@@ -1,134 +1,200 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function login(baseUrl: string, username: string, password: string): Promise<string> {
+  // GET login page (consume body)
+  const loginPage = await fetch(`${baseUrl}/Account/LogOn?ReturnUrl=%2FSCAWEB%2FVentas%2FLista`, {
+    redirect: "manual",
+    headers: { "User-Agent": "Mozilla/5.0" },
+  });
+  await loginPage.text();
+
+  // POST login
+  const loginRes = await fetch(`${baseUrl}/Account/LogOn?ReturnUrl=%2FSCAWEB%2FVentas%2FLista`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": "Mozilla/5.0",
+    },
+    body: new URLSearchParams({
+      UserName: username,
+      Password: password,
+      ReturnUrl: "/SCAWEB/Ventas/Lista",
+    }).toString(),
+    redirect: "manual",
+  });
+
+  if (loginRes.status !== 302) {
+    await loginRes.text();
+    throw new Error(`Login failed with status ${loginRes.status}`);
+  }
+
+  const authCookies: string[] = [];
+  for (const c of loginRes.headers.getSetCookie()) {
+    authCookies.push(c.split(";")[0]);
+  }
+  await loginRes.text();
+  return authCookies.join("; ");
+}
+
+interface SCARecord {
+  Id: number;
+  Fecha: string;
+  Ciudad: string | null;
+  Region: string | null;
+  Estacion: string | null;
+  IdSurtidor: number | null;
+  Surtidor: string | null;
+  Manguera: string | null;
+  Producto: string | null;
+  Factura: number | null;
+  Placa: string | null;
+  NombreFlota: string | null;
+  DocumentoFlota: string | null;
+  NombreApellidosCliente1: string | null;
+  DocumentoCliente1: string | null;
+  IdentificadorCliente1: string | null;
+  FormaDePago: string | null;
+  NombreApellidosVendedor: string | null;
+  IdentificadorVendedor: string | null;
+  TotalizadorBruto: number | null;
+  Cantidad: number | null;
+  CantidadNeta: number | null;
+  Ppu: number | null;
+  DineroTotal: number | null;
+}
+
+function mapToRow(r: SCARecord) {
+  // Parse fecha to extract date portion
+  const fechaDate = r.Fecha ? r.Fecha.split("T")[0] : null;
+  return {
+    id: r.Id,
+    fecha: r.Fecha,
+    date: fechaDate,
+    ciudad: r.Ciudad,
+    region: r.Region,
+    estacion: r.Estacion,
+    id_surtidor: r.IdSurtidor,
+    surtidor: r.Surtidor,
+    manguera: r.Manguera,
+    producto: r.Producto,
+    factura: r.Factura,
+    placa: r.Placa,
+    nombre_flota: r.NombreFlota,
+    nombre_flota_doc: r.DocumentoFlota,
+    nombre_cliente1: r.NombreApellidosCliente1,
+    documento_cliente1: r.DocumentoCliente1,
+    identificador_cliente1: r.IdentificadorCliente1,
+    forma_de_pago: r.FormaDePago,
+    nombre_vendedor: r.NombreApellidosVendedor,
+    nombre_vendedor_id: r.IdentificadorVendedor,
+    totalizador_bruto: r.TotalizadorBruto,
+    cantidad: r.Cantidad,
+    cantidad_neta: r.CantidadNeta,
+    ppu: r.Ppu,
+    dinero_total: r.DineroTotal,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const baseUrl = Deno.env.get("SCA_WEB_BASE_URL");
-  const username = Deno.env.get("SCA_WEB_USERNAME");
-  const password = Deno.env.get("SCA_WEB_PASSWORD");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const debug: string[] = [];
+  const baseUrl = Deno.env.get("SCA_WEB_BASE_URL")!;
+  const username = Deno.env.get("SCA_WEB_USERNAME")!;
+  const password = Deno.env.get("SCA_WEB_PASSWORD")!;
+
+  let totalFetched = 0;
+  let totalUpserted = 0;
 
   try {
-    // Step 1: GET login page
-    debug.push("Step 1: Fetching login page...");
-    const loginPageRes = await fetch(`${baseUrl}/Account/LogOn?ReturnUrl=%2FSCAWEB%2FVentas%2FLista`, {
-      redirect: "manual",
-      headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36" },
-    });
-    debug.push(`Login page status: ${loginPageRes.status}`);
+    // Step 1: Login
+    const cookieStr = await login(baseUrl, username, password);
 
-    // Get ALL headers for debugging
-    const allHeaders: string[] = [];
-    loginPageRes.headers.forEach((value, key) => {
-      allHeaders.push(`${key}: ${value}`);
-    });
-    debug.push(`Login page response headers: ${allHeaders.join(" | ")}`);
+    // Step 2: Fetch all pages
+    const pageSize = 200;
+    let page = 1;
+    let hasMore = true;
+    const allRecords: ReturnType<typeof mapToRow>[] = [];
 
-    // Try both methods to get cookies
-    let setCookieRaw = "";
-    try {
-      const arr = loginPageRes.headers.getSetCookie();
-      setCookieRaw = arr.join(" ||| ");
-      debug.push(`getSetCookie() returned ${arr.length} cookies: ${setCookieRaw}`);
-    } catch {
-      debug.push("getSetCookie() not available, using get()");
-      setCookieRaw = loginPageRes.headers.get("set-cookie") || "NONE";
-      debug.push(`get('set-cookie'): ${setCookieRaw}`);
-    }
+    while (hasMore) {
+      const res = await fetch(`${baseUrl}/Ventas/VentasList?page=${page}&pageSize=${pageSize}`, {
+        headers: {
+          "Cookie": cookieStr,
+          "User-Agent": "Mozilla/5.0",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      });
 
-    // Parse cookies
-    const cookies: Record<string, string> = {};
-    try {
-      const cookieHeaders = loginPageRes.headers.getSetCookie?.() || [loginPageRes.headers.get("set-cookie") || ""];
-      for (const ch of cookieHeaders) {
-        const [nameVal] = ch.split(";");
-        const eqIdx = nameVal.indexOf("=");
-        if (eqIdx > 0) {
-          cookies[nameVal.substring(0, eqIdx).trim()] = nameVal.substring(eqIdx + 1).trim();
-        }
+      if (res.status !== 200) {
+        await res.text();
+        throw new Error(`VentasList returned status ${res.status} on page ${page}`);
       }
-    } catch {}
-    debug.push(`Parsed cookies: ${JSON.stringify(cookies)}`);
 
-    // Extract CSRF token
-    const loginPageBody = await loginPageRes.text();
-    debug.push(`Login page body length: ${loginPageBody.length}`);
+      const json = await res.json();
+      const records: SCARecord[] = json.Data || [];
+      const total: number = json.Total || 0;
 
-    const csrfMatch = loginPageBody.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/);
-    const csrfToken = csrfMatch?.[1] || "";
-    debug.push(`CSRF token found: ${!!csrfToken} (first 20 chars: ${csrfToken.substring(0, 20)})`);
+      for (const r of records) {
+        allRecords.push(mapToRow(r));
+      }
 
-    // Also check what input fields exist on the form
-    const inputNames = [...loginPageBody.matchAll(/name="([^"]+)"/g)].map(m => m[1]);
-    debug.push(`Form input names found: ${inputNames.join(", ")}`);
+      totalFetched += records.length;
+      hasMore = totalFetched < total;
+      page++;
 
-    // Check if username/password env vars are set
-    debug.push(`Username set: ${!!username} (length: ${username?.length})`);
-    debug.push(`Password set: ${!!password} (length: ${password?.length})`);
-
-    // Step 2: POST login
-    debug.push("Step 2: Posting login...");
-    const cookieStr = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join("; ");
-    debug.push(`Sending cookies: ${cookieStr}`);
-
-    const formBody = new URLSearchParams({
-      UserName: username || "",
-      Password: password || "",
-      __RequestVerificationToken: csrfToken,
-      ReturnUrl: "/SCAWEB/Ventas/Lista",
-    }).toString();
-    debug.push(`POST body (password hidden): UserName=${username}&Password=***&__RequestVerificationToken=${csrfToken.substring(0, 10)}...&ReturnUrl=/SCAWEB/Ventas/Lista`);
-
-    const loginRes = await fetch(`${baseUrl}/Account/LogOn?ReturnUrl=%2FSCAWEB%2FVentas%2FLista`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Cookie": cookieStr,
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
-      },
-      body: formBody,
-      redirect: "manual",
-    });
-
-    debug.push(`Login POST status: ${loginRes.status} (302=success, 200=failed)`);
-
-    // Get response headers
-    const postHeaders: string[] = [];
-    loginRes.headers.forEach((value, key) => {
-      postHeaders.push(`${key}: ${value}`);
-    });
-    debug.push(`Login POST response headers: ${postHeaders.join(" | ")}`);
-
-    // Get cookies from POST response
-    try {
-      const postCookies = loginRes.headers.getSetCookie();
-      debug.push(`Login POST cookies (${postCookies.length}): ${postCookies.join(" ||| ")}`);
-    } catch {
-      debug.push(`Login POST set-cookie: ${loginRes.headers.get("set-cookie") || "NONE"}`);
+      // Safety: prevent infinite loops
+      if (page > 100) break;
     }
 
-    // If 200, the login page was returned again (failure) — check for error messages
-    if (loginRes.status === 200) {
-      const failBody = await loginRes.text();
-      const errorMatch = failBody.match(/validation-summary[^>]*>([\s\S]*?)<\/div/);
-      debug.push(`Login error message: ${errorMatch?.[1]?.replace(/<[^>]+>/g, "").trim() || "none found"}`);
-      debug.push(`Failed response body (first 500 chars): ${failBody.substring(0, 500)}`);
+    // Step 3: Upsert in batches
+    const batchSize = 500;
+    for (let i = 0; i < allRecords.length; i += batchSize) {
+      const batch = allRecords.slice(i, i + batchSize);
+      const { error } = await supabase
+        .from("transactions")
+        .upsert(batch, { onConflict: "id" });
+
+      if (error) throw new Error(`Upsert error: ${error.message}`);
+      totalUpserted += batch.length;
     }
 
-    return new Response(JSON.stringify({ success: true, debug }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Step 4: Log success
+    await supabase.from("sync_log").insert({
+      status: "success",
+      records_fetched: totalFetched,
+      records_upserted: totalUpserted,
     });
+
+    return new Response(
+      JSON.stringify({ success: true, records_fetched: totalFetched, records_upserted: totalUpserted }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (err: any) {
-    debug.push(`EXCEPTION: ${err.message}`);
-    return new Response(JSON.stringify({ success: false, debug, error: err.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Log failure
+    const supabaseUrl2 = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sb2 = createClient(supabaseUrl2, supabaseKey2);
+    await sb2.from("sync_log").insert({
+      status: "error",
+      records_fetched: totalFetched,
+      records_upserted: totalUpserted,
+      error_message: err.message,
     });
+
+    return new Response(
+      JSON.stringify({ success: false, error: err.message, records_fetched: totalFetched }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });
