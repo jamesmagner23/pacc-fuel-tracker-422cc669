@@ -34,26 +34,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Fetch role
-          const { data: roles } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id)
-            .limit(1);
+          try {
+            // Fetch role
+            const { data: roles } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", session.user.id)
+              .limit(1);
 
-          const userRole = roles?.[0]?.role as "admin" | "client" | null;
-          setRole(userRole ?? null);
+            const userRole = roles?.[0]?.role as "admin" | "client" | null;
+            setRole(userRole ?? null);
 
-          // If client, fetch company name
-          if (userRole === "client") {
-            const { data: account } = await supabase
-              .from("client_accounts")
-              .select("company_name")
-              .eq("auth_user_id", session.user.id)
-              .limit(1)
-              .single();
-            setCompanyName(account?.company_name ?? null);
-          } else {
+            // If client, fetch company name
+            if (userRole === "client") {
+              const { data: account } = await supabase
+                .from("client_accounts")
+                .select("company_name")
+                .eq("auth_user_id", session.user.id)
+                .limit(1)
+                .single();
+              setCompanyName(account?.company_name ?? null);
+            } else {
+              setCompanyName(null);
+            }
+          } catch (err) {
+            console.error("Error fetching user role:", err);
+            setRole(null);
             setCompanyName(null);
           }
         } else {
@@ -67,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) setLoading(false);
+    }).catch(() => {
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
