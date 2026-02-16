@@ -4,11 +4,11 @@ import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, useAllTransactions } from "@/hooks/useTransactions";
 import { format, parseISO, subDays } from "date-fns";
 
-const truckList = [
-  { name: "PACC Truck 1", capacity: 8000, plate: "PACCTRUCK1" },
-  { name: "PACC Truck 2", capacity: 5000, plate: "PACCTRUCK2" },
-  { name: "PACC Truck 3", capacity: 4000, plate: "PACCTRUCK3" },
-];
+const knownCapacities: Record<string, number> = {
+  "PACC Truck 1": 8000,
+  "PACC Truck 2": 5000,
+  "PACC Truck 3": 4000,
+};
 
 export default function Trucks() {
   const { range } = useDateRange();
@@ -22,10 +22,12 @@ export default function Trucks() {
 
   // Discover trucks dynamically from data, fallback to known list
   const trucks = useMemo(() => {
-    const known = new Set(truckList.map((t) => t.name));
     const fromData = [...new Set(allTxns.map((t) => t.estacion).filter(Boolean))] as string[];
-    const extra = fromData.filter((n) => !known.has(n)).map((n) => ({ name: n, capacity: 0, plate: n }));
-    return [...truckList, ...extra];
+    return fromData.map((name) => ({
+      name,
+      capacity: knownCapacities[name] || 0,
+      plate: name.replace(/\s+/g, "").toUpperCase(),
+    }));
   }, [allTxns]);
 
   const comparisonData = useMemo(() => {
