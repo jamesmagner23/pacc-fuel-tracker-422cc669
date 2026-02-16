@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
-import { transactions, filterByDateRange } from "@/data/mockData";
+import { useTransactions } from "@/hooks/useTransactions";
 import { format, parseISO } from "date-fns";
 
 export default function CustomerDetail() {
@@ -11,28 +11,30 @@ export default function CustomerDetail() {
   const navigate = useNavigate();
   const { range } = useDateRange();
   const customerName = decodeURIComponent(name || "");
+  const { data: allFiltered = [], isLoading } = useTransactions(range);
 
   const filtered = useMemo(
-    () => filterByDateRange(transactions, range).filter((t) => t.nombre_cliente1 === customerName),
-    [range, customerName]
+    () => allFiltered.filter((t) => t.nombre_cliente1 === customerName),
+    [allFiltered, customerName]
   );
 
   const locationData = useMemo(() => {
     const map: Record<string, number> = {};
-    filtered.forEach((t) => { map[t.ciudad] = (map[t.ciudad] || 0) + t.cantidad; });
+    filtered.forEach((t) => { const c = t.ciudad || "Unknown"; map[c] = (map[c] || 0) + (t.cantidad || 0); });
     return Object.entries(map).map(([name, litres]) => ({ name, litres })).sort((a, b) => b.litres - a.litres);
   }, [filtered]);
 
   const dailyData = useMemo(() => {
     const map: Record<string, number> = {};
-    filtered.forEach((t) => { map[t.date] = (map[t.date] || 0) + t.cantidad; });
+    filtered.forEach((t) => { if (t.date) map[t.date] = (map[t.date] || 0) + (t.cantidad || 0); });
     return Object.entries(map)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, litres]) => ({ date: format(parseISO(date), "dd MMM"), litres }));
   }, [filtered]);
 
-  const avgSize = filtered.length > 0 ? Math.round(filtered.reduce((s, t) => s + t.cantidad, 0) / filtered.length) : 0;
+  const avgSize = filtered.length > 0 ? Math.round(filtered.reduce((s, t) => s + (t.cantidad || 0), 0) / filtered.length) : 0;
 
+  if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
   if (!customerName) return <div className="p-8 text-muted-foreground">Customer not found.</div>;
 
   const tooltipStyle = { backgroundColor: "hsl(217 33% 17%)", border: "1px solid hsl(217 33% 25%)", borderRadius: "8px", color: "hsl(210 40% 98%)", fontSize: 12 };
@@ -97,8 +99,8 @@ export default function CustomerDetail() {
                   <td className="py-2.5 pr-4 whitespace-nowrap">{format(parseISO(t.fecha), "dd MMM HH:mm")}</td>
                   <td className="py-2.5 pr-4">{t.ciudad}</td>
                   <td className="py-2.5 pr-4 whitespace-nowrap">{t.estacion}</td>
-                  <td className="py-2.5 pr-4 text-right font-medium">{t.cantidad.toLocaleString()}L</td>
-                  <td className="py-2.5 text-right font-medium">${t.dinero_total.toLocaleString()}</td>
+                  <td className="py-2.5 pr-4 text-right font-medium">{(t.cantidad || 0).toLocaleString()}L</td>
+                  <td className="py-2.5 text-right font-medium">${(t.dinero_total || 0).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

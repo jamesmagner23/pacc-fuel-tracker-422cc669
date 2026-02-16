@@ -1,33 +1,32 @@
-import { useMemo } from "react";
 import { Droplets, DollarSign, Truck, BarChart3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
-import { transactions, filterByDateRange, getPreviousPeriodTransactions } from "@/data/mockData";
+import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
 import { KPICard } from "@/components/KPICard";
 import { format, parseISO } from "date-fns";
+import { useMemo } from "react";
 
 export default function Overview() {
   const { range } = useDateRange();
+  const { data: filtered = [], isLoading } = useTransactions(range);
+  const { data: previous = [] } = usePreviousTransactions(range);
 
-  const filtered = useMemo(() => filterByDateRange(transactions, range), [range]);
-  const previous = useMemo(() => getPreviousPeriodTransactions(transactions, range), [range]);
-
-  const totalLitres = filtered.reduce((s, t) => s + t.cantidad, 0);
-  const totalRevenue = filtered.reduce((s, t) => s + t.dinero_total, 0);
+  const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
+  const totalRevenue = filtered.reduce((s, t) => s + (t.dinero_total || 0), 0);
   const numDeliveries = filtered.length;
   const avgSize = numDeliveries > 0 ? totalLitres / numDeliveries : 0;
 
-  const prevLitres = previous.reduce((s, t) => s + t.cantidad, 0);
-  const prevRevenue = previous.reduce((s, t) => s + t.dinero_total, 0);
+  const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
+  const prevRevenue = previous.reduce((s, t) => s + (t.dinero_total || 0), 0);
   const prevDeliveries = previous.length;
   const prevAvg = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
 
   const pctChange = (curr: number, prev: number) =>
-    prev === 0 ? 100 : ((curr - prev) / prev) * 100;
+    prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100;
 
   const dailyData = useMemo(() => {
     const map: Record<string, number> = {};
-    filtered.forEach((t) => { map[t.date] = (map[t.date] || 0) + t.cantidad; });
+    filtered.forEach((t) => { if (t.date) map[t.date] = (map[t.date] || 0) + (t.cantidad || 0); });
     return Object.entries(map)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, litres]) => ({ date: format(parseISO(date), "dd MMM"), litres }));
@@ -36,11 +35,25 @@ export default function Overview() {
   const topCustomers = useMemo(() => {
     const map: Record<string, { name: string; litres: number }> = {};
     filtered.forEach((t) => {
-      if (!map[t.nombre_cliente1]) map[t.nombre_cliente1] = { name: t.nombre_cliente1, litres: 0 };
-      map[t.nombre_cliente1].litres += t.cantidad;
+      const name = t.nombre_cliente1 || "Unknown";
+      if (!map[name]) map[name] = { name, litres: 0 };
+      map[name].litres += t.cantidad || 0;
     });
     return Object.values(map).sort((a, b) => b.litres - a.litres).slice(0, 5);
   }, [filtered]);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
+  }
+
+  if (filtered.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground gap-3">
+        <Droplets className="w-8 h-8" />
+        <p>No transactions yet. Click <strong>Sync Now</strong> to pull data from SCA WEB.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-6xl">
