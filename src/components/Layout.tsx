@@ -3,6 +3,7 @@ import { Fuel, LayoutDashboard, Users, Truck, List, UserCheck, Globe } from "luc
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
+import { ChangePasswordDialog } from "./ChangePasswordDialog";
 
 const navItems = [
   { to: "/", label: "Overview", icon: LayoutDashboard },
@@ -28,6 +29,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <SyncStatus />
             <SyncButton />
             <DateRangeToggle />
+            <ChangePasswordDialog />
           </div>
         </div>
       </header>
