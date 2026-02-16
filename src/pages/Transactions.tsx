@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { Search, Download, ArrowUpDown } from "lucide-react";
 import { useDateRange } from "@/hooks/useDateRange";
-import { transactions, customerList, truckList, driverList, filterByDateRange } from "@/data/mockData";
+import { useTransactions } from "@/hooks/useTransactions";
 import { format, parseISO } from "date-fns";
 
 type SortKey = "fecha" | "nombre_cliente1" | "ciudad" | "cantidad" | "ppu" | "dinero_total" | "factura";
 
 export default function Transactions() {
   const { range } = useDateRange();
+  const { data: txns = [], isLoading } = useTransactions(range);
   const [search, setSearch] = useState("");
   const [customerFilter, setCustomerFilter] = useState("");
   const [truckFilter, setTruckFilter] = useState("");
@@ -16,31 +17,34 @@ export default function Transactions() {
   const [sortKey, setSortKey] = useState<SortKey>("fecha");
   const [sortAsc, setSortAsc] = useState(false);
 
-  const locations = useMemo(() => [...new Set(transactions.map((t) => t.ciudad))].sort(), []);
+  const customers = useMemo(() => [...new Set(txns.map((t) => t.nombre_cliente1).filter(Boolean))].sort() as string[], [txns]);
+  const trucks = useMemo(() => [...new Set(txns.map((t) => t.estacion).filter(Boolean))].sort() as string[], [txns]);
+  const drivers = useMemo(() => [...new Set(txns.map((t) => t.nombre_vendedor).filter(Boolean))].sort() as string[], [txns]);
+  const locations = useMemo(() => [...new Set(txns.map((t) => t.ciudad).filter(Boolean))].sort() as string[], [txns]);
 
   const filtered = useMemo(() => {
-    let txns = filterByDateRange(transactions, range);
-    if (customerFilter) txns = txns.filter((t) => t.nombre_cliente1 === customerFilter);
-    if (truckFilter) txns = txns.filter((t) => t.estacion === truckFilter);
-    if (driverFilter) txns = txns.filter((t) => t.nombre_vendedor === driverFilter);
-    if (locationFilter) txns = txns.filter((t) => t.ciudad === locationFilter);
+    let result = [...txns];
+    if (customerFilter) result = result.filter((t) => t.nombre_cliente1 === customerFilter);
+    if (truckFilter) result = result.filter((t) => t.estacion === truckFilter);
+    if (driverFilter) result = result.filter((t) => t.nombre_vendedor === driverFilter);
+    if (locationFilter) result = result.filter((t) => t.ciudad === locationFilter);
     if (search) {
       const q = search.toLowerCase();
-      txns = txns.filter((t) =>
-        t.nombre_cliente1.toLowerCase().includes(q) ||
-        t.ciudad.toLowerCase().includes(q) ||
-        t.nombre_vendedor.toLowerCase().includes(q) ||
-        t.factura.toString().includes(q)
+      result = result.filter((t) =>
+        (t.nombre_cliente1 || "").toLowerCase().includes(q) ||
+        (t.ciudad || "").toLowerCase().includes(q) ||
+        (t.nombre_vendedor || "").toLowerCase().includes(q) ||
+        (t.factura?.toString() || "").includes(q)
       );
     }
-    const sorted = [...txns].sort((a, b) => {
+    result.sort((a, b) => {
       const av = a[sortKey];
       const bv = b[sortKey];
       if (typeof av === "number" && typeof bv === "number") return sortAsc ? av - bv : bv - av;
-      return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+      return sortAsc ? String(av || "").localeCompare(String(bv || "")) : String(bv || "").localeCompare(String(av || ""));
     });
-    return sorted;
-  }, [range, search, customerFilter, truckFilter, driverFilter, locationFilter, sortKey, sortAsc]);
+    return result;
+  }, [txns, search, customerFilter, truckFilter, driverFilter, locationFilter, sortKey, sortAsc]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -68,6 +72,8 @@ export default function Transactions() {
     </th>
   );
 
+  if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
+
   return (
     <div className="space-y-4 max-w-6xl">
       <div className="flex items-center justify-between">
@@ -84,15 +90,15 @@ export default function Transactions() {
         </div>
         <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)} className="px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
           <option value="">All Customers</option>
-          {customerList.map((c) => <option key={c.code} value={c.name}>{c.name}</option>)}
+          {customers.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <select value={truckFilter} onChange={(e) => setTruckFilter(e.target.value)} className="px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
           <option value="">All Trucks</option>
-          {truckList.map((t) => <option key={t.plate} value={t.name}>{t.name}</option>)}
+          {trucks.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
         <select value={driverFilter} onChange={(e) => setDriverFilter(e.target.value)} className="px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
           <option value="">All Drivers</option>
-          {driverList.map((d) => <option key={d.name} value={d.name}>{d.name}</option>)}
+          {drivers.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
         <select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} className="px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
           <option value="">All Locations</option>
@@ -123,9 +129,9 @@ export default function Transactions() {
                 <td className="p-3 pr-2 hidden lg:table-cell">{t.ciudad}</td>
                 <td className="p-3 pr-2 whitespace-nowrap hidden md:table-cell">{t.estacion}</td>
                 <td className="p-3 pr-2 hidden lg:table-cell">{t.nombre_vendedor}</td>
-                <td className="p-3 pr-2 text-right font-medium">{t.cantidad.toLocaleString()}</td>
-                <td className="p-3 pr-2 text-right hidden sm:table-cell">${t.ppu.toFixed(2)}</td>
-                <td className="p-3 text-right font-medium">${t.dinero_total.toLocaleString()}</td>
+                <td className="p-3 pr-2 text-right font-medium">{(t.cantidad || 0).toLocaleString()}</td>
+                <td className="p-3 pr-2 text-right hidden sm:table-cell">${(t.ppu || 0).toFixed(2)}</td>
+                <td className="p-3 text-right font-medium">${(t.dinero_total || 0).toLocaleString()}</td>
                 <td className="p-3 pr-2 text-right hidden md:table-cell font-mono text-xs">{t.factura}</td>
               </tr>
             ))}

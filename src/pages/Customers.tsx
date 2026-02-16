@@ -2,35 +2,31 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { useDateRange } from "@/hooks/useDateRange";
-import { transactions, customerList, filterByDateRange } from "@/data/mockData";
+import { useTransactions } from "@/hooks/useTransactions";
 
 export default function Customers() {
   const { range } = useDateRange();
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const { data: filtered = [], isLoading } = useTransactions(range);
 
-  const filtered = useMemo(() => filterByDateRange(transactions, range), [range]);
-
-  const customerStats = useMemo(() => {
-    const map: Record<string, { litres: number; deliveries: number; revenue: number }> = {};
+  const rows = useMemo(() => {
+    const map: Record<string, { name: string; litres: number; deliveries: number; revenue: number }> = {};
     filtered.forEach((t) => {
-      if (!map[t.nombre_cliente1]) map[t.nombre_cliente1] = { litres: 0, deliveries: 0, revenue: 0 };
-      map[t.nombre_cliente1].litres += t.cantidad;
-      map[t.nombre_cliente1].deliveries += 1;
-      map[t.nombre_cliente1].revenue += t.dinero_total;
+      const name = t.nombre_cliente1 || "Unknown";
+      if (!map[name]) map[name] = { name, litres: 0, deliveries: 0, revenue: 0 };
+      map[name].litres += t.cantidad || 0;
+      map[name].deliveries += 1;
+      map[name].revenue += t.dinero_total || 0;
     });
-    return map;
-  }, [filtered]);
+    return Object.values(map)
+      .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
+      .sort((a, b) => b.litres - a.litres);
+  }, [filtered, search]);
 
-  const rows = customerList
-    .map((c) => ({
-      ...c,
-      litres: customerStats[c.name]?.litres || 0,
-      deliveries: customerStats[c.name]?.deliveries || 0,
-      revenue: customerStats[c.name]?.revenue || 0,
-    }))
-    .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => b.litres - a.litres);
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
+  }
 
   return (
     <div className="space-y-4 max-w-4xl">
@@ -41,35 +37,38 @@ export default function Customers() {
         <input type="text" placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
       </div>
 
-      <div className="space-y-2">
-        {rows.map((c, i) => (
-          <button
-            key={c.code}
-            onClick={() => navigate(`/customers/${encodeURIComponent(c.name)}`)}
-            className="w-full glass-card p-4 flex items-center justify-between hover:border-primary/30 transition-colors text-left animate-fade-in"
-            style={{ animationDelay: `${i * 30}ms` }}
-          >
-            <div>
-              <div className="font-semibold text-sm">{c.name}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{c.code}</div>
-            </div>
-            <div className="flex gap-6 text-right">
+      {rows.length === 0 ? (
+        <div className="text-center text-muted-foreground py-12">No customers found. Click <strong>Sync Now</strong> to pull data.</div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((c, i) => (
+            <button
+              key={c.name}
+              onClick={() => navigate(`/customers/${encodeURIComponent(c.name)}`)}
+              className="w-full glass-card p-4 flex items-center justify-between hover:border-primary/30 transition-colors text-left animate-fade-in"
+              style={{ animationDelay: `${i * 30}ms` }}
+            >
               <div>
-                <div className="text-sm font-bold">{c.litres.toLocaleString()}L</div>
-                <div className="text-[10px] text-muted-foreground">Volume</div>
+                <div className="font-semibold text-sm">{c.name}</div>
               </div>
-              <div className="hidden sm:block">
-                <div className="text-sm font-bold">{c.deliveries}</div>
-                <div className="text-[10px] text-muted-foreground">Deliveries</div>
+              <div className="flex gap-6 text-right">
+                <div>
+                  <div className="text-sm font-bold">{c.litres.toLocaleString()}L</div>
+                  <div className="text-[10px] text-muted-foreground">Volume</div>
+                </div>
+                <div className="hidden sm:block">
+                  <div className="text-sm font-bold">{c.deliveries}</div>
+                  <div className="text-[10px] text-muted-foreground">Deliveries</div>
+                </div>
+                <div>
+                  <div className="text-sm font-bold">${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                  <div className="text-[10px] text-muted-foreground">Revenue</div>
+                </div>
               </div>
-              <div>
-                <div className="text-sm font-bold">${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                <div className="text-[10px] text-muted-foreground">Revenue</div>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

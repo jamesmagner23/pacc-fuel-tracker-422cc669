@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { DateRange } from "@/data/mockData";
+import { DateRange } from "@/hooks/useTransactions";
 
 interface DateRangeContextType {
   range: DateRange;

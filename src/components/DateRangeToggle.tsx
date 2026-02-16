@@ -1,5 +1,5 @@
 import { useDateRange } from "@/hooks/useDateRange";
-import { DateRange } from "@/data/mockData";
+import { DateRange } from "@/hooks/useTransactions";
 
 const options: { label: string; value: DateRange }[] = [
   { label: "Today", value: "today" },

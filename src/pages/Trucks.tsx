@@ -1,24 +1,41 @@
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
-import { transactions, truckList, filterByDateRange } from "@/data/mockData";
+import { useTransactions, useAllTransactions } from "@/hooks/useTransactions";
 import { format, parseISO, subDays } from "date-fns";
+
+const truckList = [
+  { name: "PACC Truck 1", capacity: 8000, plate: "PACCTRUCK1" },
+  { name: "PACC Truck 2", capacity: 5000, plate: "PACCTRUCK2" },
+  { name: "PACC Truck 3", capacity: 4000, plate: "PACCTRUCK3" },
+];
 
 export default function Trucks() {
   const { range } = useDateRange();
-  const filtered = useMemo(() => filterByDateRange(transactions, range), [range]);
+  const { data: filtered = [], isLoading } = useTransactions(range);
+  const { data: allTxns = [] } = useAllTransactions();
 
   const today = format(new Date(), "yyyy-MM-dd");
   const weekAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
 
   const tooltipStyle = { backgroundColor: "hsl(217 33% 17%)", border: "1px solid hsl(217 33% 25%)", borderRadius: "8px", color: "hsl(210 40% 98%)", fontSize: 12 };
 
+  // Discover trucks dynamically from data, fallback to known list
+  const trucks = useMemo(() => {
+    const known = new Set(truckList.map((t) => t.name));
+    const fromData = [...new Set(allTxns.map((t) => t.estacion).filter(Boolean))] as string[];
+    const extra = fromData.filter((n) => !known.has(n)).map((n) => ({ name: n, capacity: 0, plate: n }));
+    return [...truckList, ...extra];
+  }, [allTxns]);
+
   const comparisonData = useMemo(() => {
-    return truckList.map((t) => ({
+    return trucks.map((t) => ({
       name: t.name,
-      litres: filtered.filter((tx) => tx.estacion === t.name).reduce((s, tx) => s + tx.cantidad, 0),
+      litres: filtered.filter((tx) => tx.estacion === t.name).reduce((s, tx) => s + (tx.cantidad || 0), 0),
     }));
-  }, [filtered]);
+  }, [filtered, trucks]);
+
+  if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -39,18 +56,17 @@ export default function Trucks() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {truckList.map((truck, i) => {
+        {trucks.map((truck, i) => {
           const truckTxns = filtered.filter((t) => t.estacion === truck.name);
-          const todayLitres = transactions.filter((t) => t.estacion === truck.name && t.date === today).reduce((s, t) => s + t.cantidad, 0);
-          const weekLitres = transactions.filter((t) => t.estacion === truck.name && t.date >= weekAgo).reduce((s, t) => s + t.cantidad, 0);
-          const periodLitres = truckTxns.reduce((s, t) => s + t.cantidad, 0);
+          const todayLitres = allTxns.filter((t) => t.estacion === truck.name && t.date === today).reduce((s, t) => s + (t.cantidad || 0), 0);
+          const weekLitres = allTxns.filter((t) => t.estacion === truck.name && t.date && t.date >= weekAgo).reduce((s, t) => s + (t.cantidad || 0), 0);
+          const periodLitres = truckTxns.reduce((s, t) => s + (t.cantidad || 0), 0);
           const avgSize = truckTxns.length > 0 ? Math.round(periodLitres / truckTxns.length) : 0;
 
-          // Latest totaliser
-          const latestTotaliser = transactions.find((t) => t.estacion === truck.name)?.totalizador_bruto || 0;
+          const latestTotaliser = allTxns.find((t) => t.estacion === truck.name)?.totalizador_bruto || 0;
 
           const dailyMap: Record<string, number> = {};
-          truckTxns.forEach((t) => { dailyMap[t.date] = (dailyMap[t.date] || 0) + t.cantidad; });
+          truckTxns.forEach((t) => { if (t.date) dailyMap[t.date] = (dailyMap[t.date] || 0) + (t.cantidad || 0); });
           const dailyData = Object.entries(dailyMap)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([date, litres]) => ({ date: format(parseISO(date), "dd"), litres }));
@@ -60,7 +76,7 @@ export default function Trucks() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="font-semibold text-sm">{truck.name}</div>
-                  <div className="text-xs text-muted-foreground">{truck.capacity.toLocaleString()}L capacity</div>
+                  {truck.capacity > 0 && <div className="text-xs text-muted-foreground">{truck.capacity.toLocaleString()}L capacity</div>}
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] text-muted-foreground">Totaliser</div>

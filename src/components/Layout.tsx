@@ -1,6 +1,8 @@
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
-import { Fuel, LayoutDashboard, Users, Truck, List, UserCheck, Clock } from "lucide-react";
+import { Fuel, LayoutDashboard, Users, Truck, List, UserCheck } from "lucide-react";
 import { DateRangeToggle } from "./DateRangeToggle";
+import { SyncButton } from "./SyncButton";
+import { SyncStatus } from "./SyncStatus";
 
 const navItems = [
   { to: "/", label: "Overview", icon: LayoutDashboard },
@@ -22,10 +24,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-lg tracking-tight">PACC Fuel</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <Clock className="w-3 h-3" />
-              <span>Last synced: —</span>
-            </div>
+            <SyncStatus />
+            <SyncButton />
             <DateRangeToggle />
           </div>
         </div>
