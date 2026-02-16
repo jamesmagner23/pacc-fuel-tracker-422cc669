@@ -25,8 +25,12 @@ Deno.serve(async (req) => {
   const debugInfo: string[] = [];
 
   try {
+    const loginUrl = `${baseUrl}/Account/LogOn`;
+    debugInfo.push(`Base URL: ${baseUrl}`);
+    debugInfo.push(`Login URL: ${loginUrl}`);
+
     // Step 1: GET login page
-    const loginPageRes = await fetch(`${baseUrl}/Account/LogOn`, { redirect: "manual" });
+    const loginPageRes = await fetch(loginUrl, { redirect: "manual" });
     debugInfo.push(`Login GET status: ${loginPageRes.status}`);
     const loginPageCookies = parseCookies(loginPageRes.headers);
     const loginPageBody = await loginPageRes.text();
