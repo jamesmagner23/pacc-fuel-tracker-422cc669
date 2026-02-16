@@ -3,70 +3,59 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
-import { transactions, customers, filterByDateRange } from "@/data/mockData";
+import { transactions, filterByDateRange } from "@/data/mockData";
 import { format, parseISO } from "date-fns";
 
 export default function CustomerDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const { range } = useDateRange();
+  const customerName = decodeURIComponent(name || "");
 
-  const customer = customers.find((c) => c.id === id);
   const filtered = useMemo(
-    () => filterByDateRange(transactions, range).filter((t) => t.customerId === id),
-    [range, id]
+    () => filterByDateRange(transactions, range).filter((t) => t.nombre_cliente1 === customerName),
+    [range, customerName]
   );
 
-  // Volume by project
-  const projectData = useMemo(() => {
+  const locationData = useMemo(() => {
     const map: Record<string, number> = {};
-    filtered.forEach((t) => {
-      map[t.projectName] = (map[t.projectName] || 0) + t.litres;
-    });
-    return Object.entries(map).map(([name, litres]) => ({ name, litres }));
+    filtered.forEach((t) => { map[t.ciudad] = (map[t.ciudad] || 0) + t.cantidad; });
+    return Object.entries(map).map(([name, litres]) => ({ name, litres })).sort((a, b) => b.litres - a.litres);
   }, [filtered]);
 
-  // Daily trend
   const dailyData = useMemo(() => {
     const map: Record<string, number> = {};
-    filtered.forEach((t) => {
-      map[t.date] = (map[t.date] || 0) + t.litres;
-    });
+    filtered.forEach((t) => { map[t.date] = (map[t.date] || 0) + t.cantidad; });
     return Object.entries(map)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, litres]) => ({ date: format(parseISO(date), "dd MMM"), litres }));
   }, [filtered]);
 
-  if (!customer) return <div className="p-8 text-muted-foreground">Customer not found.</div>;
+  const avgSize = filtered.length > 0 ? Math.round(filtered.reduce((s, t) => s + t.cantidad, 0) / filtered.length) : 0;
 
-  const tooltipStyle = {
-    backgroundColor: "hsl(217 33% 17%)",
-    border: "1px solid hsl(217 33% 25%)",
-    borderRadius: "8px",
-    color: "hsl(210 40% 98%)",
-    fontSize: 12,
-  };
+  if (!customerName) return <div className="p-8 text-muted-foreground">Customer not found.</div>;
+
+  const tooltipStyle = { backgroundColor: "hsl(217 33% 17%)", border: "1px solid hsl(217 33% 25%)", borderRadius: "8px", color: "hsl(210 40% 98%)", fontSize: 12 };
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <button
-        onClick={() => navigate("/customers")}
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
+      <button onClick={() => navigate("/customers")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
         <ArrowLeft className="w-4 h-4" /> Back to Customers
       </button>
 
-      <h1 className="text-xl font-bold">{customer.name}</h1>
+      <div>
+        <h1 className="text-xl font-bold">{customerName}</h1>
+        <p className="text-sm text-muted-foreground mt-1">Avg delivery: {avgSize.toLocaleString()}L · {filtered.length} deliveries this period</p>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Volume by project */}
         <div className="glass-card p-4 sm:p-5">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-4">Volume by Project</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-4">Volume by Location</h2>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={projectData} layout="vertical">
+              <BarChart data={locationData.slice(0, 8)} layout="vertical">
                 <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} width={140} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} width={100} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
                 <Bar dataKey="litres" fill="hsl(25 95% 53%)" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -74,9 +63,8 @@ export default function CustomerDetail() {
           </div>
         </div>
 
-        {/* Delivery trend */}
         <div className="glass-card p-4 sm:p-5">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-4">Delivery History</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-4">Volume Over Time</h2>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dailyData}>
@@ -90,7 +78,6 @@ export default function CustomerDetail() {
         </div>
       </div>
 
-      {/* Recent transactions */}
       <div className="glass-card p-4 sm:p-5">
         <h2 className="text-sm font-semibold text-muted-foreground mb-4">Recent Transactions</h2>
         <div className="overflow-x-auto">
@@ -98,20 +85,20 @@ export default function CustomerDetail() {
             <thead>
               <tr className="text-left text-xs text-muted-foreground border-b border-border">
                 <th className="pb-2 pr-4">Date</th>
-                <th className="pb-2 pr-4">Project</th>
+                <th className="pb-2 pr-4">Location</th>
                 <th className="pb-2 pr-4">Truck</th>
                 <th className="pb-2 pr-4 text-right">Litres</th>
                 <th className="pb-2 text-right">Total</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.slice(0, 15).map((t) => (
+              {filtered.slice(0, 20).map((t) => (
                 <tr key={t.id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
-                  <td className="py-2.5 pr-4 whitespace-nowrap">{format(parseISO(t.date), "dd MMM")} {t.time}</td>
-                  <td className="py-2.5 pr-4 truncate max-w-[200px]">{t.projectName}</td>
-                  <td className="py-2.5 pr-4 whitespace-nowrap">{t.truckName}</td>
-                  <td className="py-2.5 pr-4 text-right font-medium">{t.litres.toLocaleString()}L</td>
-                  <td className="py-2.5 text-right font-medium">${t.total.toLocaleString()}</td>
+                  <td className="py-2.5 pr-4 whitespace-nowrap">{format(parseISO(t.fecha), "dd MMM HH:mm")}</td>
+                  <td className="py-2.5 pr-4">{t.ciudad}</td>
+                  <td className="py-2.5 pr-4 whitespace-nowrap">{t.estacion}</td>
+                  <td className="py-2.5 pr-4 text-right font-medium">{t.cantidad.toLocaleString()}L</td>
+                  <td className="py-2.5 text-right font-medium">${t.dinero_total.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
