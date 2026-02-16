@@ -1,0 +1,115 @@
+import { useMemo } from "react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { useDateRange } from "@/hooks/useDateRange";
+import { transactions, trucks, filterByDateRange } from "@/data/mockData";
+import { format, parseISO, subDays } from "date-fns";
+
+export default function Trucks() {
+  const { range } = useDateRange();
+  const filtered = useMemo(() => filterByDateRange(transactions, range), [range]);
+
+  const today = format(new Date(), "yyyy-MM-dd");
+  const weekAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
+
+  const tooltipStyle = {
+    backgroundColor: "hsl(217 33% 17%)",
+    border: "1px solid hsl(217 33% 25%)",
+    borderRadius: "8px",
+    color: "hsl(210 40% 98%)",
+    fontSize: 12,
+  };
+
+  // Comparison data
+  const comparisonData = useMemo(() => {
+    const map: Record<string, number> = {};
+    trucks.forEach((t) => {
+      map[t.id] = filtered.filter((tx) => tx.truckId === t.id).reduce((s, tx) => s + tx.litres, 0);
+    });
+    return trucks.map((t) => ({ name: t.name, litres: map[t.id] || 0 }));
+  }, [filtered]);
+
+  return (
+    <div className="space-y-6 max-w-5xl">
+      <h1 className="text-xl font-bold">Trucks</h1>
+
+      {/* Comparison */}
+      <div className="glass-card p-4 sm:p-5 animate-fade-in">
+        <h2 className="text-sm font-semibold text-muted-foreground mb-4">Truck Comparison — Total Litres</h2>
+        <div className="h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={comparisonData}>
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
+              <Bar dataKey="litres" fill="hsl(25 95% 53%)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Individual Truck Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {trucks.map((truck, i) => {
+          const truckTxns = filtered.filter((t) => t.truckId === truck.id);
+          const todayLitres = transactions.filter((t) => t.truckId === truck.id && t.date === today).reduce((s, t) => s + t.litres, 0);
+          const weekLitres = transactions.filter((t) => t.truckId === truck.id && t.date >= weekAgo).reduce((s, t) => s + t.litres, 0);
+          const periodLitres = truckTxns.reduce((s, t) => s + t.litres, 0);
+          const avgSize = truckTxns.length > 0 ? Math.round(periodLitres / truckTxns.length) : 0;
+
+          // Daily chart
+          const dailyMap: Record<string, number> = {};
+          truckTxns.forEach((t) => { dailyMap[t.date] = (dailyMap[t.date] || 0) + t.litres; });
+          const dailyData = Object.entries(dailyMap)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, litres]) => ({ date: format(parseISO(date), "dd"), litres }));
+
+          return (
+            <div key={truck.id} className="glass-card p-4 sm:p-5 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="font-semibold text-sm">{truck.name} — {truck.model}</div>
+                  <div className="text-xs text-muted-foreground">{truck.capacity.toLocaleString()}L capacity</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div>
+                  <div className="text-lg font-bold">{todayLitres.toLocaleString()}</div>
+                  <div className="text-[10px] text-muted-foreground">Today (L)</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold">{(weekLitres / 1000).toFixed(1)}k</div>
+                  <div className="text-[10px] text-muted-foreground">Week (L)</div>
+                </div>
+                <div>
+                  <div className="text-lg font-bold">{(periodLitres / 1000).toFixed(1)}k</div>
+                  <div className="text-[10px] text-muted-foreground">Period (L)</div>
+                </div>
+              </div>
+
+              <div className="h-28 mb-3">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dailyData}>
+                    <defs>
+                      <linearGradient id={`grad-${truck.id}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(25 95% 53%)" stopOpacity={0.3} />
+                        <stop offset="100%" stopColor="hsl(25 95% 53%)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
+                    <Area type="monotone" dataKey="litres" stroke="hsl(25 95% 53%)" fill={`url(#grad-${truck.id})`} strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{truckTxns.length} deliveries</span>
+                <span>Avg {avgSize.toLocaleString()}L</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
