@@ -22,11 +22,56 @@ Deno.serve(async (req) => {
   let totalFetched = 0;
   let totalUpserted = 0;
 
-  try {
-    // Step 1: Login
-    const cookies = await login(baseUrl, username, password);
+  const debugInfo: string[] = [];
 
-    // Step 2: Determine start date
+  try {
+    // Step 1: GET login page
+    const loginPageRes = await fetch(`${baseUrl}/Account/LogOn`, { redirect: "manual" });
+    debugInfo.push(`Login GET status: ${loginPageRes.status}`);
+    const loginPageCookies = parseCookies(loginPageRes.headers);
+    const loginPageBody = await loginPageRes.text();
+
+    const csrfToken = loginPageBody.match(/name="__RequestVerificationToken".*?value="([^"]+)"/)?.[1] || "";
+    debugInfo.push(`CSRF token found: ${csrfToken ? "yes" : "no"}, prefix: ${csrfToken.substring(0, 10)}`);
+
+    // Step 2: POST login — DO NOT follow redirect
+    const loginRes = await fetch(`${baseUrl}/Account/LogOn`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Cookie: cookieString(loginPageCookies),
+      },
+      body: new URLSearchParams({
+        UserName: username,
+        Password: password,
+        __RequestVerificationToken: csrfToken,
+        ReturnUrl: "/SCAWEB/Ventas/Lista",
+      }).toString(),
+      redirect: "manual",
+    });
+    debugInfo.push(`Login POST status: ${loginRes.status}`);
+
+    // Capture Set-Cookie headers from the 302 response
+    const setCookieRaw = loginRes.headers.get("set-cookie") || "(none)";
+    debugInfo.push(`Login POST Set-Cookie: ${setCookieRaw}`);
+    // Also try getSetCookie
+    const setCookieArray = loginRes.headers.getSetCookie?.() || [];
+    if (setCookieArray.length > 0) {
+      debugInfo.push(`getSetCookie entries: ${setCookieArray.join(" | ")}`);
+    }
+
+    // Consume body to avoid leak
+    await loginRes.text();
+
+    // Step 3: Merge cookies
+    const authCookies = { ...loginPageCookies, ...parseCookies(loginRes.headers) };
+
+    if (loginRes.status !== 302) {
+      const errMsg = `Login failed with status ${loginRes.status}. Debug: ${debugInfo.join(" ; ")}`;
+      throw new Error(errMsg);
+    }
+
+    // Step 4: Determine start date
     const { data: latestTxn } = await supabase
       .from("transactions")
       .select("fecha")
@@ -40,22 +85,22 @@ Deno.serve(async (req) => {
 
     const tomorrow = getTomorrow();
 
-    // Step 3: Fetch all pages
+    // Step 5: Fetch all pages
     let page = 1;
     let allRecords: any[] = [];
     while (true) {
-      const result = await fetchTransactions(baseUrl, cookies, startDate, tomorrow, page);
+      const result = await fetchTransactions(baseUrl, authCookies, startDate, tomorrow, page);
       allRecords = allRecords.concat(result.Data || []);
       totalFetched = allRecords.length;
 
       if (allRecords.length >= (result.Total || 0)) break;
       page++;
     }
+    debugInfo.push(`VentasList fetched ${totalFetched} records`);
 
-    // Step 4: Upsert
+    // Step 6: Upsert
     if (allRecords.length > 0) {
       const mapped = allRecords.map(mapRecord);
-      // Upsert in batches of 100
       for (let i = 0; i < mapped.length; i += 100) {
         const batch = mapped.slice(i, i + 100);
         const { error } = await supabase
@@ -86,7 +131,7 @@ Deno.serve(async (req) => {
       records_fetched: totalFetched,
       records_upserted: totalUpserted,
       status: "error",
-      error_message: err.message || String(err),
+      error_message: (err.message || String(err)).substring(0, 2000),
     });
 
     return new Response(
@@ -96,74 +141,24 @@ Deno.serve(async (req) => {
   }
 });
 
-function extractCookies(response: Response): Record<string, string> {
+function parseCookies(headers: Headers): Record<string, string> {
   const cookies: Record<string, string> = {};
-  const setCookieHeaders = response.headers.getSetCookie?.() || [];
-  // Fallback for environments without getSetCookie
-  const raw = setCookieHeaders.length > 0
-    ? setCookieHeaders
-    : (response.headers.get("set-cookie") || "").split(/,(?=\s*\w+=)/);
+  // Try getSetCookie first (returns array of individual Set-Cookie values)
+  const setCookieArray = headers.getSetCookie?.() || [];
+  const raw = setCookieArray.length > 0
+    ? setCookieArray
+    : (headers.get("set-cookie") || "").split(/,(?=\s*[a-zA-Z_]+=)/);
 
-  for (const cookie of raw) {
-    const match = cookie.match(/^([^=]+)=([^;]*)/);
-    if (match) cookies[match[1].trim()] = match[2].trim();
+  for (const c of raw) {
+    const [nameVal] = c.split(";");
+    const [name, ...val] = nameVal.trim().split("=");
+    if (name) cookies[name.trim()] = val.join("=").trim();
   }
   return cookies;
 }
 
 function cookieString(cookies: Record<string, string>): string {
   return Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join("; ");
-}
-
-async function login(baseUrl: string, username: string, password: string): Promise<Record<string, string>> {
-  // GET login page
-  const loginPageRes = await fetch(`${baseUrl}/Account/LogOn`, { redirect: "manual" });
-  const allCookies = extractCookies(loginPageRes);
-  const html = await loginPageRes.text();
-
-  // Extract CSRF token
-  const tokenMatch = html.match(/name="__RequestVerificationToken".*?value="([^"]+)"/);
-  const token = tokenMatch ? tokenMatch[1] : "";
-
-  // POST login
-  const body = new URLSearchParams({
-    UserName: username,
-    Password: password,
-    __RequestVerificationToken: token,
-  });
-
-  const loginRes = await fetch(`${baseUrl}/Account/LogOn`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Cookie: cookieString(allCookies),
-    },
-    body: body.toString(),
-    redirect: "manual",
-  });
-
-  const newCookies = extractCookies(loginRes);
-  const merged = { ...allCookies, ...newCookies };
-
-  // A 302 redirect means login succeeded
-  if (loginRes.status === 302 || loginRes.status === 200) {
-    // Consume body to avoid leak
-    await loginRes.text();
-    return merged;
-  }
-
-  // If we got auth-related cookies, consider it success
-  const hasAuth = Object.keys(merged).some(
-    (k) => k === ".ASPXAUTH" || k.startsWith("SCA_") || k === "ASP.NET_SessionId"
-  );
-  if (hasAuth) {
-    await loginRes.text();
-    return merged;
-  }
-
-  const responseBody = await loginRes.text();
-  console.error("Login response status:", loginRes.status, "body preview:", responseBody.substring(0, 500));
-  throw new Error(`Login failed — status ${loginRes.status}, no auth cookies received`);
 }
 
 async function fetchTransactions(
