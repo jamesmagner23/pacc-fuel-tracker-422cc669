@@ -145,15 +145,25 @@ async function login(baseUrl: string, username: string, password: string): Promi
   const newCookies = extractCookies(loginRes);
   const merged = { ...allCookies, ...newCookies };
 
-  // Check for auth cookie
+  // A 302 redirect means login succeeded
+  if (loginRes.status === 302 || loginRes.status === 200) {
+    // Consume body to avoid leak
+    await loginRes.text();
+    return merged;
+  }
+
+  // If we got auth-related cookies, consider it success
   const hasAuth = Object.keys(merged).some(
     (k) => k === ".ASPXAUTH" || k.startsWith("SCA_") || k === "ASP.NET_SessionId"
   );
-  if (!hasAuth && loginRes.status !== 302) {
-    throw new Error("Login failed — no auth cookies received");
+  if (hasAuth) {
+    await loginRes.text();
+    return merged;
   }
 
-  return merged;
+  const responseBody = await loginRes.text();
+  console.error("Login response status:", loginRes.status, "body preview:", responseBody.substring(0, 500));
+  throw new Error(`Login failed — status ${loginRes.status}, no auth cookies received`);
 }
 
 async function fetchTransactions(
