@@ -48,12 +48,7 @@ function AppRoutes() {
         <Route path="/portal/login" element={user ? <Navigate to="/portal" replace /> : <PortalLogin />} />
         <Route path="/portal/*" element={
           user && role === "admin" ? (
-            <div className="min-h-screen bg-background flex items-center justify-center px-4">
-              <div className="text-center space-y-3">
-                <p className="text-muted-foreground">This is the client portal.</p>
-                <a href="/" className="text-primary text-sm hover:underline">Go to admin dashboard →</a>
-              </div>
-            </div>
+            <Navigate to="/" replace />
           ) : user ? (
             <PortalRoot />
           ) : (
