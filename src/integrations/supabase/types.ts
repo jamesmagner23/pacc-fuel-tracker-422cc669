@@ -14,77 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      client_accounts: {
-        Row: {
-          auth_user_id: string | null
-          company_name: string
-          contact_email: string
-          contact_name: string | null
-          contact_phone: string | null
-          created_at: string | null
-          id: number
-          is_active: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          auth_user_id?: string | null
-          company_name: string
-          contact_email: string
-          contact_name?: string | null
-          contact_phone?: string | null
-          created_at?: string | null
-          id?: never
-          is_active?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          auth_user_id?: string | null
-          company_name?: string
-          contact_email?: string
-          contact_name?: string | null
-          contact_phone?: string | null
-          created_at?: string | null
-          id?: never
-          is_active?: boolean | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      client_portal_settings: {
-        Row: {
-          client_account_id: number | null
-          created_at: string | null
-          delivery_notification: boolean | null
-          id: number
-          monthly_summary_email: boolean | null
-          weekly_summary_email: boolean | null
-        }
-        Insert: {
-          client_account_id?: number | null
-          created_at?: string | null
-          delivery_notification?: boolean | null
-          id?: never
-          monthly_summary_email?: boolean | null
-          weekly_summary_email?: boolean | null
-        }
-        Update: {
-          client_account_id?: number | null
-          created_at?: string | null
-          delivery_notification?: boolean | null
-          id?: never
-          monthly_summary_email?: boolean | null
-          weekly_summary_email?: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_portal_settings_client_account_id_fkey"
-            columns: ["client_account_id"]
-            isOneToOne: false
-            referencedRelation: "client_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       sync_log: {
         Row: {
           error_message: string | null
@@ -199,40 +128,15 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_client_company_name: { Args: { _user_id: string }; Returns: string }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "client"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -359,8 +263,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "client"],
-    },
+    Enums: {},
   },
 } as const
