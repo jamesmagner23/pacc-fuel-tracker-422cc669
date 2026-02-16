@@ -37,6 +37,7 @@ export default function ClientManagement() {
       .order("company_name");
     if (error) {
       toast.error("Failed to load clients");
+      setLoading(false);
       return;
     }
     setClients(data || []);
