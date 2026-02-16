@@ -16,16 +16,13 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { email } = await req.json();
+    const { user_id, password } = await req.json();
 
-    const { data, error } = await supabase.auth.admin.generateLink({
-      type: "recovery",
-      email,
-    });
+    const { error } = await supabase.auth.admin.updateUserById(user_id, { password });
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ success: true, link: data?.properties?.action_link }), {
+    return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
