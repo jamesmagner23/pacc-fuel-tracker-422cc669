@@ -58,14 +58,14 @@ function AppRoutes() {
 
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Admin routes */}
-        <Route path="/" element={<Layout><Overview /></Layout>} />
-        <Route path="/customers" element={<Layout><Customers /></Layout>} />
-        <Route path="/customers/:name" element={<Layout><CustomerDetail /></Layout>} />
-        <Route path="/trucks" element={<Layout><Trucks /></Layout>} />
-        <Route path="/drivers" element={<Layout><Drivers /></Layout>} />
-        <Route path="/transactions" element={<Layout><Transactions /></Layout>} />
-        <Route path="/client-management" element={<Layout><ClientManagement /></Layout>} />
+        {/* Admin routes - require admin auth */}
+        <Route path="/" element={user && role === "admin" ? <Layout><Overview /></Layout> : <Navigate to="/portal/login" replace />} />
+        <Route path="/customers" element={user && role === "admin" ? <Layout><Customers /></Layout> : <Navigate to="/portal/login" replace />} />
+        <Route path="/customers/:name" element={user && role === "admin" ? <Layout><CustomerDetail /></Layout> : <Navigate to="/portal/login" replace />} />
+        <Route path="/trucks" element={user && role === "admin" ? <Layout><Trucks /></Layout> : <Navigate to="/portal/login" replace />} />
+        <Route path="/drivers" element={user && role === "admin" ? <Layout><Drivers /></Layout> : <Navigate to="/portal/login" replace />} />
+        <Route path="/transactions" element={user && role === "admin" ? <Layout><Transactions /></Layout> : <Navigate to="/portal/login" replace />} />
+        <Route path="/client-management" element={user && role === "admin" ? <Layout><ClientManagement /></Layout> : <Navigate to="/portal/login" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </DateRangeProvider>
