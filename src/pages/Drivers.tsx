@@ -92,7 +92,7 @@ export default function Drivers() {
                         <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 9, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
                         <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                        <Area type="monotone" dataKey="litres" stroke="hsl(25 95% 53%)" fill={`url(#grad-driver-${i})`} strokeWidth={2} />
+                        <Area type="monotone" dataKey="litres" stroke="#7C3AED" fill={`url(#grad-driver-${i})`} strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>

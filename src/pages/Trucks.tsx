@@ -111,7 +111,7 @@ export default function Trucks() {
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
-                    <Area type="monotone" dataKey="litres" stroke="hsl(25 95% 53%)" fill={`url(#grad-${truck.plate})`} strokeWidth={2} />
+                    <Area type="monotone" dataKey="litres" stroke="#7C3AED" fill={`url(#grad-${truck.plate})`} strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
