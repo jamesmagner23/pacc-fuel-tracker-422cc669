@@ -106,8 +106,8 @@ export default function Trucks() {
                   <AreaChart data={dailyData}>
                     <defs>
                       <linearGradient id={`grad-${truck.plate}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(25 95% 53%)" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="hsl(25 95% 53%)" stopOpacity={0} />
+                         <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.3} />
+                         <stop offset="100%" stopColor="#7C3AED" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
