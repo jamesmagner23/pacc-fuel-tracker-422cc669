@@ -11,6 +11,7 @@ import CustomerDetail from "./pages/CustomerDetail";
 import Trucks from "./pages/Trucks";
 import Drivers from "./pages/Drivers";
 import Transactions from "./pages/Transactions";
+import Finance from "./pages/Finance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
