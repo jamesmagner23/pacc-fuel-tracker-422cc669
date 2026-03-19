@@ -154,5 +154,3 @@ export function Layout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-EOF
-echo "✅ Layout done"
