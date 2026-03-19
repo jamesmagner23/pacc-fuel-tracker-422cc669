@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Search, Download, ArrowUpDown } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Search, Download, ArrowUpDown, FileText } from "lucide-react";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions } from "@/hooks/useTransactions";
 import { format, parseISO } from "date-fns";
