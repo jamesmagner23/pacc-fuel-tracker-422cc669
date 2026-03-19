@@ -120,7 +120,8 @@ export default function Transactions() {
               <SortHeader label="$/L" k="ppu" className="text-right hidden sm:table-cell" />
               <SortHeader label="Total" k="dinero_total" className="text-right" />
               <th className="p-3 pr-2 text-right hidden md:table-cell">Invoice</th>
-              <th className="p-3 pr-2 text-center w-10"></th>
+              <th className="p-3 pr-2 w-10"></th>
+            </tr>
           </thead>
           <tbody>
             {filtered.slice(0, 100).map((t) => (
@@ -134,6 +135,11 @@ export default function Transactions() {
                 <td className="p-3 pr-2 text-right hidden sm:table-cell">${(t.ppu || 0).toFixed(2)}</td>
                 <td className="p-3 text-right font-medium">${(t.dinero_total || 0).toLocaleString()}</td>
                 <td className="p-3 pr-2 text-right hidden md:table-cell font-mono text-xs">{t.factura}</td>
+                <td className="p-3 pr-2 text-center">
+                  <Link to={`/docket/${t.id}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="View Docket">
+                    <FileText className="w-3.5 h-3.5" />
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
