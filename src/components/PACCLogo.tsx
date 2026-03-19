@@ -1,33 +1,33 @@
-import React from "react";
+export function PACCLogo({ size = "md" }: { size?: "sm" | "md" }) {
+  const barWidth = size === "sm" ? 18 : 22;
+  const barHeight = size === "sm" ? 2 : 2.5;
+  const gap = size === "sm" ? 3 : 3.5;
+  const fontSize = size === "sm" ? 13 : 16;
 
-interface PACCLogoProps {
-  className?: string;
-  size?: number;
-}
-
-export function PACCLogo({ className = "", size = 32 }: PACCLogoProps) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      <rect width="32" height="32" rx="8" fill="#7C3AED" />
-      <text
-        x="16"
-        y="21"
-        textAnchor="middle"
-        fontFamily="system-ui, sans-serif"
-        fontSize="12"
-        fontWeight="700"
-        fill="white"
-        letterSpacing="-0.5"
-      >
-        P
-      </text>
-    </svg>
+    <div style={{ display: "flex", alignItems: "center", gap: size === "sm" ? 8 : 10 }}>
+      {/* Stacked bars */}
+      <div style={{ display: "flex", flexDirection: "column", gap, flexShrink: 0 }}>
+        <div style={{ width: barWidth, height: barHeight, background: "#ffffff", borderRadius: 1 }} />
+        <div style={{ width: barWidth * 0.75, height: barHeight, background: "#ffffff", borderRadius: 1 }} />
+        <div style={{ width: barWidth * 0.5, height: barHeight, background: "#ffffff", borderRadius: 1 }} />
+      </div>
+
+      {/* Wordmark */}
+      <div style={{
+        fontSize,
+        fontWeight: 800,
+        color: "#ffffff",
+        letterSpacing: "-0.02em",
+        textTransform: "uppercase",
+        fontFamily: "'Inter', system-ui, sans-serif",
+        lineHeight: 1,
+      }}>
+        PACC<span style={{ color: "#7C3AED" }}>®</span>
+        <div style={{ fontSize: size === "sm" ? 8 : 9, fontWeight: 500, color: "#333333", letterSpacing: "0.12em", marginTop: 2 }}>
+          FUEL
+        </div>
+      </div>
+    </div>
   );
 }
