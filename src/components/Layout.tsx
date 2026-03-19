@@ -7,8 +7,7 @@ import { SyncStatus } from "./SyncStatus";
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Overview" },
   { to: "/customers", icon: Users, label: "Customers" },
-  { to: "/trucks", icon: Truck, label: "Trucks" },
-  { to: "/drivers", icon: UserCheck, label: "Drivers" },
+  { to: "/performance", icon: Gauge, label: "Performance" },
   { to: "/transactions", icon: List, label: "Transactions" },
   { to: "/finance", icon: DollarSign, label: "Finance" },
   { to: "/alerts", icon: Bell, label: "Alerts" },
