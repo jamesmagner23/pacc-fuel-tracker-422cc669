@@ -8,11 +8,9 @@ import { Menu, X } from "lucide-react";
 const navItems = [
   { to: "/", label: "Overview" },
   { to: "/customers", label: "Customers" },
-  { to: "/trucks", label: "Trucks" },
-  { to: "/drivers", label: "Drivers" },
+  { to: "/performance", label: "Performance" },
   { to: "/transactions", label: "Transactions" },
   { to: "/finance", label: "Finance" },
-  { to: "/alerts", label: "Alerts" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
