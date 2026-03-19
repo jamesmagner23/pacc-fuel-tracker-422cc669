@@ -10,6 +10,7 @@ const navItems = [
   { to: "/trucks", label: "Trucks", icon: Truck },
   { to: "/drivers", label: "Drivers", icon: UserCheck },
   { to: "/transactions", label: "Transactions", icon: List },
+  { to: "/finance", label: "Finance", icon: DollarSign },
 ];
 
 const activeStyle = {
