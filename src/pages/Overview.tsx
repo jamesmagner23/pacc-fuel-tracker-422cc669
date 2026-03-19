@@ -1,17 +1,10 @@
-import { Droplets, DollarSign, Truck, BarChart3 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+cat > src/pages/Overview.tsx << 'EOF'
+import { useMemo } from "react";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
-import { KPICard } from "@/components/KPICard";
 import { format, parseISO } from "date-fns";
-import { useMemo } from "react";
-
-const card = {
-  background: "#111111",
-  border: "1px solid #1e1e1e",
-  borderRadius: 10,
-  padding: "18px 20px",
-} as React.CSSProperties;
+import { Droplets, TrendingUp, TrendingDown } from "lucide-react";
 
 export default function Overview() {
   const { range } = useDateRange();
@@ -26,9 +19,13 @@ export default function Overview() {
   const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
   const prevRevenue = previous.reduce((s, t) => s + (t.dinero_total || 0), 0);
   const prevDeliveries = previous.length;
-  const prevAvg = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
 
-  const pctChange = (curr: number, prev: number) => (prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100);
+  const pct = (curr: number, prev: number) =>
+    prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100;
+
+  const litresPct = pct(totalLitres, prevLitres);
+  const revPct = pct(totalRevenue, prevRevenue);
+  const delPct = pct(numDeliveries, prevDeliveries);
 
   const dailyData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -47,23 +44,14 @@ export default function Overview() {
       if (!map[name]) map[name] = { name, litres: 0 };
       map[name].litres += t.cantidad || 0;
     });
-    return Object.values(map)
-      .sort((a, b) => b.litres - a.litres)
-      .slice(0, 5);
+    return Object.values(map).sort((a, b) => b.litres - a.litres).slice(0, 6);
   }, [filtered]);
+
+  const recentTx = useMemo(() => [...filtered].reverse().slice(0, 8), [filtered]);
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: 256,
-          color: "#444444",
-          fontSize: 13,
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "#333333", fontSize: 13 }}>
         Loading...
       </div>
     );
@@ -71,162 +59,165 @@ export default function Overview() {
 
   if (filtered.length === 0) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: 256,
-          color: "#444444",
-          gap: 12,
-        }}
-      >
-        <Droplets style={{ width: 28, height: 28 }} />
-        <p style={{ fontSize: 13 }}>
-          No transactions yet. Click <strong style={{ color: "#888888" }}>Sync Now</strong> to pull data from SCA WEB.
-        </p>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 300, color: "#333333", gap: 12 }}>
+        <Droplets style={{ width: 24, height: 24 }} />
+        <p style={{ fontSize: 13, margin: 0 }}>No transactions. Click <strong style={{ color: "#555555" }}>Sync Now</strong> to pull data.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1100 }}>
-      {/* Page title */}
-      <h1 style={{ fontSize: 18, fontWeight: 600, color: "#ffffff", letterSpacing: "-0.02em", margin: 0 }}>Overview</h1>
+    <div style={{ display: "flex", flexDirection: "column", gap: 1, maxWidth: 1200 }}>
 
-      {/* KPI grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }} className="lg:grid-cols-4">
-        <KPICard
-          title="Total Litres"
-          value={totalLitres.toLocaleString() + "L"}
-          change={pctChange(totalLitres, prevLitres)}
-          icon={<Droplets style={{ width: 14, height: 14 }} />}
-          delay={0}
-        />
-        <KPICard
-          title="Revenue"
-          value={"$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          change={pctChange(totalRevenue, prevRevenue)}
-          icon={<DollarSign style={{ width: 14, height: 14 }} />}
-          delay={50}
-        />
-        <KPICard
-          title="Deliveries"
-          value={numDeliveries.toString()}
-          change={pctChange(numDeliveries, prevDeliveries)}
-          icon={<Truck style={{ width: 14, height: 14 }} />}
-          delay={100}
-        />
-        <KPICard
-          title="Avg Delivery"
-          value={Math.round(avgSize).toLocaleString() + "L"}
-          change={pctChange(avgSize, prevAvg)}
-          icon={<BarChart3 style={{ width: 14, height: 14 }} />}
-          delay={150}
-        />
+      {/* ── HERO SECTION ── */}
+      <div style={{
+        background: "#0d0d0d",
+        border: "1px solid #161616",
+        borderRadius: 12,
+        padding: "28px 32px 0 32px",
+        overflow: "hidden",
+      }}>
+        {/* Top row: label + secondary stats */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
+          <div>
+            <div style={{ fontSize: 11, color: "#444444", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+              Total Litres Delivered
+            </div>
+            {/* Giant hero number */}
+            <div style={{ fontSize: 56, fontWeight: 300, color: "#ffffff", letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+              {totalLitres >= 1000
+                ? `${(totalLitres / 1000).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}k L`
+                : `${totalLitres.toFixed(1)} L`}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+              {litresPct >= 0
+                ? <TrendingUp style={{ width: 12, height: 12, color: "#10B981" }} />
+                : <TrendingDown style={{ width: 12, height: 12, color: "#EF4444" }} />
+              }
+              <span style={{ fontSize: 12, color: litresPct >= 0 ? "#10B981" : "#EF4444", fontWeight: 500 }}>
+                {litresPct >= 0 ? "+" : ""}{litresPct.toFixed(1)}%
+              </span>
+              <span style={{ fontSize: 12, color: "#333333" }}>vs previous period</span>
+            </div>
+          </div>
+
+          {/* Secondary KPIs top-right */}
+          <div style={{ display: "flex", gap: 32, paddingTop: 4 }}>
+            {[
+              { label: "Revenue", value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }), pct: revPct },
+              { label: "Deliveries", value: numDeliveries.toString(), pct: delPct },
+              { label: "Avg Size", value: Math.round(avgSize) + "L", pct: pct(avgSize, prevLitres > 0 ? prevLitres / (prevDeliveries || 1) : 0) },
+            ].map((k) => (
+              <div key={k.label} style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 10, color: "#333333", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>{k.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 500, color: "#ffffff", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{k.value}</div>
+                <div style={{ fontSize: 11, color: k.pct >= 0 ? "#10B981" : "#EF4444", marginTop: 2 }}>
+                  {k.pct >= 0 ? "+" : ""}{k.pct.toFixed(1)}%
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Full-width area chart — no padding on sides so it bleeds to edges */}
+        <div style={{ height: 160, marginLeft: -32, marginRight: -32 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity={0.08} />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#333333" }} axisLine={false} tickLine={false} />
+              <YAxis hide />
+              <Tooltip
+                contentStyle={{ background: "#111111", border: "1px solid #222222", borderRadius: 8, color: "#fff", fontSize: 12 }}
+                formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
+                cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
+              />
+              <Area type="monotone" dataKey="litres" stroke="#ffffff" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      {/* Charts row */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }} className="grid-cols-1 lg:grid-cols-3">
-        {/* Bar chart */}
-        <div style={{ ...card, animationDelay: "200ms" }} className="animate-fade-in lg:col-span-2">
-          <h2
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: "#444444",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              marginBottom: 16,
-              marginTop: 0,
-            }}
-          >
-            Daily Litres Delivered
-          </h2>
-          <div style={{ height: 200 }}>
+      {/* ── BOTTOM THREE PANELS ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, marginTop: 1 }}>
+
+        {/* Panel 1: Top Customers */}
+        <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "#ffffff", marginBottom: 4 }}>Top Customers</div>
+          <div style={{ fontSize: 11, color: "#333333", marginBottom: 16 }}>{numDeliveries} deliveries this period</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {topCustomers.map((c, i) => (
+              <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 0", borderBottom: i < topCustomers.length - 1 ? "1px solid #131313" : "none" }}>
+                <span style={{ fontSize: 10, color: "#2a2a2a", width: 14, flexShrink: 0, fontWeight: 600 }}>{i + 1}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: "#cccccc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 }}>{c.name}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 12, color: "#888888", fontVariantNumeric: "tabular-nums" }}>{(c.litres / 1000).toFixed(1)}k L</div>
+                  <div style={{ width: 60, height: 2, background: "#1a1a1a", borderRadius: 2, marginTop: 4, marginLeft: "auto" }}>
+                    <div style={{ width: `${(c.litres / (topCustomers[0]?.litres || 1)) * 100}%`, height: 2, background: "#ffffff", borderRadius: 2, opacity: 0.4 + (0.6 * (1 - i / topCustomers.length)) }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Panel 2: Volume by day (bar chart) */}
+        <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "#ffffff", marginBottom: 4 }}>Daily Volume</div>
+          <div style={{ fontSize: 11, color: "#333333", marginBottom: 16 }}>Litres per day</div>
+          <div style={{ height: 180 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyData} barCategoryGap="35%">
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#444444" }} axisLine={false} tickLine={false} />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#444444" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                />
+              <BarChart data={dailyData} barCategoryGap="40%">
+                <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#333333" }} axisLine={false} tickLine={false} />
+                <YAxis hide />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1a1a1a",
-                    border: "1px solid #7C3AED",
-                    borderRadius: 8,
-                    color: "#ffffff",
-                    fontSize: 12,
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-                  }}
-                  formatter={(value: number) => [`${value.toLocaleString()}L`, "Litres"]}
-                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                  contentStyle={{ background: "#111111", border: "1px solid #222222", borderRadius: 8, color: "#fff", fontSize: 11 }}
+                  formatter={(v: number) => [`${v.toLocaleString()}L`, ""]}
+                  cursor={{ fill: "rgba(255,255,255,0.02)" }}
                 />
-                <Bar dataKey="litres" fill="#7C3AED" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="litres" fill="#7C3AED" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Top customers */}
-        <div style={{ ...card, animationDelay: "250ms" }} className="animate-fade-in">
-          <h2
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: "#444444",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              marginBottom: 16,
-              marginTop: 0,
-            }}
-          >
-            Top Customers
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {topCustomers.map((c, i) => (
-              <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: "#333333", width: 16, flexShrink: 0 }}>
-                  {i + 1}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "#cccccc",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      marginBottom: 5,
-                    }}
-                  >
-                    {c.name}
+        {/* Panel 3: Recent transactions */}
+        <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: "#ffffff" }}>Transactions</div>
+            <a href="/transactions" style={{ fontSize: 11, color: "#333333", textDecoration: "none" }}>View all →</a>
+          </div>
+          <div style={{ fontSize: 11, color: "#333333", marginBottom: 16 }}>Most recent</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {recentTx.map((t, i) => (
+              <div key={t.id || i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: i < recentTx.length - 1 ? "1px solid #131313" : "none" }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 12, color: "#cccccc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500 }}>
+                    {t.nombre_cliente1 || "Unknown"}
                   </div>
-                  <div style={{ width: "100%", background: "#1a1a1a", borderRadius: 4, height: 3 }}>
-                    <div
-                      style={{
-                        background: "#7C3AED",
-                        height: 3,
-                        borderRadius: 4,
-                        width: `${(c.litres / (topCustomers[0]?.litres || 1)) * 100}%`,
-                        transition: "width 0.4s ease",
-                      }}
-                    />
+                  <div style={{ fontSize: 10, color: "#333333", marginTop: 1 }}>
+                    {t.date ? format(parseISO(t.date), "dd MMM") : "—"}
                   </div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#555555", whiteSpace: "nowrap" }}>
-                  {(c.litres / 1000).toFixed(1)}k L
-                </span>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontSize: 12, color: "#888888", fontVariantNumeric: "tabular-nums" }}>
+                    {(t.cantidad || 0).toLocaleString()}L
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
 }
+EOF
+echo "✅ Overview done"
