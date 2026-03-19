@@ -164,7 +164,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         }}
         className="md:hidden"
       >
-        {navItems.slice(0, 6).map((item) => {
+        {navItems.slice(0, 5).map((item) => {
           const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
           return (
             <RouterNavLink
