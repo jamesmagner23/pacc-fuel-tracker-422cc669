@@ -238,7 +238,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               <Menu style={{ width: 18, height: 18 }} />
             </button>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.01em" }}>PACC Fuel</span>
+            <PACCLogo size="sm" />
           </div>
 
           {/* Desktop: spacer */}
