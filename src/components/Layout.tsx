@@ -1,4 +1,5 @@
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
+import { PACCLogo } from "./PACCLogo";
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
@@ -35,18 +36,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         }}
       >
         <div style={{ padding: "0 24px", marginBottom: 40 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.01em" }}>PACC</div>
-          <div
-            style={{
-              fontSize: 11,
-              color: "#333333",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              marginTop: 1,
-            }}
-          >
-            Fuel
-          </div>
+          <PACCLogo size="md" />
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 16px" }}>
@@ -248,7 +238,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               <Menu style={{ width: 18, height: 18 }} />
             </button>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.01em" }}>PACC Fuel</span>
+            <PACCLogo size="sm" />
           </div>
 
           {/* Desktop: spacer */}
