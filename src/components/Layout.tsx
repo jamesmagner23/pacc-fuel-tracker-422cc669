@@ -1,5 +1,5 @@
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
-import { Fuel, LayoutDashboard, Users, Truck, List, UserCheck } from "lucide-react";
+import { Fuel, LayoutDashboard, Users, Truck, List, UserCheck, DollarSign } from "lucide-react";
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
