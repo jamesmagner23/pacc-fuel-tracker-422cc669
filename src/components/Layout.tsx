@@ -1,16 +1,16 @@
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Gauge, List, DollarSign, Bell, Settings } from "lucide-react";
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Overview" },
-  { to: "/customers", icon: Users, label: "Customers" },
-  { to: "/performance", icon: Gauge, label: "Performance" },
-  { to: "/transactions", icon: List, label: "Transactions" },
-  { to: "/finance", icon: DollarSign, label: "Finance" },
-  { to: "/alerts", icon: Bell, label: "Alerts" },
+  { to: "/", label: "Overview" },
+  { to: "/customers", label: "Customers" },
+  { to: "/trucks", label: "Trucks" },
+  { to: "/drivers", label: "Drivers" },
+  { to: "/transactions", label: "Transactions" },
+  { to: "/finance", label: "Finance" },
+  { to: "/alerts", label: "Alerts" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -18,137 +18,138 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", background: "#080808", color: "#ffffff" }}>
-      {/* Icon-only sidebar — desktop */}
+      {/* Sidebar — desktop */}
       <aside
+        className="hidden md:flex"
         style={{
-          width: 52,
+          width: 220,
           background: "#080808",
-          borderRight: "1px solid #161616",
+          borderRight: "1px solid #111111",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          padding: "14px 0",
-          gap: 4,
+          padding: "28px 0",
           flexShrink: 0,
           position: "sticky",
           top: 0,
           height: "100vh",
         }}
-        className="hidden md:flex"
       >
-        {/* Logo mark */}
-        <div
-          style={{
-            width: 28,
-            height: 28,
-            background: "#ffffff",
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 16,
-            flexShrink: 0,
-          }}
-        >
-          <span style={{ fontSize: 11, fontWeight: 800, color: "#080808", letterSpacing: "-0.05em" }}>P</span>
+        {/* Wordmark */}
+        <div style={{ padding: "0 24px", marginBottom: 40 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.01em" }}>PACC</div>
+          <div
+            style={{
+              fontSize: 11,
+              color: "#333333",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginTop: 1,
+            }}
+          >
+            Fuel
+          </div>
         </div>
 
-        {/* Nav icons */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
-          {navItems.map((item) => {
+        {/* Nav items */}
+        <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 16px", gap: 0 }}>
+          {navItems.map((item, i) => {
             const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
             return (
               <RouterNavLink
                 key={item.to}
                 to={item.to}
-                title={item.label}
                 style={{
-                  width: 36,
-                  height: 36,
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: 8,
-                  background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
-                  color: isActive ? "#ffffff" : "#3a3a3a",
+                  gap: 12,
+                  padding: "10px 8px",
                   textDecoration: "none",
-                  transition: "all 0.1s",
+                  borderBottom: "1px solid #111111",
+                  transition: "all 0.15s",
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)";
-                    (e.currentTarget as HTMLElement).style.color = "#777777";
-                  }
+                  if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
                 }}
                 onMouseLeave={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLElement).style.background = "transparent";
-                    (e.currentTarget as HTMLElement).style.color = "#3a3a3a";
-                  }
+                  if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent";
                 }}
               >
-                <item.icon style={{ width: 15, height: 15 }} />
+                <span
+                  style={{
+                    fontSize: 9,
+                    color: isActive ? "#444444" : "#222222",
+                    fontWeight: 500,
+                    letterSpacing: "0.05em",
+                    width: 16,
+                    flexShrink: 0,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: isActive ? 500 : 400,
+                    color: isActive ? "#ffffff" : "#3a3a3a",
+                    letterSpacing: "-0.01em",
+                    transition: "color 0.15s",
+                  }}
+                >
+                  {item.label}
+                </span>
+                {isActive && (
+                  <span
+                    style={{
+                      marginLeft: "auto",
+                      width: 4,
+                      height: 4,
+                      borderRadius: "50%",
+                      background: "#7C3AED",
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
               </RouterNavLink>
             );
           })}
-        </div>
+        </nav>
 
-        {/* Settings at bottom */}
-        <RouterNavLink
-          to="/settings"
-          title="Settings"
-          style={{
-            width: 36,
-            height: 36,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 8,
-            color: "#3a3a3a",
-            textDecoration: "none",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = "#777777";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = "#3a3a3a";
-          }}
-        >
-          <Settings style={{ width: 15, height: 15 }} />
-        </RouterNavLink>
+        {/* Bottom — sync status */}
+        <div style={{ padding: "16px 24px", borderTop: "1px solid #111111" }}>
+          <SyncStatus />
+        </div>
       </aside>
 
-      {/* Main content area */}
+      {/* Main */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         {/* Top bar */}
         <header
           style={{
             height: 48,
             background: "#080808",
-            borderBottom: "1px solid #161616",
+            borderBottom: "1px solid #111111",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: "flex-end",
             padding: "0 24px",
             flexShrink: 0,
             position: "sticky",
             top: 0,
             zIndex: 50,
+            gap: 8,
           }}
         >
-          <div style={{ fontSize: 13, color: "#333333" }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <SyncStatus />
-            <SyncButton />
-            <DateRangeToggle />
-          </div>
+          <SyncButton />
+          <DateRangeToggle />
         </header>
 
-        <main style={{ flex: 1, padding: "28px 28px", overflowY: "auto", paddingBottom: 80 }}>{children}</main>
+        <main style={{ flex: 1, padding: "32px 32px", overflowY: "auto", paddingBottom: 80 }}>{children}</main>
       </div>
 
-      {/* Bottom nav — mobile only */}
+      {/* Bottom nav — mobile */}
       <nav
+        className="md:hidden"
         style={{
           position: "fixed",
           bottom: 0,
@@ -156,15 +157,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
           right: 0,
           zIndex: 50,
           background: "#080808",
-          borderTop: "1px solid #161616",
-          height: 56,
+          borderTop: "1px solid #111111",
+          height: 52,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-around",
+          padding: "0 8px",
         }}
-        className="md:hidden"
       >
-        {navItems.slice(0, 5).map((item) => {
+        {navItems.slice(0, 5).map((item, i) => {
           const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
           return (
             <RouterNavLink
@@ -174,16 +175,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 3,
-                padding: "4px 8px",
-                fontSize: 9,
-                fontWeight: isActive ? 500 : 400,
-                color: isActive ? "#ffffff" : "#3a3a3a",
+                gap: 2,
+                padding: "4px 6px",
                 textDecoration: "none",
               }}
             >
-              <item.icon style={{ width: 18, height: 18 }} />
-              {item.label}
+              <span
+                style={{ fontSize: 8, color: isActive ? "#555555" : "#222222", fontVariantNumeric: "tabular-nums" }}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: isActive ? 500 : 400,
+                  color: isActive ? "#ffffff" : "#333333",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                {item.label}
+              </span>
             </RouterNavLink>
           );
         })}
