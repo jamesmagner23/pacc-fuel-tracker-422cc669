@@ -1,69 +1,77 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { format, subDays } from "date-fns";
 
 export interface BuyPrice {
   id: string;
   price_date: string;
   price_per_litre: number;
-  supplier: string | null;
+  supplier: string;
   notes: string | null;
-  created_at: string | null;
+  created_at: string;
 }
 
-export function useBuyPrices() {
+// Fetch all buy prices ordered by date desc
+export function useBuyPrices(days = 365) {
+  const start = format(subDays(new Date(), days), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["buy-prices"],
+    queryKey: ["buy-prices", days],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("buy_prices")
         .select("*")
+        .gte("price_date", start)
         .order("price_date", { ascending: false });
-
       if (error) throw error;
       return (data || []) as BuyPrice[];
     },
   });
 }
 
-export function useLatestBuyPrice() {
+// Fetch today's buy price
+export function useTodayBuyPrice() {
+  const today = format(new Date(), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["buy-price-latest"],
+    queryKey: ["buy-price-today", today],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("buy_prices")
-        .select("*")
-        .order("price_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) throw error;
+      const { data, error } = await supabase.from("buy_prices").select("*").eq("price_date", today).single();
+      if (error && error.code !== "PGRST116") throw error;
       return data as BuyPrice | null;
     },
   });
 }
 
+// Upsert a buy price entry
 export function useUpsertBuyPrice() {
   const qc = useQueryClient();
-
   return useMutation({
-    mutationFn: async (row: {
-      price_date: string;
-      price_per_litre: number;
-      supplier?: string;
-      notes?: string;
-    }) => {
+    mutationFn: async (entry: { price_date: string; price_per_litre: number; supplier?: string; notes?: string }) => {
       const { data, error } = await supabase
         .from("buy_prices")
-        .upsert(row, { onConflict: "price_date" })
+        .upsert({ ...entry, supplier: entry.supplier || "Pacific" }, { onConflict: "price_date" })
         .select()
         .single();
-
       if (error) throw error;
-      return data as BuyPrice;
+      return data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["buy-prices"] });
-      qc.invalidateQueries({ queryKey: ["buy-price-latest"] });
+      qc.invalidateQueries({ queryKey: ["buy-price-today"] });
+    },
+  });
+}
+
+// Delete a buy price entry
+export function useDeleteBuyPrice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("buy_prices").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["buy-prices"] });
+      qc.invalidateQueries({ queryKey: ["buy-price-today"] });
     },
   });
 }
