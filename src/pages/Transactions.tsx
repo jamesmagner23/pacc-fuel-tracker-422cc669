@@ -120,7 +120,7 @@ export default function Transactions() {
               <SortHeader label="$/L" k="ppu" className="text-right hidden sm:table-cell" />
               <SortHeader label="Total" k="dinero_total" className="text-right" />
               <th className="p-3 pr-2 text-right hidden md:table-cell">Invoice</th>
-            </tr>
+              <th className="p-3 pr-2 text-center w-10"></th>
           </thead>
           <tbody>
             {filtered.slice(0, 100).map((t) => (
