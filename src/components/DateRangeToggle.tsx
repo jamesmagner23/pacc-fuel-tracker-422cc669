@@ -1,6 +1,11 @@
 import { useDateRange } from "@/hooks/useDateRange";
+import { DateRange } from "@/hooks/useTransactions";
 
-const options = ["Today", "This Week", "This Month"] as const;
+const options: { value: DateRange; label: string }[] = [
+  { value: "today", label: "Today" },
+  { value: "week", label: "This Week" },
+  { value: "month", label: "This Month" },
+];
 
 export function DateRangeToggle() {
   const { range, setRange } = useDateRange();
@@ -18,11 +23,11 @@ export function DateRangeToggle() {
       }}
     >
       {options.map((opt) => {
-        const isActive = range === opt;
+        const isActive = range === opt.value;
         return (
           <button
-            key={opt}
-            onClick={() => setRange(opt)}
+            key={opt.value}
+            onClick={() => setRange(opt.value)}
             style={{
               padding: "4px 12px",
               borderRadius: 16,
@@ -42,7 +47,7 @@ export function DateRangeToggle() {
               if (!isActive) (e.currentTarget as HTMLElement).style.color = "#555555";
             }}
           >
-            {opt}
+            {opt.label}
           </button>
         );
       })}
