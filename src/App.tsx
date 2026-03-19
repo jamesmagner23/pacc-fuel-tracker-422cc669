@@ -8,8 +8,7 @@ import { Layout } from "@/components/Layout";
 import Overview from "./pages/Overview";
 import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
-import Trucks from "./pages/Trucks";
-import Drivers from "./pages/Drivers";
+import Performance from "./pages/Performance";
 import Transactions from "./pages/Transactions";
 import Finance from "./pages/Finance";
 import NotFound from "./pages/NotFound";
@@ -28,8 +27,7 @@ const App = () => (
               <Route path="/" element={<Overview />} />
               <Route path="/customers" element={<Customers />} />
               <Route path="/customers/:name" element={<CustomerDetail />} />
-              <Route path="/trucks" element={<Trucks />} />
-              <Route path="/drivers" element={<Drivers />} />
+              <Route path="/performance" element={<Performance />} />
               <Route path="/transactions" element={<Transactions />} />
               <Route path="/finance" element={<Finance />} />
               <Route path="*" element={<NotFound />} />

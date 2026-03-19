@@ -1,5 +1,5 @@
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Truck, List, UserCheck, DollarSign, Bell, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Gauge, List, DollarSign, Bell, Settings } from "lucide-react";
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
@@ -7,8 +7,7 @@ import { SyncStatus } from "./SyncStatus";
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Overview" },
   { to: "/customers", icon: Users, label: "Customers" },
-  { to: "/trucks", icon: Truck, label: "Trucks" },
-  { to: "/drivers", icon: UserCheck, label: "Drivers" },
+  { to: "/performance", icon: Gauge, label: "Performance" },
   { to: "/transactions", icon: List, label: "Transactions" },
   { to: "/finance", icon: DollarSign, label: "Finance" },
   { to: "/alerts", icon: Bell, label: "Alerts" },
@@ -165,7 +164,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         }}
         className="md:hidden"
       >
-        {navItems.slice(0, 6).map((item) => {
+        {navItems.slice(0, 5).map((item) => {
           const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
           return (
             <RouterNavLink
