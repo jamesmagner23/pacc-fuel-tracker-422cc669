@@ -39,7 +39,7 @@ export default function Drivers() {
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                   <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                  <Bar dataKey="litres" fill="hsl(25 95% 53%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="litres" fill="#7C3AED" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -85,14 +85,14 @@ export default function Drivers() {
                       <AreaChart data={dailyData}>
                         <defs>
                           <linearGradient id={`grad-driver-${i}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(25 95% 53%)" stopOpacity={0.3} />
-                            <stop offset="100%" stopColor="hsl(25 95% 53%)" stopOpacity={0} />
+                             <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.3} />
+                             <stop offset="100%" stopColor="#7C3AED" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 9, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
                         <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                        <Area type="monotone" dataKey="litres" stroke="hsl(25 95% 53%)" fill={`url(#grad-driver-${i})`} strokeWidth={2} />
+                        <Area type="monotone" dataKey="litres" stroke="#7C3AED" fill={`url(#grad-driver-${i})`} strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
