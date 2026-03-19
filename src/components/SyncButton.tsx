@@ -36,7 +36,7 @@ export function SyncButton() {
       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
     >
       <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`} />
-      {syncing ? "Syncing..." : "Sync Now"}
+      <span className="hidden sm:inline">{syncing ? "Syncing..." : "Sync Now"}</span>
     </button>
   );
 }
