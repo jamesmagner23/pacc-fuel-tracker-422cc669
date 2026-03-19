@@ -10,7 +10,7 @@ const navItems = [
   { to: "/trucks", icon: Truck, label: "Trucks" },
   { to: "/drivers", icon: UserCheck, label: "Drivers" },
   { to: "/transactions", icon: List, label: "Transactions" },
-  { to: "/financials", icon: DollarSign, label: "Financials" },
+  { to: "/finance", icon: DollarSign, label: "Finance" },
   { to: "/alerts", icon: Bell, label: "Alerts" },
 ];
 
