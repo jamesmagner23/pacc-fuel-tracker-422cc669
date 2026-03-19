@@ -102,7 +102,7 @@ export default function DeliveryDocket() {
           <div>
             <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Delivery Location</h3>
             <p className="text-sm font-semibold text-gray-900">{txn.ciudad || "—"}</p>
-            {txn.region && <p className="text-xs text-gray-500 mt-0.5">{txn.region}</p>}
+            {(txn as any).region && <p className="text-xs text-gray-500 mt-0.5">{(txn as any).region}</p>}
           </div>
           <div>
             <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Date</h3>
