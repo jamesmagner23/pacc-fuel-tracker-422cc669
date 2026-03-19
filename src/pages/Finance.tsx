@@ -32,7 +32,7 @@ export default function Finance() {
               padding: "8px 16px",
               fontSize: 13,
               fontWeight: activeTab === tab ? 500 : 400,
-              color: activeTab === tab ? "#ffffff" : "#444444",
+              color: activeTab === tab ? "#ffffff" : "#777777",
               background: "transparent",
               border: "none",
               borderBottom: activeTab === tab ? "2px solid #7C3AED" : "2px solid transparent",
@@ -59,7 +59,7 @@ function PLOverview() {
   const { data: buyPrices = [] } = useBuyPrices(365);
 
   if (isLoading) {
-    return <div style={{ color: "#444444", fontSize: 13, padding: "60px 0", textAlign: "center" }}>Loading…</div>;
+    return <div style={{ color: "#777777", fontSize: 13, padding: "60px 0", textAlign: "center" }}>Loading…</div>;
   }
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
@@ -123,7 +123,7 @@ function PLOverview() {
               style={{
                 fontSize: 10,
                 fontWeight: 500,
-                color: "#444444",
+                color: "#777777",
                 textTransform: "uppercase",
                 letterSpacing: "0.07em",
                 marginBottom: 10,
@@ -162,7 +162,7 @@ function PLOverview() {
                   {k.pct.toFixed(1)}%
                 </span>
               )}
-              <span style={{ fontSize: 11, color: "#333333" }}>{k.sub}</span>
+              <span style={{ fontSize: 11, color: "#666666" }}>{k.sub}</span>
             </div>
           </div>
         ))}
@@ -236,7 +236,7 @@ function BuyPriceTab() {
             <div
               style={{
                 fontSize: 10,
-                color: "#444444",
+                color: "#777777",
                 textTransform: "uppercase",
                 letterSpacing: "0.07em",
                 marginBottom: 6,
@@ -254,7 +254,7 @@ function BuyPriceTab() {
               }}
             >
               ${latest.price_per_litre.toFixed(4)}
-              <span style={{ fontSize: 18, color: "#444444" }}>/L</span>
+              <span style={{ fontSize: 18, color: "#777777" }}>/L</span>
             </div>
             {priceChange !== null && (
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
@@ -266,7 +266,7 @@ function BuyPriceTab() {
                 <span style={{ fontSize: 12, color: priceChange >= 0 ? "#EF4444" : "#10B981", fontWeight: 500 }}>
                   {priceChange >= 0 ? "+" : ""}${priceChange.toFixed(4)}/L
                 </span>
-                <span style={{ fontSize: 12, color: "#333333" }}>from previous entry</span>
+                <span style={{ fontSize: 12, color: "#666666" }}>from previous entry</span>
               </div>
             )}
           </div>
@@ -274,7 +274,7 @@ function BuyPriceTab() {
             <div
               style={{
                 fontSize: 10,
-                color: "#333333",
+                color: "#666666",
                 textTransform: "uppercase",
                 letterSpacing: "0.07em",
                 marginBottom: 4,
@@ -295,7 +295,7 @@ function BuyPriceTab() {
           <div
             style={{
               fontSize: 10,
-              color: "#444444",
+              color: "#777777",
               textTransform: "uppercase",
               letterSpacing: "0.07em",
               marginBottom: 16,
@@ -308,13 +308,13 @@ function BuyPriceTab() {
               <LineChart data={chartData}>
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 9, fill: "#333333" }}
+                  tick={{ fontSize: 9, fill: "#666666" }}
                   axisLine={false}
                   tickLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  tick={{ fontSize: 9, fill: "#333333" }}
+                  tick={{ fontSize: 9, fill: "#666666" }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v) => `$${v.toFixed(2)}`}
@@ -334,9 +334,9 @@ function BuyPriceTab() {
                 {avgPrice > 0 && (
                   <ReferenceLine
                     y={avgPrice}
-                    stroke="#333333"
+                    stroke="#555555"
                     strokeDasharray="4 4"
-                    label={{ value: "avg", fill: "#444444", fontSize: 9 }}
+                    label={{ value: "avg", fill: "#777777", fontSize: 9 }}
                   />
                 )}
                 <Line
@@ -358,7 +358,7 @@ function BuyPriceTab() {
         <div
           style={{
             fontSize: 10,
-            color: "#444444",
+            color: "#777777",
             textTransform: "uppercase",
             letterSpacing: "0.07em",
             marginBottom: 14,
@@ -368,7 +368,7 @@ function BuyPriceTab() {
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <label style={{ fontSize: 11, color: "#444444" }}>Date</label>
+            <label style={{ fontSize: 11, color: "#777777" }}>Date</label>
             <input
               type="date"
               value={date}
@@ -386,7 +386,7 @@ function BuyPriceTab() {
             />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            <label style={{ fontSize: 11, color: "#444444" }}>Buy Price / Litre ($)</label>
+            <label style={{ fontSize: 11, color: "#777777" }}>Buy Price / Litre ($)</label>
             <input
               type="number"
               step="0.0001"
@@ -429,7 +429,7 @@ function BuyPriceTab() {
             onClick={() => setShowBulk(!showBulk)}
             style={{
               background: "transparent",
-              color: "#444444",
+              color: "#777777",
               border: "1px solid #222222",
               borderRadius: 20,
               padding: "9px 16px",
@@ -440,14 +440,14 @@ function BuyPriceTab() {
             {showBulk ? "Hide Bulk" : "Bulk Backfill"}
           </button>
         </div>
-        <p style={{ fontSize: 11, color: "#333333", marginTop: 8 }}>Press Enter to save instantly</p>
+        <p style={{ fontSize: 11, color: "#666666", marginTop: 8 }}>Press Enter to save instantly</p>
 
         {/* Bulk backfill */}
         {showBulk && (
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ fontSize: 11, color: "#444444" }}>
-              One entry per line: <span style={{ color: "#555555" }}>YYYY-MM-DD, price</span> — e.g.{" "}
-              <span style={{ color: "#666666" }}>2026-03-01, 2.1520</span>
+            <div style={{ fontSize: 11, color: "#777777" }}>
+              One entry per line: <span style={{ color: "#888888" }}>YYYY-MM-DD, price</span> — e.g.{" "}
+              <span style={{ color: "#999999" }}>2026-03-01, 2.1520</span>
             </div>
             <textarea
               value={bulkText}
@@ -493,7 +493,7 @@ function BuyPriceTab() {
         <div
           style={{
             fontSize: 10,
-            color: "#444444",
+            color: "#777777",
             textTransform: "uppercase",
             letterSpacing: "0.07em",
             marginBottom: 14,
@@ -502,9 +502,9 @@ function BuyPriceTab() {
           Price History ({prices.length} entries)
         </div>
         {isLoading ? (
-          <div style={{ color: "#333333", fontSize: 13 }}>Loading…</div>
+          <div style={{ color: "#666666", fontSize: 13 }}>Loading…</div>
         ) : prices.length === 0 ? (
-          <div style={{ color: "#333333", fontSize: 13 }}>No entries yet. Add your first buy price above.</div>
+          <div style={{ color: "#666666", fontSize: 13 }}>No entries yet. Add your first buy price above.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
             {prices.map((p, i) => {
@@ -525,7 +525,7 @@ function BuyPriceTab() {
                     <div style={{ fontSize: 13, color: "#cccccc", fontWeight: 500 }}>
                       {format(parseISO(p.price_date), "EEE dd MMM yyyy")}
                     </div>
-                    <div style={{ fontSize: 11, color: "#333333", marginTop: 2 }}>{p.supplier}</div>
+                    <div style={{ fontSize: 11, color: "#666666", marginTop: 2 }}>{p.supplier}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <div style={{ textAlign: "right" }}>
@@ -546,11 +546,11 @@ function BuyPriceTab() {
                         background: "transparent",
                         border: "none",
                         cursor: "pointer",
-                        color: "#2a2a2a",
+                        color: "#555555",
                         padding: 4,
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = "#EF4444")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "#2a2a2a")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "#555555")}
                     >
                       <Trash2 style={{ width: 13, height: 13 }} />
                     </button>
