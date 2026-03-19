@@ -1,4 +1,5 @@
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
+import { PACCLogo } from "./PACCLogo";
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
