@@ -1,4 +1,4 @@
-cat > src/components/Layout.tsx << 'EOF'
+
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, Truck, List, UserCheck, DollarSign, Bell, Settings } from "lucide-react";
 import { DateRangeToggle } from "./DateRangeToggle";
@@ -154,5 +154,3 @@ export function Layout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-EOF
-echo "✅ Layout done"
