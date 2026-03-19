@@ -8,64 +8,91 @@ export default {
     container: {
       center: true,
       padding: "1rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      screens: { "2xl": "1400px" },
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
+        background: "#0C0C0C",
+        surface: "#111111",
+        "surface-raised": "#161616",
+        "surface-border": "#1a1a1a",
+
+        // Purple is ONLY for buttons, badges, and data highlights — never nav
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#7C3AED",
+          hover: "#6D28D9",
+          light: "rgba(124,58,237,0.12)",
+          text: "#A78BFA",
+          foreground: "#FFFFFF",
+        },
+        primary: {
+          DEFAULT: "#7C3AED",
+          foreground: "#FFFFFF",
+          hover: "#6D28D9",
+        },
+        "primary-light": "rgba(124,58,237,0.12)",
+
+        foreground: "#FFFFFF",
+
+        card: {
+          DEFAULT: "#111111",
+          foreground: "#FFFFFF",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "#161616",
+          foreground: "#FFFFFF",
         },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+        secondary: {
+          DEFAULT: "#161616",
+          foreground: "#FFFFFF",
         },
+        muted: {
+          DEFAULT: "#333333",
+          foreground: "#666666",
+        },
+        destructive: {
+          DEFAULT: "#EF4444",
+          foreground: "#FFFFFF",
+        },
+
+        positive: "#10B981",
+        negative: "#EF4444",
+        warning: "#F59E0B",
+
+        border: "#1a1a1a",
+        "border-subtle": "#141414",
+        input: "#1a1a1a",
+        ring: "#7C3AED",
+
+        // Sidebar — NO purple. White-based active states only.
         sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
-        },
-        kpi: {
-          up: "hsl(var(--kpi-up))",
-          down: "hsl(var(--kpi-down))",
+          DEFAULT: "#0C0C0C",
+          foreground: "#666666",
+          primary: "#FFFFFF", // active text = white, not purple
+          "primary-foreground": "#FFFFFF",
+          accent: "rgba(255,255,255,0.06)", // active bg = barely visible white
+          "accent-foreground": "#FFFFFF",
+          border: "#1a1a1a",
+          ring: "transparent",
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "10px",
+        md: "8px",
+        sm: "6px",
+      },
+      fontSize: {
+        // Tighter, more intentional scale
+        "2xs": ["10px", { lineHeight: "14px" }],
+        xs: ["11px", { lineHeight: "16px" }],
+        sm: ["12px", { lineHeight: "18px" }],
+        base: ["13px", { lineHeight: "20px" }],
+        md: ["14px", { lineHeight: "22px" }],
+        lg: ["16px", { lineHeight: "24px" }],
+        xl: ["20px", { lineHeight: "28px" }],
+        "2xl": ["24px", { lineHeight: "32px" }],
+        "3xl": ["30px", { lineHeight: "36px" }],
+        "4xl": ["36px", { lineHeight: "42px" }],
       },
       keyframes: {
         "accordion-down": {
@@ -77,14 +104,19 @@ export default {
           to: { height: "0" },
         },
         "fade-in": {
-          from: { opacity: "0", transform: "translateY(8px)" },
+          from: { opacity: "0", transform: "translateY(6px)" },
           to: { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.3s ease-out forwards",
+        "fade-in": "fade-in 0.2s ease-out forwards",
+        shimmer: "shimmer 1.5s infinite linear",
       },
     },
   },
