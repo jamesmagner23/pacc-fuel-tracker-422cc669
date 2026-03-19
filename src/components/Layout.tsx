@@ -1,5 +1,5 @@
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
-import { Fuel, LayoutDashboard, Users, Truck, List, UserCheck } from "lucide-react";
+import { Fuel, LayoutDashboard, Users, Truck, List, UserCheck, DollarSign } from "lucide-react";
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
@@ -10,6 +10,7 @@ const navItems = [
   { to: "/trucks", label: "Trucks", icon: Truck },
   { to: "/drivers", label: "Drivers", icon: UserCheck },
   { to: "/transactions", label: "Transactions", icon: List },
+  { to: "/finance", label: "Finance", icon: DollarSign },
 ];
 
 const activeStyle = {
