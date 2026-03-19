@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      buy_prices: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          price_date: string
+          price_per_litre: number
+          supplier: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          price_date: string
+          price_per_litre: number
+          supplier?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          price_date?: string
+          price_per_litre?: number
+          supplier?: string | null
+        }
+        Relationships: []
+      }
       client_accounts: {
         Row: {
           auth_user_id: string | null
