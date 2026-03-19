@@ -182,30 +182,44 @@ export default function Overview() {
         <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
           <div className="text-sm font-medium text-white mb-1">Top Customers</div>
           <div className="text-[11px] text-[#999999] mb-4">Volume share by customer</div>
-          <div style={{ height: 260 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={topCustomers}
-                  dataKey="litres"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  innerRadius={50}
-                  strokeWidth={0}
-                  label={({ name, percent }) => `${name.length > 12 ? name.slice(0, 12) + "…" : name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {topCustomers.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
-                  formatter={(v: number) => [`${(v / 1000).toFixed(1)}k L`, ""]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="flex items-center gap-4" style={{ height: 260 }}>
+            <div style={{ width: 180, height: "100%", flexShrink: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={topCustomers}
+                    dataKey="litres"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    innerRadius={45}
+                    strokeWidth={0}
+                  >
+                    {topCustomers.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
+                    formatter={(v: number) => [`${(v / 1000).toFixed(1)}k L`, ""]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-col gap-2 min-w-0 flex-1">
+              {topCustomers.map((c, i) => {
+                const total = topCustomers.reduce((s, x) => s + x.litres, 0);
+                const pctVal = total > 0 ? ((c.litres / total) * 100).toFixed(0) : "0";
+                return (
+                  <div key={c.name} className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                    <span className="text-xs text-[#ccc] truncate flex-1">{c.name}</span>
+                    <span className="text-xs text-[#999] tabular-nums shrink-0">{pctVal}%</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
