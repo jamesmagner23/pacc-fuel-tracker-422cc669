@@ -1,14 +1,21 @@
 import { useMemo } from "react";
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line,
+} from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
+import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO } from "date-fns";
 import { Droplets, TrendingUp, TrendingDown } from "lucide-react";
+
+const PIE_COLORS = ["#7C3AED", "#A78BFA", "#C4B5FD", "#DDD6FE", "#EDE9FE", "#6D28D9"];
 
 export default function Overview() {
   const { range } = useDateRange();
   const { data: filtered = [], isLoading } = useTransactions(range);
   const { data: previous = [] } = usePreviousTransactions(range);
+  const { data: buyPrices = [] } = useBuyPrices(90);
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const totalRevenue = filtered.reduce((s, t) => s + (t.dinero_total || 0), 0);
@@ -49,20 +56,18 @@ export default function Overview() {
       .slice(0, 6);
   }, [filtered]);
 
-  const recentTx = useMemo(() => [...filtered].reverse().slice(0, 8), [filtered]);
+  const priceData = useMemo(() => {
+    return [...buyPrices]
+      .sort((a, b) => a.price_date.localeCompare(b.price_date))
+      .map((p) => ({
+        date: format(parseISO(p.price_date), "dd MMM"),
+        price: p.price_per_litre,
+      }));
+  }, [buyPrices]);
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: 300,
-          color: "#333333",
-          fontSize: 13,
-        }}
-      >
+      <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
         Loading...
       </div>
     );
@@ -70,27 +75,17 @@ export default function Overview() {
 
   if (filtered.length === 0) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: 300,
-          color: "#333333",
-          gap: 12,
-        }}
-      >
-        <Droplets style={{ width: 24, height: 24 }} />
-        <p style={{ fontSize: 13, margin: 0 }}>
-          No transactions. Click <strong style={{ color: "#555555" }}>Sync Now</strong> to pull data.
+      <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground gap-3">
+        <Droplets className="w-6 h-6" />
+        <p className="text-sm">
+          No transactions. Click <strong className="text-foreground">Sync Now</strong> to pull data.
         </p>
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 1, maxWidth: 1200 }}>
+    <div className="flex flex-col gap-1 max-w-[1200px]">
       {/* HERO SECTION */}
       <div
         style={{
@@ -101,89 +96,44 @@ export default function Overview() {
           overflow: "hidden",
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 8 }}>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-4">
           <div>
-            <div
-              style={{
-                fontSize: 11,
-                color: "#444444",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: 6,
-              }}
-            >
+            <div className="text-[11px] text-[#999999] uppercase tracking-wider mb-1.5">
               Total Litres Delivered
             </div>
-            <div
-              style={{
-                fontSize: 56,
-                fontWeight: 300,
-                color: "#ffffff",
-                letterSpacing: "-0.04em",
-                lineHeight: 1,
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
+            <div className="text-4xl sm:text-[56px] font-light text-white tracking-tighter leading-none tabular-nums">
               {totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10 }}>
+            <div className="flex items-center gap-1.5 mt-2.5">
               {litresPct >= 0 ? (
-                <TrendingUp style={{ width: 12, height: 12, color: "#10B981" }} />
+                <TrendingUp className="w-3 h-3 text-emerald-500" />
               ) : (
-                <TrendingDown style={{ width: 12, height: 12, color: "#EF4444" }} />
+                <TrendingDown className="w-3 h-3 text-red-500" />
               )}
-              <span style={{ fontSize: 12, color: litresPct >= 0 ? "#10B981" : "#EF4444", fontWeight: 500 }}>
-                {litresPct >= 0 ? "+" : ""}
-                {litresPct.toFixed(1)}%
+              <span className={`text-xs font-medium ${litresPct >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                {litresPct >= 0 ? "+" : ""}{litresPct.toFixed(1)}%
               </span>
-              <span style={{ fontSize: 12, color: "#333333" }}>vs previous period</span>
+              <span className="text-xs text-[#999999]">vs previous period</span>
             </div>
           </div>
 
-          {/* Secondary KPIs */}
-          <div style={{ display: "flex", gap: 32, paddingTop: 4 }}>
+          <div className="flex gap-8 pt-1">
             {[
-              {
-                label: "Revenue",
-                value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-                p: revPct,
-              },
+              { label: "Revenue", value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }), p: revPct },
               { label: "Deliveries", value: numDeliveries.toString(), p: delPct },
               { label: "Avg Size", value: Math.round(avgSize) + "L", p: avgPct },
             ].map((k) => (
-              <div key={k.label} style={{ textAlign: "right" }}>
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "#333333",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.07em",
-                    marginBottom: 4,
-                  }}
-                >
-                  {k.label}
-                </div>
-                <div
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 500,
-                    color: "#ffffff",
-                    letterSpacing: "-0.02em",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {k.value}
-                </div>
-                <div style={{ fontSize: 11, color: k.p >= 0 ? "#10B981" : "#EF4444", marginTop: 2 }}>
-                  {k.p >= 0 ? "+" : ""}
-                  {k.p.toFixed(1)}%
+              <div key={k.label} className="text-right">
+                <div className="text-[10px] text-[#999999] uppercase tracking-wider mb-1">{k.label}</div>
+                <div className="text-xl font-medium text-white tracking-tight tabular-nums">{k.value}</div>
+                <div className={`text-[11px] mt-0.5 ${k.p >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                  {k.p >= 0 ? "+" : ""}{k.p.toFixed(1)}%
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Full-width area chart */}
         <div style={{ height: 160, marginLeft: -32, marginRight: -32 }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
@@ -193,165 +143,94 @@ export default function Overview() {
                   <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#333333" }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} />
               <YAxis hide />
               <Tooltip
-                contentStyle={{
-                  background: "#111111",
-                  border: "1px solid #222222",
-                  borderRadius: 8,
-                  color: "#fff",
-                  fontSize: 12,
-                }}
+                contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 12 }}
                 formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
               />
-              <Area
-                type="monotone"
-                dataKey="litres"
-                stroke="#ffffff"
-                strokeWidth={1.5}
-                fill="url(#litresGrad)"
-                dot={false}
-              />
+              <Area type="monotone" dataKey="litres" stroke="#ffffff" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* BOTTOM THREE PANELS */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, marginTop: 1 }}>
-        {/* Top Customers */}
-        <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: "#ffffff", marginBottom: 4 }}>Top Customers</div>
-          <div style={{ fontSize: 11, color: "#333333", marginBottom: 16 }}>{numDeliveries} deliveries this period</div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {topCustomers.map((c, i) => (
-              <div
-                key={c.name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "9px 0",
-                  borderBottom: i < topCustomers.length - 1 ? "1px solid #131313" : "none",
-                }}
-              >
-                <span style={{ fontSize: 10, color: "#2a2a2a", width: 14, flexShrink: 0, fontWeight: 600 }}>
-                  {i + 1}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#cccccc",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {c.name}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 12, color: "#888888", fontVariantNumeric: "tabular-nums" }}>
-                    {(c.litres / 1000).toFixed(1)}k L
-                  </div>
-                  <div
-                    style={{
-                      width: 60,
-                      height: 2,
-                      background: "#1a1a1a",
-                      borderRadius: 2,
-                      marginTop: 4,
-                      marginLeft: "auto",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${(c.litres / (topCustomers[0]?.litres || 1)) * 100}%`,
-                        height: 2,
-                        background: "#7C3AED",
-                        borderRadius: 2,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* DAILY VOLUME - FULL WIDTH */}
+      <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
+        <div className="text-sm font-medium text-white mb-1">Daily Volume</div>
+        <div className="text-[11px] text-[#999999] mb-4">Litres delivered per day</div>
+        <div style={{ height: 280 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={dailyData} barCategoryGap="30%">
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} width={50} />
+              <Tooltip
+                contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
+                formatter={(v: number) => [`${v.toLocaleString()}L`, ""]}
+                cursor={{ fill: "rgba(255,255,255,0.02)" }}
+              />
+              <Bar dataKey="litres" fill="#7C3AED" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
+      </div>
 
-        {/* Daily Volume */}
+      {/* BOTTOM TWO PANELS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-[1px] mt-[1px]">
+        {/* Top Customers Pie */}
         <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: "#ffffff", marginBottom: 4 }}>Daily Volume</div>
-          <div style={{ fontSize: 11, color: "#333333", marginBottom: 16 }}>Litres per day</div>
-          <div style={{ height: 180 }}>
+          <div className="text-sm font-medium text-white mb-1">Top Customers</div>
+          <div className="text-[11px] text-[#999999] mb-4">Volume share by customer</div>
+          <div style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyData} barCategoryGap="40%">
-                <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#333333" }} axisLine={false} tickLine={false} />
-                <YAxis hide />
+              <PieChart>
+                <Pie
+                  data={topCustomers}
+                  dataKey="litres"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  innerRadius={50}
+                  strokeWidth={0}
+                  label={({ name, percent }) => `${name.length > 12 ? name.slice(0, 12) + "…" : name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {topCustomers.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
                 <Tooltip
-                  contentStyle={{
-                    background: "#111111",
-                    border: "1px solid #222222",
-                    borderRadius: 8,
-                    color: "#fff",
-                    fontSize: 11,
-                  }}
-                  formatter={(v: number) => [`${v.toLocaleString()}L`, ""]}
-                  cursor={{ fill: "rgba(255,255,255,0.02)" }}
+                  contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
+                  formatter={(v: number) => [`${(v / 1000).toFixed(1)}k L`, ""]}
                 />
-                <Bar dataKey="litres" fill="#7C3AED" radius={[2, 2, 0, 0]} />
-              </BarChart>
+              </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Recent Transactions */}
+        {/* Buy Price Trend */}
         <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: "#ffffff" }}>Transactions</div>
-            <a href="/transactions" style={{ fontSize: 11, color: "#333333", textDecoration: "none" }}>
-              View all →
-            </a>
-          </div>
-          <div style={{ fontSize: 11, color: "#333333", marginBottom: 16 }}>Most recent</div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {recentTx.map((t, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "8px 0",
-                  borderBottom: i < recentTx.length - 1 ? "1px solid #131313" : "none",
-                }}
-              >
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#cccccc",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {t.nombre_cliente1 || "Unknown"}
-                  </div>
-                  <div style={{ fontSize: 10, color: "#333333", marginTop: 1 }}>
-                    {t.date ? format(parseISO(t.date), "dd MMM") : "—"}
-                  </div>
-                </div>
-                <div style={{ fontSize: 12, color: "#555555", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
-                  {(t.cantidad || 0).toLocaleString()}L
-                </div>
+          <div className="text-sm font-medium text-white mb-1">Fuel Buy Price</div>
+          <div className="text-[11px] text-[#999999] mb-4">Supply price trend ($/L)</div>
+          <div style={{ height: 260 }}>
+            {priceData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={priceData}>
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} width={50} domain={["auto", "auto"]} />
+                  <Tooltip
+                    contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
+                    formatter={(v: number) => [`$${v.toFixed(2)}/L`, "Price"]}
+                  />
+                  <Line type="monotone" dataKey="price" stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: "#10B981" }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-[#999999] text-xs">
+                No price data yet. Add prices in Finance → Buy Price.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
