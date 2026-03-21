@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { ArrowLeft, Printer, Share2, Copy, Check } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import type { Transaction } from "@/hooks/useTransactions";
 
 export default function DeliveryDocket() {
