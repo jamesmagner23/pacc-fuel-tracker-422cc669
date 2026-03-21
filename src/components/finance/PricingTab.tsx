@@ -80,6 +80,115 @@ export default function PricingTab() {
     }
   };
 
+  const generateQuotePdf = (q: Quote) => {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const w = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const contentW = w - margin * 2;
+    let y = 0;
+
+    // Header bar
+    doc.setFillColor(10, 10, 10);
+    doc.rect(0, 0, w, 42, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.text("PACC", margin, 26);
+    const paccW = doc.getTextWidth("PACC");
+    doc.setTextColor(124, 58, 237);
+    doc.setFontSize(14);
+    doc.text("®", margin + paccW + 1, 22);
+    doc.setFontSize(7);
+    doc.setTextColor(102, 102, 102);
+    doc.text("FUEL", margin, 33);
+
+    // Quote title
+    y = 58;
+    doc.setTextColor(17, 17, 17);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Fuel Quote", margin, y);
+
+    y += 10;
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(102, 102, 102);
+    doc.text(`Prepared for `, margin, y);
+    const prepW = doc.getTextWidth("Prepared for ");
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(17, 17, 17);
+    doc.text(q.customer_name, margin + prepW, y);
+
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(102, 102, 102);
+    doc.setFontSize(9);
+    doc.text(format(parseISO(q.created_at), "dd MMMM yyyy"), margin, y);
+
+    // Table
+    y += 14;
+    const rows = [
+      ["Volume", `${Number(q.volume_litres).toLocaleString()} Litres`],
+      ["Price Per Litre (Ex GST)", `$${Number(q.sell_price_per_litre).toFixed(4)}`],
+      ["Total (Ex GST)", `$${Number(q.total_ex_gst).toLocaleString(undefined, { maximumFractionDigits: 2 })}`],
+      ["GST (10%)", `$${(Number(q.total_inc_gst) - Number(q.total_ex_gst)).toLocaleString(undefined, { maximumFractionDigits: 2 })}`],
+    ];
+
+    doc.setFontSize(10);
+    for (const [label, value] of rows) {
+      doc.setDrawColor(238, 238, 238);
+      doc.line(margin, y + 7, margin + contentW, y + 7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(102, 102, 102);
+      doc.text(label, margin, y + 4);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(17, 17, 17);
+      doc.text(value, margin + contentW, y + 4, { align: "right" });
+      y += 12;
+    }
+
+    // Total row
+    y += 4;
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(17, 17, 17);
+    doc.text("Total (Inc GST)", margin, y + 4);
+    doc.setTextColor(124, 58, 237);
+    doc.setFontSize(16);
+    doc.text(
+      `$${Number(q.total_inc_gst).toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+      margin + contentW, y + 4, { align: "right" }
+    );
+
+    // Notes
+    if (q.notes) {
+      y += 18;
+      doc.setFillColor(249, 249, 249);
+      doc.roundedRect(margin, y - 4, contentW, 16, 3, 3, "F");
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(102, 102, 102);
+      doc.text(q.notes, margin + 6, y + 4, { maxWidth: contentW - 12 });
+      y += 16;
+    }
+
+    // Valid until
+    if (q.valid_until) {
+      y += 10;
+      doc.setFontSize(8);
+      doc.setTextColor(153, 153, 153);
+      doc.text(`This quote is valid until ${format(parseISO(q.valid_until), "dd MMMM yyyy")}.`, margin, y);
+    }
+
+    // Footer
+    y += 18;
+    doc.setFontSize(8);
+    doc.setTextColor(187, 187, 187);
+    doc.text("PACC Fuel · Melbourne, Australia", margin, y);
+
+    doc.save(`PACC-Quote-${q.customer_name.replace(/\s+/g, "-")}-${format(parseISO(q.created_at), "yyyyMMdd")}.pdf`);
+  };
+
   const handleSendQuote = async (quoteId: string) => {
     try {
       const { error } = await supabase.functions.invoke("send-quote", { body: { quote_id: quoteId } });
