@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { format, parseISO, addDays } from "date-fns";
-import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown } from "lucide-react";
+import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil } from "lucide-react";
 import jsPDF from "jspdf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
@@ -17,6 +17,7 @@ import {
 } from "@/hooks/useQuotes";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import QuoteEditModal from "./QuoteEditModal";
 
 const GST_RATE = 0.1;
 
@@ -50,6 +51,7 @@ export default function PricingTab() {
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -517,6 +519,13 @@ export default function PricingTab() {
                     <div className="text-[10px] text-muted-foreground">inc GST</div>
                   </div>
                   <button
+                    onClick={() => setEditingQuote(q)}
+                    title="Edit quote"
+                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
                     onClick={() => generateQuotePdf(q)}
                     title="Download PDF"
                     className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
@@ -543,6 +552,10 @@ export default function PricingTab() {
           </div>
         )}
       </div>
+
+      {editingQuote && (
+        <QuoteEditModal quote={editingQuote} onClose={() => setEditingQuote(null)} />
+      )}
     </div>
   );
 }
