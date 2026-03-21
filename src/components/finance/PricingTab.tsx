@@ -52,6 +52,7 @@ export default function PricingTab() {
   const [clientSearch, setClientSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Close dropdown on outside click
   useEffect(() => {
