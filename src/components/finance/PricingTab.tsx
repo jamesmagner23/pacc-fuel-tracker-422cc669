@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { format, parseISO, addDays } from "date-fns";
-import { Send, Trash2, FileText, Plus, Settings2, Download } from "lucide-react";
+import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown } from "lucide-react";
 import jsPDF from "jspdf";
+import { useQuery } from "@tanstack/react-query";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import {
   usePricingTiers,
@@ -23,6 +24,14 @@ export default function PricingTab() {
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { data: tiers = [], isLoading: tiersLoading } = usePricingTiers();
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
+  const { data: clients = [] } = useQuery({
+    queryKey: ["client-accounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("client_accounts").select("id, company_name, contact_email, contact_name, contact_phone").eq("is_active", true).order("company_name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
   const createQuote = useCreateQuote();
   const deleteQuote = useDeleteQuote();
   const upsertTier = useUpsertTier();
@@ -37,6 +46,32 @@ export default function PricingTab() {
   const [volume, setVolume] = useState("");
   const [notes, setNotes] = useState("");
   const [validDays, setValidDays] = useState("7");
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowClientDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filteredClients = clients.filter((c) =>
+    c.company_name.toLowerCase().includes((clientSearch || name).toLowerCase())
+  );
+
+  const selectClient = (client: typeof clients[0]) => {
+    setName(client.company_name);
+    setEmail(client.contact_email || "");
+    setPhone(client.contact_phone || "");
+    setShowClientDropdown(false);
+    setClientSearch("");
+  };
 
   // Tier editing
   const [editTierName, setEditTierName] = useState("");
@@ -313,9 +348,32 @@ export default function PricingTab() {
           Create Quote
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 relative" ref={dropdownRef}>
             <label className="text-[11px] text-muted-foreground">Customer Name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. ABC Transport" className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+            <div className="relative">
+              <input
+                value={name}
+                onChange={(e) => { setName(e.target.value); setShowClientDropdown(true); }}
+                onFocus={() => setShowClientDropdown(true)}
+                placeholder="Search or type new…"
+                className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full pr-8"
+              />
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+            {showClientDropdown && filteredClients.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-surface-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                {filteredClients.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => selectClient(c)}
+                    className="w-full text-left px-3 py-2 bg-transparent border-none cursor-pointer hover:bg-muted transition-colors"
+                  >
+                    <div className="text-[13px] text-foreground font-medium">{c.company_name}</div>
+                    <div className="text-[10px] text-muted-foreground">{c.contact_email}{c.contact_phone ? ` · ${c.contact_phone}` : ""}</div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] text-muted-foreground">Email *</label>
