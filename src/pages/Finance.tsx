@@ -37,6 +37,7 @@ export default function Finance() {
 
       {activeTab === "P&L Overview" && <PLOverview />}
       {activeTab === "Buy Price" && <BuyPriceTab />}
+      {activeTab === "Client Pricing" && <ClientPricingTab />}
       {activeTab === "Pricing" && <PricingTab />}
     </div>
   );
