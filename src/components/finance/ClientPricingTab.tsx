@@ -22,7 +22,7 @@ export default function ClientPricingTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_accounts")
-        .select("id, company_name, contact_email, contact_phone")
+        .select("id, company_name, contact_email, contact_phone, speedsol_name")
         .eq("is_active", true)
         .order("company_name");
       if (error) throw error;
