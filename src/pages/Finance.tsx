@@ -7,8 +7,10 @@ import { useTransactions, usePreviousTransactions } from "@/hooks/useTransaction
 import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice } from "@/hooks/useBuyPrices";
 import { toast } from "sonner";
 import PricingTab from "@/components/finance/PricingTab";
+import ClientPricingTab from "@/components/finance/ClientPricingTab";
+import { useCustomerPricing, getBlendedMargin } from "@/hooks/useCustomerPricing";
 
-const tabs = ["P&L Overview", "Buy Price", "Pricing"] as const;
+const tabs = ["P&L Overview", "Buy Price", "Client Pricing", "Pricing"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function Finance() {
@@ -35,6 +37,7 @@ export default function Finance() {
 
       {activeTab === "P&L Overview" && <PLOverview />}
       {activeTab === "Buy Price" && <BuyPriceTab />}
+      {activeTab === "Client Pricing" && <ClientPricingTab />}
       {activeTab === "Pricing" && <PricingTab />}
     </div>
   );
@@ -45,6 +48,7 @@ function PLOverview() {
   const { data: filtered = [], isLoading } = useTransactions(range);
   const { data: previous = [] } = usePreviousTransactions(range);
   const { data: buyPrices = [] } = useBuyPrices(365);
+  const { data: customerPricing = [] } = useCustomerPricing();
 
   if (isLoading) {
     return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
@@ -58,9 +62,12 @@ function PLOverview() {
   const prevRevenue = previous.reduce((s, t) => s + (t.dinero_total || 0), 0);
 
   const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
+  const blendedMargin = getBlendedMargin(customerPricing);
   const totalCost = totalLitres * latestBuyPrice;
-  const profit = totalRevenue - totalCost;
-  const profitMargin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+  const blendedSellPrice = latestBuyPrice * (1 + blendedMargin / 100);
+  const grossRevenue = totalLitres * blendedSellPrice;
+  const grossProfit = grossRevenue - totalCost;
+  const grossMargin = grossRevenue > 0 ? (grossProfit / grossRevenue) * 100 : 0;
 
   const pct = (c: number, p: number) => (p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100);
   const rangeLabel = range === "today" ? "Today" : range === "week" ? "This Week" : "This Month";
@@ -86,18 +93,18 @@ function PLOverview() {
       pct: null,
     },
     {
-      label: "Profit (Markup)",
-      value: "$" + profit.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${rangeLabel} · revenue minus cost`,
+      label: "Gross Profit",
+      value: "$" + grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 }),
+      sub: `${rangeLabel} · blended margin ${blendedMargin.toFixed(1)}%`,
       pct: null,
-      positive: profit >= 0,
+      positive: grossProfit >= 0,
     },
     {
-      label: "Profit Margin",
-      value: profitMargin.toFixed(1) + "%",
-      sub: "Profit ÷ revenue",
+      label: "Gross Margin",
+      value: grossMargin.toFixed(1) + "%",
+      sub: "GP ÷ revenue",
       pct: null,
-      positive: profitMargin >= 0,
+      positive: grossMargin >= 0,
     },
   ];
 

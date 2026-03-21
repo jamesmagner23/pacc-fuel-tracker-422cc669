@@ -112,6 +112,47 @@ export type Database = {
           },
         ]
       }
+      customer_pricing: {
+        Row: {
+          client_account_id: number
+          created_at: string | null
+          id: string
+          margin_percent: number
+          notes: string | null
+          payment_terms: string
+          updated_at: string | null
+          weekly_volume_tier: string
+        }
+        Insert: {
+          client_account_id: number
+          created_at?: string | null
+          id?: string
+          margin_percent?: number
+          notes?: string | null
+          payment_terms?: string
+          updated_at?: string | null
+          weekly_volume_tier?: string
+        }
+        Update: {
+          client_account_id?: number
+          created_at?: string | null
+          id?: string
+          margin_percent?: number
+          notes?: string | null
+          payment_terms?: string
+          updated_at?: string | null
+          weekly_volume_tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_pricing_client_account_id_fkey"
+            columns: ["client_account_id"]
+            isOneToOne: true
+            referencedRelation: "client_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_tiers: {
         Row: {
           created_at: string | null
