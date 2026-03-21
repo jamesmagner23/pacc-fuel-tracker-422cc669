@@ -409,8 +409,19 @@ export default function PricingTab() {
             <label className="text-[11px] text-muted-foreground">Volume (Litres) *</label>
             <input value={volume} onChange={(e) => setVolume(e.target.value)} type="number" placeholder="e.g. 8000" className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Valid For (Days)</label>
+        </div>
+
+        {/* Save new client prompt */}
+        {name.length > 1 && email && !isExistingClient && (
+          <button
+            onClick={handleSaveNewClient}
+            className="mt-3 text-[11px] text-primary hover:text-primary/80 bg-transparent border border-primary/20 rounded-full px-4 py-1.5 cursor-pointer transition-colors"
+          >
+            + Save "{name}" as new client
+          </button>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
             <input value={validDays} onChange={(e) => setValidDays(e.target.value)} type="number" className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
           </div>
           <div className="flex flex-col gap-1.5">
