@@ -24,6 +24,14 @@ export default function PricingTab() {
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { data: tiers = [], isLoading: tiersLoading } = usePricingTiers();
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
+  const { data: clients = [] } = useQuery({
+    queryKey: ["client-accounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("client_accounts").select("id, company_name, contact_email, contact_name, contact_phone").eq("is_active", true).order("company_name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
   const createQuote = useCreateQuote();
   const deleteQuote = useDeleteQuote();
   const upsertTier = useUpsertTier();
