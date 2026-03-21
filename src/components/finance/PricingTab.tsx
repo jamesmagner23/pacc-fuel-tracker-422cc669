@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { format, parseISO, addDays } from "date-fns";
-import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil, Copy } from "lucide-react";
+import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil, Copy, CheckSquare, Square } from "lucide-react";
 import jsPDF from "jspdf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
@@ -11,6 +11,7 @@ import {
   useQuotes,
   useCreateQuote,
   useDeleteQuote,
+  useUpdateQuoteStatus,
   getTierForVolume,
   type PricingTier,
   type Quote,
@@ -53,6 +54,53 @@ export default function PricingTab() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState("sent");
+  const updateQuoteStatus = useUpdateQuoteStatus();
+
+  const filteredQuotes = useMemo(
+    () => quotes.filter(q => statusFilter === "all" || q.status === statusFilter),
+    [quotes, statusFilter]
+  );
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredQuotes.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredQuotes.map(q => q.id)));
+    }
+  };
+
+  const handleBulkStatusChange = async () => {
+    try {
+      const updates = Array.from(selectedIds).map(id =>
+        updateQuoteStatus.mutateAsync({ id, status: bulkStatus, ...(bulkStatus === "sent" ? { sent_at: new Date().toISOString() } : {}) })
+      );
+      await Promise.all(updates);
+      toast.success(`${selectedIds.size} quote(s) updated to "${bulkStatus}"`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("Failed to update quotes");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => deleteQuote.mutateAsync(id)));
+      toast.success(`${selectedIds.size} quote(s) deleted`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("Failed to delete quotes");
+    }
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -521,71 +569,102 @@ export default function PricingTab() {
         ) : quotes.length === 0 ? (
           <div className="text-muted-foreground text-[13px]">No quotes yet. Create your first one above.</div>
         ) : (
-          <div className="flex flex-col">
-            {quotes.filter(q => statusFilter === "all" || q.status === statusFilter).map((q, i, arr) => (
-              <div key={q.id} className="flex items-center justify-between py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid hsl(var(--border))" : "none" }}>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-medium text-foreground truncate">{q.customer_name}</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {q.volume_litres.toLocaleString()}L · ${q.sell_price_per_litre.toFixed(4)}/L · {format(parseISO(q.created_at), "dd MMM yyyy")}
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      q.status === "sent" ? "bg-primary/10 text-primary" : q.status === "draft" ? "bg-muted text-muted-foreground" : "bg-muted text-foreground"
-                    }`}>
-                      {q.status}
-                    </span>
-                    {q.valid_until && (
-                      <span className="text-[10px] text-muted-foreground">
-                        Valid until {format(parseISO(q.valid_until), "dd MMM")}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 ml-3">
-                  <div className="text-right mr-2">
-                    <div className="text-sm font-semibold text-foreground tabular-nums">${q.total_inc_gst.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-                    <div className="text-[10px] text-muted-foreground">inc GST</div>
-                  </div>
-                  <button
-                    onClick={() => setEditingQuote(q)}
-                    title="Edit quote"
-                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+          <>
+            {/* Bulk action bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-2 mb-3 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
+                <span className="text-[11px] text-foreground font-medium">{selectedIds.size} selected</span>
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <select
+                    value={bulkStatus}
+                    onChange={(e) => setBulkStatus(e.target.value)}
+                    className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-2 py-1 text-[11px] outline-none"
                   >
-                    <Pencil className="w-3.5 h-3.5" />
+                    {["draft", "sent", "accepted", "rejected", "expired"].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleBulkStatusChange}
+                    className="bg-primary text-primary-foreground border-none rounded-full px-3 py-1 text-[10px] font-semibold cursor-pointer"
+                  >
+                    Set Status
                   </button>
                   <button
-                    onClick={() => handleDuplicateQuote(q)}
-                    title="Duplicate quote"
-                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+                    onClick={handleBulkDelete}
+                    className="bg-destructive text-destructive-foreground border-none rounded-full px-3 py-1 text-[10px] font-semibold cursor-pointer"
                   >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => generateQuotePdf(q)}
-                    title="Download PDF"
-                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleSendQuote(q.id)}
-                    title="Email quote"
-                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-primary p-1.5 transition-colors"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => deleteQuote.mutate(q.id)}
-                    title="Delete quote"
-                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-destructive p-1.5 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+
+            {/* Select all */}
+            {filteredQuotes.length > 0 && (
+              <button
+                onClick={toggleSelectAll}
+                className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer mb-1 p-0 transition-colors"
+              >
+                {selectedIds.size === filteredQuotes.length ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                {selectedIds.size === filteredQuotes.length ? "Deselect all" : "Select all"}
+              </button>
+            )}
+
+            <div className="flex flex-col">
+              {filteredQuotes.map((q, i, arr) => (
+                <div key={q.id} className="flex items-center justify-between py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid hsl(var(--border))" : "none" }}>
+                  <div className="flex items-start gap-2 min-w-0 flex-1">
+                    <button
+                      onClick={() => toggleSelect(q.id)}
+                      className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-0 mt-0.5 flex-shrink-0 transition-colors"
+                    >
+                      {selectedIds.has(q.id) ? <CheckSquare className="w-3.5 h-3.5 text-primary" /> : <Square className="w-3.5 h-3.5" />}
+                    </button>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-medium text-foreground truncate">{q.customer_name}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        {q.volume_litres.toLocaleString()}L · ${q.sell_price_per_litre.toFixed(4)}/L · {format(parseISO(q.created_at), "dd MMM yyyy")}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          q.status === "sent" ? "bg-primary/10 text-primary" : q.status === "draft" ? "bg-muted text-muted-foreground" : "bg-muted text-foreground"
+                        }`}>
+                          {q.status}
+                        </span>
+                        {q.valid_until && (
+                          <span className="text-[10px] text-muted-foreground">
+                            Valid until {format(parseISO(q.valid_until), "dd MMM")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 ml-3">
+                    <div className="text-right mr-2">
+                      <div className="text-sm font-semibold text-foreground tabular-nums">${q.total_inc_gst.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                      <div className="text-[10px] text-muted-foreground">inc GST</div>
+                    </div>
+                    <button onClick={() => setEditingQuote(q)} title="Edit quote" className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDuplicateQuote(q)} title="Duplicate quote" className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => generateQuotePdf(q)} title="Download PDF" className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors">
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleSendQuote(q.id)} title="Email quote" className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-primary p-1.5 transition-colors">
+                      <Send className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => deleteQuote.mutate(q.id)} title="Delete quote" className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-destructive p-1.5 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
