@@ -90,6 +90,7 @@ export default function PricingTab() {
         contact_phone: phone || null,
       });
       if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["client-accounts"] });
       toast.success("Client saved to accounts");
     } catch {
       toast.error("Failed to save client");
