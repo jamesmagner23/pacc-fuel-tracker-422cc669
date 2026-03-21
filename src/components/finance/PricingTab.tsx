@@ -60,8 +60,11 @@ export default function PricingTab() {
   const updateQuoteStatus = useUpdateQuoteStatus();
 
   const filteredQuotes = useMemo(
-    () => quotes.filter(q => statusFilter === "all" || q.status === statusFilter),
-    [quotes, statusFilter]
+    () => quotes.filter(q =>
+      (statusFilter === "all" || q.status === statusFilter) &&
+      (!quoteSearch || q.customer_name.toLowerCase().includes(quoteSearch.toLowerCase()))
+    ),
+    [quotes, statusFilter, quoteSearch]
   );
 
   const toggleSelect = (id: string) => {
