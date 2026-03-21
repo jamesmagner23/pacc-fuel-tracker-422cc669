@@ -112,6 +112,87 @@ export type Database = {
           },
         ]
       }
+      pricing_tiers: {
+        Row: {
+          created_at: string | null
+          id: string
+          margin_percent: number
+          max_litres: number | null
+          min_litres: number
+          tier_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          margin_percent?: number
+          max_litres?: number | null
+          min_litres?: number
+          tier_name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          margin_percent?: number
+          max_litres?: number | null
+          min_litres?: number
+          tier_name?: string
+        }
+        Relationships: []
+      }
+      quotes: {
+        Row: {
+          buy_price_per_litre: number
+          created_at: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          margin_percent: number
+          notes: string | null
+          sell_price_per_litre: number
+          sent_at: string | null
+          status: string
+          total_ex_gst: number
+          total_inc_gst: number
+          valid_until: string | null
+          volume_litres: number
+        }
+        Insert: {
+          buy_price_per_litre: number
+          created_at?: string | null
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          margin_percent: number
+          notes?: string | null
+          sell_price_per_litre: number
+          sent_at?: string | null
+          status?: string
+          total_ex_gst: number
+          total_inc_gst: number
+          valid_until?: string | null
+          volume_litres: number
+        }
+        Update: {
+          buy_price_per_litre?: number
+          created_at?: string | null
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          margin_percent?: number
+          notes?: string | null
+          sell_price_per_litre?: number
+          sent_at?: string | null
+          status?: string
+          total_ex_gst?: number
+          total_inc_gst?: number
+          valid_until?: string | null
+          volume_litres?: number
+        }
+        Relationships: []
+      }
       sync_log: {
         Row: {
           error_message: string | null

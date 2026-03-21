@@ -6,8 +6,9 @@ import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice } from "@/hooks/useBuyPrices";
 import { toast } from "sonner";
+import PricingTab from "@/components/finance/PricingTab";
 
-const tabs = ["P&L Overview", "Buy Price"] as const;
+const tabs = ["P&L Overview", "Buy Price", "Pricing"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function Finance() {
@@ -34,6 +35,7 @@ export default function Finance() {
 
       {activeTab === "P&L Overview" && <PLOverview />}
       {activeTab === "Buy Price" && <BuyPriceTab />}
+      {activeTab === "Pricing" && <PricingTab />}
     </div>
   );
 }
