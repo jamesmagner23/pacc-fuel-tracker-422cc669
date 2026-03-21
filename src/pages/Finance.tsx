@@ -48,6 +48,7 @@ function PLOverview() {
   const { data: filtered = [], isLoading } = useTransactions(range);
   const { data: previous = [] } = usePreviousTransactions(range);
   const { data: buyPrices = [] } = useBuyPrices(365);
+  const { data: customerPricing = [] } = useCustomerPricing();
 
   if (isLoading) {
     return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
@@ -61,9 +62,12 @@ function PLOverview() {
   const prevRevenue = previous.reduce((s, t) => s + (t.dinero_total || 0), 0);
 
   const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
+  const blendedMargin = getBlendedMargin(customerPricing);
   const totalCost = totalLitres * latestBuyPrice;
-  const profit = totalRevenue - totalCost;
-  const profitMargin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+  const blendedSellPrice = latestBuyPrice * (1 + blendedMargin / 100);
+  const grossRevenue = totalLitres * blendedSellPrice;
+  const grossProfit = grossRevenue - totalCost;
+  const grossMargin = grossRevenue > 0 ? (grossProfit / grossRevenue) * 100 : 0;
 
   const pct = (c: number, p: number) => (p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100);
   const rangeLabel = range === "today" ? "Today" : range === "week" ? "This Week" : "This Month";
