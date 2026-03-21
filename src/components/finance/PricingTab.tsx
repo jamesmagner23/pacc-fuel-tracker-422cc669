@@ -496,8 +496,25 @@ export default function PricingTab() {
 
       {/* Quote history */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">
-          Quotes ({quotes.length})
+        <div className="flex items-center justify-between mb-3.5">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+            Quotes ({statusFilter === "all" ? quotes.length : quotes.filter(q => q.status === statusFilter).length})
+          </div>
+          <div className="flex gap-1">
+            {["all", "draft", "sent", "accepted", "rejected", "expired"].map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`text-[10px] px-2.5 py-1 rounded-full border cursor-pointer transition-colors capitalize ${
+                  statusFilter === s
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-transparent text-muted-foreground border-surface-border hover:border-foreground/30"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
         {quotesLoading ? (
           <div className="text-muted-foreground text-[13px]">Loading…</div>
@@ -505,8 +522,8 @@ export default function PricingTab() {
           <div className="text-muted-foreground text-[13px]">No quotes yet. Create your first one above.</div>
         ) : (
           <div className="flex flex-col">
-            {quotes.map((q, i) => (
-              <div key={q.id} className="flex items-center justify-between py-3" style={{ borderBottom: i < quotes.length - 1 ? "1px solid hsl(var(--border))" : "none" }}>
+            {quotes.filter(q => statusFilter === "all" || q.status === statusFilter).map((q, i, arr) => (
+              <div key={q.id} className="flex items-center justify-between py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid hsl(var(--border))" : "none" }}>
                 <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-medium text-foreground truncate">{q.customer_name}</div>
                   <div className="text-[11px] text-muted-foreground mt-0.5">
