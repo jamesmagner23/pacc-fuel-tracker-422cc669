@@ -65,12 +65,34 @@ export default function PricingTab() {
     c.company_name.toLowerCase().includes((clientSearch || name).toLowerCase())
   );
 
+  const isExistingClient = clients.some(
+    (c) => c.company_name.toLowerCase() === name.toLowerCase()
+  );
+
   const selectClient = (client: typeof clients[0]) => {
     setName(client.company_name);
     setEmail(client.contact_email || "");
     setPhone(client.contact_phone || "");
     setShowClientDropdown(false);
     setClientSearch("");
+  };
+
+  const handleSaveNewClient = async () => {
+    if (!name || !email) {
+      toast.error("Name and email are required to save a new client");
+      return;
+    }
+    try {
+      const { error } = await supabase.from("client_accounts").insert({
+        company_name: name,
+        contact_email: email,
+        contact_phone: phone || null,
+      });
+      if (error) throw error;
+      toast.success("Client saved to accounts");
+    } catch {
+      toast.error("Failed to save client");
+    }
   };
 
   // Tier editing
