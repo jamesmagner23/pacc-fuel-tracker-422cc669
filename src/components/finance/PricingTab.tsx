@@ -17,6 +17,7 @@ import {
 } from "@/hooks/useQuotes";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import QuoteEditModal from "./QuoteEditModal";
 
 const GST_RATE = 0.1;
 
