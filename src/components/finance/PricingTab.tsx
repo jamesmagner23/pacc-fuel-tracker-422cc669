@@ -54,6 +54,7 @@ export default function PricingTab() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [quoteSearch, setQuoteSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState("sent");
   const updateQuoteStatus = useUpdateQuoteStatus();
