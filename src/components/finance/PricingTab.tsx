@@ -422,6 +422,13 @@ export default function PricingTab() {
                     <div className="text-[10px] text-muted-foreground">inc GST</div>
                   </div>
                   <button
+                    onClick={() => generateQuotePdf(q)}
+                    title="Download PDF"
+                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                  <button
                     onClick={() => handleSendQuote(q.id)}
                     title="Email quote"
                     className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-primary p-1.5 transition-colors"
