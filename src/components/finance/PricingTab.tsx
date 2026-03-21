@@ -54,6 +54,53 @@ export default function PricingTab() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState("sent");
+  const updateQuoteStatus = useUpdateQuoteStatus();
+
+  const filteredQuotes = useMemo(
+    () => quotes.filter(q => statusFilter === "all" || q.status === statusFilter),
+    [quotes, statusFilter]
+  );
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredQuotes.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredQuotes.map(q => q.id)));
+    }
+  };
+
+  const handleBulkStatusChange = async () => {
+    try {
+      const updates = Array.from(selectedIds).map(id =>
+        updateQuoteStatus.mutateAsync({ id, status: bulkStatus, ...(bulkStatus === "sent" ? { sent_at: new Date().toISOString() } : {}) })
+      );
+      await Promise.all(updates);
+      toast.success(`${selectedIds.size} quote(s) updated to "${bulkStatus}"`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("Failed to update quotes");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => deleteQuote.mutateAsync(id)));
+      toast.success(`${selectedIds.size} quote(s) deleted`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("Failed to delete quotes");
+    }
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
