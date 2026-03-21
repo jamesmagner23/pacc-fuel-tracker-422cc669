@@ -144,6 +144,9 @@ export default function ClientPricingTab() {
         </div>
       </div>
 
+      {/* Auto-import from SpeedSol */}
+      <ImportSpeedsolClients existingSpeedsolNames={clients.map((c) => (c as any).speedsol_name).filter(Boolean)} />
+
       {/* Add / Edit form */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
