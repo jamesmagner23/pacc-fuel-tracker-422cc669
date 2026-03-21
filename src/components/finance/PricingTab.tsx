@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { format, parseISO, addDays } from "date-fns";
 import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown } from "lucide-react";
 import jsPDF from "jspdf";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import {
   usePricingTiers,
@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 const GST_RATE = 0.1;
 
 export default function PricingTab() {
+  const queryClient = useQueryClient();
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { data: tiers = [], isLoading: tiersLoading } = usePricingTiers();
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
@@ -89,6 +90,7 @@ export default function PricingTab() {
         contact_phone: phone || null,
       });
       if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["client-accounts"] });
       toast.success("Client saved to accounts");
     } catch {
       toast.error("Failed to save client");
