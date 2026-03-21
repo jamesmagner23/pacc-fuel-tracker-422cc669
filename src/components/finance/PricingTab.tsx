@@ -537,6 +537,13 @@ export default function PricingTab() {
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    onClick={() => handleDuplicateQuote(q)}
+                    title="Duplicate quote"
+                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                  <button
                     onClick={() => generateQuotePdf(q)}
                     title="Download PDF"
                     className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
