@@ -519,6 +519,13 @@ export default function PricingTab() {
                     <div className="text-[10px] text-muted-foreground">inc GST</div>
                   </div>
                   <button
+                    onClick={() => setEditingQuote(q)}
+                    title="Edit quote"
+                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
                     onClick={() => generateQuotePdf(q)}
                     title="Download PDF"
                     className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
@@ -545,6 +552,10 @@ export default function PricingTab() {
           </div>
         )}
       </div>
+
+      {editingQuote && (
+        <QuoteEditModal quote={editingQuote} onClose={() => setEditingQuote(null)} />
+      )}
     </div>
   );
 }
