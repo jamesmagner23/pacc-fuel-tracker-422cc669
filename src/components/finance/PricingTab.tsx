@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 const GST_RATE = 0.1;
 
 export default function PricingTab() {
+  const queryClient = useQueryClient();
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { data: tiers = [], isLoading: tiersLoading } = usePricingTiers();
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
