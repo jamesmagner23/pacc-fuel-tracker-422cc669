@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { format, parseISO, addDays } from "date-fns";
-import { Send, Trash2, FileText, Plus, Settings2 } from "lucide-react";
+import { Send, Trash2, FileText, Plus, Settings2, Download } from "lucide-react";
+import jsPDF from "jspdf";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import {
   usePricingTiers,
