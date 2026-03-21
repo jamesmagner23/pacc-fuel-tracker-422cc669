@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import ImportSpeedsolClients from "./ImportSpeedsolClients";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
@@ -22,7 +23,7 @@ export default function ClientPricingTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_accounts")
-        .select("id, company_name, contact_email, contact_phone")
+        .select("id, company_name, contact_email, contact_phone, speedsol_name")
         .eq("is_active", true)
         .order("company_name");
       if (error) throw error;
@@ -142,6 +143,9 @@ export default function ClientPricingTab() {
           <div className="text-[11px] text-muted-foreground mt-0.5">clients without pricing</div>
         </div>
       </div>
+
+      {/* Auto-import from SpeedSol */}
+      <ImportSpeedsolClients existingSpeedsolNames={clients.map((c) => (c as any).speedsol_name).filter(Boolean)} />
 
       {/* Add / Edit form */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
@@ -294,7 +298,7 @@ export default function ClientPricingTab() {
                       return (
                         <Cell
                           key={i}
-                          fill={isAbove ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.4)"}
+                          fill={isAbove ? "hsl(var(--primary))" : "hsl(220 15% 45%)"}
                         />
                       );
                     })}
@@ -307,7 +311,7 @@ export default function ClientPricingTab() {
               <span className="w-2.5 h-2.5 rounded-sm bg-primary inline-block" /> ≥ Avg margin
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/40 inline-block" /> Below avg
+              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: "hsl(220 15% 45%)" }} /> Below avg
             </span>
           </div>
         </div>
