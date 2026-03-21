@@ -54,13 +54,17 @@ export default function PricingTab() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [quoteSearch, setQuoteSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState("sent");
   const updateQuoteStatus = useUpdateQuoteStatus();
 
   const filteredQuotes = useMemo(
-    () => quotes.filter(q => statusFilter === "all" || q.status === statusFilter),
-    [quotes, statusFilter]
+    () => quotes.filter(q =>
+      (statusFilter === "all" || q.status === statusFilter) &&
+      (!quoteSearch || q.customer_name.toLowerCase().includes(quoteSearch.toLowerCase()))
+    ),
+    [quotes, statusFilter, quoteSearch]
   );
 
   const toggleSelect = (id: string) => {
@@ -544,9 +548,17 @@ export default function PricingTab() {
 
       {/* Quote history */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-3.5">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-            Quotes ({statusFilter === "all" ? quotes.length : quotes.filter(q => q.status === statusFilter).length})
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3.5">
+          <div className="flex items-center gap-2">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+              Quotes ({filteredQuotes.length})
+            </div>
+            <input
+              value={quoteSearch}
+              onChange={(e) => setQuoteSearch(e.target.value)}
+              placeholder="Search customer…"
+              className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-2.5 py-1 text-[11px] outline-none w-36"
+            />
           </div>
           <div className="flex gap-1">
             {["all", "draft", "sent", "accepted", "rejected", "expired"].map((s) => (
