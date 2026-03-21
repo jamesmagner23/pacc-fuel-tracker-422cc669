@@ -93,18 +93,18 @@ function PLOverview() {
       pct: null,
     },
     {
-      label: "Profit (Markup)",
-      value: "$" + profit.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${rangeLabel} · revenue minus cost`,
+      label: "Gross Profit",
+      value: "$" + grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 }),
+      sub: `${rangeLabel} · blended margin ${blendedMargin.toFixed(1)}%`,
       pct: null,
-      positive: profit >= 0,
+      positive: grossProfit >= 0,
     },
     {
-      label: "Profit Margin",
-      value: profitMargin.toFixed(1) + "%",
-      sub: "Profit ÷ revenue",
+      label: "Gross Margin",
+      value: grossMargin.toFixed(1) + "%",
+      sub: "GP ÷ revenue",
       pct: null,
-      positive: profitMargin >= 0,
+      positive: grossMargin >= 0,
     },
   ];
 
