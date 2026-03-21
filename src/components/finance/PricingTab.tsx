@@ -422,6 +422,8 @@ export default function PricingTab() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] text-muted-foreground">Valid For (Days)</label>
             <input value={validDays} onChange={(e) => setValidDays(e.target.value)} type="number" className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
           </div>
           <div className="flex flex-col gap-1.5">
