@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { format, parseISO, addDays } from "date-fns";
-import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil } from "lucide-react";
+import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil, Copy } from "lucide-react";
 import jsPDF from "jspdf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
