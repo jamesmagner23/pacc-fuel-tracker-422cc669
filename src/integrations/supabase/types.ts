@@ -51,6 +51,7 @@ export type Database = {
           created_at: string | null
           id: number
           is_active: boolean | null
+          speedsol_name: string | null
           updated_at: string | null
         }
         Insert: {
@@ -62,6 +63,7 @@ export type Database = {
           created_at?: string | null
           id?: never
           is_active?: boolean | null
+          speedsol_name?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -73,6 +75,7 @@ export type Database = {
           created_at?: string | null
           id?: never
           is_active?: boolean | null
+          speedsol_name?: string | null
           updated_at?: string | null
         }
         Relationships: []

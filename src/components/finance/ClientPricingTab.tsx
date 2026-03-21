@@ -294,7 +294,7 @@ export default function ClientPricingTab() {
                       return (
                         <Cell
                           key={i}
-                          fill={isAbove ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.4)"}
+                          fill={isAbove ? "hsl(var(--primary))" : "hsl(220 15% 45%)"}
                         />
                       );
                     })}
