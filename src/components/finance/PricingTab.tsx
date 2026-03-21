@@ -12,6 +12,7 @@ import {
   useDeleteQuote,
   getTierForVolume,
   type PricingTier,
+  type Quote,
 } from "@/hooks/useQuotes";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
