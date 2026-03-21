@@ -271,3 +271,65 @@
     letter-spacing: -0.03em;
   }
 }
+
+/* Receipt printer optimised print styles */
+@media print {
+  /* Hide app shell */
+  nav, header, .print\\:hidden, [class*="print:hidden"] {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Thermal receipt: narrow page, no margins */
+  @page {
+    size: 80mm auto;
+    margin: 2mm;
+  }
+
+  /* Reset docket card for receipt output */
+  #docket {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 2mm !important;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+
+  #docket h1 {
+    font-size: 14px !important;
+  }
+
+  #docket table {
+    font-size: 10px !important;
+  }
+
+  #docket .grid-cols-2 {
+    gap: 2mm !important;
+  }
+
+  /* Smaller QR for receipt */
+  #docket svg[class*="qr"], #docket svg {
+    max-width: 48px !important;
+    max-height: 48px !important;
+  }
+
+  /* Compact signature lines */
+  #docket .mt-10 {
+    margin-top: 4mm !important;
+  }
+
+  /* Ensure everything fits on receipt width */
+  * {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+}
