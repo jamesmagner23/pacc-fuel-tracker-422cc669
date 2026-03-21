@@ -48,7 +48,9 @@ export default function DeliveryDocket() {
   if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
   if (!txn) return <div className="p-8 text-muted-foreground">Transaction not found.</div>;
 
+  const docketUrl = window.location.href;
   const deliveryDate = format(parseISO(txn.fecha), "dd MMMM yyyy");
+  const deliveryTime = format(parseISO(txn.fecha), "HH:mm");
   const deliveryTime = format(parseISO(txn.fecha), "HH:mm");
 
   return (
