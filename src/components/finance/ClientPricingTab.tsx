@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import ImportSpeedsolClients from "./ImportSpeedsolClients";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
