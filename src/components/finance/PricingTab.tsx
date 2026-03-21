@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { format, parseISO, addDays } from "date-fns";
-import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil } from "lucide-react";
+import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil, Copy } from "lucide-react";
 import jsPDF from "jspdf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
@@ -249,6 +249,17 @@ export default function PricingTab() {
     doc.text("PACC Fuel · Melbourne, Australia", margin, y);
 
     doc.save(`PACC-Quote-${q.customer_name.replace(/\s+/g, "-")}-${format(parseISO(q.created_at), "yyyyMMdd")}.pdf`);
+  };
+
+  const handleDuplicateQuote = (q: Quote) => {
+    setName(q.customer_name);
+    setEmail(q.customer_email);
+    setPhone(q.customer_phone || "");
+    setVolume(String(q.volume_litres));
+    setNotes(q.notes || "");
+    toast.info("Quote duplicated — edit details and create a new one");
+    // Scroll to quote builder
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSendQuote = async (quoteId: string) => {
@@ -524,6 +535,13 @@ export default function PricingTab() {
                     className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDuplicateQuote(q)}
+                    title="Duplicate quote"
+                    className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => generateQuotePdf(q)}
