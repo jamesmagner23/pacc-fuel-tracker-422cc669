@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
 import {
   useCustomerPricing,
   useUpsertCustomerPricing,
@@ -312,6 +312,78 @@ export default function ClientPricingTab() {
           </div>
         </div>
       )}
+
+      {/* Volume tier distribution pie chart */}
+      {pricingWithClients.length > 0 && (() => {
+        const TIER_COLORS = [
+          "hsl(var(--primary))",
+          "hsl(260 60% 55%)",
+          "hsl(200 70% 50%)",
+          "hsl(170 60% 45%)",
+          "hsl(45 80% 55%)",
+          "hsl(25 75% 55%)",
+          "hsl(350 65% 50%)",
+        ];
+        const tierCounts = VOLUME_TIERS.map((tier, idx) => ({
+          name: `${tier}L`,
+          value: pricingWithClients.filter((p) => p.weekly_volume_tier === tier).length,
+          color: TIER_COLORS[idx % TIER_COLORS.length],
+        })).filter((t) => t.value > 0);
+
+        return (
+          <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">
+              Volume Tier Distribution
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="h-48 w-48 sm:h-52 sm:w-52 flex-shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={tierCounts}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={75}
+                      paddingAngle={2}
+                      stroke="none"
+                    >
+                      {tierCounts.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--background))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 11,
+                      }}
+                      formatter={(value: number, name: string) => [
+                        `${value} client${value !== 1 ? "s" : ""}`,
+                        name,
+                      ]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                {tierCounts.map((t) => (
+                  <span key={t.name} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <span
+                      className="w-2.5 h-2.5 rounded-sm inline-block flex-shrink-0"
+                      style={{ backgroundColor: t.color }}
+                    />
+                    {t.name} ({t.value})
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Client pricing list */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
