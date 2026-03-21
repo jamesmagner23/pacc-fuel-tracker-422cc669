@@ -348,9 +348,32 @@ export default function PricingTab() {
           Create Quote
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1.5 relative" ref={dropdownRef}>
             <label className="text-[11px] text-muted-foreground">Customer Name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. ABC Transport" className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+            <div className="relative">
+              <input
+                value={name}
+                onChange={(e) => { setName(e.target.value); setShowClientDropdown(true); }}
+                onFocus={() => setShowClientDropdown(true)}
+                placeholder="Search or type new…"
+                className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full pr-8"
+              />
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+            {showClientDropdown && filteredClients.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-surface-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                {filteredClients.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => selectClient(c)}
+                    className="w-full text-left px-3 py-2 bg-transparent border-none cursor-pointer hover:bg-muted transition-colors"
+                  >
+                    <div className="text-[13px] text-foreground font-medium">{c.company_name}</div>
+                    <div className="text-[10px] text-muted-foreground">{c.contact_email}{c.contact_phone ? ` · ${c.contact_phone}` : ""}</div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] text-muted-foreground">Email *</label>
