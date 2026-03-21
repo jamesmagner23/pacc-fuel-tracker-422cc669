@@ -7,8 +7,10 @@ import { useTransactions, usePreviousTransactions } from "@/hooks/useTransaction
 import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice } from "@/hooks/useBuyPrices";
 import { toast } from "sonner";
 import PricingTab from "@/components/finance/PricingTab";
+import ClientPricingTab from "@/components/finance/ClientPricingTab";
+import { useCustomerPricing, getBlendedMargin } from "@/hooks/useCustomerPricing";
 
-const tabs = ["P&L Overview", "Buy Price", "Pricing"] as const;
+const tabs = ["P&L Overview", "Buy Price", "Client Pricing", "Pricing"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function Finance() {
