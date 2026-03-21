@@ -46,6 +46,32 @@ export default function PricingTab() {
   const [volume, setVolume] = useState("");
   const [notes, setNotes] = useState("");
   const [validDays, setValidDays] = useState("7");
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowClientDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filteredClients = clients.filter((c) =>
+    c.company_name.toLowerCase().includes((clientSearch || name).toLowerCase())
+  );
+
+  const selectClient = (client: typeof clients[0]) => {
+    setName(client.company_name);
+    setEmail(client.contact_email || "");
+    setPhone(client.contact_phone || "");
+    setShowClientDropdown(false);
+    setClientSearch("");
+  };
 
   // Tier editing
   const [editTierName, setEditTierName] = useState("");
