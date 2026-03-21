@@ -234,6 +234,85 @@ export default function ClientPricingTab() {
         )}
       </div>
 
+      {/* Margin distribution chart */}
+      {pricingWithClients.length > 0 && (
+        <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">
+            Margin Distribution by Client
+          </div>
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={pricingWithClients
+                  .slice()
+                  .sort((a, b) => b.margin_percent - a.margin_percent)
+                  .map((p) => ({
+                    name: p.client_name.length > 12 ? p.client_name.slice(0, 12) + "…" : p.client_name,
+                    fullName: p.client_name,
+                    margin: p.margin_percent,
+                    tier: p.weekly_volume_tier,
+                    terms: p.payment_terms,
+                  }))}
+                margin={{ top: 4, right: 8, bottom: 4, left: 0 }}
+              >
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  unit="%"
+                  width={36}
+                />
+                <Tooltip
+                  cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
+                  contentStyle={{
+                    background: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: 8,
+                    fontSize: 11,
+                  }}
+                  formatter={(value: number) => [`${value}%`, "Margin"]}
+                  labelFormatter={(_label, payload) => {
+                    const item = payload?.[0]?.payload;
+                    if (!item) return _label;
+                    return `${item.fullName} · ${item.tier}L/wk · ${item.terms}`;
+                  }}
+                />
+                <Bar dataKey="margin" radius={[4, 4, 0, 0]}>
+                  {pricingWithClients
+                    .slice()
+                    .sort((a, b) => b.margin_percent - a.margin_percent)
+                    .map((_, i) => {
+                      const avg = pricing.reduce((s, p) => s + p.margin_percent, 0) / pricing.length;
+                      const sorted = pricingWithClients.slice().sort((a, b) => b.margin_percent - a.margin_percent);
+                      const isAbove = sorted[i]?.margin_percent >= avg;
+                      return (
+                        <Cell
+                          key={i}
+                          fill={isAbove ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.4)"}
+                        />
+                      );
+                    })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm bg-primary inline-block" /> ≥ Avg margin
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-sm bg-muted-foreground/40 inline-block" /> Below avg
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Client pricing list */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3.5">
