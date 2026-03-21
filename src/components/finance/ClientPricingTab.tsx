@@ -283,7 +283,7 @@ export default function ClientPricingTab() {
                     return `${item.fullName} · ${item.tier}L/wk · ${item.terms}`;
                   }}
                 />
-                <Bar dataKey="margin" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="margin" radius={[4, 4, 0, 0]} maxBarSize={60}>
                   {pricingWithClients
                     .slice()
                     .sort((a, b) => b.margin_percent - a.margin_percent)
