@@ -251,6 +251,17 @@ export default function PricingTab() {
     doc.save(`PACC-Quote-${q.customer_name.replace(/\s+/g, "-")}-${format(parseISO(q.created_at), "yyyyMMdd")}.pdf`);
   };
 
+  const handleDuplicateQuote = (q: Quote) => {
+    setName(q.customer_name);
+    setEmail(q.customer_email);
+    setPhone(q.customer_phone || "");
+    setVolume(String(q.volume_litres));
+    setNotes(q.notes || "");
+    toast.info("Quote duplicated — edit details and create a new one");
+    // Scroll to quote builder
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleSendQuote = async (quoteId: string) => {
     try {
       const { error } = await supabase.functions.invoke("send-quote", { body: { quote_id: quoteId } });
