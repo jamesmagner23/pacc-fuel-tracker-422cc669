@@ -51,7 +51,6 @@ export default function DeliveryDocket() {
   const docketUrl = window.location.href;
   const deliveryDate = format(parseISO(txn.fecha), "dd MMMM yyyy");
   const deliveryTime = format(parseISO(txn.fecha), "HH:mm");
-  const deliveryTime = format(parseISO(txn.fecha), "HH:mm");
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
