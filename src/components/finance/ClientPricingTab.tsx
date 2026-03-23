@@ -96,6 +96,7 @@ export default function ClientPricingTab() {
     setEditingId(p.client_account_id);
     setShowAdd(true);
     setCreatingNew(false);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
   };
 
   const handleSave = async () => {
