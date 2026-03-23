@@ -209,19 +209,54 @@ export default function ClientPricingTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] text-muted-foreground">Client *</label>
-                <select
-                  value={formClientId}
-                  onChange={(e) => setFormClientId(e.target.value ? Number(e.target.value) : "")}
-                  className={selectClass}
-                  disabled={!!editingId}
-                >
-                  <option value="">Select client…</option>
-                  {(editingId ? clients : unassignedClients).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.company_name}
-                    </option>
-                  ))}
-                </select>
+                {creatingNew ? (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="text"
+                      placeholder="Company name"
+                      value={newCompanyName}
+                      onChange={(e) => setNewCompanyName(e.target.value)}
+                      className={inputClass}
+                    />
+                    <input
+                      type="email"
+                      placeholder="Contact email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      className={inputClass}
+                    />
+                    <button
+                      onClick={() => { setCreatingNew(false); setNewCompanyName(""); setNewEmail(""); }}
+                      className="text-[11px] text-muted-foreground hover:text-foreground self-start"
+                    >
+                      ← Back to select
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <select
+                      value={formClientId}
+                      onChange={(e) => setFormClientId(e.target.value ? Number(e.target.value) : "")}
+                      className={selectClass}
+                      disabled={!!editingId}
+                    >
+                      <option value="">Select client…</option>
+                      {(editingId ? clients : unassignedClients).map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.company_name}
+                        </option>
+                      ))}
+                    </select>
+                    {!editingId && (
+                      <button
+                        onClick={() => { setCreatingNew(true); setFormClientId(""); }}
+                        className="text-[11px] text-primary hover:text-primary/80 self-start flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" /> Create new client
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] text-muted-foreground">Margin % *</label>
