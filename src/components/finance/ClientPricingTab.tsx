@@ -193,7 +193,7 @@ export default function ClientPricingTab() {
       <ImportSpeedsolClients existingSpeedsolNames={clients.map((c) => (c as any).speedsol_name).filter(Boolean)} />
 
       {/* Add / Edit form */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+      <div ref={formRef} className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
             {editingId ? "Edit Client Pricing" : "Add Client Pricing"}
