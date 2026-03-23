@@ -90,6 +90,10 @@ export default function PLOverview() {
       .sort((a, b) => b.revenue - a.revenue);
   }, [filtered, clients, customerPricing, latestBuyPrice]);
 
+  if (isLoading) {
+    return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
+  }
+
   const kpis = [
     {
       label: "Revenue",
