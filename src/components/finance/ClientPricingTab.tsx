@@ -83,6 +83,7 @@ export default function ClientPricingTab() {
     setCreatingNew(false);
     setNewCompanyName("");
     setNewEmail("");
+    setNewPhone("");
   };
 
   const handleEdit = (p: CustomerPricing & { client_name: string }) => {
