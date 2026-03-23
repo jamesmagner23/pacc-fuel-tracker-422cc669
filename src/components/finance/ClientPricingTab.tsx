@@ -121,7 +121,7 @@ export default function ClientPricingTab() {
       try {
         const { data: newClient, error } = await supabase
           .from("client_accounts")
-          .insert({ company_name: name, contact_email: email })
+          .insert({ company_name: name, contact_email: email, contact_phone: newPhone.trim() || null })
           .select("id")
           .single();
         if (error) throw error;
