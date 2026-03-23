@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import ImportSpeedsolClients from "./ImportSpeedsolClients";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
