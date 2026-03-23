@@ -153,11 +153,29 @@ export default function PricingTab() {
   };
 
   // Tier editing
+  const [editingTierId, setEditingTierId] = useState<string | null>(null);
   const [editTierName, setEditTierName] = useState("");
   const [editMin, setEditMin] = useState("");
   const [editMax, setEditMax] = useState("");
   const [editMargin, setEditMargin] = useState("");
 
+  const handleEditTier = (t: PricingTier) => {
+    setEditingTierId(t.id);
+    setEditTierName(t.tier_name);
+    setEditMin(String(t.min_litres));
+    setEditMax(t.max_litres ? String(t.max_litres) : "");
+    setEditMargin(String(t.margin_percent));
+    setShowTierConfig(true);
+  };
+
+  const resetTierForm = () => {
+    setEditingTierId(null);
+    setEditTierName("");
+    setEditMin("");
+    setEditMax("");
+    setEditMargin("");
+  };
+  
   const vol = parseFloat(volume) || 0;
   const matchedTier = useMemo(() => getTierForVolume(tiers, vol), [tiers, vol]);
   const marginPct = matchedTier?.margin_percent ?? 10;
