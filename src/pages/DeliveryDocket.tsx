@@ -118,63 +118,24 @@ export default function DeliveryDocket() {
           </div>
         </div>
 
-        {/* Product table */}
+        {/* Delivery summary */}
         <div className="border border-gray-200 rounded-lg overflow-hidden mb-8">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                 <th className="px-4 py-3">Product</th>
                 <th className="px-4 py-3 text-right">Litres</th>
-                <th className="px-4 py-3 text-right">Price/L</th>
-                <th className="px-4 py-3 text-right">Total</th>
+                <th className="px-4 py-3">Asset / Plant</th>
               </tr>
             </thead>
             <tbody>
               <tr className="border-t border-gray-100">
                 <td className="px-4 py-3 font-medium text-gray-900">{txn.producto || "Diesel"}</td>
-                <td className="px-4 py-3 text-right font-medium text-gray-900">{(txn.cantidad || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                <td className="px-4 py-3 text-right text-gray-700">${(txn.ppu || 0).toFixed(4)}</td>
-                <td className="px-4 py-3 text-right font-bold text-gray-900">${(txn.dinero_total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td className="px-4 py-3 text-right font-bold text-gray-900">{(txn.cantidad || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td className="px-4 py-3 text-gray-700">{txn.placa || txn.identificador_cliente1 || "—"}</td>
               </tr>
             </tbody>
           </table>
-        </div>
-
-        {/* Meter readings */}
-        {txn.totalizador_bruto != null && (
-          <div className="bg-gray-50 rounded-lg p-4 mb-8">
-            <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Meter Reading</h3>
-            <div className="flex gap-8">
-              <div>
-                <p className="text-xs text-gray-500">Totaliser (Gross)</p>
-                <p className="text-sm font-semibold text-gray-900">{txn.totalizador_bruto.toLocaleString()}</p>
-              </div>
-              {txn.cantidad_neta != null && (
-                <div>
-                  <p className="text-xs text-gray-500">Net Quantity</p>
-                  <p className="text-sm font-semibold text-gray-900">{txn.cantidad_neta.toLocaleString()}</p>
-                </div>
-              )}
-              {txn.surtidor && (
-                <div>
-                  <p className="text-xs text-gray-500">Dispenser</p>
-                  <p className="text-sm font-semibold text-gray-900">{txn.surtidor}{txn.manguera ? ` / ${txn.manguera}` : ""}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="border-t border-gray-200 pt-6 flex items-end justify-between">
-          <div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Payment Method</p>
-            <p className="text-sm text-gray-700">{txn.forma_de_pago || "Account"}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-1">Amount Due</p>
-            <p className="text-2xl font-bold text-gray-900">${(txn.dinero_total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          </div>
         </div>
 
         {/* Signature lines for print */}
