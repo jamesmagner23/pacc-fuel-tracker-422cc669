@@ -35,6 +35,7 @@ export default function ClientPricingTab() {
 
   const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
 
+  const formRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showAdd, setShowAdd] = useState(false);
