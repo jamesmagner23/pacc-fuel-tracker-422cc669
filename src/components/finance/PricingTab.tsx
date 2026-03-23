@@ -428,21 +428,36 @@ export default function PricingTab() {
               Manage Tiers
             </div>
             {tiers.map((t) => (
-              <div key={t.id} className="flex items-center justify-between py-1.5 text-[12px] text-foreground">
-                <span>{t.tier_name} — {t.min_litres}L{t.max_litres ? `–${t.max_litres}L` : "+"} @ {t.margin_percent}%</span>
-                <button onClick={() => deleteTier.mutate(t.id)} className="bg-transparent border-none text-muted-foreground hover:text-destructive cursor-pointer p-1">
-                  <Trash2 className="w-3 h-3" />
-                </button>
+              <div key={t.id} className={`flex items-center justify-between py-1.5 text-[12px] text-foreground rounded px-1 ${editingTierId === t.id ? "bg-primary/10" : ""}`}>
+                <span>{t.tier_name} — {t.min_litres.toLocaleString()}L{t.max_litres ? `–${t.max_litres.toLocaleString()}L` : "+"} @ {t.margin_percent}%</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => handleEditTier(t)} className="bg-transparent border-none text-muted-foreground hover:text-foreground cursor-pointer p-1">
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => deleteTier.mutate(t.id)} className="bg-transparent border-none text-muted-foreground hover:text-destructive cursor-pointer p-1">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             ))}
-            <div className="flex flex-col sm:flex-row gap-2 mt-3">
+            <div className="text-[10px] text-muted-foreground mt-3 mb-1.5">
+              {editingTierId ? "Edit Tier" : "Add New Tier"}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
               <input placeholder="Tier name" value={editTierName} onChange={(e) => setEditTierName(e.target.value)} className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none w-full sm:w-28" />
               <input placeholder="Min L" type="number" value={editMin} onChange={(e) => setEditMin(e.target.value)} className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none w-full sm:w-20" />
               <input placeholder="Max L" type="number" value={editMax} onChange={(e) => setEditMax(e.target.value)} className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none w-full sm:w-20" />
               <input placeholder="Margin %" type="number" value={editMargin} onChange={(e) => setEditMargin(e.target.value)} className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none w-full sm:w-20" />
-              <button onClick={handleAddTier} className="bg-primary text-primary-foreground border-none rounded-full px-4 py-2 text-[11px] font-semibold cursor-pointer flex items-center gap-1 whitespace-nowrap">
-                <Plus className="w-3 h-3" /> Add
-              </button>
+              <div className="flex gap-1.5">
+                <button onClick={handleAddTier} className="bg-primary text-primary-foreground border-none rounded-full px-4 py-2 text-[11px] font-semibold cursor-pointer flex items-center gap-1 whitespace-nowrap">
+                  {editingTierId ? <><Pencil className="w-3 h-3" /> Update</> : <><Plus className="w-3 h-3" /> Add</>}
+                </button>
+                {editingTierId && (
+                  <button onClick={resetTierForm} className="bg-transparent text-muted-foreground border border-surface-border rounded-full px-3 py-2 text-[11px] cursor-pointer whitespace-nowrap">
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
