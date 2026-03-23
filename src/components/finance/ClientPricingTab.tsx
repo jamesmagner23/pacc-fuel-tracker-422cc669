@@ -38,6 +38,9 @@ export default function ClientPricingTab() {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
 
   // Form state
   const [formClientId, setFormClientId] = useState<number | "">("");
