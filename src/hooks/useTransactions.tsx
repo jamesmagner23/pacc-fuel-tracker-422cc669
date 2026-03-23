@@ -37,9 +37,12 @@ function getDateRange(range: DateRange): { start: string; end: string } {
     case "today":
       start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       break;
-    case "week":
-      start = subDays(today, 7);
+    case "week": {
+      const day = today.getDay(); // 0=Sun,1=Mon,...
+      const diffToMonday = day === 0 ? 6 : day - 1;
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToMonday);
       break;
+    }
     case "month":
     default:
       start = subDays(today, 30);
