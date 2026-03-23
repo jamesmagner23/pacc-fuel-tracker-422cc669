@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import ImportSpeedsolClients from "./ImportSpeedsolClients";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -35,6 +35,7 @@ export default function ClientPricingTab() {
 
   const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
 
+  const formRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -95,6 +96,7 @@ export default function ClientPricingTab() {
     setEditingId(p.client_account_id);
     setShowAdd(true);
     setCreatingNew(false);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
   };
 
   const handleSave = async () => {
@@ -191,7 +193,7 @@ export default function ClientPricingTab() {
       <ImportSpeedsolClients existingSpeedsolNames={clients.map((c) => (c as any).speedsol_name).filter(Boolean)} />
 
       {/* Add / Edit form */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+      <div ref={formRef} className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
             {editingId ? "Edit Client Pricing" : "Add Client Pricing"}
