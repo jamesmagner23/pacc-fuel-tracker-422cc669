@@ -352,16 +352,14 @@ export default function PricingTab() {
     }
     try {
       await upsertTier.mutateAsync({
+        ...(editingTierId ? { id: editingTierId } : {}),
         tier_name: editTierName,
         min_litres: min,
         max_litres: editMax ? parseFloat(editMax) : null,
         margin_percent: margin,
       });
-      toast.success("Tier saved");
-      setEditTierName("");
-      setEditMin("");
-      setEditMax("");
-      setEditMargin("");
+      toast.success(editingTierId ? "Tier updated" : "Tier saved");
+      resetTierForm();
     } catch {
       toast.error("Failed to save tier");
     }
