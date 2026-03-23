@@ -38,6 +38,9 @@ export default function ClientPricingTab() {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
 
   // Form state
   const [formClientId, setFormClientId] = useState<number | "">("");
@@ -76,6 +79,9 @@ export default function ClientPricingTab() {
     setFormNotes("");
     setEditingId(null);
     setShowAdd(false);
+    setCreatingNew(false);
+    setNewCompanyName("");
+    setNewEmail("");
   };
 
   const handleEdit = (p: CustomerPricing & { client_name: string }) => {
@@ -86,17 +92,52 @@ export default function ClientPricingTab() {
     setFormNotes(p.notes || "");
     setEditingId(p.client_account_id);
     setShowAdd(true);
+    setCreatingNew(false);
   };
 
   const handleSave = async () => {
     const margin = parseFloat(formMargin);
-    if (!formClientId || isNaN(margin)) {
-      toast.error("Select a client and enter a valid margin");
-      return;
+
+    let clientId = formClientId as number;
+
+    // If creating a new client, insert into client_accounts first
+    if (creatingNew) {
+      const name = newCompanyName.trim();
+      const email = newEmail.trim();
+      if (!name) {
+        toast.error("Enter a company name");
+        return;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast.error("Enter a valid email");
+        return;
+      }
+      if (isNaN(margin)) {
+        toast.error("Enter a valid margin");
+        return;
+      }
+      try {
+        const { data: newClient, error } = await supabase
+          .from("client_accounts")
+          .insert({ company_name: name, contact_email: email })
+          .select("id")
+          .single();
+        if (error) throw error;
+        clientId = newClient.id;
+      } catch {
+        toast.error("Failed to create client");
+        return;
+      }
+    } else {
+      if (!formClientId || isNaN(margin)) {
+        toast.error("Select a client and enter a valid margin");
+        return;
+      }
     }
+
     try {
       await upsert.mutateAsync({
-        client_account_id: formClientId as number,
+        client_account_id: clientId,
         margin_percent: margin,
         payment_terms: formTerms,
         weekly_volume_tier: formTier,
@@ -168,19 +209,54 @@ export default function ClientPricingTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] text-muted-foreground">Client *</label>
-                <select
-                  value={formClientId}
-                  onChange={(e) => setFormClientId(e.target.value ? Number(e.target.value) : "")}
-                  className={selectClass}
-                  disabled={!!editingId}
-                >
-                  <option value="">Select client…</option>
-                  {(editingId ? clients : unassignedClients).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.company_name}
-                    </option>
-                  ))}
-                </select>
+                {creatingNew ? (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="text"
+                      placeholder="Company name"
+                      value={newCompanyName}
+                      onChange={(e) => setNewCompanyName(e.target.value)}
+                      className={inputClass}
+                    />
+                    <input
+                      type="email"
+                      placeholder="Contact email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      className={inputClass}
+                    />
+                    <button
+                      onClick={() => { setCreatingNew(false); setNewCompanyName(""); setNewEmail(""); }}
+                      className="text-[11px] text-muted-foreground hover:text-foreground self-start"
+                    >
+                      ← Back to select
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <select
+                      value={formClientId}
+                      onChange={(e) => setFormClientId(e.target.value ? Number(e.target.value) : "")}
+                      className={selectClass}
+                      disabled={!!editingId}
+                    >
+                      <option value="">Select client…</option>
+                      {(editingId ? clients : unassignedClients).map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.company_name}
+                        </option>
+                      ))}
+                    </select>
+                    {!editingId && (
+                      <button
+                        onClick={() => { setCreatingNew(true); setFormClientId(""); }}
+                        className="text-[11px] text-primary hover:text-primary/80 self-start flex items-center gap-1"
+                      >
+                        <Plus className="w-3 h-3" /> Create new client
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] text-muted-foreground">Margin % *</label>
