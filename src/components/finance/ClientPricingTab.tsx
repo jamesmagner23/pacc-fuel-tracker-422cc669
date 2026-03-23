@@ -79,6 +79,9 @@ export default function ClientPricingTab() {
     setFormNotes("");
     setEditingId(null);
     setShowAdd(false);
+    setCreatingNew(false);
+    setNewCompanyName("");
+    setNewEmail("");
   };
 
   const handleEdit = (p: CustomerPricing & { client_name: string }) => {
@@ -89,17 +92,52 @@ export default function ClientPricingTab() {
     setFormNotes(p.notes || "");
     setEditingId(p.client_account_id);
     setShowAdd(true);
+    setCreatingNew(false);
   };
 
   const handleSave = async () => {
     const margin = parseFloat(formMargin);
-    if (!formClientId || isNaN(margin)) {
-      toast.error("Select a client and enter a valid margin");
-      return;
+
+    let clientId = formClientId as number;
+
+    // If creating a new client, insert into client_accounts first
+    if (creatingNew) {
+      const name = newCompanyName.trim();
+      const email = newEmail.trim();
+      if (!name) {
+        toast.error("Enter a company name");
+        return;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        toast.error("Enter a valid email");
+        return;
+      }
+      if (isNaN(margin)) {
+        toast.error("Enter a valid margin");
+        return;
+      }
+      try {
+        const { data: newClient, error } = await supabase
+          .from("client_accounts")
+          .insert({ company_name: name, contact_email: email })
+          .select("id")
+          .single();
+        if (error) throw error;
+        clientId = newClient.id;
+      } catch {
+        toast.error("Failed to create client");
+        return;
+      }
+    } else {
+      if (!formClientId || isNaN(margin)) {
+        toast.error("Select a client and enter a valid margin");
+        return;
+      }
     }
+
     try {
       await upsert.mutateAsync({
-        client_account_id: formClientId as number,
+        client_account_id: clientId,
         margin_percent: margin,
         payment_terms: formTerms,
         weekly_volume_tier: formTier,
