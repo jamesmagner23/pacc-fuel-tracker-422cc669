@@ -27,30 +27,11 @@ export default function PLOverview() {
     },
   });
 
-  if (isLoading) {
-    return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
-  }
-
   const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
-
-  // Actual data from SpeedSol
-  const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const totalRevenue = filtered.reduce((s, t) => s + (t.dinero_total || 0), 0);
-  const numDeliveries = filtered.length;
-  const totalCost = totalLitres * latestBuyPrice;
-  const grossProfit = totalRevenue - totalCost;
-  const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
-
-  const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevRevenue = previous.reduce((s, t) => s + (t.dinero_total || 0), 0);
-  const prevCost = prevLitres * latestBuyPrice;
-  const prevGrossProfit = prevRevenue - prevCost;
-
-  const pct = (c: number, p: number) => (p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100);
-  const rangeLabel = range === "today" ? "Today" : range === "week" ? "This Week" : "This Month";
 
   // Per-client breakdown using actual transaction data + individual margins
   const clientBreakdown = useMemo(() => {
+    if (isLoading) return [];
     // Build speedsol_name → client mapping
     const speedsolToClient = new Map<string, { id: number; name: string }>();
     clients.forEach((c) => {
