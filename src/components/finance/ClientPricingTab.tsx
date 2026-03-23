@@ -227,6 +227,13 @@ export default function ClientPricingTab() {
                       onChange={(e) => setNewEmail(e.target.value)}
                       className={inputClass}
                     />
+                    <input
+                      type="tel"
+                      placeholder="Phone (optional)"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      className={inputClass}
+                    />
                     <button
                       onClick={() => { setCreatingNew(false); setNewCompanyName(""); setNewEmail(""); }}
                       className="text-[11px] text-muted-foreground hover:text-foreground self-start"
