@@ -37,9 +37,12 @@ function getDateRange(range: DateRange): { start: string; end: string } {
     case "today":
       start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       break;
-    case "week":
-      start = subDays(today, 7);
+    case "week": {
+      const day = today.getDay(); // 0=Sun,1=Mon,...
+      const diffToMonday = day === 0 ? 6 : day - 1;
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - diffToMonday);
       break;
+    }
     case "month":
     default:
       start = subDays(today, 30);
@@ -54,7 +57,12 @@ function getPreviousRange(range: DateRange): { start: string; end: string } {
   let days: number;
   switch (range) {
     case "today": days = 1; break;
-    case "week": days = 7; break;
+    case "week": {
+      const day = today.getDay();
+      days = day === 0 ? 6 : day - 1; // days since Monday
+      if (days === 0) days = 7; // if today is Monday, previous period is last week
+      break;
+    }
     case "month": default: days = 30; break;
   }
   const end = subDays(today, days);

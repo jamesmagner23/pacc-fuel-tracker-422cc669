@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line,
@@ -10,6 +10,99 @@ import { format, parseISO } from "date-fns";
 import { Droplets, TrendingUp, TrendingDown } from "lucide-react";
 
 const PIE_COLORS = ["#7C3AED", "#A78BFA", "#C4B5FD", "#DDD6FE", "#EDE9FE", "#6D28D9"];
+
+function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: number }[] }) {
+  const [showPct, setShowPct] = useState(false);
+  const total = topCustomers.reduce((s, x) => s + x.litres, 0);
+
+  return (
+    <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-sm font-medium text-white">Top Customers</div>
+        <button
+          onClick={() => setShowPct((p) => !p)}
+          className="text-[10px] px-2 py-0.5 rounded-full border transition-colors"
+          style={{
+            borderColor: "#333",
+            color: "#999",
+            background: "transparent",
+            cursor: "pointer",
+          }}
+        >
+          {showPct ? "Show Litres" : "Show %"}
+        </button>
+      </div>
+      <div className="text-[11px] text-[#999999] mb-4">Volume share by customer</div>
+      <div className="flex items-center gap-4" style={{ height: 260 }}>
+        <div style={{ width: 180, height: "100%", flexShrink: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={topCustomers}
+                dataKey="litres"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                innerRadius={45}
+                strokeWidth={0}
+                label={({ cx, cy, midAngle, outerRadius, index }) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = outerRadius + 16;
+                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                  const entry = topCustomers[index];
+                  if (!entry) return null;
+                  const val = showPct
+                    ? `${total > 0 ? ((entry.litres / total) * 100).toFixed(0) : 0}%`
+                    : `${(entry.litres / 1000).toFixed(1)}k`;
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      fill="#ffffff"
+                      textAnchor={x > cx ? "start" : "end"}
+                      dominantBaseline="central"
+                      fontSize={10}
+                      fontWeight={500}
+                    >
+                      {val}
+                    </text>
+                  );
+                }}
+              >
+                {topCustomers.map((_, i) => (
+                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
+                formatter={(v: number) => {
+                  const pctVal = total > 0 ? ((v / total) * 100).toFixed(1) : "0";
+                  return [`${(v / 1000).toFixed(1)}k L (${pctVal}%)`, ""];
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex flex-col gap-2 min-w-0 flex-1">
+          {topCustomers.map((c, i) => {
+            const pctVal = total > 0 ? ((c.litres / total) * 100).toFixed(0) : "0";
+            return (
+              <div key={c.name} className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                <span className="text-xs text-[#ccc] truncate flex-1">{c.name}</span>
+                <span className="text-xs text-[#999] tabular-nums shrink-0">
+                  {showPct ? `${pctVal}%` : `${(c.litres / 1000).toFixed(1)}k L`}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Overview() {
   const { range } = useDateRange();
@@ -179,49 +272,7 @@ export default function Overview() {
       {/* BOTTOM TWO PANELS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-[1px] mt-[1px]">
         {/* Top Customers Pie */}
-        <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
-          <div className="text-sm font-medium text-white mb-1">Top Customers</div>
-          <div className="text-[11px] text-[#999999] mb-4">Volume share by customer</div>
-          <div className="flex items-center gap-4" style={{ height: 260 }}>
-            <div style={{ width: 180, height: "100%", flexShrink: 0 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={topCustomers}
-                    dataKey="litres"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    innerRadius={45}
-                    strokeWidth={0}
-                  >
-                    {topCustomers.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
-                    formatter={(v: number) => [`${(v / 1000).toFixed(1)}k L`, ""]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-col gap-2 min-w-0 flex-1">
-              {topCustomers.map((c, i) => {
-                const total = topCustomers.reduce((s, x) => s + x.litres, 0);
-                const pctVal = total > 0 ? ((c.litres / total) * 100).toFixed(0) : "0";
-                return (
-                  <div key={c.name} className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                    <span className="text-xs text-[#ccc] truncate flex-1">{c.name}</span>
-                    <span className="text-xs text-[#999] tabular-nums shrink-0">{pctVal}%</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        <DonutCard topCustomers={topCustomers} />
 
         {/* Buy Price Trend */}
         <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
