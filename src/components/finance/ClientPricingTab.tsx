@@ -41,6 +41,7 @@ export default function ClientPricingTab() {
   const [creatingNew, setCreatingNew] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
 
   // Form state
   const [formClientId, setFormClientId] = useState<number | "">("");
