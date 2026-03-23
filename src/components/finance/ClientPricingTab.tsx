@@ -41,6 +41,7 @@ export default function ClientPricingTab() {
   const [creatingNew, setCreatingNew] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
 
   // Form state
   const [formClientId, setFormClientId] = useState<number | "">("");
@@ -82,6 +83,7 @@ export default function ClientPricingTab() {
     setCreatingNew(false);
     setNewCompanyName("");
     setNewEmail("");
+    setNewPhone("");
   };
 
   const handleEdit = (p: CustomerPricing & { client_name: string }) => {
@@ -119,7 +121,7 @@ export default function ClientPricingTab() {
       try {
         const { data: newClient, error } = await supabase
           .from("client_accounts")
-          .insert({ company_name: name, contact_email: email })
+          .insert({ company_name: name, contact_email: email, contact_phone: newPhone.trim() || null })
           .select("id")
           .single();
         if (error) throw error;
@@ -223,6 +225,13 @@ export default function ClientPricingTab() {
                       placeholder="Contact email"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
+                      className={inputClass}
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone (optional)"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
                       className={inputClass}
                     />
                     <button
