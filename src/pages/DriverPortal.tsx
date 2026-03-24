@@ -117,6 +117,7 @@ function FuelIntakeForm() {
     },
     onSuccess: () => {
       toast.success("Fuel intake logged!");
+      logActivity("fuel_intake", { litres: parseFloat(litres) || 0 });
       setLitres("");
       setPhoto(null);
       setPreview(null);
