@@ -181,6 +181,19 @@ function FuelIntakeForm() {
         />
       </div>
 
+      {/* Price on bowser */}
+      <div className="flex flex-col gap-1.5 mb-3">
+        <label className="text-xs text-muted-foreground">Price shown on bowser ($/L)</label>
+        <input
+          type="number"
+          step="0.0001"
+          value={bowserPrice}
+          onChange={(e) => setBowserPrice(e.target.value)}
+          placeholder="e.g. 1.8500"
+          className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+        />
+      </div>
+
       {/* Notes */}
       <div className="flex flex-col gap-1.5 mb-4">
         <label className="text-xs text-muted-foreground">Notes (optional)</label>
