@@ -8,25 +8,28 @@ import { PACCLogo } from "@/components/PACCLogo";
 const tabs = ["Overview", "Deliveries", "Sites", "Scheduled"] as const;
 type Tab = (typeof tabs)[number];
 
-// ── Fetch customer's own transactions ──
-function useCustomerTransactions(range: "week" | "month" | "all") {
+// ── Fetch customer's own transactions (filtered by speedsol_names) ──
+function useCustomerTransactions(range: "week" | "month" | "all", speedsolNames: string[]) {
   const start =
     range === "all"
       ? null
       : format(subDays(new Date(), range === "week" ? 7 : 30), "yyyy-MM-dd");
 
   return useQuery({
-    queryKey: ["customer-transactions", range],
+    queryKey: ["customer-transactions", range, speedsolNames],
     queryFn: async () => {
+      if (speedsolNames.length === 0) return [];
       let q = supabase
         .from("transactions")
         .select("*")
+        .in("nombre_cliente1", speedsolNames)
         .order("fecha", { ascending: false });
       if (start) q = q.gte("date", start);
       const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
+    enabled: speedsolNames.length > 0,
   });
 }
 
@@ -67,16 +70,20 @@ function useCustomerProfile() {
 
       // Fetch linked client account
       let companyName = "Your Account";
+      let speedsolNames: string[] = [];
       if (data?.client_account_id) {
         const { data: ca } = await supabase
           .from("client_accounts")
           .select("company_name, speedsol_names")
           .eq("id", data.client_account_id)
           .single();
-        if (ca) companyName = ca.company_name;
+        if (ca) {
+          companyName = ca.company_name;
+          speedsolNames = ca.speedsol_names || [];
+        }
       }
 
-      return { ...data, companyName };
+      return { ...data, companyName, speedsolNames };
     },
   });
 }
@@ -140,7 +147,8 @@ export default function CustomerPortal() {
   const [siteFilter, setSiteFilter] = useState("all");
 
   const { data: profile } = useCustomerProfile();
-  const { data: transactions = [], isLoading } = useCustomerTransactions(range);
+  const speedsolNames = profile?.speedsolNames || [];
+  const { data: transactions = [], isLoading } = useCustomerTransactions(range, speedsolNames);
   const clientAccountId = profile?.client_account_id || null;
   const { data: scheduled = [] } = useScheduledDeliveries(clientAccountId);
 
