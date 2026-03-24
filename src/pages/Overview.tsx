@@ -263,15 +263,15 @@ export default function Overview() {
           ) : (
             <div className="flex flex-col divide-y divide-[#6B5240]">
               {recentDeliveries.map((t) => (
-                <div key={t.id} className="flex items-center gap-3 py-2.5 group hover:bg-[#5A4535] -mx-3 px-3 rounded-lg transition-colors">
-                  <div className="w-[52px] text-[11px] text-[#C4A882] tabular-nums shrink-0">
+                <div key={t.id} className="flex items-start gap-2 sm:gap-3 py-2.5 group hover:bg-[#5A4535] -mx-3 px-3 rounded-lg transition-colors">
+                  <div className="w-[40px] sm:w-[52px] text-[11px] text-[#C4A882] tabular-nums shrink-0 pt-0.5">
                     {format(new Date(t.fecha), "HH:mm")}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-foreground font-medium truncate">
                       {t.nombre_cliente1 || "Walk-in"}
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-[#C4A882] mt-0.5">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] sm:text-[11px] text-[#C4A882] mt-0.5">
                       {t.placa && (
                         <span className="flex items-center gap-1">
                           <Truck className="w-3 h-3" />
@@ -279,13 +279,13 @@ export default function Overview() {
                         </span>
                       )}
                       {t.estacion && (
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 hidden sm:flex">
                           <MapPin className="w-3 h-3" />
                           {t.estacion}
                         </span>
                       )}
                       {t.producto && (
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 hidden sm:flex">
                           <Fuel className="w-3 h-3" />
                           {t.producto}
                         </span>
@@ -297,7 +297,7 @@ export default function Overview() {
                       {(t.cantidad || 0).toLocaleString()}L
                     </div>
                     {t.dinero_total != null && (
-                      <div className="text-[11px] text-[#C4A882] tabular-nums">
+                      <div className="text-[11px] text-[#C4A882] tabular-nums hidden sm:block">
                         ${t.dinero_total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     )}
