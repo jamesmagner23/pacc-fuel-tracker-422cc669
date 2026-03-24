@@ -134,6 +134,7 @@ Melbourne, Victoria
   a.download = `docket-${tx.factura || tx.id}.txt`;
   a.click();
   URL.revokeObjectURL(url);
+  logActivity("export", { type: "docket", invoice: tx.factura || tx.id });
 }
 
 const card: React.CSSProperties = {
