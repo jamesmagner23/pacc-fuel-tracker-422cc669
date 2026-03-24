@@ -25,93 +25,49 @@ export default function Login() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#3D2B1A",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
-      }}
-    >
+    <div className="min-h-screen bg-background flex items-center justify-center p-5">
       <form
         onSubmit={handleLogin}
-        style={{
-          width: "100%",
-          maxWidth: 380,
-          display: "flex",
-          flexDirection: "column",
-          gap: 24,
-        }}
+        className="w-full max-w-[380px] flex flex-col gap-6"
       >
-        <div style={{ textAlign: "center", marginBottom: 8 }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+        <div className="text-center mb-2">
+          <div className="flex justify-center mb-5">
             <PACCLogo />
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 600, color: "#F5E6D0", margin: 0 }}>Sign in</h1>
-          <p style={{ fontSize: 13, color: "#C4A882", margin: "6px 0 0" }}>
+          <h1 className="text-xl font-semibold text-foreground m-0">Sign in</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">
             Enter your email and password to continue
           </p>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 12, color: "#D4C4A8" }}>Email</label>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@company.com"
               required
-              style={{
-                background: "#4A3525",
-                border: "1px solid #6B5240",
-                borderRadius: 8,
-                color: "#F5E6D0",
-                padding: "10px 12px",
-                fontSize: 13,
-                outline: "none",
-              }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#E8461E")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#6B5240")}
+              className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
             />
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 12, color: "#D4C4A8" }}>Password</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              style={{
-                background: "#4A3525",
-                border: "1px solid #6B5240",
-                borderRadius: 8,
-                color: "#F5E6D0",
-                padding: "10px 12px",
-                fontSize: 13,
-                outline: "none",
-              }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#E8461E")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#6B5240")}
+              className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
             />
           </div>
         </div>
 
         {error && (
-          <div
-            style={{
-              background: "rgba(239, 68, 68, 0.1)",
-              border: "1px solid rgba(239, 68, 68, 0.3)",
-              borderRadius: 8,
-              padding: "10px 14px",
-              fontSize: 12,
-              color: "#ef4444",
-            }}
-          >
+          <div className="bg-negative/10 border border-negative/30 rounded-lg px-3.5 py-2.5 text-xs text-negative">
             {error}
           </div>
         )}
@@ -119,28 +75,12 @@ export default function Login() {
         <button
           type="submit"
           disabled={loading}
-          style={{
-            background: "#E8461E",
-            color: "#F5E6D0",
-            border: "none",
-            borderRadius: 8,
-            padding: "11px 0",
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.7 : 1,
-          }}
-          onMouseEnter={(e) => {
-            if (!loading) e.currentTarget.style.background = "#D13A14";
-          }}
-          onMouseLeave={(e) => {
-            if (!loading) e.currentTarget.style.background = "#E8461E";
-          }}
+          className="bg-primary text-primary-foreground border-none rounded-lg py-2.5 text-md font-semibold cursor-pointer hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-70 transition-colors"
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>
 
-        <p style={{ fontSize: 11, color: "#C4A882", textAlign: "center", margin: 0 }}>
+        <p className="text-xs text-muted-foreground text-center m-0">
           Need access? Contact PACC Energy
         </p>
       </form>
