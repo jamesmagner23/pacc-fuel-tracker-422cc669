@@ -210,7 +210,7 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className="flex gap-8 pt-1">
+          <div className="flex gap-4 sm:gap-8 pt-1">
             {[
               { label: "Revenue", value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }), p: revPct },
               { label: "Deliveries", value: numDeliveries.toString(), p: delPct },
