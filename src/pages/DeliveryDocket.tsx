@@ -120,7 +120,7 @@ export default function DeliveryDocket() {
           <div>
             <div style={{ lineHeight: 1 }}>
               <div style={{ fontSize: 24, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
-                PACC<span style={{ color: "#7C3AED", fontSize: 15 }}>®</span>
+                PACC<span style={{ color: "#FF4D1C", fontSize: 15 }}>®</span>
               </div>
               <div style={{ fontSize: 9, fontWeight: 500, color: "#666", letterSpacing: "0.15em", marginTop: 2 }}>
                 FUEL

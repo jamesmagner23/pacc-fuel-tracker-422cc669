@@ -135,8 +135,8 @@ Melbourne, Victoria
 }
 
 const card: React.CSSProperties = {
-  background: "#0d0d0d",
-  border: "1px solid #1a1a1a",
+  background: "#1A1009",
+  border: "1px solid #2E1C0C",
   borderRadius: 10,
   padding: "18px 20px",
 };
@@ -196,11 +196,11 @@ export default function CustomerPortal() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#000000", color: "#ffffff" }}>
+    <div style={{ minHeight: "100vh", background: "#110B06", color: "#F2EDE6" }}>
       {/* Header */}
       <div
         style={{
-          borderBottom: "1px solid #1a1a1a",
+          borderBottom: "1px solid #2E1C0C",
           padding: "12px 20px",
           display: "flex",
           alignItems: "center",
@@ -261,8 +261,8 @@ export default function CustomerPortal() {
                   borderRadius: 16,
                   fontSize: 11,
                   fontWeight: range === r ? 500 : 400,
-                  color: range === r ? "#ffffff" : "#444444",
-                  background: range === r ? "#7C3AED" : "transparent",
+                  color: range === r ? "#F2EDE6" : "#444444",
+                  background: range === r ? "#FF4D1C" : "transparent",
                   border: "none",
                   cursor: "pointer",
                 }}
@@ -278,7 +278,7 @@ export default function CustomerPortal() {
           style={{
             display: "flex",
             gap: 0,
-            borderBottom: "1px solid #1a1a1a",
+            borderBottom: "1px solid #2E1C0C",
             marginBottom: 20,
           }}
         >
@@ -290,12 +290,12 @@ export default function CustomerPortal() {
                 padding: "8px 16px",
                 fontSize: 13,
                 fontWeight: activeTab === tab ? 500 : 400,
-                color: activeTab === tab ? "#ffffff" : "#444444",
+                color: activeTab === tab ? "#F2EDE6" : "#444444",
                 background: "transparent",
                 border: "none",
                 borderBottom:
                   activeTab === tab
-                    ? "2px solid #7C3AED"
+                    ? "2px solid #FF4D1C"
                     : "2px solid transparent",
                 cursor: "pointer",
                 marginBottom: -1,
@@ -360,7 +360,7 @@ export default function CustomerPortal() {
                   onClick={() => setActiveTab("Deliveries")}
                   style={{
                     fontSize: 11,
-                    color: "#7C3AED",
+                    color: "#FF4D1C",
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
@@ -377,7 +377,7 @@ export default function CustomerPortal() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "8px 0",
-                    borderTop: i > 0 ? "1px solid #1a1a1a" : "none",
+                    borderTop: i > 0 ? "1px solid #2E1C0C" : "none",
                   }}
                 >
                   <div>
@@ -404,10 +404,10 @@ export default function CustomerPortal() {
                 value={siteFilter}
                 onChange={(e) => setSiteFilter(e.target.value)}
                 style={{
-                  background: "#111111",
-                  border: "1px solid #1a1a1a",
+                  background: "#1A1009",
+                  border: "1px solid #2E1C0C",
                   borderRadius: 8,
-                  color: "#ffffff",
+                  color: "#F2EDE6",
                   padding: "7px 12px",
                   fontSize: 12,
                   outline: "none",
@@ -431,8 +431,8 @@ export default function CustomerPortal() {
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  background: "#7C3AED",
-                  color: "#ffffff",
+                  background: "#FF4D1C",
+                  color: "#F2EDE6",
                   border: "none",
                   borderRadius: 20,
                   padding: "7px 16px",
@@ -465,7 +465,7 @@ export default function CustomerPortal() {
                       justifyContent: "space-between",
                       alignItems: "center",
                       padding: "10px 0",
-                      borderTop: i > 0 ? "1px solid #1a1a1a" : "none",
+                      borderTop: i > 0 ? "1px solid #2E1C0C" : "none",
                     }}
                   >
                     <div>
@@ -484,7 +484,7 @@ export default function CustomerPortal() {
                         title="Download docket"
                         style={{
                           background: "transparent",
-                          border: "1px solid #1a1a1a",
+                          border: "1px solid #2E1C0C",
                           borderRadius: 6,
                           color: "#444444",
                           cursor: "pointer",
@@ -492,7 +492,7 @@ export default function CustomerPortal() {
                           display: "flex",
                           alignItems: "center",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "#7C3AED")}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#FF4D1C")}
                         onMouseLeave={(e) => (e.currentTarget.style.color = "#444444")}
                       >
                         <FileText className="w-3.5 h-3.5" />
@@ -519,7 +519,7 @@ export default function CustomerPortal() {
                 >
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                      <MapPin className="w-3.5 h-3.5" style={{ color: "#7C3AED" }} />
+                      <MapPin className="w-3.5 h-3.5" style={{ color: "#FF4D1C" }} />
                       <span style={{ fontSize: 14, fontWeight: 500 }}>{s.site}</span>
                     </div>
                     <div style={{ fontSize: 11, color: "#555555" }}>
@@ -538,7 +538,7 @@ export default function CustomerPortal() {
                           width: 60,
                           height: 4,
                           borderRadius: 2,
-                          background: "#1a1a1a",
+                          background: "#2E1C0C",
                           overflow: "hidden",
                         }}
                       >
@@ -547,7 +547,7 @@ export default function CustomerPortal() {
                             display: "block",
                             height: "100%",
                             width: `${Math.min((s.litres / (siteBreakdown[0]?.litres || 1)) * 100, 100)}%`,
-                            background: "#7C3AED",
+                            background: "#FF4D1C",
                             borderRadius: 2,
                           }}
                         />
@@ -593,7 +593,7 @@ export default function CustomerPortal() {
                       <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
                         {s.site_name}
                       </div>
-                      <div style={{ fontSize: 12, color: "#7C3AED" }}>
+                      <div style={{ fontSize: 12, color: "#FF4D1C" }}>
                         {format(parseISO(s.scheduled_date), "EEEE dd MMM yyyy")}
                       </div>
                       {s.notes && (
@@ -611,7 +611,7 @@ export default function CustomerPortal() {
                       <div
                         style={{
                           fontSize: 10,
-                          color: s.status === "scheduled" ? "#7C3AED" : "#10B981",
+                          color: s.status === "scheduled" ? "#FF4D1C" : "#10B981",
                           textTransform: "uppercase",
                           letterSpacing: "0.05em",
                           marginTop: 4,

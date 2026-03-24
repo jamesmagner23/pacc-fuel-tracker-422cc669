@@ -28,7 +28,7 @@ export default function Login() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#000000",
+        background: "#110B06",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -49,7 +49,7 @@ export default function Login() {
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
             <PACCLogo />
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 600, color: "#ffffff", margin: 0 }}>Sign in</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: "#F2EDE6", margin: 0 }}>Sign in</h1>
           <p style={{ fontSize: 13, color: "#555555", margin: "6px 0 0" }}>
             Enter your email and password to continue
           </p>
@@ -65,16 +65,16 @@ export default function Login() {
               placeholder="you@company.com"
               required
               style={{
-                background: "#111111",
-                border: "1px solid #1f1f1f",
+                background: "#1A1009",
+                border: "1px solid #2E1C0C",
                 borderRadius: 8,
-                color: "#ffffff",
+                color: "#F2EDE6",
                 padding: "10px 12px",
                 fontSize: 13,
                 outline: "none",
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#7C3AED")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#1f1f1f")}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#FF4D1C")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#2E1C0C")}
             />
           </div>
 
@@ -87,16 +87,16 @@ export default function Login() {
               placeholder="••••••••"
               required
               style={{
-                background: "#111111",
-                border: "1px solid #1f1f1f",
+                background: "#1A1009",
+                border: "1px solid #2E1C0C",
                 borderRadius: 8,
-                color: "#ffffff",
+                color: "#F2EDE6",
                 padding: "10px 12px",
                 fontSize: 13,
                 outline: "none",
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#7C3AED")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#1f1f1f")}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#FF4D1C")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#2E1C0C")}
             />
           </div>
         </div>
@@ -120,8 +120,8 @@ export default function Login() {
           type="submit"
           disabled={loading}
           style={{
-            background: "#7C3AED",
-            color: "#ffffff",
+            background: "#FF4D1C",
+            color: "#F2EDE6",
             border: "none",
             borderRadius: 8,
             padding: "11px 0",
@@ -131,10 +131,10 @@ export default function Login() {
             opacity: loading ? 0.7 : 1,
           }}
           onMouseEnter={(e) => {
-            if (!loading) e.currentTarget.style.background = "#6D28D9";
+            if (!loading) e.currentTarget.style.background = "#E63D0F";
           }}
           onMouseLeave={(e) => {
-            if (!loading) e.currentTarget.style.background = "#7C3AED";
+            if (!loading) e.currentTarget.style.background = "#FF4D1C";
           }}
         >
           {loading ? "Signing in…" : "Sign in"}
