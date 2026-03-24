@@ -54,10 +54,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       setRole(userRole);
       setLoading(false);
 
-      if (userRole === "client" && !location.pathname.startsWith("/portal")) {
+      if (userRole === "client" && !location.pathname.startsWith("/portal") && !location.pathname.startsWith("/docket")) {
         navigate("/portal", { replace: true });
       }
-      if (userRole === "driver" && !location.pathname.startsWith("/driver")) {
+      if (userRole === "driver" && !location.pathname.startsWith("/driver") && !location.pathname.startsWith("/docket")) {
         navigate("/driver", { replace: true });
       }
     };
