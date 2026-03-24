@@ -356,21 +356,38 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          client_account_id: number | null
+          email: string | null
+          full_name: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          client_account_id?: number | null
+          email?: string | null
+          full_name?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          client_account_id?: number | null
+          email?: string | null
+          full_name?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_client_account_id_fkey"
+            columns: ["client_account_id"]
+            isOneToOne: false
+            referencedRelation: "client_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
