@@ -79,6 +79,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
             if (r === "client" && !window.location.pathname.startsWith("/portal")) {
               navigate("/portal", { replace: true });
             }
+            if (r === "driver" && !window.location.pathname.startsWith("/driver")) {
+              navigate("/driver", { replace: true });
+            }
           });
       }
     });
