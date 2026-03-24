@@ -250,38 +250,25 @@ export default function Overview() {
           </div>
         </div>
 
-        {/* Hero chart: hourly for Today, area for other ranges */}
+        {/* Hero chart: area chart for all ranges */}
         <div style={{ height: 160, marginLeft: -32, marginRight: -32 }}>
           <ResponsiveContainer width="100%" height="100%">
-            {range === "today" ? (
-              <BarChart data={hourlyData} barCategoryGap="20%">
-                <XAxis dataKey="hour" tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} interval={1} />
-                <YAxis hide />
-                <Tooltip
-                  contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 12 }}
-                  formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
-                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
-                />
-                <Bar dataKey="litres" fill="#E8461E" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            ) : (
-              <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#E8461E" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="#E8461E" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-                <YAxis hide />
-                <Tooltip
-                  contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 12 }}
-                  formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
-                  cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
-                />
-                <Area type="monotone" dataKey="litres" stroke="#E8461E" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
-              </AreaChart>
-            )}
+            <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#E8461E" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#E8461E" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+              <YAxis hide />
+              <Tooltip
+                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 12 }}
+                formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
+                cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
+              />
+              <Area type="monotone" dataKey="litres" stroke="#E8461E" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
