@@ -39,7 +39,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       if (!session) {
         setRole(null);
         setLoading(false);
-        if (location.pathname !== "/login") {
+        // Allow public pages without redirect
+        const publicPaths = ["/login", "/", "/reset-password"];
+        if (!publicPaths.includes(location.pathname)) {
           navigate("/login", { replace: true });
         }
         return;
