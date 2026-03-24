@@ -1,0 +1,1 @@
+ALTER TABLE public.fuel_intake_logs ADD COLUMN bowser_retail_price numeric;

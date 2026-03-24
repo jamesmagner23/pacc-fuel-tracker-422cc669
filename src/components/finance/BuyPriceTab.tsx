@@ -3,12 +3,29 @@ import { format, parseISO } from "date-fns";
 import { TrendingUp, TrendingDown, Trash2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice } from "@/hooks/useBuyPrices";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function BuyPriceTab() {
   const { data: prices = [], isLoading } = useBuyPrices(365);
   const upsert = useUpsertBuyPrice();
   const del = useDeleteBuyPrice();
+
+  // Latest bowser retail price from driver intake logs
+  const bowserRetailQuery = useQuery({
+    queryKey: ["bowser-retail-latest"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fuel_intake_logs")
+        .select("bowser_retail_price, log_date, created_at")
+        .not("bowser_retail_price", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return data?.[0] || null;
+    },
+  });
 
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [price, setPrice] = useState("");
@@ -82,6 +99,14 @@ export default function BuyPriceTab() {
           <div className="sm:text-right">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg</div>
             <div className="text-lg sm:text-xl font-medium text-muted-foreground tabular-nums">${avgPrice.toFixed(4)}/L</div>
+            {bowserRetailQuery.data && (
+              <div className="mt-2">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Bowser Retail</div>
+                <div className="text-sm font-medium text-muted-foreground/70 tabular-nums">
+                  ${Number(bowserRetailQuery.data.bowser_retail_price).toFixed(4)}/L
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
