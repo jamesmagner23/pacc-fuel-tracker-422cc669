@@ -130,35 +130,42 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthGate>
-          <DateRangeProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/portal" element={<CustomerPortal />} />
-              <Route path="/driver" element={<DriverPortal />} />
-              <Route
-                path="/*"
-                element={
-                  <Layout>
-                    <Routes>
-                      <Route path="/" element={<Overview />} />
-                      <Route path="/customers" element={<Customers />} />
-                      <Route path="/customers/:name" element={<CustomerDetail />} />
-                      <Route path="/performance" element={<Performance />} />
-                      <Route path="/transactions" element={<Transactions />} />
-                      <Route path="/finance" element={<Finance />} />
-                      <Route path="/admin" element={<Admin />} />
-                      <Route path="/docket/multi" element={<DeliveryDocket />} />
-                      <Route path="/docket/:id" element={<DeliveryDocket />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Layout>
-                }
-              />
-            </Routes>
-          </DateRangeProvider>
-        </AuthGate>
+        <DateRangeProvider>
+          <Routes>
+            {/* Public docket routes — no auth, clean white page */}
+            <Route path="/docket/multi" element={<DeliveryDocket />} />
+            <Route path="/docket/:id" element={<DeliveryDocket />} />
+
+            {/* Everything else requires auth */}
+            <Route path="/*" element={
+              <AuthGate>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/portal" element={<CustomerPortal />} />
+                  <Route path="/driver" element={<DriverPortal />} />
+                  <Route
+                    path="/*"
+                    element={
+                      <Layout>
+                        <Routes>
+                          <Route path="/" element={<Overview />} />
+                          <Route path="/customers" element={<Customers />} />
+                          <Route path="/customers/:name" element={<CustomerDetail />} />
+                          <Route path="/performance" element={<Performance />} />
+                          <Route path="/transactions" element={<Transactions />} />
+                          <Route path="/finance" element={<Finance />} />
+                          <Route path="/admin" element={<Admin />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Layout>
+                    }
+                  />
+                </Routes>
+              </AuthGate>
+            } />
+          </Routes>
+        </DateRangeProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
