@@ -446,7 +446,7 @@ export default function ClientPricingTab() {
                       return (
                         <Cell
                           key={i}
-                          fill={isAbove ? "hsl(var(--primary))" : "hsl(220 15% 45%)"}
+                          fill={isAbove ? "#E8461E" : "#8B7355"}
                         />
                       );
                     })}
