@@ -4,6 +4,7 @@ import PLOverview from "@/components/finance/PLOverview";
 import BuyPriceTab from "@/components/finance/BuyPriceTab";
 import ClientPricingTab from "@/components/finance/ClientPricingTab";
 import PricingTab from "@/components/finance/PricingTab";
+import ScheduledTab from "@/components/finance/ScheduledTab";
 
 export default function Finance() {
   return (
@@ -15,6 +16,7 @@ export default function Finance() {
             { value: "buy", label: "Buy Price" },
             { value: "clients", label: "Client Pricing" },
             { value: "quotes", label: "Quote Builder" },
+            { value: "scheduled", label: "Scheduled" },
           ].map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -37,6 +39,9 @@ export default function Finance() {
         </TabsContent>
         <TabsContent value="quotes" className="mt-5">
           <PricingTab />
+        </TabsContent>
+        <TabsContent value="scheduled" className="mt-5">
+          <ScheduledTab />
         </TabsContent>
       </Tabs>
     </div>
