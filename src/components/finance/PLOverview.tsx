@@ -311,7 +311,7 @@ export default function PLOverview() {
           </div>
           <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm bg-primary inline-block" /> Profitable
+              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: "#10B981" }} /> Profitable
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm bg-destructive inline-block" /> Loss
