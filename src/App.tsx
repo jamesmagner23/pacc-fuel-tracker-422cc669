@@ -34,6 +34,8 @@ const App = () => (
               <Route path="/finance" element={<Finance />} />
               <Route path="/docket/multi" element={<DeliveryDocket />} />
               <Route path="/docket/:id" element={<DeliveryDocket />} />
+              <Route path="/portal" element={<CustomerPortal />} />
+              <Route path="*" element={<NotFound />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
