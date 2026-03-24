@@ -243,7 +243,7 @@ export default function Overview() {
                 formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
               />
-              <Area type="monotone" dataKey="litres" stroke="#F5E6D0" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
+              <Area type="monotone" dataKey="litres" stroke="#E8461E" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
