@@ -107,8 +107,8 @@ export default function Transactions() {
 
   return (
     <div className="space-y-4 max-w-6xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Transactions</h1>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-lg sm:text-xl font-bold">Transactions</h1>
         <div className="flex gap-2">
           <button
             onClick={() => { setSelectMode(!selectMode); if (selectMode) clearSelection(); }}
