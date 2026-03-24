@@ -108,9 +108,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   // Not logged in — allow public pages
   if (!role) {
-    const publicPaths = ["/login", "/", "/reset-password"];
-    if (publicPaths.includes(location.pathname)) {
+    const publicPaths = ["/login", "/landing", "/reset-password"];
+    if (publicPaths.includes(location.pathname) || location.pathname.startsWith("/docket")) {
       return <>{children}</>;
+    }
+    if (location.pathname === "/") {
+      return <Navigate to="/landing" replace />;
     }
     return <Navigate to="/login" replace />;
   }
