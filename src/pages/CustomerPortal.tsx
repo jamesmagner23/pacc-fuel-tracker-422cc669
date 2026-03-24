@@ -466,7 +466,7 @@ export default function CustomerPortal() {
                         {(t.cantidad || 0).toLocaleString()}L
                       </span>
                       <button
-                        onClick={() => exportDocket(t)}
+                        onClick={() => openDocket(t)}
                         title="Download docket"
                         style={{
                           background: "transparent",
