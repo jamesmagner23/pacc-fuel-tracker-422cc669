@@ -78,10 +78,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
           .then(({ data }) => {
             const r = (data?.role as UserRole) || null;
             setRole(r);
-            if (r === "client" && !window.location.pathname.startsWith("/portal")) {
+            if (r === "client" && !window.location.pathname.startsWith("/portal") && !window.location.pathname.startsWith("/docket")) {
               navigate("/portal", { replace: true });
             }
-            if (r === "driver" && !window.location.pathname.startsWith("/driver")) {
+            if (r === "driver" && !window.location.pathname.startsWith("/driver") && !window.location.pathname.startsWith("/docket")) {
               navigate("/driver", { replace: true });
             }
           });
