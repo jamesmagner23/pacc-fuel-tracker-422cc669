@@ -15,6 +15,7 @@ import Transactions from "./pages/Transactions";
 import Finance from "./pages/Finance";
 import DeliveryDocket from "./pages/DeliveryDocket";
 import CustomerPortal from "./pages/CustomerPortal";
+import DriverPortal from "./pages/DriverPortal";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
