@@ -23,8 +23,8 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
           onClick={() => setShowPct((p) => !p)}
           className="text-[10px] px-2 py-0.5 rounded-full border transition-colors"
           style={{
-            borderColor: "#333",
-            color: "#999",
+            borderColor: "#4A3520",
+            color: "#A89580",
             background: "transparent",
             cursor: "pointer",
           }}
@@ -32,7 +32,7 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
           {showPct ? "Show Litres" : "Show %"}
         </button>
       </div>
-      <div className="text-[11px] text-[#999999] mb-4">Volume share by customer</div>
+      <div className="text-[11px] text-[#A89580] mb-4">Volume share by customer</div>
       <div className="flex items-center gap-4" style={{ height: 260 }}>
         <div style={{ width: 180, height: "100%", flexShrink: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -76,7 +76,7 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
+                contentStyle={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 8, color: "#F2EDE6", fontSize: 11 }}
                 formatter={(v: number) => {
                   const pctVal = total > 0 ? ((v / total) * 100).toFixed(1) : "0";
                   return [`${(v / 1000).toFixed(1)}k L (${pctVal}%)`, ""];
@@ -91,8 +91,8 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
             return (
               <div key={c.name} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                <span className="text-xs text-[#ccc] truncate flex-1">{c.name}</span>
-                <span className="text-xs text-[#999] tabular-nums shrink-0">
+                <span className="text-xs text-[#C4B5A0] truncate flex-1">{c.name}</span>
+                <span className="text-xs text-[#A89580] tabular-nums shrink-0">
                   {showPct ? `${pctVal}%` : `${(c.litres / 1000).toFixed(1)}k L`}
                 </span>
               </div>
@@ -191,7 +191,7 @@ export default function Overview() {
       >
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-4">
           <div>
-            <div className="text-[11px] text-[#999999] uppercase tracking-wider mb-1.5">
+            <div className="text-[11px] text-[#A89580] uppercase tracking-wider mb-1.5">
               Total Litres Delivered
             </div>
             <div className="text-4xl sm:text-[56px] font-light text-foreground tracking-tighter leading-none tabular-nums">
@@ -206,7 +206,7 @@ export default function Overview() {
               <span className={`text-xs font-medium ${litresPct >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                 {litresPct >= 0 ? "+" : ""}{litresPct.toFixed(1)}%
               </span>
-              <span className="text-xs text-[#999999]">vs previous period</span>
+              <span className="text-xs text-[#A89580]">vs previous period</span>
             </div>
           </div>
 
@@ -217,7 +217,7 @@ export default function Overview() {
               { label: "Avg Size", value: Math.round(avgSize) + "L", p: avgPct },
             ].map((k) => (
               <div key={k.label} className="text-right">
-                <div className="text-[10px] text-[#999999] uppercase tracking-wider mb-1">{k.label}</div>
+                <div className="text-[10px] text-[#A89580] uppercase tracking-wider mb-1">{k.label}</div>
                 <div className="text-xl font-medium text-foreground tracking-tight tabular-nums">{k.value}</div>
                 <div className={`text-[11px] mt-0.5 ${k.p >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                   {k.p >= 0 ? "+" : ""}{k.p.toFixed(1)}%
@@ -236,10 +236,10 @@ export default function Overview() {
                   <stop offset="100%" stopColor="#F2EDE6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} />
               <YAxis hide />
               <Tooltip
-                contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 12 }}
+                contentStyle={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 8, color: "#F2EDE6", fontSize: 12 }}
                 formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
               />
@@ -252,14 +252,14 @@ export default function Overview() {
       {/* DAILY VOLUME - FULL WIDTH */}
       <div style={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
         <div className="text-sm font-medium text-foreground mb-1">Daily Volume</div>
-        <div className="text-[11px] text-[#999999] mb-4">Litres delivered per day</div>
+        <div className="text-[11px] text-[#A89580] mb-4">Litres delivered per day</div>
         <div style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dailyData} barCategoryGap="30%">
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} width={50} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} width={50} />
               <Tooltip
-                contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
+                contentStyle={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 8, color: "#F2EDE6", fontSize: 11 }}
                 formatter={(v: number) => [`${v.toLocaleString()}L`, ""]}
                 cursor={{ fill: "rgba(255,255,255,0.02)" }}
               />
@@ -277,22 +277,22 @@ export default function Overview() {
         {/* Buy Price Trend */}
         <div style={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 12, padding: "20px 24px" }}>
           <div className="text-sm font-medium text-foreground mb-1">Fuel Buy Price</div>
-          <div className="text-[11px] text-[#999999] mb-4">Supply price trend ($/L)</div>
+          <div className="text-[11px] text-[#A89580] mb-4">Supply price trend ($/L)</div>
           <div style={{ height: 260 }}>
             {priceData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={priceData}>
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} width={50} domain={["auto", "auto"]} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} width={50} domain={["auto", "auto"]} />
                   <Tooltip
-                    contentStyle={{ background: "#111", border: "1px solid #222", borderRadius: 8, color: "#fff", fontSize: 11 }}
+                    contentStyle={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 8, color: "#F2EDE6", fontSize: 11 }}
                     formatter={(v: number) => [`$${v.toFixed(2)}/L`, "Price"]}
                   />
                   <Line type="monotone" dataKey="price" stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: "#10B981" }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-[#999999] text-xs">
+              <div className="flex items-center justify-center h-full text-[#A89580] text-xs">
                 No price data yet. Add prices in Finance → Buy Price.
               </div>
             )}
