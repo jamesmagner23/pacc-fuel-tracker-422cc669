@@ -171,6 +171,14 @@ export default function DeliveryDocket() {
           </table>
         </div>
 
+        {/* Notes / on-site remarks */}
+        <div className="mb-8">
+          <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Notes / On-Site Remarks</h3>
+          <div className="border border-gray-200 rounded-lg min-h-[72px] p-3 text-sm text-gray-500 print:min-h-[80px]">
+            &nbsp;
+          </div>
+        </div>
+
         {/* Signature lines for print */}
         <div className="mt-10 grid grid-cols-2 gap-12 print:mt-16">
           <div>
