@@ -107,6 +107,7 @@ function exportCSV(transactions: any[], filename: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+  logActivity("export", { type: "csv", filename, rows: transactions.length });
 }
 
 // ── Text Docket for single delivery ──
