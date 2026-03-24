@@ -19,6 +19,7 @@ import DriverPortal from "./pages/DriverPortal";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
+import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
