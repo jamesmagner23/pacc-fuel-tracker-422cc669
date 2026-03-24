@@ -41,35 +41,38 @@ export default function PLOverview() {
     return map;
   }, [clients]);
 
-  // Helper: calculate sell price per litre for a transaction using client margin
-  const getSellPPL = useCallback((t: any) => {
-    // If actual sell price exists, use it
-    if (t.ppu && t.ppu > 0) return t.ppu;
-    // Otherwise derive from client's margin setting
+  // Helper: check if a transaction belongs to a priced client
+  const getTxPricing = useCallback((t: any) => {
+    if (t.ppu && t.ppu > 0) return { hasPricing: true, sellPPL: t.ppu };
     const clientId = speedsolToClientId.get((t.nombre_cliente1 || "").toLowerCase());
     const pricing = clientId ? customerPricing.find((p) => p.client_account_id === clientId) : null;
-    const marginPct = pricing?.margin_percent ?? 10; // default 10% margin
-    return latestBuyPrice * (1 + marginPct / 100);
+    if (!pricing) return { hasPricing: false, sellPPL: 0 };
+    return { hasPricing: true, sellPPL: latestBuyPrice * (1 + pricing.margin_percent / 100) };
   }, [speedsolToClientId, customerPricing, latestBuyPrice]);
 
+  // Only include priced transactions in revenue/profit KPIs
+  const pricedTxs = filtered.filter((t) => getTxPricing(t).hasPricing);
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const totalRevenue = filtered.reduce((s, t) => {
+  const pricedLitres = pricedTxs.reduce((s, t) => s + (t.cantidad || 0), 0);
+  const totalRevenue = pricedTxs.reduce((s, t) => {
     const litres = t.cantidad || 0;
-    if (t.dinero_total && t.dinero_total > 0) return s + t.dinero_total;
-    return s + litres * getSellPPL(t);
+    const { sellPPL } = getTxPricing(t);
+    return s + (t.dinero_total && t.dinero_total > 0 ? t.dinero_total : litres * sellPPL);
   }, 0);
   const numDeliveries = filtered.length;
-  const totalCost = totalLitres * latestBuyPrice;
+  const totalCost = pricedLitres * latestBuyPrice;
   const grossProfit = totalRevenue - totalCost;
   const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
+  const pricedPrev = previous.filter((t) => getTxPricing(t).hasPricing);
   const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevRevenue = previous.reduce((s, t) => {
+  const prevPricedLitres = pricedPrev.reduce((s, t) => s + (t.cantidad || 0), 0);
+  const prevRevenue = pricedPrev.reduce((s, t) => {
     const litres = t.cantidad || 0;
-    if (t.dinero_total && t.dinero_total > 0) return s + t.dinero_total;
-    return s + litres * getSellPPL(t);
+    const { sellPPL } = getTxPricing(t);
+    return s + (t.dinero_total && t.dinero_total > 0 ? t.dinero_total : litres * sellPPL);
   }, 0);
-  const prevCost = prevLitres * latestBuyPrice;
+  const prevCost = prevPricedLitres * latestBuyPrice;
   const prevGrossProfit = prevRevenue - prevCost;
 
   const pct = (c: number, p: number) => (p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100);
@@ -104,22 +107,21 @@ export default function PLOverview() {
       }
       const litres = t.cantidad || 0;
       byClient[key].litres += litres;
-      // Use actual revenue if available, otherwise derive from margin
+      const { hasPricing, sellPPL } = getTxPricing(t);
       if (t.dinero_total && t.dinero_total > 0) {
         byClient[key].revenue += t.dinero_total;
-      } else {
-        byClient[key].revenue += litres * getSellPPL(t);
+      } else if (hasPricing) {
+        byClient[key].revenue += litres * sellPPL;
       }
     });
 
-    // Calculate profit per client
     return Object.values(byClient)
       .map((c) => {
         const pricing = c.clientId
           ? customerPricing.find((p) => p.client_account_id === c.clientId)
           : null;
-        const cost = c.litres * latestBuyPrice;
-        const profit = c.revenue - cost;
+        const cost = pricing ? c.litres * latestBuyPrice : 0;
+        const profit = pricing ? c.revenue - cost : 0;
         const margin = c.revenue > 0 ? (profit / c.revenue) * 100 : 0;
         return {
           ...c,
@@ -131,30 +133,34 @@ export default function PLOverview() {
         };
       })
       .sort((a, b) => b.revenue - a.revenue);
-  }, [filtered, clients, customerPricing, latestBuyPrice, getSellPPL]);
+  }, [filtered, clients, customerPricing, latestBuyPrice, getTxPricing]);
 
   if (isLoading) {
     return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
   }
 
+  const unpricedClients = clientBreakdown.filter((c) => !c.hasCustomPricing);
+  const pricedClients = clientBreakdown.filter((c) => c.hasCustomPricing);
+  const unpricedLitres = unpricedClients.reduce((s, c) => s + c.litres, 0);
+
   const kpis = [
     {
       label: "Revenue",
       value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${rangeLabel} · actual from transactions`,
+      sub: `${pricedClients.length} priced client${pricedClients.length !== 1 ? "s" : ""} only`,
       pct: pct(totalRevenue, prevRevenue),
     },
     {
       label: "Cost of Fuel",
       value: "$" + totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${totalLitres.toLocaleString()}L × $${latestBuyPrice.toFixed(4)}`,
+      sub: `${pricedLitres.toLocaleString()}L × $${latestBuyPrice.toFixed(4)}`,
       pct: null,
       positive: null as boolean | null,
     },
     {
       label: "Gross Profit",
       value: "$" + grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${rangeLabel} · revenue − cost`,
+      sub: `${rangeLabel} · priced clients`,
       pct: pct(grossProfit, prevGrossProfit),
       positive: grossProfit >= 0,
     },
@@ -218,8 +224,35 @@ export default function PLOverview() {
         ))}
       </div>
 
-      {/* Per-client profit breakdown */}
-      {clientBreakdown.length > 0 && (
+      {/* Unpriced clients notice */}
+      {unpricedClients.length > 0 && (
+        <div className="bg-surface border border-yellow-500/20 rounded-[10px] p-4 flex items-start gap-3">
+          <div className="text-yellow-500 text-lg mt-0.5">⚠</div>
+          <div>
+            <div className="text-[12px] font-medium text-foreground">
+              {unpricedClients.length} client{unpricedClients.length !== 1 ? "s" : ""} without pricing ({unpricedLitres.toLocaleString()}L)
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              Revenue &amp; profit only includes clients with pricing set in Client Pricing. Assign pricing to see full P&amp;L.
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {unpricedClients.slice(0, 8).map((c) => (
+                <span key={c.name} className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
+                  {c.name} ({c.litres.toLocaleString()}L)
+                </span>
+              ))}
+              {unpricedClients.length > 8 && (
+                <span className="text-[10px] text-muted-foreground px-2 py-0.5">
+                  +{unpricedClients.length - 8} more
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Per-client profit breakdown — priced clients only */}
+      {pricedClients.length > 0 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">
             Profit by Client — {rangeLabel}
@@ -227,14 +260,13 @@ export default function PLOverview() {
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={clientBreakdown.slice(0, 10).map((c) => ({
+                data={pricedClients.slice(0, 10).map((c) => ({
                   name: c.name.length > 14 ? c.name.slice(0, 14) + "…" : c.name,
                   fullName: c.name,
                   profit: Math.round(c.profit),
                   revenue: Math.round(c.revenue),
                   litres: Math.round(c.litres),
                   margin: c.margin,
-                  hasPricing: c.hasCustomPricing,
                 }))}
                 margin={{ top: 4, right: 8, bottom: 4, left: 0 }}
               >
@@ -267,7 +299,7 @@ export default function PLOverview() {
                   }}
                 />
                 <Bar dataKey="profit" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                  {clientBreakdown.slice(0, 10).map((c, i) => (
+                  {pricedClients.slice(0, 10).map((c, i) => (
                     <Cell
                       key={i}
                       fill={c.profit >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))"}
@@ -311,40 +343,44 @@ export default function PLOverview() {
                   <tr key={c.name} className="border-b border-border/50">
                     <td className="py-2.5 text-foreground font-medium">
                       {c.name}
-                      {c.hasCustomPricing && (
+                      {c.hasCustomPricing ? (
                         <span className="ml-1.5 text-[9px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
                           priced
+                        </span>
+                      ) : (
+                        <span className="ml-1.5 text-[9px] text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded-full">
+                          unpriced
                         </span>
                       )}
                     </td>
                     <td className="py-2.5 text-right text-foreground tabular-nums">
                       {c.litres.toLocaleString()}
                     </td>
-                    <td className="py-2.5 text-right text-foreground tabular-nums">
-                      ${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    <td className="py-2.5 text-right tabular-nums" style={{ color: c.hasCustomPricing ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}>
+                      {c.hasCustomPricing ? `$${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
                     </td>
-                    <td className="py-2.5 text-right text-muted-foreground tabular-nums">
-                      ${c.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    <td className="py-2.5 text-right tabular-nums text-muted-foreground">
+                      {c.hasCustomPricing ? `$${c.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
                     </td>
                     <td
                       className="py-2.5 text-right font-medium tabular-nums"
-                      style={{ color: c.profit >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
+                      style={{ color: !c.hasCustomPricing ? "hsl(var(--muted-foreground))" : c.profit >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
                     >
-                      ${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      {c.hasCustomPricing ? `$${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
                     </td>
                     <td
                       className="py-2.5 text-right tabular-nums"
-                      style={{ color: c.margin >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
+                      style={{ color: !c.hasCustomPricing ? "hsl(var(--muted-foreground))" : c.margin >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
                     >
-                      {c.margin.toFixed(1)}%
+                      {c.hasCustomPricing ? `${c.margin.toFixed(1)}%` : "—"}
                     </td>
                   </tr>
                 ))}
-                {/* Totals row */}
+                {/* Totals row — priced only */}
                 <tr className="font-semibold border-t border-border">
-                  <td className="py-2.5 text-foreground">Total</td>
+                  <td className="py-2.5 text-foreground">Total (priced)</td>
                   <td className="py-2.5 text-right text-foreground tabular-nums">
-                    {totalLitres.toLocaleString()}
+                    {pricedLitres.toLocaleString()}
                   </td>
                   <td className="py-2.5 text-right text-foreground tabular-nums">
                     ${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
