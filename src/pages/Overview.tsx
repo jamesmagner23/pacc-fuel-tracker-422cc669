@@ -181,11 +181,11 @@ export default function Overview() {
     <div className="flex flex-col gap-1 max-w-[1200px]">
       {/* HERO SECTION */}
       <div
+        className="px-4 pt-5 pb-0 sm:px-8 sm:pt-7"
         style={{
           background: "#4A3525",
           border: "1px solid #6B5240",
           borderRadius: 12,
-          padding: "28px 32px 0 32px",
           overflow: "hidden",
         }}
       >
