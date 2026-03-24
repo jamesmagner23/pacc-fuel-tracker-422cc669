@@ -9,7 +9,7 @@ import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO } from "date-fns";
 import { Droplets, TrendingUp, TrendingDown } from "lucide-react";
 
-const PIE_COLORS = ["#FF4D1C", "#FF7A52", "#C4B5FD", "#DDD6FE", "#EDE9FE", "#E63D0F"];
+const PIE_COLORS = ["#FF4D1C", "#FF7A52", "#FFB088", "#E63D0F", "#CC6B3A", "#8B5A2B"];
 
 function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: number }[] }) {
   const [showPct, setShowPct] = useState(false);
