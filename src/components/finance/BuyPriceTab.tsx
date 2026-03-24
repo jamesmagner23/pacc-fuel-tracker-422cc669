@@ -3,11 +3,29 @@ import { format, parseISO } from "date-fns";
 import { TrendingUp, TrendingDown, Trash2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice } from "@/hooks/useBuyPrices";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function BuyPriceTab() {
   const { data: prices = [], isLoading } = useBuyPrices(365);
   const upsert = useUpsertBuyPrice();
+  const del = useDeleteBuyPrice();
+
+  // Latest bowser retail price from driver intake logs
+  const bowserRetailQuery = useQuery({
+    queryKey: ["bowser-retail-latest"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fuel_intake_logs")
+        .select("bowser_retail_price, log_date, created_at")
+        .not("bowser_retail_price", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      return data?.[0] || null;
+    },
+  });
   const del = useDeleteBuyPrice();
 
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
