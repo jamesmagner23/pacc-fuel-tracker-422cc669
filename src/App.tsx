@@ -19,6 +19,7 @@ import DriverPortal from "./pages/DriverPortal";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
+import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,8 +39,14 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       if (!session) {
         setRole(null);
         setLoading(false);
-        if (location.pathname !== "/login") {
-          navigate("/login", { replace: true });
+        const publicPaths = ["/login", "/landing", "/reset-password"];
+        if (!publicPaths.includes(location.pathname) && !location.pathname.startsWith("/docket")) {
+          // Redirect root to landing page for unauthenticated users
+          if (location.pathname === "/") {
+            navigate("/landing", { replace: true });
+          } else {
+            navigate("/login", { replace: true });
+          }
         }
         return;
       }
@@ -65,7 +72,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session && location.pathname !== "/login") {
+      if (!session && !["/login", "/landing", "/reset-password"].includes(location.pathname) && !location.pathname.startsWith("/docket")) {
         setRole(null);
         navigate("/login", { replace: true });
       } else if (session) {
@@ -99,8 +106,15 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Not logged in — only show login page
-  if (!role && location.pathname !== "/login") {
+  // Not logged in — allow public pages
+  if (!role) {
+    const publicPaths = ["/login", "/landing", "/reset-password"];
+    if (publicPaths.includes(location.pathname) || location.pathname.startsWith("/docket")) {
+      return <>{children}</>;
+    }
+    if (location.pathname === "/") {
+      return <Navigate to="/landing" replace />;
+    }
     return <Navigate to="/login" replace />;
   }
 
@@ -134,6 +148,7 @@ const App = () => (
           <DateRangeProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/landing" element={<LandingPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/portal" element={<CustomerPortal />} />
               <Route path="/driver" element={<DriverPortal />} />
