@@ -139,24 +139,28 @@ export default function PLOverview() {
     return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
   }
 
+  const unpricedClients = clientBreakdown.filter((c) => !c.hasCustomPricing);
+  const pricedClients = clientBreakdown.filter((c) => c.hasCustomPricing);
+  const unpricedLitres = unpricedClients.reduce((s, c) => s + c.litres, 0);
+
   const kpis = [
     {
       label: "Revenue",
       value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${rangeLabel} · actual from transactions`,
+      sub: `${pricedClients.length} priced client${pricedClients.length !== 1 ? "s" : ""} only`,
       pct: pct(totalRevenue, prevRevenue),
     },
     {
       label: "Cost of Fuel",
       value: "$" + totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${totalLitres.toLocaleString()}L × $${latestBuyPrice.toFixed(4)}`,
+      sub: `${pricedLitres.toLocaleString()}L × $${latestBuyPrice.toFixed(4)}`,
       pct: null,
       positive: null as boolean | null,
     },
     {
       label: "Gross Profit",
       value: "$" + grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${rangeLabel} · revenue − cost`,
+      sub: `${rangeLabel} · priced clients`,
       pct: pct(grossProfit, prevGrossProfit),
       positive: grossProfit >= 0,
     },
