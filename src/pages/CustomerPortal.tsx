@@ -8,25 +8,28 @@ import { PACCLogo } from "@/components/PACCLogo";
 const tabs = ["Overview", "Deliveries", "Sites", "Scheduled"] as const;
 type Tab = (typeof tabs)[number];
 
-// ── Fetch customer's own transactions ──
-function useCustomerTransactions(range: "week" | "month" | "all") {
+// ── Fetch customer's own transactions (filtered by speedsol_names) ──
+function useCustomerTransactions(range: "week" | "month" | "all", speedsolNames: string[]) {
   const start =
     range === "all"
       ? null
       : format(subDays(new Date(), range === "week" ? 7 : 30), "yyyy-MM-dd");
 
   return useQuery({
-    queryKey: ["customer-transactions", range],
+    queryKey: ["customer-transactions", range, speedsolNames],
     queryFn: async () => {
+      if (speedsolNames.length === 0) return [];
       let q = supabase
         .from("transactions")
         .select("*")
+        .in("nombre_cliente1", speedsolNames)
         .order("fecha", { ascending: false });
       if (start) q = q.gte("date", start);
       const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
+    enabled: speedsolNames.length > 0,
   });
 }
 
