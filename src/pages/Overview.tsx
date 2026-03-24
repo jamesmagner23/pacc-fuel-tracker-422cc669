@@ -232,8 +232,8 @@ export default function Overview() {
             <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#F5E6D0" stopOpacity={0.08} />
-                  <stop offset="100%" stopColor="#F5E6D0" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#E8461E" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="#E8461E" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
