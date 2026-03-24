@@ -26,7 +26,6 @@ export default function BuyPriceTab() {
       return data?.[0] || null;
     },
   });
-  const del = useDeleteBuyPrice();
 
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [price, setPrice] = useState("");
