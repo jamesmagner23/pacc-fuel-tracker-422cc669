@@ -157,8 +157,8 @@ export default function BuyPriceTab() {
                   formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]}
                   cursor={{ stroke: "hsl(var(--muted-foreground) / 0.2)" }}
                 />
-                {avgPrice > 0 && <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" label={{ value: "avg", fill: "hsl(var(--muted-foreground))", fontSize: 9 }} />}
-                <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={1.5} dot={{ fill: "hsl(var(--primary))", r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: "hsl(var(--primary))" }} />
+                {avgPrice > 0 && <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />}
+                <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={1.5} dot={{ fill: "hsl(var(--foreground))", r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: "hsl(var(--primary))" }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
