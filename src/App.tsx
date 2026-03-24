@@ -12,6 +12,7 @@ import Performance from "./pages/Performance";
 import Transactions from "./pages/Transactions";
 import Finance from "./pages/Finance";
 import DeliveryDocket from "./pages/DeliveryDocket";
+import CustomerPortal from "./pages/CustomerPortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
