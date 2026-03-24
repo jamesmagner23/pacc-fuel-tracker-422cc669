@@ -99,17 +99,50 @@ export default function BuyPriceTab() {
           <div className="sm:text-right">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg</div>
             <div className="text-lg sm:text-xl font-medium text-muted-foreground tabular-nums">${avgPrice.toFixed(4)}/L</div>
-            {bowserRetailQuery.data && (
-              <div className="mt-2">
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Bowser Retail</div>
-                <div className="text-sm font-medium text-muted-foreground/70 tabular-nums">
-                  ${Number(bowserRetailQuery.data.bowser_retail_price).toFixed(4)}/L
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
+
+      {/* Buy vs Retail comparison */}
+      {latest && bowserRetailQuery.data && (() => {
+        const retail = Number(bowserRetailQuery.data.bowser_retail_price);
+        const buy = latest.price_per_litre;
+        const diff = retail - buy;
+        const pct = buy > 0 ? ((diff / buy) * 100) : 0;
+        const logDate = bowserRetailQuery.data.log_date;
+        return (
+          <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Buy Price vs Bowser Retail</div>
+            <div className="grid grid-cols-3 gap-4 items-end">
+              <div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Your Buy (Pacific)</div>
+                <div className="text-xl sm:text-2xl font-semibold text-foreground tabular-nums">${buy.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Difference</div>
+                <div className={`text-xl sm:text-2xl font-semibold tabular-nums ${diff >= 0 ? "text-positive" : "text-destructive"}`}>
+                  {diff >= 0 ? "+" : ""}${diff.toFixed(4)}
+                </div>
+                <div className={`text-[11px] font-medium ${diff >= 0 ? "text-positive" : "text-destructive"}`}>
+                  {diff >= 0 ? "+" : ""}{pct.toFixed(1)}% {diff >= 0 ? "margin" : "loss"}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Bowser Retail</div>
+                <div className="text-xl sm:text-2xl font-semibold text-muted-foreground tabular-nums">${retail.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                {logDate && <div className="text-[10px] text-muted-foreground mt-0.5">logged {format(parseISO(logDate), "dd MMM")}</div>}
+              </div>
+            </div>
+            {/* Visual bar */}
+            <div className="mt-4 flex items-center gap-2">
+              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden relative">
+                <div className="absolute inset-y-0 left-0 bg-foreground rounded-full" style={{ width: `${Math.min((buy / retail) * 100, 100)}%` }} />
+              </div>
+              <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">{((buy / retail) * 100).toFixed(1)}% of retail</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {chartData.length > 1 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
