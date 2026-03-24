@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subDays } from "date-fns";
 import { Download, MapPin, Calendar, Droplets, FileText, LogOut } from "lucide-react";
 import { PACCLogo } from "@/components/PACCLogo";
+import { logActivity } from "@/hooks/useActivityLog";
 
 const tabs = ["Overview", "Deliveries", "Sites", "Scheduled"] as const;
 type Tab = (typeof tabs)[number];
