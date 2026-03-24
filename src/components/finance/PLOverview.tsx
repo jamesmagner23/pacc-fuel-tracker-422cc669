@@ -224,8 +224,35 @@ export default function PLOverview() {
         ))}
       </div>
 
-      {/* Per-client profit breakdown */}
-      {clientBreakdown.length > 0 && (
+      {/* Unpriced clients notice */}
+      {unpricedClients.length > 0 && (
+        <div className="bg-surface border border-yellow-500/20 rounded-[10px] p-4 flex items-start gap-3">
+          <div className="text-yellow-500 text-lg mt-0.5">⚠</div>
+          <div>
+            <div className="text-[12px] font-medium text-foreground">
+              {unpricedClients.length} client{unpricedClients.length !== 1 ? "s" : ""} without pricing ({unpricedLitres.toLocaleString()}L)
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">
+              Revenue &amp; profit only includes clients with pricing set in Client Pricing. Assign pricing to see full P&amp;L.
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {unpricedClients.slice(0, 8).map((c) => (
+                <span key={c.name} className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded">
+                  {c.name} ({c.litres.toLocaleString()}L)
+                </span>
+              ))}
+              {unpricedClients.length > 8 && (
+                <span className="text-[10px] text-muted-foreground px-2 py-0.5">
+                  +{unpricedClients.length - 8} more
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Per-client profit breakdown — priced clients only */}
+      {pricedClients.length > 0 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">
             Profit by Client — {rangeLabel}
@@ -233,14 +260,13 @@ export default function PLOverview() {
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={clientBreakdown.slice(0, 10).map((c) => ({
+                data={pricedClients.slice(0, 10).map((c) => ({
                   name: c.name.length > 14 ? c.name.slice(0, 14) + "…" : c.name,
                   fullName: c.name,
                   profit: Math.round(c.profit),
                   revenue: Math.round(c.revenue),
                   litres: Math.round(c.litres),
                   margin: c.margin,
-                  hasPricing: c.hasCustomPricing,
                 }))}
                 margin={{ top: 4, right: 8, bottom: 4, left: 0 }}
               >
@@ -273,7 +299,7 @@ export default function PLOverview() {
                   }}
                 />
                 <Bar dataKey="profit" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                  {clientBreakdown.slice(0, 10).map((c, i) => (
+                  {pricedClients.slice(0, 10).map((c, i) => (
                     <Cell
                       key={i}
                       fill={c.profit >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))"}
@@ -317,40 +343,44 @@ export default function PLOverview() {
                   <tr key={c.name} className="border-b border-border/50">
                     <td className="py-2.5 text-foreground font-medium">
                       {c.name}
-                      {c.hasCustomPricing && (
+                      {c.hasCustomPricing ? (
                         <span className="ml-1.5 text-[9px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
                           priced
+                        </span>
+                      ) : (
+                        <span className="ml-1.5 text-[9px] text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded-full">
+                          unpriced
                         </span>
                       )}
                     </td>
                     <td className="py-2.5 text-right text-foreground tabular-nums">
                       {c.litres.toLocaleString()}
                     </td>
-                    <td className="py-2.5 text-right text-foreground tabular-nums">
-                      ${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    <td className="py-2.5 text-right tabular-nums" style={{ color: c.hasCustomPricing ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}>
+                      {c.hasCustomPricing ? `$${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
                     </td>
-                    <td className="py-2.5 text-right text-muted-foreground tabular-nums">
-                      ${c.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    <td className="py-2.5 text-right tabular-nums text-muted-foreground">
+                      {c.hasCustomPricing ? `$${c.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
                     </td>
                     <td
                       className="py-2.5 text-right font-medium tabular-nums"
-                      style={{ color: c.profit >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
+                      style={{ color: !c.hasCustomPricing ? "hsl(var(--muted-foreground))" : c.profit >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
                     >
-                      ${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      {c.hasCustomPricing ? `$${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
                     </td>
                     <td
                       className="py-2.5 text-right tabular-nums"
-                      style={{ color: c.margin >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
+                      style={{ color: !c.hasCustomPricing ? "hsl(var(--muted-foreground))" : c.margin >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
                     >
-                      {c.margin.toFixed(1)}%
+                      {c.hasCustomPricing ? `${c.margin.toFixed(1)}%` : "—"}
                     </td>
                   </tr>
                 ))}
-                {/* Totals row */}
+                {/* Totals row — priced only */}
                 <tr className="font-semibold border-t border-border">
-                  <td className="py-2.5 text-foreground">Total</td>
+                  <td className="py-2.5 text-foreground">Total (priced)</td>
                   <td className="py-2.5 text-right text-foreground tabular-nums">
-                    {totalLitres.toLocaleString()}
+                    {pricedLitres.toLocaleString()}
                   </td>
                   <td className="py-2.5 text-right text-foreground tabular-nums">
                     ${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
