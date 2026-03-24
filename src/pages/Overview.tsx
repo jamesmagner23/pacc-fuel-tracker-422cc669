@@ -7,7 +7,7 @@ import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO } from "date-fns";
-import { Droplets, TrendingUp, TrendingDown } from "lucide-react";
+import { Droplets, TrendingUp, TrendingDown, Clock, Truck, MapPin, Fuel } from "lucide-react";
 
 const PIE_COLORS = ["#E8461E", "#FF6B42", "#FFB088", "#D13A14", "#CC6B3A", "#8B5A2B"];
 
@@ -137,6 +137,29 @@ export default function Overview() {
       .map(([date, litres]) => ({ date: format(parseISO(date), "dd MMM"), litres }));
   }, [filtered]);
 
+  const hourlyData = useMemo(() => {
+    if (range !== "today") return [];
+    const hours: Record<number, number> = {};
+    for (let h = 0; h < 24; h++) hours[h] = 0;
+    filtered.forEach((t) => {
+      const hour = new Date(t.fecha).getHours();
+      hours[hour] += t.cantidad || 0;
+    });
+    return Object.entries(hours)
+      .map(([h, litres]) => ({
+        hour: `${String(h).padStart(2, "0")}:00`,
+        litres,
+      }))
+      .filter((_, i) => i >= 5 && i <= 22); // 5am to 10pm
+  }, [filtered, range]);
+
+  const recentDeliveries = useMemo(() => {
+    if (range !== "today") return [];
+    return [...filtered]
+      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+      .slice(0, 12);
+  }, [filtered, range]);
+
   const topCustomers = useMemo(() => {
     const map: Record<string, { name: string; litres: number }> = {};
     filtered.forEach((t) => {
@@ -227,47 +250,119 @@ export default function Overview() {
           </div>
         </div>
 
+        {/* Hero chart: hourly for Today, area for other ranges */}
         <div style={{ height: 160, marginLeft: -32, marginRight: -32 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#E8461E" stopOpacity={0.2} />
-                  <stop offset="100%" stopColor="#E8461E" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip
-                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 12 }}
-                formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
-                cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
-              />
-              <Area type="monotone" dataKey="litres" stroke="#E8461E" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
-            </AreaChart>
+            {range === "today" ? (
+              <BarChart data={hourlyData} barCategoryGap="20%">
+                <XAxis dataKey="hour" tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} interval={1} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 12 }}
+                  formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
+                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
+                />
+                <Bar dataKey="litres" fill="#E8461E" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            ) : (
+              <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#E8461E" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#E8461E" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 12 }}
+                  formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
+                  cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
+                />
+                <Area type="monotone" dataKey="litres" stroke="#E8461E" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
+              </AreaChart>
+            )}
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* DAILY VOLUME - FULL WIDTH */}
-      <div style={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
-        <div className="text-sm font-medium text-foreground mb-1">Daily Volume</div>
-        <div className="text-[11px] text-[#D4C4A8] mb-4">Litres delivered per day</div>
-        <div style={{ height: 280 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dailyData} barCategoryGap="30%">
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} width={50} />
-              <Tooltip
-                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
-                formatter={(v: number) => [`${v.toLocaleString()}L`, ""]}
-                cursor={{ fill: "rgba(255,255,255,0.02)" }}
-              />
-              <Bar dataKey="litres" fill="#E8461E" radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* TODAY: Live Delivery Feed | OTHER: Daily Volume Bar Chart */}
+      {range === "today" ? (
+        <div style={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="w-4 h-4 text-primary" />
+            <div className="text-sm font-medium text-foreground">Today's Deliveries</div>
+          </div>
+          <div className="text-[11px] text-[#D4C4A8] mb-4">Live feed — most recent first</div>
+          {recentDeliveries.length === 0 ? (
+            <div className="text-center text-[#C4A882] text-xs py-8">No deliveries recorded today yet.</div>
+          ) : (
+            <div className="flex flex-col divide-y divide-[#6B5240]">
+              {recentDeliveries.map((t) => (
+                <div key={t.id} className="flex items-center gap-3 py-2.5 group hover:bg-[#5A4535] -mx-3 px-3 rounded-lg transition-colors">
+                  <div className="w-[52px] text-[11px] text-[#C4A882] tabular-nums shrink-0">
+                    {format(new Date(t.fecha), "HH:mm")}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-foreground font-medium truncate">
+                      {t.nombre_cliente1 || "Walk-in"}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-[#C4A882] mt-0.5">
+                      {t.placa && (
+                        <span className="flex items-center gap-1">
+                          <Truck className="w-3 h-3" />
+                          {t.placa}
+                        </span>
+                      )}
+                      {t.estacion && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {t.estacion}
+                        </span>
+                      )}
+                      {t.producto && (
+                        <span className="flex items-center gap-1">
+                          <Fuel className="w-3 h-3" />
+                          {t.producto}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm text-foreground font-semibold tabular-nums">
+                      {(t.cantidad || 0).toLocaleString()}L
+                    </div>
+                    {t.dinero_total != null && (
+                      <div className="text-[11px] text-[#C4A882] tabular-nums">
+                        ${t.dinero_total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      ) : (
+        <div style={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
+          <div className="text-sm font-medium text-foreground mb-1">Daily Volume</div>
+          <div className="text-[11px] text-[#D4C4A8] mb-4">Litres delivered per day</div>
+          <div style={{ height: 280 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dailyData} barCategoryGap="30%">
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} width={50} />
+                <Tooltip
+                  contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
+                  formatter={(v: number) => [`${v.toLocaleString()}L`, ""]}
+                  cursor={{ fill: "rgba(255,255,255,0.02)" }}
+                />
+                <Bar dataKey="litres" fill="#E8461E" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* BOTTOM TWO PANELS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-[1px] mt-[1px]">
