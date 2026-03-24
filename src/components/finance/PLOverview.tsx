@@ -131,7 +131,7 @@ export default function PLOverview() {
         };
       })
       .sort((a, b) => b.revenue - a.revenue);
-  }, [filtered, clients, customerPricing, latestBuyPrice]);
+  }, [filtered, clients, customerPricing, latestBuyPrice, getSellPPL]);
 
   if (isLoading) {
     return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
