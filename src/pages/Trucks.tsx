@@ -18,7 +18,7 @@ export default function Trucks() {
   const today = format(new Date(), "yyyy-MM-dd");
   const weekAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
 
-  const tooltipStyle = { backgroundColor: "hsl(217 33% 17%)", border: "1px solid hsl(217 33% 25%)", borderRadius: "8px", color: "hsl(210 40% 98%)", fontSize: 12 };
+  const tooltipStyle = { backgroundColor: "#1A1009", border: "1px solid #2E1C0C", borderRadius: "8px", color: "#F2EDE6", fontSize: 12 };
 
   // Discover trucks dynamically from data, fallback to known list
   const trucks = useMemo(() => {
@@ -48,8 +48,8 @@ export default function Trucks() {
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={comparisonData}>
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#8B7355" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#8B7355" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
               <Bar dataKey="litres" fill="#FF4D1C" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -110,7 +110,7 @@ export default function Trucks() {
                          <stop offset="100%" stopColor="#FF4D1C" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#8B7355" }} axisLine={false} tickLine={false} />
                     <Area type="monotone" dataKey="litres" stroke="#FF4D1C" fill={`url(#grad-${truck.plate})`} strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
