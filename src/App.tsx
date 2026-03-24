@@ -133,6 +133,7 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/portal" element={<CustomerPortal />} />
+              <Route path="/driver" element={<DriverPortal />} />
               <Route
                 path="/*"
                 element={
