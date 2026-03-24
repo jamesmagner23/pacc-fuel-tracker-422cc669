@@ -21,7 +21,7 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-type UserRole = "admin" | "client" | null;
+type UserRole = "admin" | "client" | "driver" | null;
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<UserRole>(null);
