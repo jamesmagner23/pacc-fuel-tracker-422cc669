@@ -8,7 +8,7 @@ export default function Drivers() {
   const { range } = useDateRange();
   const { data: filtered = [], isLoading } = useTransactions(range);
 
-  const tooltipStyle = { backgroundColor: "#1A1009", border: "1px solid #2E1C0C", borderRadius: "8px", color: "#F2EDE6", fontSize: 12 };
+  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", color: "#F5E6D0", fontSize: 12 };
 
   const drivers = useMemo(() => {
     return [...new Set(filtered.map((t) => t.nombre_vendedor).filter(Boolean))] as string[];
@@ -36,10 +36,10 @@ export default function Drivers() {
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={comparisonData}>
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#8B7355" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: "#8B7355" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                   <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                  <Bar dataKey="litres" fill="#FF4D1C" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="litres" fill="#E8461E" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -85,14 +85,14 @@ export default function Drivers() {
                       <AreaChart data={dailyData}>
                         <defs>
                           <linearGradient id={`grad-driver-${i}`} x1="0" y1="0" x2="0" y2="1">
-                             <stop offset="0%" stopColor="#FF4D1C" stopOpacity={0.3} />
-                             <stop offset="100%" stopColor="#FF4D1C" stopOpacity={0} />
+                             <stop offset="0%" stopColor="#E8461E" stopOpacity={0.3} />
+                             <stop offset="100%" stopColor="#E8461E" stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#8B7355" }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 9, fill: "#8B7355" }} axisLine={false} tickLine={false} />
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} />
                         <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                        <Area type="monotone" dataKey="litres" stroke="#FF4D1C" fill={`url(#grad-driver-${i})`} strokeWidth={2} />
+                        <Area type="monotone" dataKey="litres" stroke="#E8461E" fill={`url(#grad-driver-${i})`} strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
