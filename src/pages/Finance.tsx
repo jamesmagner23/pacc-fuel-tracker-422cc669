@@ -21,7 +21,7 @@ export default function Finance() {
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="px-4 py-2 text-[13px] rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent"
+              className="px-2.5 sm:px-4 py-2 text-[12px] sm:text-[13px] rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent whitespace-nowrap shrink-0"
             >
               {tab.label}
             </TabsTrigger>

@@ -228,7 +228,7 @@ export default function Overview() {
         </div>
 
         {/* Hero chart: area chart for all ranges */}
-        <div style={{ height: 160, marginLeft: -32, marginRight: -32 }}>
+        <div className="-mx-4 sm:-mx-8" style={{ height: 160 }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <defs>

@@ -208,7 +208,7 @@ export default function Transactions() {
 
       {/* Floating action bar when items are selected */}
       {selected.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-border rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4 animate-in slide-in-from-bottom-4">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-border rounded-2xl shadow-2xl px-3 sm:px-5 py-3 flex flex-wrap items-center gap-2 sm:gap-4 animate-in slide-in-from-bottom-4 max-w-[95vw]">
           <div className="text-sm">
             <span className="font-bold text-foreground">{selected.size}</span>
             <span className="text-muted-foreground ml-1">selected</span>
