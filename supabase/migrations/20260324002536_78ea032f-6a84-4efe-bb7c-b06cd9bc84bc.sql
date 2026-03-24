@@ -1,0 +1,1 @@
+ALTER TABLE public.client_accounts ADD COLUMN IF NOT EXISTS speedsol_names text[] DEFAULT '{}';

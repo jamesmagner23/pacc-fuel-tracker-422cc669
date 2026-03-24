@@ -20,7 +20,7 @@ export default function PLOverview() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_accounts")
-        .select("id, company_name, speedsol_name")
+        .select("id, company_name, speedsol_name, speedsol_names")
         .order("company_name");
       if (error) throw error;
       return data || [];
@@ -46,9 +46,15 @@ export default function PLOverview() {
 
   // Per-client breakdown using actual transaction data + individual margins
   const clientBreakdown = useMemo(() => {
-    // Build speedsol_name → client mapping
+    // Build speedsol_name → client mapping (supports array of names per client)
     const speedsolToClient = new Map<string, { id: number; name: string }>();
-    clients.forEach((c) => {
+    clients.forEach((c: any) => {
+      // Map from speedsol_names array (primary)
+      const names: string[] = c.speedsol_names || [];
+      names.forEach((n: string) => {
+        if (n) speedsolToClient.set(n.toLowerCase(), { id: c.id, name: c.company_name });
+      });
+      // Fallback: legacy speedsol_name field
       if (c.speedsol_name) {
         speedsolToClient.set(c.speedsol_name.toLowerCase(), { id: c.id, name: c.company_name });
       }

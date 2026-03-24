@@ -46,6 +46,7 @@ export default function ImportSpeedsolClients({ existingSpeedsolNames }: Props) 
         company_name: name,
         contact_email: `${name.toLowerCase().replace(/\s+/g, ".")}@placeholder.com`,
         speedsol_name: name,
+        speedsol_names: [name],
       }));
       const { error } = await supabase.from("client_accounts").insert(rows);
       if (error) throw error;
