@@ -104,17 +104,17 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Client role — only allow portal routes
+  // Client role — allow portal + docket routes
   if (role === "client") {
-    if (location.pathname.startsWith("/portal")) {
+    if (location.pathname.startsWith("/portal") || location.pathname.startsWith("/docket")) {
       return <>{children}</>;
     }
     return <Navigate to="/portal" replace />;
   }
 
-  // Driver role — only allow driver routes
+  // Driver role — allow driver + docket routes
   if (role === "driver") {
-    if (location.pathname.startsWith("/driver")) {
+    if (location.pathname.startsWith("/driver") || location.pathname.startsWith("/docket")) {
       return <>{children}</>;
     }
     return <Navigate to="/driver" replace />;
