@@ -3,8 +3,9 @@ import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut } from "lucide-react";
 import { PACCLogo } from "./PACCLogo";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { to: "/", label: "Overview" },
@@ -110,8 +111,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div style={{ padding: "16px 24px", borderTop: `1px solid ${BORDER}` }}>
+        <div style={{ padding: "16px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
           <SyncStatus />
+          <button
+            onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 8,
+              color: TEXT_DIM, fontSize: 12, cursor: "pointer", padding: "8px 12px",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = TEXT_ACTIVE; e.currentTarget.style.borderColor = ACCENT; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_DIM; e.currentTarget.style.borderColor = BORDER; }}
+          >
+            <LogOut style={{ width: 14, height: 14 }} />
+            Sign Out
+          </button>
         </div>
       </aside>
 
@@ -196,8 +211,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <div style={{ padding: "20px 24px", borderTop: `1px solid ${BORDER}` }}>
+          <div style={{ padding: "20px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
             <SyncStatus />
+            <button
+              onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 8,
+                color: TEXT_DIM, fontSize: 13, cursor: "pointer", padding: "10px 16px",
+              }}
+            >
+              <LogOut style={{ width: 14, height: 14 }} />
+              Sign Out
+            </button>
           </div>
         </div>
       )}
