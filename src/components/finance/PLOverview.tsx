@@ -102,8 +102,14 @@ export default function PLOverview() {
       if (!byClient[key]) {
         byClient[key] = { name: key, litres: 0, revenue: 0, clientId: matched?.id || null };
       }
-      byClient[key].litres += t.cantidad || 0;
-      byClient[key].revenue += t.dinero_total || 0;
+      const litres = t.cantidad || 0;
+      byClient[key].litres += litres;
+      // Use actual revenue if available, otherwise derive from margin
+      if (t.dinero_total && t.dinero_total > 0) {
+        byClient[key].revenue += t.dinero_total;
+      } else {
+        byClient[key].revenue += litres * getSellPPL(t);
+      }
     });
 
     // Calculate profit per client
