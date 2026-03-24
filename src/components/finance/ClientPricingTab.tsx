@@ -564,43 +564,107 @@ export default function ClientPricingTab() {
           <div className="flex flex-col">
             {filtered.map((p, i) => {
               const sellPrice = latestBuyPrice * (1 + p.margin_percent / 100);
+              const client = clients.find((c) => c.id === p.client_account_id);
+              const clientSpeedsolNames: string[] = (client as any)?.speedsol_names || [];
+              const isMapping = mappingClientId === p.client_account_id;
+
               return (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between py-3"
+                  className="py-3"
                   style={{ borderBottom: i < filtered.length - 1 ? "1px solid hsl(var(--border))" : "none" }}
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-medium text-foreground truncate">{p.client_name}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {p.weekly_volume_tier}L/wk · {p.payment_terms}
-                    </div>
-                    {p.notes && (
-                      <div className="text-[10px] text-muted-foreground/70 mt-0.5 truncate">{p.notes}</div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 ml-3">
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-foreground tabular-nums">+{p.margin_percent}%</div>
-                      {latestBuyPrice > 0 && (
-                        <div className="text-[10px] text-muted-foreground tabular-nums">${sellPrice.toFixed(4)}/L</div>
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-medium text-foreground truncate">{p.client_name}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        {p.weekly_volume_tier}L/wk · {p.payment_terms}
+                      </div>
+                      {p.notes && (
+                        <div className="text-[10px] text-muted-foreground/70 mt-0.5 truncate">{p.notes}</div>
+                      )}
+                      {/* SpeedSol name tags */}
+                      {clientSpeedsolNames.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {clientSpeedsolNames.map((n) => (
+                            <span key={n} className="inline-flex items-center gap-1 text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                              {n}
+                              {isMapping && (
+                                <button onClick={() => removeSpeedsolName(p.client_account_id, n)} className="hover:text-destructive bg-transparent border-none p-0 cursor-pointer">
+                                  <X className="w-2.5 h-2.5" />
+                                </button>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {clientSpeedsolNames.length === 0 && !isMapping && (
+                        <div className="text-[9px] text-warning mt-1">⚠ No SpeedSol names mapped</div>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleEdit(p)}
-                      title="Edit"
-                      className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => del.mutate(p.id)}
-                      title="Delete"
-                      className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-destructive p-1.5 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-3 ml-3">
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-foreground tabular-nums">+{p.margin_percent}%</div>
+                        {latestBuyPrice > 0 && (
+                          <div className="text-[10px] text-muted-foreground tabular-nums">${sellPrice.toFixed(4)}/L</div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setMappingClientId(isMapping ? null : p.client_account_id)}
+                        title="Map SpeedSol names"
+                        className={`bg-transparent border-none cursor-pointer p-1.5 transition-colors ${isMapping ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        <Link2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleEdit(p)}
+                        title="Edit"
+                        className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => del.mutate(p.id)}
+                        title="Delete"
+                        className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-destructive p-1.5 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Inline SpeedSol mapping editor */}
+                  {isMapping && (
+                    <div className="mt-2 p-3 bg-[hsl(var(--muted))] rounded-lg">
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+                        Map SpeedSol Names → {p.client_name}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search SpeedSol names…"
+                        value={mappingSearch}
+                        onChange={(e) => setMappingSearch(e.target.value)}
+                        className="bg-card border border-border rounded-lg text-foreground px-3 py-1.5 text-[11px] outline-none w-full mb-2"
+                      />
+                      <div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
+                        {unmappedTxnNames
+                          .filter((n) => !mappingSearch || n.toLowerCase().includes(mappingSearch.toLowerCase()))
+                          .map((name) => (
+                            <button
+                              key={name}
+                              onClick={() => addSpeedsolName(p.client_account_id, name)}
+                              className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-card text-left bg-transparent border-none cursor-pointer w-full"
+                            >
+                              <Plus className="w-3 h-3 text-primary flex-shrink-0" />
+                              <span className="text-[11px] text-foreground">{name}</span>
+                            </button>
+                          ))}
+                        {unmappedTxnNames.filter((n) => !mappingSearch || n.toLowerCase().includes(mappingSearch.toLowerCase())).length === 0 && (
+                          <div className="text-[11px] text-muted-foreground py-2 px-2">All names are mapped</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
