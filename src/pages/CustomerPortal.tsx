@@ -70,16 +70,20 @@ function useCustomerProfile() {
 
       // Fetch linked client account
       let companyName = "Your Account";
+      let speedsolNames: string[] = [];
       if (data?.client_account_id) {
         const { data: ca } = await supabase
           .from("client_accounts")
           .select("company_name, speedsol_names")
           .eq("id", data.client_account_id)
           .single();
-        if (ca) companyName = ca.company_name;
+        if (ca) {
+          companyName = ca.company_name;
+          speedsolNames = ca.speedsol_names || [];
+        }
       }
 
-      return { ...data, companyName };
+      return { ...data, companyName, speedsolNames };
     },
   });
 }
