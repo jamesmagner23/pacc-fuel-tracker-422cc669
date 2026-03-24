@@ -93,7 +93,7 @@ export default function DeliveryDocket() {
   const isDateRange = deliveryDate !== lastDate;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-4 min-h-screen bg-white p-4 sm:p-6" style={{ background: "#fff" }}>
       {/* Action bar — hidden when printing */}
       <div className="flex items-center justify-between print:hidden">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
