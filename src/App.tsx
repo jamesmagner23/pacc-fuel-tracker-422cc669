@@ -16,6 +16,7 @@ import Finance from "./pages/Finance";
 import DeliveryDocket from "./pages/DeliveryDocket";
 import CustomerPortal from "./pages/CustomerPortal";
 import DriverPortal from "./pages/DriverPortal";
+import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -147,6 +148,7 @@ const App = () => (
                       <Route path="/performance" element={<Performance />} />
                       <Route path="/transactions" element={<Transactions />} />
                       <Route path="/finance" element={<Finance />} />
+                      <Route path="/admin" element={<Admin />} />
                       <Route path="/docket/multi" element={<DeliveryDocket />} />
                       <Route path="/docket/:id" element={<DeliveryDocket />} />
                       <Route path="*" element={<NotFound />} />
