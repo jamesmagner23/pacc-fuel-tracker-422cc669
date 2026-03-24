@@ -33,8 +33,9 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
         </button>
       </div>
       <div className="text-[11px] text-[#D4C4A8] mb-4">Volume share by customer</div>
-      <div className="flex items-center gap-4" style={{ height: 260 }}>
-        <div style={{ width: 180, height: "100%", flexShrink: 0 }}>
+      {/* Stacked on mobile, side-by-side on desktop */}
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="w-full sm:w-[180px] shrink-0" style={{ height: 220 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -43,33 +44,9 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                outerRadius={80}
-                innerRadius={45}
+                outerRadius={75}
+                innerRadius={40}
                 strokeWidth={0}
-                label={({ cx, cy, midAngle, outerRadius, index }) => {
-                  const RADIAN = Math.PI / 180;
-                  const radius = outerRadius + 16;
-                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                  const entry = topCustomers[index];
-                  if (!entry) return null;
-                  const val = showPct
-                    ? `${total > 0 ? ((entry.litres / total) * 100).toFixed(0) : 0}%`
-                    : `${(entry.litres / 1000).toFixed(1)}k`;
-                  return (
-                    <text
-                      x={x}
-                      y={y}
-                      fill="#F5E6D0"
-                      textAnchor={x > cx ? "start" : "end"}
-                      dominantBaseline="central"
-                      fontSize={10}
-                      fontWeight={500}
-                    >
-                      {val}
-                    </text>
-                  );
-                }}
               >
                 {topCustomers.map((_, i) => (
                   <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
@@ -85,13 +62,13 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex flex-col gap-2 min-w-0 flex-1">
+        <div className="flex flex-col gap-2 min-w-0 w-full sm:flex-1">
           {topCustomers.map((c, i) => {
             const pctVal = total > 0 ? ((c.litres / total) * 100).toFixed(0) : "0";
             return (
               <div key={c.name} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                <span className="text-xs text-[#E0D0B8] truncate flex-1">{c.name}</span>
+                <span className="text-xs text-[#E0D0B8] flex-1">{c.name}</span>
                 <span className="text-xs text-[#D4C4A8] tabular-nums shrink-0">
                   {showPct ? `${pctVal}%` : `${(c.litres / 1000).toFixed(1)}k L`}
                 </span>
