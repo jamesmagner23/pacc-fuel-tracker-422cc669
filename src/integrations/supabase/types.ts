@@ -240,6 +240,47 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_deliveries: {
+        Row: {
+          client_account_id: number | null
+          created_at: string | null
+          estimated_litres: number | null
+          id: string
+          notes: string | null
+          scheduled_date: string
+          site_name: string
+          status: string | null
+        }
+        Insert: {
+          client_account_id?: number | null
+          created_at?: string | null
+          estimated_litres?: number | null
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          site_name: string
+          status?: string | null
+        }
+        Update: {
+          client_account_id?: number | null
+          created_at?: string | null
+          estimated_litres?: number | null
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          site_name?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_deliveries_client_account_id_fkey"
+            columns: ["client_account_id"]
+            isOneToOne: false
+            referencedRelation: "client_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_log: {
         Row: {
           error_message: string | null
@@ -395,11 +436,19 @@ export type Database = {
     }
     Functions: {
       get_client_company_name: { Args: { _user_id: string }; Returns: string }
+      get_user_client_account_id: {
+        Args: { _user_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      user_owns_speedsol_name: {
+        Args: { _name: string; _user_id: string }
         Returns: boolean
       }
     }
