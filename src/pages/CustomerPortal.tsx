@@ -209,7 +209,7 @@ export default function CustomerPortal() {
       >
         <PACCLogo />
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 13, color: "#888888" }}>{companyName}</span>
+          <span style={{ fontSize: 13, color: "#A89580" }}>{companyName}</span>
           <button
             onClick={handleSignOut}
             style={{
@@ -218,14 +218,14 @@ export default function CustomerPortal() {
               gap: 6,
               background: "transparent",
               border: "none",
-              color: "#333333",
+              color: "#4A3520",
               fontSize: 12,
               cursor: "pointer",
               padding: "6px 10px",
               borderRadius: 8,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#888888")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#333333")}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#A89580")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#4A3520")}
           >
             <LogOut className="w-3.5 h-3.5" />
             Sign out
@@ -247,7 +247,7 @@ export default function CustomerPortal() {
         >
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{companyName}</h1>
-            <p style={{ fontSize: 13, color: "#555555", margin: "4px 0 0" }}>
+            <p style={{ fontSize: 13, color: "#8B7355", margin: "4px 0 0" }}>
               Fuel delivery portal
             </p>
           </div>
@@ -335,10 +335,10 @@ export default function CustomerPortal() {
                       marginBottom: 8,
                     }}
                   >
-                    <span style={{ fontSize: 10, color: "#555555", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <span style={{ fontSize: 10, color: "#8B7355", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       {k.label}
                     </span>
-                    <span style={{ color: "#333333" }}>{k.icon}</span>
+                    <span style={{ color: "#4A3520" }}>{k.icon}</span>
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 600 }}>{k.value}</div>
                 </div>
@@ -382,7 +382,7 @@ export default function CustomerPortal() {
                 >
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{t.nombre_cliente1}</div>
-                    <div style={{ fontSize: 11, color: "#555555" }}>
+                    <div style={{ fontSize: 11, color: "#8B7355" }}>
                       {t.date ? format(parseISO(t.date), "dd MMM yyyy") : "—"}
                     </div>
                   </div>
@@ -449,11 +449,11 @@ export default function CustomerPortal() {
             {/* Transaction list */}
             <div style={card}>
               {isLoading ? (
-                <div style={{ color: "#555555", fontSize: 13, textAlign: "center", padding: 20 }}>
+                <div style={{ color: "#8B7355", fontSize: 13, textAlign: "center", padding: 20 }}>
                   Loading...
                 </div>
               ) : filtered.length === 0 ? (
-                <div style={{ color: "#555555", fontSize: 13, textAlign: "center", padding: 20 }}>
+                <div style={{ color: "#8B7355", fontSize: 13, textAlign: "center", padding: 20 }}>
                   No deliveries found
                 </div>
               ) : (
@@ -470,7 +470,7 @@ export default function CustomerPortal() {
                   >
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 500 }}>{t.nombre_cliente1}</div>
-                      <div style={{ fontSize: 11, color: "#555555" }}>
+                      <div style={{ fontSize: 11, color: "#8B7355" }}>
                         {t.date ? format(parseISO(t.date), "EEE dd MMM yyyy") : "—"}
                         {t.factura ? ` · #${t.factura}` : ""}
                       </div>
@@ -486,14 +486,14 @@ export default function CustomerPortal() {
                           background: "transparent",
                           border: "1px solid #2E1C0C",
                           borderRadius: 6,
-                          color: "#444444",
+                          color: "#5C4A35",
                           cursor: "pointer",
                           padding: "5px 8px",
                           display: "flex",
                           alignItems: "center",
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.color = "#FF4D1C")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "#444444")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#5C4A35")}
                       >
                         <FileText className="w-3.5 h-3.5" />
                       </button>
@@ -522,7 +522,7 @@ export default function CustomerPortal() {
                       <MapPin className="w-3.5 h-3.5" style={{ color: "#FF4D1C" }} />
                       <span style={{ fontSize: 14, fontWeight: 500 }}>{s.site}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: "#555555" }}>
+                    <div style={{ fontSize: 11, color: "#8B7355" }}>
                       {s.count} deliveries · Last:{" "}
                       {s.lastDate ? format(parseISO(s.lastDate), "dd MMM") : "—"}
                     </div>
@@ -531,7 +531,7 @@ export default function CustomerPortal() {
                     <div style={{ fontSize: 18, fontWeight: 600 }}>
                       {s.litres.toLocaleString()}L
                     </div>
-                    <div style={{ fontSize: 10, color: "#555555", marginTop: 2 }}>
+                    <div style={{ fontSize: 10, color: "#8B7355", marginTop: 2 }}>
                       <span
                         style={{
                           display: "inline-block",
@@ -571,11 +571,11 @@ export default function CustomerPortal() {
                   padding: 40,
                 }}
               >
-                <Calendar className="w-8 h-8" style={{ color: "#333333", margin: "0 auto 12px" }} />
-                <p style={{ fontSize: 14, color: "#555555", margin: 0 }}>
+                <Calendar className="w-8 h-8" style={{ color: "#4A3520", margin: "0 auto 12px" }} />
+                <p style={{ fontSize: 14, color: "#8B7355", margin: 0 }}>
                   No upcoming deliveries scheduled
                 </p>
-                <p style={{ fontSize: 12, color: "#333333", margin: "6px 0 0" }}>
+                <p style={{ fontSize: 12, color: "#4A3520", margin: "6px 0 0" }}>
                   Contact PACC Energy to arrange your next delivery
                 </p>
               </div>
@@ -597,7 +597,7 @@ export default function CustomerPortal() {
                         {format(parseISO(s.scheduled_date), "EEEE dd MMM yyyy")}
                       </div>
                       {s.notes && (
-                        <p style={{ fontSize: 11, color: "#555555", margin: "6px 0 0" }}>
+                        <p style={{ fontSize: 11, color: "#8B7355", margin: "6px 0 0" }}>
                           {s.notes}
                         </p>
                       )}

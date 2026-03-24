@@ -50,14 +50,14 @@ export default function Login() {
             <PACCLogo />
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 600, color: "#F2EDE6", margin: 0 }}>Sign in</h1>
-          <p style={{ fontSize: 13, color: "#555555", margin: "6px 0 0" }}>
+          <p style={{ fontSize: 13, color: "#8B7355", margin: "6px 0 0" }}>
             Enter your email and password to continue
           </p>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 12, color: "#888888" }}>Email</label>
+            <label style={{ fontSize: 12, color: "#A89580" }}>Email</label>
             <input
               type="email"
               value={email}
@@ -79,7 +79,7 @@ export default function Login() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 12, color: "#888888" }}>Password</label>
+            <label style={{ fontSize: 12, color: "#A89580" }}>Password</label>
             <input
               type="password"
               value={password}
@@ -140,7 +140,7 @@ export default function Login() {
           {loading ? "Signing in…" : "Sign in"}
         </button>
 
-        <p style={{ fontSize: 11, color: "#333333", textAlign: "center", margin: 0 }}>
+        <p style={{ fontSize: 11, color: "#4A3520", textAlign: "center", margin: 0 }}>
           Need access? Contact PACC Energy
         </p>
       </form>
