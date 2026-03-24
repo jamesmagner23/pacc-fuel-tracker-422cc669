@@ -251,8 +251,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main
-          style={{ flex: 1, padding: "28px 28px", overflowY: "auto", paddingBottom: 80 }}
-          className="md:px-8 md:py-8"
+          style={{ flex: 1, overflowY: "auto", paddingBottom: 80 }}
+          className="px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8"
         >
           {children}
         </main>

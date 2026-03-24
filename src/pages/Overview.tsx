@@ -33,8 +33,9 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
         </button>
       </div>
       <div className="text-[11px] text-[#D4C4A8] mb-4">Volume share by customer</div>
-      <div className="flex items-center gap-4" style={{ height: 260 }}>
-        <div style={{ width: 180, height: "100%", flexShrink: 0 }}>
+      {/* Stacked on mobile, side-by-side on desktop */}
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="w-full sm:w-[180px] shrink-0" style={{ height: 220 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -43,33 +44,9 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                outerRadius={80}
-                innerRadius={45}
+                outerRadius={75}
+                innerRadius={40}
                 strokeWidth={0}
-                label={({ cx, cy, midAngle, outerRadius, index }) => {
-                  const RADIAN = Math.PI / 180;
-                  const radius = outerRadius + 16;
-                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                  const entry = topCustomers[index];
-                  if (!entry) return null;
-                  const val = showPct
-                    ? `${total > 0 ? ((entry.litres / total) * 100).toFixed(0) : 0}%`
-                    : `${(entry.litres / 1000).toFixed(1)}k`;
-                  return (
-                    <text
-                      x={x}
-                      y={y}
-                      fill="#F5E6D0"
-                      textAnchor={x > cx ? "start" : "end"}
-                      dominantBaseline="central"
-                      fontSize={10}
-                      fontWeight={500}
-                    >
-                      {val}
-                    </text>
-                  );
-                }}
               >
                 {topCustomers.map((_, i) => (
                   <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
@@ -85,13 +62,13 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex flex-col gap-2 min-w-0 flex-1">
+        <div className="flex flex-col gap-2 min-w-0 w-full sm:flex-1">
           {topCustomers.map((c, i) => {
             const pctVal = total > 0 ? ((c.litres / total) * 100).toFixed(0) : "0";
             return (
               <div key={c.name} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                <span className="text-xs text-[#E0D0B8] truncate flex-1">{c.name}</span>
+                <span className="text-xs text-[#E0D0B8] flex-1">{c.name}</span>
                 <span className="text-xs text-[#D4C4A8] tabular-nums shrink-0">
                   {showPct ? `${pctVal}%` : `${(c.litres / 1000).toFixed(1)}k L`}
                 </span>
@@ -204,11 +181,11 @@ export default function Overview() {
     <div className="flex flex-col gap-1 max-w-[1200px]">
       {/* HERO SECTION */}
       <div
+        className="px-4 pt-5 pb-0 sm:px-8 sm:pt-7"
         style={{
           background: "#4A3525",
           border: "1px solid #6B5240",
           borderRadius: 12,
-          padding: "28px 32px 0 32px",
           overflow: "hidden",
         }}
       >
@@ -233,7 +210,7 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className="flex gap-8 pt-1">
+          <div className="flex gap-4 sm:gap-8 pt-1">
             {[
               { label: "Revenue", value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }), p: revPct },
               { label: "Deliveries", value: numDeliveries.toString(), p: delPct },
@@ -251,7 +228,7 @@ export default function Overview() {
         </div>
 
         {/* Hero chart: area chart for all ranges */}
-        <div style={{ height: 160, marginLeft: -32, marginRight: -32 }}>
+        <div className="-mx-4 sm:-mx-8" style={{ height: 160 }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <defs>
@@ -286,15 +263,15 @@ export default function Overview() {
           ) : (
             <div className="flex flex-col divide-y divide-[#6B5240]">
               {recentDeliveries.map((t) => (
-                <div key={t.id} className="flex items-center gap-3 py-2.5 group hover:bg-[#5A4535] -mx-3 px-3 rounded-lg transition-colors">
-                  <div className="w-[52px] text-[11px] text-[#C4A882] tabular-nums shrink-0">
+                <div key={t.id} className="flex items-start gap-2 sm:gap-3 py-2.5 group hover:bg-[#5A4535] -mx-3 px-3 rounded-lg transition-colors">
+                  <div className="w-[40px] sm:w-[52px] text-[11px] text-[#C4A882] tabular-nums shrink-0 pt-0.5">
                     {format(new Date(t.fecha), "HH:mm")}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-foreground font-medium truncate">
                       {t.nombre_cliente1 || "Walk-in"}
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-[#C4A882] mt-0.5">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] sm:text-[11px] text-[#C4A882] mt-0.5">
                       {t.placa && (
                         <span className="flex items-center gap-1">
                           <Truck className="w-3 h-3" />
@@ -302,13 +279,13 @@ export default function Overview() {
                         </span>
                       )}
                       {t.estacion && (
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 hidden sm:flex">
                           <MapPin className="w-3 h-3" />
                           {t.estacion}
                         </span>
                       )}
                       {t.producto && (
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 hidden sm:flex">
                           <Fuel className="w-3 h-3" />
                           {t.producto}
                         </span>
@@ -320,7 +297,7 @@ export default function Overview() {
                       {(t.cantidad || 0).toLocaleString()}L
                     </div>
                     {t.dinero_total != null && (
-                      <div className="text-[11px] text-[#C4A882] tabular-nums">
+                      <div className="text-[11px] text-[#C4A882] tabular-nums hidden sm:block">
                         ${t.dinero_total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     )}
