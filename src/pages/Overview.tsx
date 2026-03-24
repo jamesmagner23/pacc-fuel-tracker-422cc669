@@ -137,6 +137,29 @@ export default function Overview() {
       .map(([date, litres]) => ({ date: format(parseISO(date), "dd MMM"), litres }));
   }, [filtered]);
 
+  const hourlyData = useMemo(() => {
+    if (range !== "today") return [];
+    const hours: Record<number, number> = {};
+    for (let h = 0; h < 24; h++) hours[h] = 0;
+    filtered.forEach((t) => {
+      const hour = new Date(t.fecha).getHours();
+      hours[hour] += t.cantidad || 0;
+    });
+    return Object.entries(hours)
+      .map(([h, litres]) => ({
+        hour: `${String(h).padStart(2, "0")}:00`,
+        litres,
+      }))
+      .filter((_, i) => i >= 5 && i <= 22); // 5am to 10pm
+  }, [filtered, range]);
+
+  const recentDeliveries = useMemo(() => {
+    if (range !== "today") return [];
+    return [...filtered]
+      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+      .slice(0, 12);
+  }, [filtered, range]);
+
   const topCustomers = useMemo(() => {
     const map: Record<string, { name: string; litres: number }> = {};
     filtered.forEach((t) => {
