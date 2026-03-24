@@ -7,7 +7,7 @@ import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO } from "date-fns";
-import { Droplets, TrendingUp, TrendingDown } from "lucide-react";
+import { Droplets, TrendingUp, TrendingDown, Clock, Truck, MapPin, Fuel } from "lucide-react";
 
 const PIE_COLORS = ["#E8461E", "#FF6B42", "#FFB088", "#D13A14", "#CC6B3A", "#8B5A2B"];
 
