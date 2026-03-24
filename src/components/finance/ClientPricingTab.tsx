@@ -459,7 +459,7 @@ export default function ClientPricingTab() {
               <span className="w-2.5 h-2.5 rounded-sm bg-primary inline-block" /> ≥ Avg margin
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: "hsl(220 15% 45%)" }} /> Below avg
+              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: "#8B7355" }} /> Below avg
             </span>
           </div>
         </div>
