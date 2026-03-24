@@ -10,7 +10,7 @@ export default function Finance() {
   return (
     <div className="flex flex-col gap-5 max-w-[1100px]">
       <Tabs defaultValue="pnl">
-        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-1">
+        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap">
           {[
             { value: "pnl", label: "P&L Overview" },
             { value: "buy", label: "Buy Price" },
