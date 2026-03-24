@@ -42,6 +42,7 @@ export default function Finance() {
         </TabsContent>
         <TabsContent value="scheduled" className="mt-5">
           <ScheduledTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
