@@ -42,7 +42,7 @@ export default function PLOverview() {
   }, [clients]);
 
   // Helper: calculate sell price per litre for a transaction using client margin
-  const getSellPPL = (t: any) => {
+  const getSellPPL = useCallback((t: any) => {
     // If actual sell price exists, use it
     if (t.ppu && t.ppu > 0) return t.ppu;
     // Otherwise derive from client's margin setting
@@ -50,7 +50,7 @@ export default function PLOverview() {
     const pricing = clientId ? customerPricing.find((p) => p.client_account_id === clientId) : null;
     const marginPct = pricing?.margin_percent ?? 10; // default 10% margin
     return latestBuyPrice * (1 + marginPct / 100);
-  };
+  }, [speedsolToClientId, customerPricing, latestBuyPrice]);
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const totalRevenue = filtered.reduce((s, t) => {
