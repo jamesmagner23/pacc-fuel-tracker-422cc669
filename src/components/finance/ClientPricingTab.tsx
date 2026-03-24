@@ -101,6 +101,53 @@ export default function ClientPricingTab() {
     setNewPhone("");
   };
 
+  // SpeedSol name mapping
+  const [mappingClientId, setMappingClientId] = useState<number | null>(null);
+  const [mappingSearch, setMappingSearch] = useState("");
+
+  const updateSpeedsolNames = useMutation({
+    mutationFn: async ({ clientId, names }: { clientId: number; names: string[] }) => {
+      const { error } = await supabase
+        .from("client_accounts")
+        .update({ speedsol_names: names } as any)
+        .eq("id", clientId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["client-accounts"] });
+      toast.success("SpeedSol mapping updated");
+    },
+    onError: () => toast.error("Failed to update mapping"),
+  });
+
+  const addSpeedsolName = (clientId: number, name: string) => {
+    const client = clients.find((c) => c.id === clientId);
+    if (!client) return;
+    const current: string[] = (client as any).speedsol_names || [];
+    if (current.includes(name)) return;
+    updateSpeedsolNames.mutate({ clientId, names: [...current, name] });
+  };
+
+  const removeSpeedsolName = (clientId: number, name: string) => {
+    const client = clients.find((c) => c.id === clientId);
+    if (!client) return;
+    const current: string[] = (client as any).speedsol_names || [];
+    updateSpeedsolNames.mutate({ clientId, names: current.filter((n) => n !== name) });
+  };
+
+  // All currently mapped speedsol names
+  const allMappedNames = useMemo(() => {
+    const set = new Set<string>();
+    clients.forEach((c: any) => {
+      (c.speedsol_names || []).forEach((n: string) => set.add(n));
+    });
+    return set;
+  }, [clients]);
+
+  const unmappedTxnNames = useMemo(() => {
+    return txnCustomers.filter((n) => !allMappedNames.has(n));
+  }, [txnCustomers, allMappedNames]);
+
   const handleEdit = (p: CustomerPricing & { client_name: string }) => {
     setFormClientId(p.client_account_id);
     setFormMargin(String(p.margin_percent));
