@@ -1,10 +1,11 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, subWeeks } from "date-fns";
 import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check } from "lucide-react";
 import { PACCLogo } from "@/components/PACCLogo";
 import { toast } from "sonner";
+import { logActivity } from "@/hooks/useActivityLog";
 
 function useDriverTransactions() {
   const today = format(new Date(), "yyyy-MM-dd");
@@ -116,6 +117,7 @@ function FuelIntakeForm() {
     },
     onSuccess: () => {
       toast.success("Fuel intake logged!");
+      logActivity("fuel_intake", { litres: parseFloat(litres) || 0 });
       setLitres("");
       setPhoto(null);
       setPreview(null);
@@ -253,6 +255,10 @@ function FuelIntakeForm() {
 
 export default function DriverPortal() {
   const { todayQuery, weekQuery, lastWeekQuery } = useDriverTransactions();
+
+  useEffect(() => {
+    logActivity("page_view", { page: "driver_portal" });
+  }, []);
 
   const today = todayQuery.data || [];
   const week = weekQuery.data || [];

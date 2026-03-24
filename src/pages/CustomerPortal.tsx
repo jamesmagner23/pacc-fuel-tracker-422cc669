@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subDays } from "date-fns";
 import { Download, MapPin, Calendar, Droplets, FileText, LogOut } from "lucide-react";
 import { PACCLogo } from "@/components/PACCLogo";
+import { logActivity } from "@/hooks/useActivityLog";
 
 const tabs = ["Overview", "Deliveries", "Sites", "Scheduled"] as const;
 type Tab = (typeof tabs)[number];
@@ -106,6 +107,7 @@ function exportCSV(transactions: any[], filename: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+  logActivity("export", { type: "csv", filename, rows: transactions.length });
 }
 
 // ── Text Docket for single delivery ──
@@ -132,6 +134,7 @@ Melbourne, Victoria
   a.download = `docket-${tx.factura || tx.id}.txt`;
   a.click();
   URL.revokeObjectURL(url);
+  logActivity("export", { type: "docket", invoice: tx.factura || tx.id });
 }
 
 const card: React.CSSProperties = {
@@ -153,6 +156,10 @@ export default function CustomerPortal() {
   const { data: scheduled = [] } = useScheduledDeliveries(clientAccountId);
 
   const companyName = profile?.companyName || "Your Account";
+
+  useEffect(() => {
+    logActivity("page_view", { page: "customer_portal" });
+  }, []);
 
   // All unique sites for this customer
   const sites = useMemo(() => {
