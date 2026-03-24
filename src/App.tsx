@@ -13,6 +13,7 @@ import Transactions from "./pages/Transactions";
 import Finance from "./pages/Finance";
 import DeliveryDocket from "./pages/DeliveryDocket";
 import CustomerPortal from "./pages/CustomerPortal";
+import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/docket/multi" element={<DeliveryDocket />} />
               <Route path="/docket/:id" element={<DeliveryDocket />} />
               <Route path="/portal" element={<CustomerPortal />} />
+              <Route path="/login" element={<Login />} />
               <Route path="*" element={<NotFound />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
