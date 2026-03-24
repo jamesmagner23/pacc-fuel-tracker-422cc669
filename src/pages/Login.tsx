@@ -41,7 +41,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(true);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
