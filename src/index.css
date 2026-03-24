@@ -2,24 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Inter from Google Fonts */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 @layer base {
   :root {
-    --background: #0c0c0c;
-    --surface: #111111;
-    --surface-raised: #161616;
-    --surface-border: #1a1a1a;
+    --background: #110b06;
+    --surface: #1a1009;
+    --surface-raised: #221408;
+    --surface-border: #2e1c0c;
 
-    --accent: #7c3aed;
-    --accent-hover: #6d28d9;
-    --accent-light: rgba(124, 58, 237, 0.12);
-    --accent-text: #a78bfa;
+    --accent: #ff4d1c;
+    --accent-hover: #e63d0f;
+    --accent-light: rgba(255, 77, 28, 0.12);
+    --accent-text: #ff7a52;
 
-    --text-primary: #ffffff;
-    --text-secondary: #888888;
-    --text-muted: #555555;
+    --text-primary: #f2ede6;
+    --text-secondary: #8b7355;
+    --text-muted: #4a3520;
 
     --positive: #10b981;
     --positive-bg: rgba(16, 185, 129, 0.08);
@@ -28,33 +27,33 @@
     --warning: #f59e0b;
     --warning-bg: rgba(245, 158, 11, 0.08);
 
-    --border: #1a1a1a;
-    --border-subtle: #141414;
+    --border: #2e1c0c;
+    --border-subtle: #1e1208;
     --radius: 10px;
     --radius-sm: 6px;
 
     /* Shadcn compat */
-    --foreground: #ffffff;
-    --primary: #7c3aed;
+    --foreground: #f2ede6;
+    --primary: #ff4d1c;
     --primary-foreground: #ffffff;
-    --card: #111111;
-    --card-foreground: #ffffff;
-    --popover: #161616;
-    --popover-foreground: #ffffff;
-    --secondary: #161616;
-    --secondary-foreground: #ffffff;
-    --muted: #333333;
-    --muted-foreground: #666666;
+    --card: #1a1009;
+    --card-foreground: #f2ede6;
+    --popover: #221408;
+    --popover-foreground: #f2ede6;
+    --secondary: #221408;
+    --secondary-foreground: #f2ede6;
+    --muted: #2e1c0c;
+    --muted-foreground: #8b7355;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
-    --ring: #7c3aed;
-    --input: #1a1a1a;
+    --ring: #ff4d1c;
+    --input: #2e1c0c;
   }
 }
 
 @layer base {
   * {
-    border-color: #1a1a1a;
+    border-color: #2e1c0c;
     box-sizing: border-box;
   }
 
@@ -63,8 +62,8 @@
   }
 
   body {
-    background-color: #0c0c0c;
-    color: #ffffff;
+    background-color: #110b06;
+    color: #f2ede6;
     font-family:
       "Inter",
       system-ui,
@@ -77,32 +76,30 @@
     font-feature-settings: "cv11", "ss01", "ss03";
   }
 
-  /* Headings — tighter tracking like Midday */
   h1 {
     font-size: 22px;
     font-weight: 600;
     letter-spacing: -0.025em;
-    color: #ffffff;
+    color: #f2ede6;
   }
   h2 {
     font-size: 18px;
     font-weight: 600;
     letter-spacing: -0.02em;
-    color: #ffffff;
+    color: #f2ede6;
   }
   h3 {
     font-size: 15px;
     font-weight: 500;
     letter-spacing: -0.01em;
-    color: #ffffff;
+    color: #f2ede6;
   }
   h4 {
     font-size: 13px;
     font-weight: 500;
-    color: #ffffff;
+    color: #f2ede6;
   }
 
-  /* Scrollbar */
   ::-webkit-scrollbar {
     width: 4px;
     height: 4px;
@@ -111,41 +108,37 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #2a2a2a;
+    background: #2e1c0c;
     border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #3a3a3a;
+    background: #3d2510;
   }
 }
 
 @layer components {
-  /* Card — Midday style: dark surface, very subtle border, no shadow */
   .card {
-    background: #111111;
-    border: 1px solid #1a1a1a;
+    background: #1a1009;
+    border: 1px solid #2e1c0c;
     border-radius: 10px;
   }
 
-  /* KPI card label */
   .kpi-label {
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #555555;
+    color: #4a3520;
   }
 
-  /* KPI number */
   .kpi-value {
     font-size: 28px;
     font-weight: 600;
     letter-spacing: -0.03em;
-    color: #ffffff;
+    color: #f2ede6;
     line-height: 1;
   }
 
-  /* Delta pills */
   .delta-up {
     display: inline-flex;
     align-items: center;
@@ -170,26 +163,23 @@
     font-weight: 500;
   }
 
-  /* Table rows */
   .data-row {
-    border-bottom: 1px solid #141414;
+    border-bottom: 1px solid #1e1208;
     transition: background 0.1s;
   }
   .data-row:hover {
     background: rgba(255, 255, 255, 0.02);
   }
 
-  /* Skeleton loader */
   .skeleton {
-    background: linear-gradient(90deg, #1a1a1a 25%, #222222 50%, #1a1a1a 75%);
+    background: linear-gradient(90deg, #1a1009 25%, #221408 50%, #1a1009 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite linear;
     border-radius: 6px;
   }
 
-  /* Primary button */
   .btn-primary {
-    background: #7c3aed;
+    background: #ff4d1c;
     color: #ffffff;
     border: none;
     border-radius: 20px;
@@ -201,14 +191,13 @@
     letter-spacing: 0.01em;
   }
   .btn-primary:hover {
-    background: #6d28d9;
+    background: #e63d0f;
   }
 
-  /* Secondary/ghost button */
   .btn-ghost {
     background: transparent;
-    color: #666666;
-    border: 1px solid #222222;
+    color: #8b7355;
+    border: 1px solid #2e1c0c;
     border-radius: 20px;
     padding: 6px 14px;
     font-size: 12px;
@@ -219,29 +208,28 @@
       color 0.15s;
   }
   .btn-ghost:hover {
-    border-color: #444444;
-    color: #aaaaaa;
+    border-color: #4a3520;
+    color: #f2ede6;
   }
 
-  /* Section label */
   .section-label {
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #444444;
+    color: #3d2510;
   }
 }
 
 @layer utilities {
   .text-primary-val {
-    color: #ffffff;
+    color: #f2ede6;
   }
   .text-secondary-val {
-    color: #888888;
+    color: #8b7355;
   }
   .text-muted-val {
-    color: #555555;
+    color: #4a3520;
   }
   .text-positive {
     color: #10b981;
@@ -252,84 +240,20 @@
   .text-warning {
     color: #f59e0b;
   }
-  .text-accent-purple {
-    color: #a78bfa;
+  .text-accent-orange {
+    color: #ff7a52;
   }
 
   .bg-surface {
-    background: #111111;
+    background: #1a1009;
   }
   .bg-raised {
-    background: #161616;
+    background: #221408;
   }
-
   .border-subtle {
-    border-color: #141414;
+    border-color: #1e1208;
   }
-
   .tracking-tight-xl {
     letter-spacing: -0.03em;
-  }
-}
-
-/* Receipt printer optimised print styles */
-@media print {
-  /* Hide app shell */
-  nav, header, .print\\:hidden, [class*="print:hidden"] {
-    display: none !important;
-  }
-
-  body {
-    background: white !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* Thermal receipt: narrow page, no margins */
-  @page {
-    size: 80mm auto;
-    margin: 2mm;
-  }
-
-  /* Reset docket card for receipt output */
-  #docket {
-    max-width: 100% !important;
-    width: 100% !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 2mm !important;
-    font-size: 11px !important;
-    line-height: 1.3 !important;
-  }
-
-  #docket h1 {
-    font-size: 14px !important;
-  }
-
-  #docket table {
-    font-size: 10px !important;
-  }
-
-  #docket .grid-cols-2 {
-    gap: 2mm !important;
-  }
-
-  /* Smaller QR for receipt */
-  #docket svg[class*="qr"], #docket svg {
-    max-width: 48px !important;
-    max-height: 48px !important;
-  }
-
-  /* Compact signature lines */
-  #docket .mt-10 {
-    margin-top: 4mm !important;
-  }
-
-  /* Ensure everything fits on receipt width */
-  * {
-    overflow-wrap: break-word;
-    word-break: break-word;
   }
 }
