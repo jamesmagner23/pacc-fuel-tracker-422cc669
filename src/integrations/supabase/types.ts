@@ -161,6 +161,7 @@ export type Database = {
       }
       fuel_intake_logs: {
         Row: {
+          bowser_retail_price: number | null
           created_at: string | null
           driver_user_id: string
           id: string
@@ -170,6 +171,7 @@ export type Database = {
           photo_path: string | null
         }
         Insert: {
+          bowser_retail_price?: number | null
           created_at?: string | null
           driver_user_id: string
           id?: string
@@ -179,6 +181,7 @@ export type Database = {
           photo_path?: string | null
         }
         Update: {
+          bowser_retail_price?: number | null
           created_at?: string | null
           driver_user_id?: string
           id?: string
