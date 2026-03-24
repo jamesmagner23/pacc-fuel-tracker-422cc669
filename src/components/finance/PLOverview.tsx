@@ -302,7 +302,7 @@ export default function PLOverview() {
                   {pricedClients.slice(0, 10).map((c, i) => (
                     <Cell
                       key={i}
-                      fill={c.profit >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))"}
+                      fill={c.profit >= 0 ? "#10B981" : "#EF4444"}
                     />
                   ))}
                 </Bar>
