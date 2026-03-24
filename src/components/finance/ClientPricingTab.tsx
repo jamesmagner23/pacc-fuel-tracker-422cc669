@@ -468,13 +468,13 @@ export default function ClientPricingTab() {
       {/* Volume tier distribution pie chart */}
       {pricingWithClients.length > 0 && (() => {
         const TIER_COLORS = [
-          "hsl(var(--primary))",
-          "hsl(260 60% 55%)",
-          "hsl(200 70% 50%)",
-          "hsl(170 60% 45%)",
-          "hsl(45 80% 55%)",
-          "hsl(25 75% 55%)",
-          "hsl(350 65% 50%)",
+          "#E8461E",
+          "#FF6B42",
+          "#FFB088",
+          "#D13A14",
+          "#F5E6D0",
+          "#C4A882",
+          "#8B7355",
         ];
         const tierCounts = VOLUME_TIERS.map((tier, idx) => ({
           name: `${tier}L`,
