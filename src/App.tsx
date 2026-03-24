@@ -110,6 +110,14 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return <Navigate to="/portal" replace />;
   }
 
+  // Driver role — only allow driver routes
+  if (role === "driver") {
+    if (location.pathname.startsWith("/driver")) {
+      return <>{children}</>;
+    }
+    return <Navigate to="/driver" replace />;
+  }
+
   // Admin or login page — render normally
   return <>{children}</>;
 }
