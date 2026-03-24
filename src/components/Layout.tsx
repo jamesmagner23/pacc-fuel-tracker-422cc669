@@ -9,7 +9,6 @@ import { PACCLogo } from "./PACCLogo";
 const navItems = [
   { to: "/", label: "Overview" },
   { to: "/customers", label: "Customers" },
-  { to: "/performance", label: "Performance" },
   { to: "/transactions", label: "Transactions" },
   { to: "/finance", label: "Finance" },
   { to: "/admin", label: "Admin" },
