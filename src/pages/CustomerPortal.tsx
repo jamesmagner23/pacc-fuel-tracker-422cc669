@@ -147,7 +147,8 @@ export default function CustomerPortal() {
   const [siteFilter, setSiteFilter] = useState("all");
 
   const { data: profile } = useCustomerProfile();
-  const { data: transactions = [], isLoading } = useCustomerTransactions(range);
+  const speedsolNames = profile?.speedsolNames || [];
+  const { data: transactions = [], isLoading } = useCustomerTransactions(range, speedsolNames);
   const clientAccountId = profile?.client_account_id || null;
   const { data: scheduled = [] } = useScheduledDeliveries(clientAccountId);
 
