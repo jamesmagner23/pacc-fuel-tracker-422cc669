@@ -59,6 +59,7 @@ function FuelIntakeForm() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [bowserPrice, setBowserPrice] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
