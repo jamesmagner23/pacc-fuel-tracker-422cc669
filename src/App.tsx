@@ -68,7 +68,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session && location.pathname !== "/login") {
+      if (!session && !["/login", "/", "/reset-password"].includes(location.pathname)) {
         setRole(null);
         navigate("/login", { replace: true });
       } else if (session) {
