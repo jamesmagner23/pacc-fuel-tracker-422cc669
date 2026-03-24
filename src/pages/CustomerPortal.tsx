@@ -110,30 +110,9 @@ function exportCSV(transactions: any[], filename: string) {
   logActivity("export", { type: "csv", filename, rows: transactions.length });
 }
 
-// ── Text Docket for single delivery ──
-function exportDocket(tx: any) {
-  const content = `
-PACC FUEL — DELIVERY DOCKET
-
-Date:     ${tx.date || "—"}
-Time:     ${tx.fecha ? format(new Date(tx.fecha), "HH:mm") : "—"}
-Site:     ${tx.nombre_cliente1 || "—"}
-Driver:   ${tx.nombre_vendedor || "—"}
-Truck:    ${tx.placa || "—"}
-Litres:   ${tx.cantidad?.toFixed(2) || "0"} L
-Invoice:  ${tx.factura || "—"}
-
-PACC Energy Pty Ltd
-Melbourne, Victoria
-`.trim();
-
-  const blob = new Blob([content], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `docket-${tx.factura || tx.id}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
+// ── Open branded docket page for single delivery ──
+function openDocket(tx: any) {
+  window.open(`/docket/${tx.id}`, "_blank");
   logActivity("export", { type: "docket", invoice: tx.factura || tx.id });
 }
 
@@ -487,7 +466,7 @@ export default function CustomerPortal() {
                         {(t.cantidad || 0).toLocaleString()}L
                       </span>
                       <button
-                        onClick={() => exportDocket(t)}
+                        onClick={() => openDocket(t)}
                         title="Download docket"
                         style={{
                           background: "transparent",
