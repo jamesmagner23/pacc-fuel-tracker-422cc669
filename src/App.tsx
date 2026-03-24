@@ -15,12 +15,13 @@ import Transactions from "./pages/Transactions";
 import Finance from "./pages/Finance";
 import DeliveryDocket from "./pages/DeliveryDocket";
 import CustomerPortal from "./pages/CustomerPortal";
+import DriverPortal from "./pages/DriverPortal";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-type UserRole = "admin" | "client" | null;
+type UserRole = "admin" | "client" | "driver" | null;
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<UserRole>(null);
@@ -54,6 +55,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       if (userRole === "client" && !location.pathname.startsWith("/portal")) {
         navigate("/portal", { replace: true });
       }
+      if (userRole === "driver" && !location.pathname.startsWith("/driver")) {
+        navigate("/driver", { replace: true });
+      }
     };
 
     checkAuth();
@@ -74,6 +78,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
             setRole(r);
             if (r === "client" && !window.location.pathname.startsWith("/portal")) {
               navigate("/portal", { replace: true });
+            }
+            if (r === "driver" && !window.location.pathname.startsWith("/driver")) {
+              navigate("/driver", { replace: true });
             }
           });
       }
@@ -103,6 +110,14 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return <Navigate to="/portal" replace />;
   }
 
+  // Driver role — only allow driver routes
+  if (role === "driver") {
+    if (location.pathname.startsWith("/driver")) {
+      return <>{children}</>;
+    }
+    return <Navigate to="/driver" replace />;
+  }
+
   // Admin or login page — render normally
   return <>{children}</>;
 }
@@ -118,6 +133,7 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/portal" element={<CustomerPortal />} />
+              <Route path="/driver" element={<DriverPortal />} />
               <Route
                 path="/*"
                 element={
