@@ -446,7 +446,7 @@ export default function ClientPricingTab() {
                       return (
                         <Cell
                           key={i}
-                          fill={isAbove ? "hsl(var(--primary))" : "hsl(220 15% 45%)"}
+                          fill={isAbove ? "#E8461E" : "#8B7355"}
                         />
                       );
                     })}
@@ -459,7 +459,7 @@ export default function ClientPricingTab() {
               <span className="w-2.5 h-2.5 rounded-sm bg-primary inline-block" /> ≥ Avg margin
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: "hsl(220 15% 45%)" }} /> Below avg
+              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: "#8B7355" }} /> Below avg
             </span>
           </div>
         </div>
@@ -468,13 +468,13 @@ export default function ClientPricingTab() {
       {/* Volume tier distribution pie chart */}
       {pricingWithClients.length > 0 && (() => {
         const TIER_COLORS = [
-          "hsl(var(--primary))",
-          "hsl(260 60% 55%)",
-          "hsl(200 70% 50%)",
-          "hsl(170 60% 45%)",
-          "hsl(45 80% 55%)",
-          "hsl(25 75% 55%)",
-          "hsl(350 65% 50%)",
+          "#E8461E",
+          "#FF6B42",
+          "#FFB088",
+          "#D13A14",
+          "#F5E6D0",
+          "#C4A882",
+          "#8B7355",
         ];
         const tierCounts = VOLUME_TIERS.map((tier, idx) => ({
           name: `${tier}L`,
