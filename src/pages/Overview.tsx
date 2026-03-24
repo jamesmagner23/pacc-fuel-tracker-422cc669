@@ -60,7 +60,7 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
                     <text
                       x={x}
                       y={y}
-                      fill="#ffffff"
+                      fill="#F2EDE6"
                       textAnchor={x > cx ? "start" : "end"}
                       dominantBaseline="central"
                       fontSize={10}

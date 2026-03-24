@@ -261,7 +261,7 @@ export default function CustomerPortal() {
                   borderRadius: 16,
                   fontSize: 11,
                   fontWeight: range === r ? 500 : 400,
-                  color: range === r ? "#ffffff" : "#444444",
+                  color: range === r ? "#F2EDE6" : "#444444",
                   background: range === r ? "#FF4D1C" : "transparent",
                   border: "none",
                   cursor: "pointer",
@@ -290,7 +290,7 @@ export default function CustomerPortal() {
                 padding: "8px 16px",
                 fontSize: 13,
                 fontWeight: activeTab === tab ? 500 : 400,
-                color: activeTab === tab ? "#ffffff" : "#444444",
+                color: activeTab === tab ? "#F2EDE6" : "#444444",
                 background: "transparent",
                 border: "none",
                 borderBottom:

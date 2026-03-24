@@ -25,7 +25,7 @@ export default function Performance() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
               style={{
                 background: active === tab.id ? "rgba(255,255,255,0.08)" : "transparent",
-                color: active === tab.id ? "#ffffff" : "#666666",
+                color: active === tab.id ? "#F2EDE6" : "#666666",
               }}
             >
               <tab.icon className="w-3.5 h-3.5" />
