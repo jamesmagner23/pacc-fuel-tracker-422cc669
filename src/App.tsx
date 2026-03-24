@@ -39,10 +39,14 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       if (!session) {
         setRole(null);
         setLoading(false);
-        // Allow public pages without redirect
-        const publicPaths = ["/login", "/", "/reset-password"];
-        if (!publicPaths.includes(location.pathname)) {
-          navigate("/login", { replace: true });
+        const publicPaths = ["/login", "/landing", "/reset-password"];
+        if (!publicPaths.includes(location.pathname) && !location.pathname.startsWith("/docket")) {
+          // Redirect root to landing page for unauthenticated users
+          if (location.pathname === "/") {
+            navigate("/landing", { replace: true });
+          } else {
+            navigate("/login", { replace: true });
+          }
         }
         return;
       }
