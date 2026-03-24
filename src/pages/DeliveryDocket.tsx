@@ -9,18 +9,34 @@ import type { Transaction } from "@/hooks/useTransactions";
 export default function DeliveryDocket() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [txn, setTxn] = useState<Transaction | null>(null);
+  const [items, setItems] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function fetch() {
-      const { data, error } = await supabase
+      // First get the anchor transaction
+      const { data: anchor, error } = await supabase
         .from("transactions")
         .select("*")
         .eq("id", Number(id))
         .single();
-      if (!error && data) setTxn(data as Transaction);
+
+      if (error || !anchor) {
+        setLoading(false);
+        return;
+      }
+
+      // Then find all related transactions: same date, client, truck/driver
+      const { data: related } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("date", anchor.date)
+        .eq("nombre_cliente1", anchor.nombre_cliente1)
+        .eq("estacion", anchor.estacion)
+        .order("fecha", { ascending: true });
+
+      setItems((related || [anchor]) as Transaction[]);
       setLoading(false);
     }
     if (id) fetch();
@@ -37,7 +53,7 @@ export default function DeliveryDocket() {
   const handleShare = async () => {
     if (navigator.share) {
       await navigator.share({
-        title: `Delivery Docket #${txn?.factura || txn?.id}`,
+        title: `Delivery Docket #${items[0]?.factura || items[0]?.id}`,
         url: window.location.href,
       });
     } else {
@@ -46,11 +62,13 @@ export default function DeliveryDocket() {
   };
 
   if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
-  if (!txn) return <div className="p-8 text-muted-foreground">Transaction not found.</div>;
+  if (items.length === 0) return <div className="p-8 text-muted-foreground">Transaction not found.</div>;
 
+  const primary = items[0];
   const docketUrl = window.location.href;
-  const deliveryDate = format(parseISO(txn.fecha), "dd MMMM yyyy");
-  const deliveryTime = format(parseISO(txn.fecha), "HH:mm");
+  const deliveryDate = format(parseISO(primary.fecha), "dd MMMM yyyy");
+  const deliveryTime = format(parseISO(primary.fecha), "HH:mm");
+  const totalLitres = items.reduce((sum, t) => sum + (t.cantidad || 0), 0);
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
@@ -90,7 +108,7 @@ export default function DeliveryDocket() {
           </div>
           <div className="text-right">
             <h1 className="text-lg font-bold text-gray-900">DELIVERY DOCKET</h1>
-            <p className="text-sm text-gray-500 mt-1">#{txn.factura || txn.id}</p>
+            <p className="text-sm text-gray-500 mt-1">#{primary.factura || primary.id}</p>
           </div>
         </div>
 
@@ -98,13 +116,12 @@ export default function DeliveryDocket() {
         <div className="grid grid-cols-2 gap-6 mb-8">
           <div>
             <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Customer</h3>
-            <p className="text-sm font-semibold text-gray-900">{txn.nombre_cliente1 || "—"}</p>
-            {txn.identificador_cliente1 && <p className="text-xs text-gray-500 mt-0.5">ID: {txn.identificador_cliente1}</p>}
+            <p className="text-sm font-semibold text-gray-900">{primary.nombre_cliente1 || "—"}</p>
+            {primary.identificador_cliente1 && <p className="text-xs text-gray-500 mt-0.5">ID: {primary.identificador_cliente1}</p>}
           </div>
           <div>
             <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Delivery Location</h3>
-            <p className="text-sm font-semibold text-gray-900">{txn.ciudad || "—"}</p>
-            {(txn as any).region && <p className="text-xs text-gray-500 mt-0.5">{(txn as any).region}</p>}
+            <p className="text-sm font-semibold text-gray-900">{primary.ciudad || "—"}</p>
           </div>
           <div>
             <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Date</h3>
@@ -113,28 +130,44 @@ export default function DeliveryDocket() {
           </div>
           <div>
             <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Truck / Driver</h3>
-            <p className="text-sm font-semibold text-gray-900">{txn.estacion || "—"}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{txn.nombre_vendedor || "—"}</p>
+            <p className="text-sm font-semibold text-gray-900">{primary.estacion || "—"}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{primary.nombre_vendedor || "—"}</p>
           </div>
         </div>
 
-        {/* Delivery summary */}
+        {/* Itemised delivery table */}
         <div className="border border-gray-200 rounded-lg overflow-hidden mb-8">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 w-8">#</th>
+                <th className="px-4 py-3">Asset / Plant</th>
                 <th className="px-4 py-3">Product</th>
                 <th className="px-4 py-3 text-right">Litres</th>
-                <th className="px-4 py-3">Asset / Plant</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-t border-gray-100">
-                <td className="px-4 py-3 font-medium text-gray-900">{txn.producto || "Diesel"}</td>
-                <td className="px-4 py-3 text-right font-bold text-gray-900">{(txn.cantidad || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                <td className="px-4 py-3 text-gray-700">{txn.placa || txn.identificador_cliente1 || "—"}</td>
-              </tr>
+              {items.map((t, i) => (
+                <tr key={t.id} className="border-t border-gray-100">
+                  <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
+                  <td className="px-4 py-2.5 font-medium text-gray-900">{t.placa || t.identificador_cliente1 || "—"}</td>
+                  <td className="px-4 py-2.5 text-gray-700">{t.producto || "Diesel"}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-gray-900 tabular-nums">
+                    {(t.cantidad || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                </tr>
+              ))}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-gray-300 bg-gray-50">
+                <td colSpan={3} className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Total — {items.length} item{items.length !== 1 ? "s" : ""}
+                </td>
+                <td className="px-4 py-3 text-right font-bold text-gray-900 text-base tabular-nums">
+                  {totalLitres.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
 
