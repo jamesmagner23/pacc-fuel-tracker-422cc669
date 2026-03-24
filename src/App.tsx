@@ -54,10 +54,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       setRole(userRole);
       setLoading(false);
 
-      if (userRole === "client" && !location.pathname.startsWith("/portal")) {
+      if (userRole === "client" && !location.pathname.startsWith("/portal") && !location.pathname.startsWith("/docket")) {
         navigate("/portal", { replace: true });
       }
-      if (userRole === "driver" && !location.pathname.startsWith("/driver")) {
+      if (userRole === "driver" && !location.pathname.startsWith("/driver") && !location.pathname.startsWith("/docket")) {
         navigate("/driver", { replace: true });
       }
     };
@@ -78,10 +78,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
           .then(({ data }) => {
             const r = (data?.role as UserRole) || null;
             setRole(r);
-            if (r === "client" && !window.location.pathname.startsWith("/portal")) {
+            if (r === "client" && !window.location.pathname.startsWith("/portal") && !window.location.pathname.startsWith("/docket")) {
               navigate("/portal", { replace: true });
             }
-            if (r === "driver" && !window.location.pathname.startsWith("/driver")) {
+            if (r === "driver" && !window.location.pathname.startsWith("/driver") && !window.location.pathname.startsWith("/docket")) {
               navigate("/driver", { replace: true });
             }
           });
@@ -104,17 +104,17 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Client role — only allow portal routes
+  // Client role — allow portal + docket routes
   if (role === "client") {
-    if (location.pathname.startsWith("/portal")) {
+    if (location.pathname.startsWith("/portal") || location.pathname.startsWith("/docket")) {
       return <>{children}</>;
     }
     return <Navigate to="/portal" replace />;
   }
 
-  // Driver role — only allow driver routes
+  // Driver role — allow driver + docket routes
   if (role === "driver") {
-    if (location.pathname.startsWith("/driver")) {
+    if (location.pathname.startsWith("/driver") || location.pathname.startsWith("/docket")) {
       return <>{children}</>;
     }
     return <Navigate to="/driver" replace />;
@@ -130,42 +130,35 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <DateRangeProvider>
-          <Routes>
-            {/* Public docket routes — no auth, clean white page */}
-            <Route path="/docket/multi" element={<DeliveryDocket />} />
-            <Route path="/docket/:id" element={<DeliveryDocket />} />
-
-            {/* Everything else requires auth */}
-            <Route path="/*" element={
-              <AuthGate>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/portal" element={<CustomerPortal />} />
-                  <Route path="/driver" element={<DriverPortal />} />
-                  <Route
-                    path="/*"
-                    element={
-                      <Layout>
-                        <Routes>
-                          <Route path="/" element={<Overview />} />
-                          <Route path="/customers" element={<Customers />} />
-                          <Route path="/customers/:name" element={<CustomerDetail />} />
-                          <Route path="/performance" element={<Performance />} />
-                          <Route path="/transactions" element={<Transactions />} />
-                          <Route path="/finance" element={<Finance />} />
-                          <Route path="/admin" element={<Admin />} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </Layout>
-                    }
-                  />
-                </Routes>
-              </AuthGate>
-            } />
-          </Routes>
-        </DateRangeProvider>
+        <AuthGate>
+          <DateRangeProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/portal" element={<CustomerPortal />} />
+              <Route path="/driver" element={<DriverPortal />} />
+              <Route path="/docket/multi" element={<DeliveryDocket />} />
+              <Route path="/docket/:id" element={<DeliveryDocket />} />
+              <Route
+                path="/*"
+                element={
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Overview />} />
+                      <Route path="/customers" element={<Customers />} />
+                      <Route path="/customers/:name" element={<CustomerDetail />} />
+                      <Route path="/performance" element={<Performance />} />
+                      <Route path="/transactions" element={<Transactions />} />
+                      <Route path="/finance" element={<Finance />} />
+                      <Route path="/admin" element={<Admin />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Layout>
+                }
+              />
+            </Routes>
+          </DateRangeProvider>
+        </AuthGate>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
