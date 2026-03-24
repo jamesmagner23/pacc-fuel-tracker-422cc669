@@ -159,6 +159,36 @@ export type Database = {
           },
         ]
       }
+      fuel_intake_logs: {
+        Row: {
+          created_at: string | null
+          driver_user_id: string
+          id: string
+          litres_entered: number
+          log_date: string
+          notes: string | null
+          photo_path: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          driver_user_id: string
+          id?: string
+          litres_entered: number
+          log_date?: string
+          notes?: string | null
+          photo_path?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          driver_user_id?: string
+          id?: string
+          litres_entered?: number
+          log_date?: string
+          notes?: string | null
+          photo_path?: string | null
+        }
+        Relationships: []
+      }
       pricing_tiers: {
         Row: {
           created_at: string | null
