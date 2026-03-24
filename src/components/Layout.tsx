@@ -12,7 +12,6 @@ const navItems = [
   { to: "/performance", label: "Performance" },
   { to: "/transactions", label: "Transactions" },
   { to: "/finance", label: "Finance" },
-  { to: "/alerts", label: "Alerts" },
 ];
 
 const BG = "#3D2B1A";
