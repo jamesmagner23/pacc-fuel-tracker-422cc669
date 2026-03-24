@@ -15,8 +15,8 @@ export function DateRangeToggle() {
       style={{
         display: "flex",
         alignItems: "center",
-        background: "#141414",
-        border: "1px solid #1f1f1f",
+        background: "#1A1009",
+        border: "1px solid #2E1C0C",
         borderRadius: 20,
         padding: 3,
         gap: 2,
@@ -33,18 +33,18 @@ export function DateRangeToggle() {
               borderRadius: 16,
               fontSize: 12,
               fontWeight: isActive ? 500 : 400,
-              color: isActive ? "#ffffff" : "#555555",
-              background: isActive ? "#7C3AED" : "transparent",
+              color: isActive ? "#ffffff" : "#4A3520",
+              background: isActive ? "#FF4D1C" : "transparent",
               border: "none",
               cursor: "pointer",
               transition: "all 0.15s",
               whiteSpace: "nowrap",
             }}
             onMouseEnter={(e) => {
-              if (!isActive) (e.currentTarget as HTMLElement).style.color = "#888888";
+              if (!isActive) (e.currentTarget as HTMLElement).style.color = "#8B7355";
             }}
             onMouseLeave={(e) => {
-              if (!isActive) (e.currentTarget as HTMLElement).style.color = "#555555";
+              if (!isActive) (e.currentTarget as HTMLElement).style.color = "#4A3520";
             }}
           >
             {opt.label}
