@@ -109,8 +109,9 @@ function FuelIntakeForm() {
         driver_user_id: user.id,
         litres_entered: parseFloat(litres),
         photo_path: photoPath,
+        bowser_retail_price: bowserPrice ? parseFloat(bowserPrice) : null,
         notes: notes || null,
-      });
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
