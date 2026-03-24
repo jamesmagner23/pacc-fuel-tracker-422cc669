@@ -157,6 +157,10 @@ export default function CustomerPortal() {
 
   const companyName = profile?.companyName || "Your Account";
 
+  useEffect(() => {
+    logActivity("page_view", { page: "customer_portal" });
+  }, []);
+
   // All unique sites for this customer
   const sites = useMemo(() => {
     const s = new Set(
