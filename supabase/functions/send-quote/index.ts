@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
 <div style="max-width:600px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;">
   <div style="background:#0a0a0a;padding:28px 32px;">
     <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">
-      PACC<span style="color:#7C3AED;font-size:13px;">®</span>
+      PACC<span style="color:#FF4D1C;font-size:13px;">®</span>
     </div>
     <div style="font-size:8px;font-weight:500;color:#666;letter-spacing:0.15em;margin-top:3px;">FUEL</div>
   </div>
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       </tr>
       <tr>
         <td style="padding:14px 0;color:#111;font-weight:700;font-size:15px;">Total (Inc GST)</td>
-        <td style="padding:14px 0;text-align:right;font-weight:700;font-size:18px;color:#7C3AED;">$${Number(quote.total_inc_gst).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+        <td style="padding:14px 0;text-align:right;font-weight:700;font-size:18px;color:#FF4D1C;">$${Number(quote.total_inc_gst).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
       </tr>
     </table>
     ${quote.notes ? `<p style="margin:20px 0 0;padding:12px;background:#f9f9f9;border-radius:8px;font-size:12px;color:#666;">${quote.notes}</p>` : ""}

@@ -9,14 +9,14 @@ import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO } from "date-fns";
 import { Droplets, TrendingUp, TrendingDown } from "lucide-react";
 
-const PIE_COLORS = ["#7C3AED", "#A78BFA", "#C4B5FD", "#DDD6FE", "#EDE9FE", "#6D28D9"];
+const PIE_COLORS = ["#FF4D1C", "#FF7A52", "#C4B5FD", "#DDD6FE", "#EDE9FE", "#E63D0F"];
 
 function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: number }[] }) {
   const [showPct, setShowPct] = useState(false);
   const total = topCustomers.reduce((s, x) => s + x.litres, 0);
 
   return (
-    <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
+    <div style={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 12, padding: "20px 24px" }}>
       <div className="flex items-center justify-between mb-1">
         <div className="text-sm font-medium text-white">Top Customers</div>
         <button
@@ -182,8 +182,8 @@ export default function Overview() {
       {/* HERO SECTION */}
       <div
         style={{
-          background: "#0d0d0d",
-          border: "1px solid #161616",
+          background: "#1A1009",
+          border: "1px solid #2E1C0C",
           borderRadius: 12,
           padding: "28px 32px 0 32px",
           overflow: "hidden",
@@ -250,7 +250,7 @@ export default function Overview() {
       </div>
 
       {/* DAILY VOLUME - FULL WIDTH */}
-      <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
+      <div style={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
         <div className="text-sm font-medium text-white mb-1">Daily Volume</div>
         <div className="text-[11px] text-[#999999] mb-4">Litres delivered per day</div>
         <div style={{ height: 280 }}>
@@ -263,7 +263,7 @@ export default function Overview() {
                 formatter={(v: number) => [`${v.toLocaleString()}L`, ""]}
                 cursor={{ fill: "rgba(255,255,255,0.02)" }}
               />
-              <Bar dataKey="litres" fill="#7C3AED" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="litres" fill="#FF4D1C" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -275,7 +275,7 @@ export default function Overview() {
         <DonutCard topCustomers={topCustomers} />
 
         {/* Buy Price Trend */}
-        <div style={{ background: "#0d0d0d", border: "1px solid #161616", borderRadius: 12, padding: "20px 24px" }}>
+        <div style={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 12, padding: "20px 24px" }}>
           <div className="text-sm font-medium text-white mb-1">Fuel Buy Price</div>
           <div className="text-[11px] text-[#999999] mb-4">Supply price trend ($/L)</div>
           <div style={{ height: 260 }}>
