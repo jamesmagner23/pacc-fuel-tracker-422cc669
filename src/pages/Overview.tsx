@@ -9,22 +9,22 @@ import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO } from "date-fns";
 import { Droplets, TrendingUp, TrendingDown } from "lucide-react";
 
-const PIE_COLORS = ["#FF4D1C", "#FF7A52", "#FFB088", "#E63D0F", "#CC6B3A", "#8B5A2B"];
+const PIE_COLORS = ["#E8461E", "#FF6B42", "#FFB088", "#D13A14", "#CC6B3A", "#8B5A2B"];
 
 function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: number }[] }) {
   const [showPct, setShowPct] = useState(false);
   const total = topCustomers.reduce((s, x) => s + x.litres, 0);
 
   return (
-    <div style={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 12, padding: "20px 24px" }}>
+    <div style={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 12, padding: "20px 24px" }}>
       <div className="flex items-center justify-between mb-1">
         <div className="text-sm font-medium text-foreground">Top Customers</div>
         <button
           onClick={() => setShowPct((p) => !p)}
           className="text-[10px] px-2 py-0.5 rounded-full border transition-colors"
           style={{
-            borderColor: "#4A3520",
-            color: "#A89580",
+            borderColor: "#C4A882",
+            color: "#D4C4A8",
             background: "transparent",
             cursor: "pointer",
           }}
@@ -32,7 +32,7 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
           {showPct ? "Show Litres" : "Show %"}
         </button>
       </div>
-      <div className="text-[11px] text-[#A89580] mb-4">Volume share by customer</div>
+      <div className="text-[11px] text-[#D4C4A8] mb-4">Volume share by customer</div>
       <div className="flex items-center gap-4" style={{ height: 260 }}>
         <div style={{ width: 180, height: "100%", flexShrink: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -60,7 +60,7 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
                     <text
                       x={x}
                       y={y}
-                      fill="#F2EDE6"
+                      fill="#F5E6D0"
                       textAnchor={x > cx ? "start" : "end"}
                       dominantBaseline="central"
                       fontSize={10}
@@ -76,7 +76,7 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 8, color: "#F2EDE6", fontSize: 11 }}
+                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
                 formatter={(v: number) => {
                   const pctVal = total > 0 ? ((v / total) * 100).toFixed(1) : "0";
                   return [`${(v / 1000).toFixed(1)}k L (${pctVal}%)`, ""];
@@ -91,8 +91,8 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
             return (
               <div key={c.name} className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                <span className="text-xs text-[#C4B5A0] truncate flex-1">{c.name}</span>
-                <span className="text-xs text-[#A89580] tabular-nums shrink-0">
+                <span className="text-xs text-[#E0D0B8] truncate flex-1">{c.name}</span>
+                <span className="text-xs text-[#D4C4A8] tabular-nums shrink-0">
                   {showPct ? `${pctVal}%` : `${(c.litres / 1000).toFixed(1)}k L`}
                 </span>
               </div>
@@ -182,8 +182,8 @@ export default function Overview() {
       {/* HERO SECTION */}
       <div
         style={{
-          background: "#1A1009",
-          border: "1px solid #2E1C0C",
+          background: "#4A3525",
+          border: "1px solid #6B5240",
           borderRadius: 12,
           padding: "28px 32px 0 32px",
           overflow: "hidden",
@@ -191,7 +191,7 @@ export default function Overview() {
       >
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-4">
           <div>
-            <div className="text-[11px] text-[#A89580] uppercase tracking-wider mb-1.5">
+            <div className="text-[11px] text-[#D4C4A8] uppercase tracking-wider mb-1.5">
               Total Litres Delivered
             </div>
             <div className="text-4xl sm:text-[56px] font-light text-foreground tracking-tighter leading-none tabular-nums">
@@ -206,7 +206,7 @@ export default function Overview() {
               <span className={`text-xs font-medium ${litresPct >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                 {litresPct >= 0 ? "+" : ""}{litresPct.toFixed(1)}%
               </span>
-              <span className="text-xs text-[#A89580]">vs previous period</span>
+              <span className="text-xs text-[#D4C4A8]">vs previous period</span>
             </div>
           </div>
 
@@ -217,7 +217,7 @@ export default function Overview() {
               { label: "Avg Size", value: Math.round(avgSize) + "L", p: avgPct },
             ].map((k) => (
               <div key={k.label} className="text-right">
-                <div className="text-[10px] text-[#A89580] uppercase tracking-wider mb-1">{k.label}</div>
+                <div className="text-[10px] text-[#D4C4A8] uppercase tracking-wider mb-1">{k.label}</div>
                 <div className="text-xl font-medium text-foreground tracking-tight tabular-nums">{k.value}</div>
                 <div className={`text-[11px] mt-0.5 ${k.p >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                   {k.p >= 0 ? "+" : ""}{k.p.toFixed(1)}%
@@ -232,38 +232,38 @@ export default function Overview() {
             <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#F2EDE6" stopOpacity={0.08} />
-                  <stop offset="100%" stopColor="#F2EDE6" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#F5E6D0" stopOpacity={0.08} />
+                  <stop offset="100%" stopColor="#F5E6D0" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
               <YAxis hide />
               <Tooltip
-                contentStyle={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 8, color: "#F2EDE6", fontSize: 12 }}
+                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 12 }}
                 formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
               />
-              <Area type="monotone" dataKey="litres" stroke="#F2EDE6" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
+              <Area type="monotone" dataKey="litres" stroke="#F5E6D0" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* DAILY VOLUME - FULL WIDTH */}
-      <div style={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
+      <div style={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
         <div className="text-sm font-medium text-foreground mb-1">Daily Volume</div>
-        <div className="text-[11px] text-[#A89580] mb-4">Litres delivered per day</div>
+        <div className="text-[11px] text-[#D4C4A8] mb-4">Litres delivered per day</div>
         <div style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dailyData} barCategoryGap="30%">
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} width={50} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} width={50} />
               <Tooltip
-                contentStyle={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 8, color: "#F2EDE6", fontSize: 11 }}
+                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
                 formatter={(v: number) => [`${v.toLocaleString()}L`, ""]}
                 cursor={{ fill: "rgba(255,255,255,0.02)" }}
               />
-              <Bar dataKey="litres" fill="#FF4D1C" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="litres" fill="#E8461E" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -275,24 +275,24 @@ export default function Overview() {
         <DonutCard topCustomers={topCustomers} />
 
         {/* Buy Price Trend */}
-        <div style={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 12, padding: "20px 24px" }}>
+        <div style={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 12, padding: "20px 24px" }}>
           <div className="text-sm font-medium text-foreground mb-1">Fuel Buy Price</div>
-          <div className="text-[11px] text-[#A89580] mb-4">Supply price trend ($/L)</div>
+          <div className="text-[11px] text-[#D4C4A8] mb-4">Supply price trend ($/L)</div>
           <div style={{ height: 260 }}>
             {priceData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={priceData}>
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: "#8B7355" }} axisLine={false} tickLine={false} width={50} domain={["auto", "auto"]} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} width={50} domain={["auto", "auto"]} />
                   <Tooltip
-                    contentStyle={{ background: "#1A1009", border: "1px solid #2E1C0C", borderRadius: 8, color: "#F2EDE6", fontSize: 11 }}
+                    contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
                     formatter={(v: number) => [`$${v.toFixed(2)}/L`, "Price"]}
                   />
                   <Line type="monotone" dataKey="price" stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: "#10B981" }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-[#A89580] text-xs">
+              <div className="flex items-center justify-center h-full text-[#D4C4A8] text-xs">
                 No price data yet. Add prices in Finance → Buy Price.
               </div>
             )}

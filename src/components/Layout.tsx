@@ -15,12 +15,12 @@ const navItems = [
   { to: "/alerts", label: "Alerts" },
 ];
 
-const BG = "#110B06";
-const BORDER = "#2E1C0C";
-const ACCENT = "#FF4D1C";
-const TEXT_DIM = "#4A3520";
-const TEXT_MID = "#8B7355";
-const TEXT_ACTIVE = "#F2EDE6";
+const BG = "#3D2B1A";
+const BORDER = "#6B5240";
+const ACCENT = "#E8461E";
+const TEXT_DIM = "#C4A882";
+const TEXT_MID = "#C4A882";
+const TEXT_ACTIVE = "#F5E6D0";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -161,7 +161,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     gap: 16,
                     padding: "18px 24px",
                     textDecoration: "none",
-                    borderBottom: `1px solid #1E1208`,
+                    borderBottom: `1px solid #56402E`,
                     background: isActive ? "rgba(255,77,28,0.06)" : "transparent",
                   }}
                 >

@@ -28,7 +28,7 @@ export default function Login() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#110B06",
+        background: "#3D2B1A",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -49,15 +49,15 @@ export default function Login() {
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
             <PACCLogo />
           </div>
-          <h1 style={{ fontSize: 20, fontWeight: 600, color: "#F2EDE6", margin: 0 }}>Sign in</h1>
-          <p style={{ fontSize: 13, color: "#8B7355", margin: "6px 0 0" }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: "#F5E6D0", margin: 0 }}>Sign in</h1>
+          <p style={{ fontSize: 13, color: "#C4A882", margin: "6px 0 0" }}>
             Enter your email and password to continue
           </p>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 12, color: "#A89580" }}>Email</label>
+            <label style={{ fontSize: 12, color: "#D4C4A8" }}>Email</label>
             <input
               type="email"
               value={email}
@@ -65,21 +65,21 @@ export default function Login() {
               placeholder="you@company.com"
               required
               style={{
-                background: "#1A1009",
-                border: "1px solid #2E1C0C",
+                background: "#4A3525",
+                border: "1px solid #6B5240",
                 borderRadius: 8,
-                color: "#F2EDE6",
+                color: "#F5E6D0",
                 padding: "10px 12px",
                 fontSize: 13,
                 outline: "none",
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#FF4D1C")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#2E1C0C")}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#E8461E")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#6B5240")}
             />
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <label style={{ fontSize: 12, color: "#A89580" }}>Password</label>
+            <label style={{ fontSize: 12, color: "#D4C4A8" }}>Password</label>
             <input
               type="password"
               value={password}
@@ -87,16 +87,16 @@ export default function Login() {
               placeholder="••••••••"
               required
               style={{
-                background: "#1A1009",
-                border: "1px solid #2E1C0C",
+                background: "#4A3525",
+                border: "1px solid #6B5240",
                 borderRadius: 8,
-                color: "#F2EDE6",
+                color: "#F5E6D0",
                 padding: "10px 12px",
                 fontSize: 13,
                 outline: "none",
               }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#FF4D1C")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#2E1C0C")}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "#E8461E")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#6B5240")}
             />
           </div>
         </div>
@@ -120,8 +120,8 @@ export default function Login() {
           type="submit"
           disabled={loading}
           style={{
-            background: "#FF4D1C",
-            color: "#F2EDE6",
+            background: "#E8461E",
+            color: "#F5E6D0",
             border: "none",
             borderRadius: 8,
             padding: "11px 0",
@@ -131,16 +131,16 @@ export default function Login() {
             opacity: loading ? 0.7 : 1,
           }}
           onMouseEnter={(e) => {
-            if (!loading) e.currentTarget.style.background = "#E63D0F";
+            if (!loading) e.currentTarget.style.background = "#D13A14";
           }}
           onMouseLeave={(e) => {
-            if (!loading) e.currentTarget.style.background = "#FF4D1C";
+            if (!loading) e.currentTarget.style.background = "#E8461E";
           }}
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>
 
-        <p style={{ fontSize: 11, color: "#4A3520", textAlign: "center", margin: 0 }}>
+        <p style={{ fontSize: 11, color: "#C4A882", textAlign: "center", margin: 0 }}>
           Need access? Contact PACC Energy
         </p>
       </form>

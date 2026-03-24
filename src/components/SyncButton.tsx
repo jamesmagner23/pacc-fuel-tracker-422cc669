@@ -38,7 +38,7 @@ export function SyncButton() {
         alignItems: "center",
         gap: 6,
         borderRadius: 20,
-        background: "#FF4D1C",
+        background: "#E8461E",
         color: "#ffffff",
         fontWeight: 600,
         border: "none",
@@ -47,10 +47,10 @@ export function SyncButton() {
         transition: "background 0.15s",
       }}
       onMouseEnter={(e) => {
-        if (!syncing) (e.currentTarget as HTMLElement).style.background = "#E63D0F";
+        if (!syncing) (e.currentTarget as HTMLElement).style.background = "#D13A14";
       }}
       onMouseLeave={(e) => {
-        if (!syncing) (e.currentTarget as HTMLElement).style.background = "#FF4D1C";
+        if (!syncing) (e.currentTarget as HTMLElement).style.background = "#E8461E";
       }}
     >
       <span className="md:hidden" style={{ padding: "7px 10px", display: "flex", alignItems: "center" }}>
