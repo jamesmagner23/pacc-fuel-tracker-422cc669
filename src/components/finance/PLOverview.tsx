@@ -107,22 +107,21 @@ export default function PLOverview() {
       }
       const litres = t.cantidad || 0;
       byClient[key].litres += litres;
-      // Use actual revenue if available, otherwise derive from margin
+      const { hasPricing, sellPPL } = getTxPricing(t);
       if (t.dinero_total && t.dinero_total > 0) {
         byClient[key].revenue += t.dinero_total;
-      } else {
-        byClient[key].revenue += litres * getSellPPL(t);
+      } else if (hasPricing) {
+        byClient[key].revenue += litres * sellPPL;
       }
     });
 
-    // Calculate profit per client
     return Object.values(byClient)
       .map((c) => {
         const pricing = c.clientId
           ? customerPricing.find((p) => p.client_account_id === c.clientId)
           : null;
-        const cost = c.litres * latestBuyPrice;
-        const profit = c.revenue - cost;
+        const cost = pricing ? c.litres * latestBuyPrice : 0;
+        const profit = pricing ? c.revenue - cost : 0;
         const margin = c.revenue > 0 ? (profit / c.revenue) * 100 : 0;
         return {
           ...c,
@@ -134,7 +133,7 @@ export default function PLOverview() {
         };
       })
       .sort((a, b) => b.revenue - a.revenue);
-  }, [filtered, clients, customerPricing, latestBuyPrice, getSellPPL]);
+  }, [filtered, clients, customerPricing, latestBuyPrice, getTxPricing]);
 
   if (isLoading) {
     return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
