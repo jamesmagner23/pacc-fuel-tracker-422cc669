@@ -120,6 +120,7 @@ function FuelIntakeForm() {
       setPhoto(null);
       setPreview(null);
       setNotes("");
+      setBowserPrice("");
       queryClient.invalidateQueries({ queryKey: ["fuel-intake-today"] });
     },
     onError: (err: Error) => {
