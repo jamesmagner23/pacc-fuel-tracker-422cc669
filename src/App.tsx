@@ -55,6 +55,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       if (userRole === "client" && !location.pathname.startsWith("/portal")) {
         navigate("/portal", { replace: true });
       }
+      if (userRole === "driver" && !location.pathname.startsWith("/driver")) {
+        navigate("/driver", { replace: true });
+      }
     };
 
     checkAuth();
