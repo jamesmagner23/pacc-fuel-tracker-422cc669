@@ -33,10 +33,36 @@ export function SyncButton() {
     <button
       onClick={handleSync}
       disabled={syncing}
-      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-[10px] font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        borderRadius: 20,
+        background: "#FF4D1C",
+        color: "#ffffff",
+        fontWeight: 600,
+        border: "none",
+        cursor: syncing ? "not-allowed" : "pointer",
+        opacity: syncing ? 0.7 : 1,
+        transition: "background 0.15s",
+      }}
+      onMouseEnter={(e) => {
+        if (!syncing) (e.currentTarget as HTMLElement).style.background = "#E63D0F";
+      }}
+      onMouseLeave={(e) => {
+        if (!syncing) (e.currentTarget as HTMLElement).style.background = "#FF4D1C";
+      }}
     >
-      <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`} />
-      <span className="hidden sm:inline">{syncing ? "Syncing..." : "Sync Now"}</span>
+      <span className="md:hidden" style={{ padding: "7px 10px", display: "flex", alignItems: "center" }}>
+        <RefreshCw style={{ width: 13, height: 13 }} className={syncing ? "animate-spin" : ""} />
+      </span>
+      <span
+        className="hidden md:flex"
+        style={{ padding: "7px 16px", alignItems: "center", gap: 6, fontSize: 12, letterSpacing: "0.01em" }}
+      >
+        <RefreshCw style={{ width: 11, height: 11 }} className={syncing ? "animate-spin" : ""} />
+        {syncing ? "Syncing..." : "Sync Now"}
+      </span>
     </button>
   );
 }
