@@ -41,35 +41,38 @@ export default function PLOverview() {
     return map;
   }, [clients]);
 
-  // Helper: calculate sell price per litre for a transaction using client margin
-  const getSellPPL = useCallback((t: any) => {
-    // If actual sell price exists, use it
-    if (t.ppu && t.ppu > 0) return t.ppu;
-    // Otherwise derive from client's margin setting
+  // Helper: check if a transaction belongs to a priced client
+  const getTxPricing = useCallback((t: any) => {
+    if (t.ppu && t.ppu > 0) return { hasPricing: true, sellPPL: t.ppu };
     const clientId = speedsolToClientId.get((t.nombre_cliente1 || "").toLowerCase());
     const pricing = clientId ? customerPricing.find((p) => p.client_account_id === clientId) : null;
-    const marginPct = pricing?.margin_percent ?? 10; // default 10% margin
-    return latestBuyPrice * (1 + marginPct / 100);
+    if (!pricing) return { hasPricing: false, sellPPL: 0 };
+    return { hasPricing: true, sellPPL: latestBuyPrice * (1 + pricing.margin_percent / 100) };
   }, [speedsolToClientId, customerPricing, latestBuyPrice]);
 
+  // Only include priced transactions in revenue/profit KPIs
+  const pricedTxs = filtered.filter((t) => getTxPricing(t).hasPricing);
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const totalRevenue = filtered.reduce((s, t) => {
+  const pricedLitres = pricedTxs.reduce((s, t) => s + (t.cantidad || 0), 0);
+  const totalRevenue = pricedTxs.reduce((s, t) => {
     const litres = t.cantidad || 0;
-    if (t.dinero_total && t.dinero_total > 0) return s + t.dinero_total;
-    return s + litres * getSellPPL(t);
+    const { sellPPL } = getTxPricing(t);
+    return s + (t.dinero_total && t.dinero_total > 0 ? t.dinero_total : litres * sellPPL);
   }, 0);
   const numDeliveries = filtered.length;
-  const totalCost = totalLitres * latestBuyPrice;
+  const totalCost = pricedLitres * latestBuyPrice;
   const grossProfit = totalRevenue - totalCost;
   const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
+  const pricedPrev = previous.filter((t) => getTxPricing(t).hasPricing);
   const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevRevenue = previous.reduce((s, t) => {
+  const prevPricedLitres = pricedPrev.reduce((s, t) => s + (t.cantidad || 0), 0);
+  const prevRevenue = pricedPrev.reduce((s, t) => {
     const litres = t.cantidad || 0;
-    if (t.dinero_total && t.dinero_total > 0) return s + t.dinero_total;
-    return s + litres * getSellPPL(t);
+    const { sellPPL } = getTxPricing(t);
+    return s + (t.dinero_total && t.dinero_total > 0 ? t.dinero_total : litres * sellPPL);
   }, 0);
-  const prevCost = prevLitres * latestBuyPrice;
+  const prevCost = prevPricedLitres * latestBuyPrice;
   const prevGrossProfit = prevRevenue - prevCost;
 
   const pct = (c: number, p: number) => (p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100);
