@@ -20,7 +20,7 @@ export default function PLOverview() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_accounts")
-        .select("id, company_name, speedsol_name")
+        .select("id, company_name, speedsol_name, speedsol_names")
         .order("company_name");
       if (error) throw error;
       return data || [];
