@@ -140,6 +140,7 @@ const App = () => (
         <AuthGate>
           <DateRangeProvider>
             <Routes>
+              <Route path="/login" element={<Login />} />
               <Route path="/landing" element={<LandingPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/portal" element={<CustomerPortal />} />
