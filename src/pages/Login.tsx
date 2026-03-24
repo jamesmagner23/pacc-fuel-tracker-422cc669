@@ -24,6 +24,7 @@ export default function Login() {
       return;
     }
 
+    await logActivity("login", { method: "password" });
     window.location.href = "/";
   };
 
