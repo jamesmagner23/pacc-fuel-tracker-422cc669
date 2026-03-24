@@ -196,7 +196,7 @@ export default function CustomerPortal() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#000000", color: "#F2EDE6" }}>
+    <div style={{ minHeight: "100vh", background: "#110B06", color: "#F2EDE6" }}>
       {/* Header */}
       <div
         style={{

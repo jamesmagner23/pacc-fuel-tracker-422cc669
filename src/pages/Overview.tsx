@@ -232,8 +232,8 @@ export default function Overview() {
             <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ffffff" stopOpacity={0.08} />
-                  <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#F2EDE6" stopOpacity={0.08} />
+                  <stop offset="100%" stopColor="#F2EDE6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#666" }} axisLine={false} tickLine={false} />
@@ -243,7 +243,7 @@ export default function Overview() {
                 formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
               />
-              <Area type="monotone" dataKey="litres" stroke="#ffffff" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
+              <Area type="monotone" dataKey="litres" stroke="#F2EDE6" strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

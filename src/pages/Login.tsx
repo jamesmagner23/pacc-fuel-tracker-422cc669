@@ -28,7 +28,7 @@ export default function Login() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#000000",
+        background: "#110B06",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -66,7 +66,7 @@ export default function Login() {
               required
               style={{
                 background: "#1A1009",
-                border: "1px solid #1f1f1f",
+                border: "1px solid #2E1C0C",
                 borderRadius: 8,
                 color: "#F2EDE6",
                 padding: "10px 12px",
@@ -74,7 +74,7 @@ export default function Login() {
                 outline: "none",
               }}
               onFocus={(e) => (e.currentTarget.style.borderColor = "#FF4D1C")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#1f1f1f")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#2E1C0C")}
             />
           </div>
 
@@ -88,7 +88,7 @@ export default function Login() {
               required
               style={{
                 background: "#1A1009",
-                border: "1px solid #1f1f1f",
+                border: "1px solid #2E1C0C",
                 borderRadius: 8,
                 color: "#F2EDE6",
                 padding: "10px 12px",
@@ -96,7 +96,7 @@ export default function Login() {
                 outline: "none",
               }}
               onFocus={(e) => (e.currentTarget.style.borderColor = "#FF4D1C")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#1f1f1f")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "#2E1C0C")}
             />
           </div>
         </div>
