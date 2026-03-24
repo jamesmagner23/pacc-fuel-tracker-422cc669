@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { format, parseISO } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -29,15 +29,46 @@ export default function PLOverview() {
 
   const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
 
+  // Build speedsol → client mapping for revenue calculation
+  const speedsolToClientId = useMemo(() => {
+    const map = new Map<string, number>();
+    clients.forEach((c: any) => {
+      const names: string[] = c.speedsol_names || [];
+      names.forEach((n: string) => { if (n) map.set(n.toLowerCase(), c.id); });
+      if (c.speedsol_name) map.set(c.speedsol_name.toLowerCase(), c.id);
+      map.set(c.company_name.toLowerCase(), c.id);
+    });
+    return map;
+  }, [clients]);
+
+  // Helper: calculate sell price per litre for a transaction using client margin
+  const getSellPPL = useCallback((t: any) => {
+    // If actual sell price exists, use it
+    if (t.ppu && t.ppu > 0) return t.ppu;
+    // Otherwise derive from client's margin setting
+    const clientId = speedsolToClientId.get((t.nombre_cliente1 || "").toLowerCase());
+    const pricing = clientId ? customerPricing.find((p) => p.client_account_id === clientId) : null;
+    const marginPct = pricing?.margin_percent ?? 10; // default 10% margin
+    return latestBuyPrice * (1 + marginPct / 100);
+  }, [speedsolToClientId, customerPricing, latestBuyPrice]);
+
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const totalRevenue = filtered.reduce((s, t) => s + (t.dinero_total || 0), 0);
+  const totalRevenue = filtered.reduce((s, t) => {
+    const litres = t.cantidad || 0;
+    if (t.dinero_total && t.dinero_total > 0) return s + t.dinero_total;
+    return s + litres * getSellPPL(t);
+  }, 0);
   const numDeliveries = filtered.length;
   const totalCost = totalLitres * latestBuyPrice;
   const grossProfit = totalRevenue - totalCost;
   const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
   const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevRevenue = previous.reduce((s, t) => s + (t.dinero_total || 0), 0);
+  const prevRevenue = previous.reduce((s, t) => {
+    const litres = t.cantidad || 0;
+    if (t.dinero_total && t.dinero_total > 0) return s + t.dinero_total;
+    return s + litres * getSellPPL(t);
+  }, 0);
   const prevCost = prevLitres * latestBuyPrice;
   const prevGrossProfit = prevRevenue - prevCost;
 
@@ -71,8 +102,14 @@ export default function PLOverview() {
       if (!byClient[key]) {
         byClient[key] = { name: key, litres: 0, revenue: 0, clientId: matched?.id || null };
       }
-      byClient[key].litres += t.cantidad || 0;
-      byClient[key].revenue += t.dinero_total || 0;
+      const litres = t.cantidad || 0;
+      byClient[key].litres += litres;
+      // Use actual revenue if available, otherwise derive from margin
+      if (t.dinero_total && t.dinero_total > 0) {
+        byClient[key].revenue += t.dinero_total;
+      } else {
+        byClient[key].revenue += litres * getSellPPL(t);
+      }
     });
 
     // Calculate profit per client
@@ -94,7 +131,7 @@ export default function PLOverview() {
         };
       })
       .sort((a, b) => b.revenue - a.revenue);
-  }, [filtered, clients, customerPricing, latestBuyPrice]);
+  }, [filtered, clients, customerPricing, latestBuyPrice, getSellPPL]);
 
   if (isLoading) {
     return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
