@@ -1,10 +1,10 @@
 import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
-import { PACCLogo } from "./PACCLogo";
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { PACCLogo } from "./PACCLogo";
 
 const navItems = [
   { to: "/", label: "Overview" },
@@ -12,21 +12,29 @@ const navItems = [
   { to: "/performance", label: "Performance" },
   { to: "/transactions", label: "Transactions" },
   { to: "/finance", label: "Finance" },
+  { to: "/alerts", label: "Alerts" },
 ];
+
+const BG = "#110B06";
+const BORDER = "#2E1C0C";
+const ACCENT = "#FF4D1C";
+const TEXT_DIM = "#4A3520";
+const TEXT_MID = "#8B7355";
+const TEXT_ACTIVE = "#F2EDE6";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "#080808", color: "#ffffff" }}>
+    <div style={{ minHeight: "100vh", display: "flex", background: BG, color: TEXT_ACTIVE }}>
       {/* ── DESKTOP SIDEBAR ── */}
       <aside
         className="hidden md:flex"
         style={{
           width: 220,
-          background: "#080808",
-          borderRight: "1px solid #111111",
+          background: BG,
+          borderRight: `1px solid ${BORDER}`,
           flexDirection: "column",
           padding: "28px 0",
           flexShrink: 0,
@@ -52,9 +60,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   gap: 12,
                   padding: "10px 8px",
                   textDecoration: "none",
-                  borderBottom: "1px solid #111111",
-                  transition: "all 0.15s",
+                  borderBottom: `1px solid ${BORDER}`,
                   background: "transparent",
+                  transition: "all 0.15s",
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
@@ -66,11 +74,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <span
                   style={{
                     fontSize: 9,
-                    color: isActive ? "#7C3AED" : "#222222",
-                    fontWeight: 500,
+                    color: isActive ? ACCENT : TEXT_DIM,
+                    fontWeight: 600,
                     width: 16,
                     flexShrink: 0,
                     fontVariantNumeric: "tabular-nums",
+                    letterSpacing: "0.05em",
                   }}
                 >
                   {String(i + 1).padStart(2, "0")}
@@ -79,7 +88,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   style={{
                     fontSize: 13,
                     fontWeight: isActive ? 500 : 400,
-                    color: isActive ? "#ffffff" : "#3a3a3a",
+                    color: isActive ? TEXT_ACTIVE : TEXT_MID,
                     letterSpacing: "-0.01em",
                   }}
                 >
@@ -92,7 +101,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       width: 4,
                       height: 4,
                       borderRadius: "50%",
-                      background: "#7C3AED",
+                      background: ACCENT,
                       flexShrink: 0,
                     }}
                   />
@@ -102,50 +111,42 @@ export function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div style={{ padding: "16px 24px", borderTop: "1px solid #111111" }}>
+        <div style={{ padding: "16px 24px", borderTop: `1px solid ${BORDER}` }}>
           <SyncStatus />
         </div>
       </aside>
 
-      {/* ── MOBILE FULL-SCREEN MENU OVERLAY ── */}
+      {/* ── MOBILE FULL-SCREEN MENU ── */}
       {mobileMenuOpen && (
         <div
           style={{
             position: "fixed",
             inset: 0,
             zIndex: 100,
-            background: "#080808",
+            background: BG,
             display: "flex",
             flexDirection: "column",
-            padding: "0 0 40px 0",
           }}
           className="md:hidden"
         >
-          {/* Header */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               padding: "16px 20px",
-              borderBottom: "1px solid #111111",
+              borderBottom: `1px solid ${BORDER}`,
             }}
           >
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#ffffff" }}>PACC</div>
-              <div style={{ fontSize: 10, color: "#333333", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                Fuel
-              </div>
-            </div>
+            <PACCLogo size="sm" />
             <button
               onClick={() => setMobileMenuOpen(false)}
-              style={{ background: "transparent", border: "none", color: "#666666", cursor: "pointer", padding: 4 }}
+              style={{ background: "transparent", border: "none", color: TEXT_MID, cursor: "pointer", padding: 4 }}
             >
               <X style={{ width: 20, height: 20 }} />
             </button>
           </div>
 
-          {/* Nav items — large touch targets */}
           <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
             {navItems.map((item, i) => {
               const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
@@ -160,14 +161,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     gap: 16,
                     padding: "18px 24px",
                     textDecoration: "none",
-                    borderBottom: "1px solid #0f0f0f",
-                    background: isActive ? "rgba(124,58,237,0.06)" : "transparent",
+                    borderBottom: `1px solid #1E1208`,
+                    background: isActive ? "rgba(255,77,28,0.06)" : "transparent",
                   }}
                 >
                   <span
                     style={{
                       fontSize: 10,
-                      color: isActive ? "#7C3AED" : "#2a2a2a",
+                      color: isActive ? ACCENT : TEXT_DIM,
                       fontWeight: 600,
                       width: 20,
                       flexShrink: 0,
@@ -180,7 +181,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     style={{
                       fontSize: 17,
                       fontWeight: isActive ? 500 : 400,
-                      color: isActive ? "#ffffff" : "#444444",
+                      color: isActive ? TEXT_ACTIVE : TEXT_MID,
                       letterSpacing: "-0.01em",
                     }}
                   >
@@ -188,7 +189,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </span>
                   {isActive && (
                     <span
-                      style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#7C3AED" }}
+                      style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: ACCENT }}
                     />
                   )}
                 </RouterNavLink>
@@ -196,8 +197,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          {/* Bottom of menu */}
-          <div style={{ padding: "20px 24px", borderTop: "1px solid #111111" }}>
+          <div style={{ padding: "20px 24px", borderTop: `1px solid ${BORDER}` }}>
             <SyncStatus />
           </div>
         </div>
@@ -205,12 +205,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ── MAIN CONTENT ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {/* Top bar */}
         <header
           style={{
             height: 52,
-            background: "#080808",
-            borderBottom: "1px solid #111111",
+            background: BG,
+            borderBottom: `1px solid ${BORDER}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -222,29 +221,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
             gap: 8,
           }}
         >
-          {/* Mobile: hamburger + wordmark */}
+          {/* Mobile header */}
           <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
               onClick={() => setMobileMenuOpen(true)}
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#666666",
+                color: TEXT_MID,
                 cursor: "pointer",
                 padding: 4,
                 display: "flex",
                 alignItems: "center",
               }}
             >
-              <Menu style={{ width: 18, height: 18 }} />
+              <Menu style={{ width: 16, height: 16 }} />
             </button>
             <PACCLogo size="sm" />
           </div>
 
-          {/* Desktop: spacer */}
           <div className="hidden md:block" />
 
-          {/* Right side — sync + toggle */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div className="hidden sm:flex">
               <SyncStatus />
@@ -254,15 +251,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Page content */}
         <main
-          style={{
-            flex: 1,
-            padding: "20px 16px",
-            overflowY: "auto",
-            paddingBottom: 80,
-            // Desktop padding
-          }}
+          style={{ flex: 1, padding: "28px 28px", overflowY: "auto", paddingBottom: 80 }}
           className="md:px-8 md:py-8"
         >
           {children}
