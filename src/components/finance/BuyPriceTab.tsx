@@ -100,6 +100,14 @@ export default function BuyPriceTab() {
           <div className="sm:text-right">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg</div>
             <div className="text-lg sm:text-xl font-medium text-muted-foreground tabular-nums">${avgPrice.toFixed(4)}/L</div>
+            {bowserRetailQuery.data && (
+              <div className="mt-2">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Bowser Retail</div>
+                <div className="text-sm font-medium text-muted-foreground/70 tabular-nums">
+                  ${Number(bowserRetailQuery.data.bowser_retail_price).toFixed(4)}/L
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
