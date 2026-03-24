@@ -36,6 +36,7 @@ const App = () => (
               <Route path="/docket/multi" element={<DeliveryDocket />} />
               <Route path="/docket/:id" element={<DeliveryDocket />} />
               <Route path="/portal" element={<CustomerPortal />} />
+              <Route path="/login" element={<Login />} />
               <Route path="*" element={<NotFound />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
