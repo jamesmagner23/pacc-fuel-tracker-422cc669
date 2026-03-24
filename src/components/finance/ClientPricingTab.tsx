@@ -18,16 +18,30 @@ import { toast } from "sonner";
 export default function ClientPricingTab() {
   const { data: pricing = [], isLoading } = useCustomerPricing();
   const { data: buyPrices = [] } = useBuyPrices(30);
+  const qc = useQueryClient();
   const { data: clients = [] } = useQuery({
     queryKey: ["client-accounts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_accounts")
-        .select("id, company_name, contact_email, contact_phone, speedsol_name")
+        .select("id, company_name, contact_email, contact_phone, speedsol_name, speedsol_names")
         .eq("is_active", true)
         .order("company_name");
       if (error) throw error;
       return data || [];
+    },
+  });
+  // All unique SpeedSol customer names from transactions
+  const { data: txnCustomers = [] } = useQuery({
+    queryKey: ["speedsol-all-names"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("nombre_cliente1")
+        .not("nombre_cliente1", "is", null);
+      if (error) throw error;
+      const unique = [...new Set((data || []).map((r) => r.nombre_cliente1!))].sort();
+      return unique;
     },
   });
   const upsert = useUpsertCustomerPricing();
