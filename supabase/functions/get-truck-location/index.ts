@@ -15,7 +15,7 @@ serve(async (req) => {
   try {
     const today = new Date().toISOString().split("T")[0];
 
-    // 1. Get today's routes for stop data and driver info
+    // 1. Get today's routes for stop data and driver info + events in parallel
     const routeRes = await fetch(
       `https://api.optimoroute.com/v1/get_routes?key=${OPTIMOROUTE_KEY}&date=${today}`,
       { method: "GET" }
@@ -28,13 +28,54 @@ serve(async (req) => {
 
     const routeData = await routeRes.json();
 
-    // 2. Get mobile events for last known GPS position
+    // 2. Get mobile events for GPS positions from order events
     const eventsRes = await fetch(
       `https://api.optimoroute.com/v1/get_events?key=${OPTIMOROUTE_KEY}&after_tag=`,
       { method: "GET" }
     );
 
     const eventsData = eventsRes.ok ? await eventsRes.json() : null;
+
+    // 3. Get completion details for today's orders (has more accurate GPS)
+    let completionPosition = null;
+    let completionTimestamp = null;
+    if (routeData?.routes?.length > 0) {
+      const allOrderNos = routeData.routes[0].stops?.map((s: any) => s.orderNo).filter(Boolean) || [];
+      if (allOrderNos.length > 0) {
+        try {
+          const completionRes = await fetch(
+            `https://api.optimoroute.com/v1/get_completion_details?key=${OPTIMOROUTE_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orders: allOrderNos.map((no: string) => ({ orderNo: no })),
+              }),
+            }
+          );
+          if (completionRes.ok) {
+            const completionData = await completionRes.json();
+            // Find most recent completion with endPosition (GPS when driver finished)
+            if (completionData?.orders) {
+              let latestTime = 0;
+              for (const order of completionData.orders) {
+                const pos = order.completionDetails?.endPosition || order.completionDetails?.startPosition;
+                if (pos?.latitude && pos?.longitude && pos?.timestamp) {
+                  const t = new Date(pos.timestamp).getTime();
+                  if (t > latestTime) {
+                    latestTime = t;
+                    completionPosition = { lat: pos.latitude, lng: pos.longitude };
+                    completionTimestamp = pos.timestamp;
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Non-critical, fall back to events
+        }
+      }
+    }
 
     // Extract route summary from first route
     let routeSummary = null;
@@ -58,9 +99,21 @@ serve(async (req) => {
       routeSummary = { completed, total, stops };
     }
 
-    // 3. Extract last known position from events (most recent event with position)
+    // 4. Extract last known position - prefer completion details, then events, then stops
     let driverLocation = null;
-    if (eventsData?.events?.length > 0) {
+
+    // Use completion details if available (most accurate)
+    if (completionPosition) {
+      driverLocation = {
+        lat: completionPosition.lat,
+        lng: completionPosition.lng,
+        timestamp: completionTimestamp,
+        event: "completion",
+      };
+    }
+
+    // Fall back to events
+    if (!driverLocation && eventsData?.events?.length > 0) {
       // Events are in chronological order, find the last one with a position
       for (let i = eventsData.events.length - 1; i >= 0; i--) {
         const evt = eventsData.events[i];
@@ -77,7 +130,7 @@ serve(async (req) => {
       }
     }
 
-    // 4. Fallback: use the last stop's location from the route if no event position
+    // 5. Fallback: use the last completed stop's location from the route
     if (!driverLocation && routeData?.routes?.length > 0) {
       const stops = routeData.routes[0].stops || [];
       if (stops.length > 0) {
