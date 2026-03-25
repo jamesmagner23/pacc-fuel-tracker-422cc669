@@ -248,19 +248,34 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         </div>
       )}
 
-      {/* Loading overlay */}
+      {/* Loading / error overlay */}
       {!mapReady && (
         <div
           style={{
             position: "absolute",
             inset: 0,
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             background: "#1A1009",
+            gap: 6,
           }}
         >
-          <span style={{ fontSize: 12, color: "#4A3520" }}>Loading map…</span>
+          {mapError ? (
+            <>
+              <MapPin style={{ width: 18, height: 18, color: "#4A3520" }} />
+              <span style={{ fontSize: 12, color: "#8B7355" }}>Map failed to load</span>
+              <button
+                onClick={() => { setMapError(false); setMapReady(false); }}
+                style={{ fontSize: 11, color: "#FF4D1C", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+              >
+                Retry
+              </button>
+            </>
+          ) : (
+            <span style={{ fontSize: 12, color: "#4A3520" }}>Loading map…</span>
+          )}
         </div>
       )}
 
