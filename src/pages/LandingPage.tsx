@@ -1,7 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Phone, Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users } from "lucide-react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail } from "lucide-react";
 import heroImg from "@/assets/hero-construction.jpg";
 import refuelImg from "@/assets/refuelling-closeup.jpg";
+import truckSideImg from "@/assets/truck-side.jpg";
+import truckOnsiteImg from "@/assets/truck-onsite.jpg";
+import truckDeliveryImg from "@/assets/truck-delivery.jpg";
+import truckRefuelImg from "@/assets/truck-refuel.jpg";
+import truckSiteImg from "@/assets/truck-site.jpg";
 
 function PACCNavLogo() {
   return (
