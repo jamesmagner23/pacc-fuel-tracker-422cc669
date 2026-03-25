@@ -33,6 +33,33 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
+    // Set up auth listener FIRST (before getSession)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session && !["/login", "/landing", "/reset-password"].includes(location.pathname) && !location.pathname.startsWith("/docket")) {
+        setRole(null);
+        setLoading(false);
+        navigate("/login", { replace: true });
+      } else if (session) {
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .single()
+          .then(({ data }) => {
+            const r = (data?.role as UserRole) || null;
+            setRole(r);
+            setLoading(false);
+            if (r === "client" && !window.location.pathname.startsWith("/portal") && !window.location.pathname.startsWith("/docket")) {
+              navigate("/portal", { replace: true });
+            }
+            if (r === "driver" && !window.location.pathname.startsWith("/driver") && !window.location.pathname.startsWith("/docket")) {
+              navigate("/driver", { replace: true });
+            }
+          });
+      }
+    });
+
+    // Then check existing session
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -41,7 +68,6 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         setLoading(false);
         const publicPaths = ["/login", "/landing", "/reset-password"];
         if (!publicPaths.includes(location.pathname) && !location.pathname.startsWith("/docket")) {
-          // Redirect root to landing page for unauthenticated users
           if (location.pathname === "/") {
             navigate("/landing", { replace: true });
           } else {
@@ -70,30 +96,6 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     };
 
     checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session && !["/login", "/landing", "/reset-password"].includes(location.pathname) && !location.pathname.startsWith("/docket")) {
-        setRole(null);
-        navigate("/login", { replace: true });
-      } else if (session) {
-        // Re-check role on auth change
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .single()
-          .then(({ data }) => {
-            const r = (data?.role as UserRole) || null;
-            setRole(r);
-            if (r === "client" && !window.location.pathname.startsWith("/portal") && !window.location.pathname.startsWith("/docket")) {
-              navigate("/portal", { replace: true });
-            }
-            if (r === "driver" && !window.location.pathname.startsWith("/driver") && !window.location.pathname.startsWith("/docket")) {
-              navigate("/driver", { replace: true });
-            }
-          });
-      }
-    });
 
     return () => subscription.unsubscribe();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
