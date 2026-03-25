@@ -7,14 +7,12 @@ const corsHeaders = {
 };
 
 async function login(baseUrl: string, username: string, password: string): Promise<string> {
-  // GET login page (consume body)
   const loginPage = await fetch(`${baseUrl}/Account/LogOn?ReturnUrl=%2FSCAWEB%2FVentas%2FLista`, {
     redirect: "manual",
     headers: { "User-Agent": "Mozilla/5.0" },
   });
   await loginPage.text();
 
-  // POST login
   const loginRes = await fetch(`${baseUrl}/Account/LogOn?ReturnUrl=%2FSCAWEB%2FVentas%2FLista`, {
     method: "POST",
     headers: {
@@ -70,7 +68,6 @@ interface SCARecord {
 }
 
 function mapToRow(r: SCARecord) {
-  // Parse fecha to extract date portion
   const fechaDate = r.Fecha ? r.Fecha.split("T")[0] : null;
   return {
     id: r.Id,
@@ -108,7 +105,45 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // --- Authentication: require admin role ---
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+  if (claimsError || !claimsData?.claims) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const userId = claimsData.claims.sub;
+
+  // Check admin role
   const supabase = createClient(supabaseUrl, supabaseKey);
+  const { data: roleCheck } = await supabase.rpc("has_role", {
+    _user_id: userId,
+    _role: "admin",
+  });
+
+  if (!roleCheck) {
+    return new Response(
+      JSON.stringify({ success: false, error: "Admin access required" }),
+      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+  // --- End authentication ---
 
   const baseUrl = Deno.env.get("SCA_WEB_BASE_URL")!;
   const username = Deno.env.get("SCA_WEB_USERNAME")!;
@@ -118,10 +153,8 @@ Deno.serve(async (req) => {
   let totalUpserted = 0;
 
   try {
-    // Step 1: Login
     const cookieStr = await login(baseUrl, username, password);
 
-    // Step 2: Fetch all pages
     const pageSize = 200;
     let page = 1;
     let hasMore = true;
@@ -153,11 +186,9 @@ Deno.serve(async (req) => {
       hasMore = totalFetched < total;
       page++;
 
-      // Safety: prevent infinite loops
       if (page > 100) break;
     }
 
-    // Step 3: Upsert in batches
     const batchSize = 500;
     for (let i = 0; i < allRecords.length; i += batchSize) {
       const batch = allRecords.slice(i, i + batchSize);
@@ -169,7 +200,6 @@ Deno.serve(async (req) => {
       totalUpserted += batch.length;
     }
 
-    // Step 4: Log success
     await supabase.from("sync_log").insert({
       status: "success",
       records_fetched: totalFetched,
@@ -181,11 +211,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    // Log failure
-    const supabaseUrl2 = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey2 = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const sb2 = createClient(supabaseUrl2, supabaseKey2);
-    await sb2.from("sync_log").insert({
+    await supabase.from("sync_log").insert({
       status: "error",
       records_fetched: totalFetched,
       records_upserted: totalUpserted,
@@ -193,7 +219,7 @@ Deno.serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ success: false, error: err.message, records_fetched: totalFetched }),
+      JSON.stringify({ success: false, error: "Sync failed", records_fetched: totalFetched }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
