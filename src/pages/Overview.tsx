@@ -332,7 +332,9 @@ export default function Overview() {
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} width={50} domain={["auto", "auto"]} />
                   <Tooltip
-                    contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
+                    contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, fontSize: 11 }}
+                    labelStyle={{ color: "#F5E6D0" }}
+                    itemStyle={{ color: "#F5E6D0" }}
                     formatter={(v: number) => [`$${v.toFixed(2)}/L`, "Price"]}
                   />
                   <Line type="monotone" dataKey="price" stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: "#10B981" }} />
