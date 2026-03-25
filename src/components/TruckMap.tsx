@@ -79,7 +79,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
     try {
       const map = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/light-v11",
+        style: "mapbox://styles/mapbox/streets-v12",
         center: [MELB.lng, MELB.lat],
         zoom: 10,
         attributionControl: false,
@@ -126,15 +126,12 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
     if (!markerRef.current) {
       const el = document.createElement("div");
       el.style.cssText = `
-        width:36px;height:36px;
+        width:18px;height:18px;
         background:#FF4D1C;
-        border:3px solid #fff;
         border-radius:50%;
-        display:flex;align-items:center;justify-content:center;
-        box-shadow:0 0 0 6px rgba(255,77,28,0.25),0 4px 12px rgba(0,0,0,0.3);
+        box-shadow:0 0 0 6px rgba(255,77,28,0.2),0 0 0 12px rgba(255,77,28,0.08),0 2px 8px rgba(0,0,0,0.3);
         cursor:pointer;
       `;
-      el.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`;
 
       markerRef.current = new mapboxgl.Marker({ element: el, anchor: "center" })
         .setLngLat([driver.lng, driver.lat])
