@@ -37,7 +37,9 @@ export default function CustomerDetail() {
   if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
   if (!customerName) return <div className="p-8 text-muted-foreground">Customer not found.</div>;
 
-  const tooltipStyle = { backgroundColor: "hsl(217 33% 17%)", border: "1px solid hsl(217 33% 25%)", borderRadius: "8px", color: "hsl(210 40% 98%)", fontSize: 12 };
+  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", fontSize: 12 };
+  const tooltipLabelStyle = { color: "#F5E6D0" };
+  const tooltipItemStyle = { color: "#F5E6D0" };
 
   return (
     <div className="space-y-6 max-w-5xl">

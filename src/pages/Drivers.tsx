@@ -8,7 +8,9 @@ export default function Drivers() {
   const { range } = useDateRange();
   const { data: filtered = [], isLoading } = useTransactions(range);
 
-  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", color: "#F5E6D0", fontSize: 12 };
+  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", fontSize: 12 };
+  const tooltipLabelStyle = { color: "#F5E6D0" };
+  const tooltipItemStyle = { color: "#F5E6D0" };
 
   const drivers = useMemo(() => {
     return [...new Set(filtered.map((t) => t.nombre_vendedor).filter(Boolean))] as string[];
