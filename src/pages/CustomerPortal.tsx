@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { TruckMap } from "@/components/TruckMap";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subDays } from "date-fns";
@@ -331,7 +332,8 @@ export default function CustomerPortal() {
               ))}
             </div>
 
-            {/* Recent deliveries preview */}
+            <TruckMap height={220} compact={false} />
+
             <div style={card}>
               <div
                 style={{
