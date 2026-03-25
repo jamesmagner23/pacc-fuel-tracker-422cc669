@@ -291,6 +291,9 @@ export default function PLOverview() {
                     borderRadius: 8,
                     fontSize: 11,
                   }}
+                  labelStyle={{ color: "hsl(var(--foreground))" }}
+                  itemStyle={{ color: "hsl(var(--foreground))" }}
+                  }}
                   formatter={(value: number) => [`$${value.toLocaleString()}`, "Profit"]}
                   labelFormatter={(_label, payload) => {
                     const item = payload?.[0]?.payload;
