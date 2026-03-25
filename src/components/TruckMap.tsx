@@ -31,7 +31,7 @@ function useTruckLocation() {
 }
 
 function loadMapbox(): Promise<any> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     if ((window as any).mapboxgl) {
       resolve((window as any).mapboxgl);
       return;
@@ -45,14 +45,34 @@ function loadMapbox(): Promise<any> {
       document.head.appendChild(link);
     }
 
+    // Check if script is already being loaded
+    const existing = document.querySelector('script[src*="mapbox-gl"]');
+    if (existing) {
+      existing.addEventListener("load", () => {
+        const mapboxgl = (window as any).mapboxgl;
+        if (mapboxgl) {
+          mapboxgl.accessToken = MAPBOX_TOKEN;
+          resolve(mapboxgl);
+        } else {
+          reject(new Error("mapboxgl not available after load"));
+        }
+      });
+      return;
+    }
+
     // Load JS
     const script = document.createElement("script");
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/2.15.0/mapbox-gl.min.js";
     script.onload = () => {
       const mapboxgl = (window as any).mapboxgl;
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-      resolve(mapboxgl);
+      if (mapboxgl) {
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        resolve(mapboxgl);
+      } else {
+        reject(new Error("mapboxgl not available"));
+      }
     };
+    script.onerror = () => reject(new Error("Failed to load Mapbox GL JS"));
     document.head.appendChild(script);
   });
 }
