@@ -255,8 +255,11 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* TODAY: Live Delivery Feed | OTHER: Daily Volume Bar Chart */}
-      {range === "today" ? (
+      {/* TRUCK MAP — always visible */}
+      <TruckMap height={260} showStops={true} />
+
+      {/* TODAY: Live Delivery Feed */}
+      {range === "today" && (
         <div style={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
           <div className="flex items-center gap-2 mb-1">
             <Clock className="w-4 h-4 text-primary" />
@@ -312,8 +315,6 @@ export default function Overview() {
             </div>
           )}
         </div>
-      ) : (
-        <TruckMap height={260} showStops={true} />
       )}
 
       {/* BOTTOM TWO PANELS */}
