@@ -8,7 +8,9 @@ import { MapPin, Truck, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
 const MELB = { lng: 144.9631, lat: -37.8136 };
 
-mapboxgl.accessToken = MAPBOX_TOKEN;
+if (MAPBOX_TOKEN) {
+  mapboxgl.accessToken = MAPBOX_TOKEN;
+}
 
 interface TruckMapProps {
   height?: number;
@@ -62,6 +64,12 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
     setMapReady(false);
     setMapError(false);
 
+    if (!MAPBOX_TOKEN) {
+      setMapError(true);
+      return;
+    }
+
+    try {
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/light-v11",
@@ -93,6 +101,10 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
       mapRef.current = null;
       setMapReady(false);
     };
+    } catch (err) {
+      console.warn("Mapbox init failed:", err);
+      setMapError(true);
+    }
   }, [mapAttempt]);
 
   useEffect(() => {
