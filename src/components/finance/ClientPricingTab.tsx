@@ -517,9 +517,6 @@ export default function ClientPricingTab() {
                       }}
                       labelStyle={{ color: "hsl(var(--foreground))" }}
                       itemStyle={{ color: "hsl(var(--foreground))" }}
-                  labelStyle={{ color: "hsl(var(--foreground))" }}
-                  itemStyle={{ color: "hsl(var(--foreground))" }}
-                      }}
                       formatter={(value: number, name: string) => [
                         `${value} client${value !== 1 ? "s" : ""}`,
                         name,
