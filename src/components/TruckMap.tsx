@@ -79,7 +79,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
     try {
       const map = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/light-v11",
+        style: "mapbox://styles/mapbox/streets-v12",
         center: [MELB.lng, MELB.lat],
         zoom: 10,
         attributionControl: false,
