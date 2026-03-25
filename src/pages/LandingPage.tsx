@@ -299,11 +299,11 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
-              href="tel:0476186863"
+              href="mailto:fuel@paccvictoria.com"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all"
               style={{ background: "#E8461E", color: "#fff", boxShadow: "0 8px 32px rgba(232,70,30,0.3)" }}
             >
-              <Phone className="w-4 h-4" /> Call 0476 186 863
+              <Mail className="w-4 h-4" /> fuel@paccvictoria.com
             </a>
             <button
               onClick={() => navigate("/login")}
