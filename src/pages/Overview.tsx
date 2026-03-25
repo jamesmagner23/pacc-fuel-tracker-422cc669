@@ -54,7 +54,9 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
+                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, fontSize: 11 }}
+                labelStyle={{ color: "#F5E6D0" }}
+                itemStyle={{ color: "#F5E6D0" }}
                 formatter={(v: number) => {
                   const pctVal = total > 0 ? ((v / total) * 100).toFixed(1) : "0";
                   return [`${(v / 1000).toFixed(1)}k L (${pctVal}%)`, ""];
