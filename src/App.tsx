@@ -120,6 +120,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
+  const isPublicAuthPath = ["/login", "/landing", "/reset-password"].includes(location.pathname);
+
+  if (role === "admin" && isPublicAuthPath) {
+    return <Navigate to="/" replace />;
+  }
+
   // Client role — allow portal + docket routes
   if (role === "client") {
     if (location.pathname.startsWith("/portal") || location.pathname.startsWith("/docket")) {
