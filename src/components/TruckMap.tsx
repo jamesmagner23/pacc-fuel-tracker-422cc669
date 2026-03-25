@@ -16,10 +16,15 @@ function useTruckLocation() {
   return useQuery({
     queryKey: ["truck-location"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("get-truck-location");
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase.functions.invoke("get-truck-location");
+        if (error) return { success: false, driver: null, route: null };
+        return data;
+      } catch {
+        return { success: false, driver: null, route: null };
+      }
     },
+    retry: false,
     refetchInterval: 30000,
     staleTime: 25000,
   });
