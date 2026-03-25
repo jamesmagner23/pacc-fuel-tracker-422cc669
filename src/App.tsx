@@ -17,6 +17,7 @@ import DeliveryDocket from "./pages/DeliveryDocket";
 import CustomerPortal from "./pages/CustomerPortal";
 import DriverPortal from "./pages/DriverPortal";
 import Admin from "./pages/Admin";
+import Reconciliation from "./pages/Reconciliation";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import LandingPage from "./pages/LandingPage";
