@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Truck, RefreshCw } from "lucide-react";
 
 const MAPBOX_TOKEN = "pk.eyJ1IjoicGFjY2VuZXJneSIsImEiOiJjbW41ZGRwdDIwOXNwMnNwb3BlaGQ0ZDY2In0.ie912dCPZJAjj-63ytswgw";
 const MELB = { lng: 144.9631, lat: -37.8136 };
+
+mapboxgl.accessToken = MAPBOX_TOKEN;
 
 interface TruckMapProps {
   height?: number;
@@ -30,111 +34,63 @@ function useTruckLocation() {
   });
 }
 
-function loadMapbox(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).mapboxgl) {
-      resolve((window as any).mapboxgl);
-      return;
-    }
-
-    // Load CSS
-    if (!document.querySelector('link[href*="mapbox-gl"]')) {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = "https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/2.15.0/mapbox-gl.min.css";
-      document.head.appendChild(link);
-    }
-
-    // Check if script is already being loaded
-    const existing = document.querySelector('script[src*="mapbox-gl"]');
-    if (existing) {
-      existing.addEventListener("load", () => {
-        const mapboxgl = (window as any).mapboxgl;
-        if (mapboxgl) {
-          mapboxgl.accessToken = MAPBOX_TOKEN;
-          resolve(mapboxgl);
-        } else {
-          reject(new Error("mapboxgl not available after load"));
-        }
-      });
-      return;
-    }
-
-    // Load JS
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/2.15.0/mapbox-gl.min.js";
-    script.onload = () => {
-      const mapboxgl = (window as any).mapboxgl;
-      if (mapboxgl) {
-        mapboxgl.accessToken = MAPBOX_TOKEN;
-        resolve(mapboxgl);
-      } else {
-        reject(new Error("mapboxgl not available"));
-      }
-    };
-    script.onerror = () => reject(new Error("Failed to load Mapbox GL JS"));
-    document.head.appendChild(script);
-  });
-}
-
 export function TruckMap({ height = 280, showStops = false, compact = false }: TruckMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState(false);
+  const [mapAttempt, setMapAttempt] = useState(0);
 
   const { data, isLoading, dataUpdatedAt, refetch } = useTruckLocation();
   const driver = data?.driver;
   const route = data?.route;
   const hasLocation = !!(driver?.lat && driver?.lng);
 
-  // Init map after Mapbox loads
   useEffect(() => {
     if (!mapContainer.current) return;
+
     let cancelled = false;
+    setMapReady(false);
+    setMapError(false);
 
-    loadMapbox().then((mapboxgl) => {
-      if (cancelled || !mapContainer.current || mapRef.current) return;
+    const map = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/dark-v11",
+      center: [MELB.lng, MELB.lat],
+      zoom: 10,
+      attributionControl: false,
+    });
 
-      const map = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/dark-v11",
-        center: [MELB.lng, MELB.lat],
-        zoom: 10,
-        attributionControl: false,
-      });
+    mapRef.current = map;
 
-      map.on("load", () => {
-        if (!cancelled) {
-          mapRef.current = map;
-          setMapReady(true);
-        }
-      });
+    const loadTimeout = window.setTimeout(() => {
+      if (!cancelled) {
+        setMapError(true);
+      }
+    }, 8000);
 
-      map.on("error", () => {
-        if (!cancelled) setMapError(true);
-      });
-    }).catch(() => {
-      if (!cancelled) setMapError(true);
+    map.on("load", () => {
+      window.clearTimeout(loadTimeout);
+      if (!cancelled) {
+        setMapReady(true);
+        setMapError(false);
+      }
     });
 
     return () => {
       cancelled = true;
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-        markerRef.current = null;
-        setMapReady(false);
-      }
+      window.clearTimeout(loadTimeout);
+      markerRef.current?.remove();
+      markerRef.current = null;
+      map.remove();
+      mapRef.current = null;
+      setMapReady(false);
     };
-  }, []);
+  }, [mapAttempt]);
 
-  // Update marker when location arrives
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
-    const mapboxgl = (window as any).mapboxgl;
-    if (!mapboxgl) return;
 
     if (!hasLocation) {
       markerRef.current?.remove();
@@ -167,7 +123,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
       zoom: 13,
       duration: 1200,
     });
-  }, [mapReady, hasLocation, driver?.lat, driver?.lng]);
+  }, [mapReady, hasLocation, driver?.lat, driver?.lng, driver?.lng]);
 
   const lastUpdated = dataUpdatedAt
     ? new Date(dataUpdatedAt).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })
@@ -183,7 +139,6 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         position: "relative",
       }}
     >
-      {/* Header */}
       {!compact && (
         <div
           style={{
@@ -222,10 +177,8 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         </div>
       )}
 
-      {/* Map container */}
       <div ref={mapContainer} style={{ height, width: "100%" }} />
 
-      {/* No location overlay */}
       {!hasLocation && !isLoading && mapReady && (
         <div
           style={{
@@ -248,7 +201,6 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         </div>
       )}
 
-      {/* Loading / error overlay */}
       {!mapReady && (
         <div
           style={{
@@ -267,7 +219,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
               <MapPin style={{ width: 18, height: 18, color: "#4A3520" }} />
               <span style={{ fontSize: 12, color: "#8B7355" }}>Map failed to load</span>
               <button
-                onClick={() => { setMapError(false); setMapReady(false); }}
+                onClick={() => setMapAttempt((value) => value + 1)}
                 style={{ fontSize: 11, color: "#FF4D1C", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
               >
                 Retry
@@ -279,7 +231,6 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         </div>
       )}
 
-      {/* Stop counter */}
       {showStops && route && (
         <div
           style={{
@@ -301,7 +252,6 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         </div>
       )}
 
-      {/* Live badge */}
       {hasLocation && (
         <div
           style={{
