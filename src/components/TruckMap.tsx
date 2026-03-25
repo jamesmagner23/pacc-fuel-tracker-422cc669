@@ -305,7 +305,11 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
               boxShadow: "0 0 6px #10B981",
             }}
           />
-          <span style={{ fontSize: 10, color: "#8B7355", fontWeight: 500 }}>LIVE</span>
+          <span style={{ fontSize: 10, color: "#8B7355", fontWeight: 500 }}>
+            {driver?.lastUpdate
+              ? `Last seen ${new Date(driver.lastUpdate).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Melbourne" })}`
+              : "LAST KNOWN"}
+          </span>
         </div>
       )}
     </div>
