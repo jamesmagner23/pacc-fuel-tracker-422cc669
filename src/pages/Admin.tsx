@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subDays } from "date-fns";
-import { Users, Activity, Shield, Trash2, Pencil, LogIn, Download, Eye, X } from "lucide-react";
+import { Users, Activity, Shield, Trash2, Pencil, LogIn, Download, Eye, X, Gauge } from "lucide-react";
 import { toast } from "sonner";
+import Reconciliation from "./Reconciliation";
 
 interface UserRow {
   id: string;
