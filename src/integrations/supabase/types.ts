@@ -243,6 +243,33 @@ export type Database = {
         }
         Relationships: []
       }
+      pump_readings: {
+        Row: {
+          created_at: string | null
+          driver_id: string
+          id: string
+          litres: number
+          notes: string | null
+          reading_date: string
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id: string
+          id?: string
+          litres: number
+          notes?: string | null
+          reading_date?: string
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string
+          id?: string
+          litres?: number
+          notes?: string | null
+          reading_date?: string
+        }
+        Relationships: []
+      }
       quotes: {
         Row: {
           buy_price_per_litre: number
@@ -294,6 +321,75 @@ export type Database = {
           total_inc_gst?: number
           valid_until?: string | null
           volume_litres?: number
+        }
+        Relationships: []
+      }
+      recon_settings: {
+        Row: {
+          alert_sensitivity: string
+          auto_weekly_report: boolean
+          calibration_factor: number
+          id: number
+          report_email: string | null
+          updated_at: string | null
+          variance_threshold_litres: number
+          variance_threshold_pct: number
+        }
+        Insert: {
+          alert_sensitivity?: string
+          auto_weekly_report?: boolean
+          calibration_factor?: number
+          id?: number
+          report_email?: string | null
+          updated_at?: string | null
+          variance_threshold_litres?: number
+          variance_threshold_pct?: number
+        }
+        Update: {
+          alert_sensitivity?: string
+          auto_weekly_report?: boolean
+          calibration_factor?: number
+          id?: number
+          report_email?: string | null
+          updated_at?: string | null
+          variance_threshold_litres?: number
+          variance_threshold_pct?: number
+        }
+        Relationships: []
+      }
+      reconciliation_alerts: {
+        Row: {
+          alert_date: string
+          alert_type: string
+          created_at: string | null
+          id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          suggested_action: string | null
+          values: Json | null
+        }
+        Insert: {
+          alert_date: string
+          alert_type: string
+          created_at?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          suggested_action?: string | null
+          values?: Json | null
+        }
+        Update: {
+          alert_date?: string
+          alert_type?: string
+          created_at?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          suggested_action?: string | null
+          values?: Json | null
         }
         Relationships: []
       }

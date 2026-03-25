@@ -12,6 +12,7 @@ const navItems = [
   { to: "/customers", label: "Customers" },
   { to: "/transactions", label: "Transactions" },
   { to: "/finance", label: "Finance" },
+  { to: "/reconciliation", label: "Reconciliation" },
   { to: "/admin", label: "Admin" },
 ];
 
