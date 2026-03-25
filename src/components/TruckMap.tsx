@@ -5,7 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Truck, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 
-const MAPBOX_TOKEN = "pk.eyJ1IjoicGFjY2VuZXJneSIsImEiOiJjbW41ZGRwdDIwOXNwMnNwb3BlaGQ0ZDY2In0.ie912dCPZJAjj-63ytswgw";
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
 const MELB = { lng: 144.9631, lat: -37.8136 };
 
 mapboxgl.accessToken = MAPBOX_TOKEN;

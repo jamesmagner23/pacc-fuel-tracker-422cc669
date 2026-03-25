@@ -226,9 +226,14 @@ function FuelIntakeForm() {
         <div className="mt-4 pt-4 border-t border-surface-border">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Today's Intake Logs</p>
           {(todayLogs.data || []).map((log: any) => {
-            const photoUrl = log.photo_path
-              ? supabase.storage.from("bowser-photos").getPublicUrl(log.photo_path).data.publicUrl
-              : null;
+            const [photoUrl, setPhotoUrl] = React.useState<string | null>(null);
+            React.useEffect(() => {
+              if (log.photo_path) {
+                supabase.storage.from("bowser-photos").createSignedUrl(log.photo_path, 3600).then(({ data }) => {
+                  if (data?.signedUrl) setPhotoUrl(data.signedUrl);
+                });
+              }
+            }, [log.photo_path]);
             return (
               <div key={log.id} className="flex items-center gap-3 py-2 border-b border-border-subtle last:border-0">
                 {photoUrl && (
