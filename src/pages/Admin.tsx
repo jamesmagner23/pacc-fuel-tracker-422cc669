@@ -123,6 +123,7 @@ export default function Admin() {
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [activeTab, setActiveTab] = useState<"users" | "reconciliation">("users");
   const qc = useQueryClient();
 
   const admins = users.filter(u => u.role === "admin");
@@ -163,8 +164,37 @@ export default function Admin() {
     qc.invalidateQueries({ queryKey: ["admin-users"] });
   };
 
+  const tabs = [
+    { id: "users" as const, label: "Users & Activity", icon: <Users className="w-3.5 h-3.5" /> },
+    { id: "reconciliation" as const, label: "Reconciliation", icon: <Gauge className="w-3.5 h-3.5" /> },
+  ];
+
   return (
     <div className="flex flex-col gap-5 max-w-[1100px]">
+      {/* Tab Bar */}
+      <div className="flex gap-1 bg-surface border border-surface-border rounded-[10px] p-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer"
+            style={{
+              background: activeTab === tab.id ? "rgba(232,70,30,0.12)" : "transparent",
+              color: activeTab === tab.id ? "#E8461E" : "#C4A882",
+              border: "none",
+            }}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "reconciliation" ? (
+        <Reconciliation />
+      ) : (
+        <>
+      {/* KPI row */}
       {/* KPI row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
