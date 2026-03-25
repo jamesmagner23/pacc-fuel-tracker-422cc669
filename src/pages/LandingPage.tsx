@@ -105,7 +105,7 @@ export default function LandingPage() {
       {/* ── HERO ── */}
       <section className="relative overflow-hidden" style={{ minHeight: "min(85vh, 700px)" }}>
         <div className="absolute inset-0">
-          <img src={heroImg} alt="PACC Energy fuel tanker delivering diesel to a Melbourne construction site" width={1920} height={1080} className="w-full h-full object-cover" />
+          <img src={truckOnsiteImg} alt="PACC Energy fuel tanker delivering diesel to a Melbourne construction site" width={1920} height={1080} className="w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(61,43,26,0.7) 0%, rgba(61,43,26,0.5) 40%, rgba(61,43,26,0.85) 100%)" }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 flex flex-col justify-center" style={{ minHeight: "min(85vh, 700px)" }}>
