@@ -228,7 +228,7 @@ function FuelIntakeForm() {
           {(todayLogs.data || []).map((log: any) => (
               <IntakeLogRow key={log.id} log={log} />
             ))}
-          })}
+          
           <div className="flex justify-between mt-2 pt-2 border-t border-surface-border">
             <span className="text-xs font-medium text-muted-foreground">Total Intake</span>
             <span className="text-sm font-bold text-foreground">{todayTotal.toLocaleString()}L</span>
