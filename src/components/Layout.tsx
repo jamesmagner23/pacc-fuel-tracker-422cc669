@@ -268,9 +268,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="hidden md:block" />
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div className="hidden sm:flex">
-              <SyncStatus />
-            </div>
             <SyncButton />
             <DateRangeToggle />
           </div>
