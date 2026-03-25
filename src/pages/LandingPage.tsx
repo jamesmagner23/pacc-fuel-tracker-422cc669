@@ -1,7 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Phone, Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users } from "lucide-react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail } from "lucide-react";
 import heroImg from "@/assets/hero-construction.jpg";
 import refuelImg from "@/assets/refuelling-closeup.jpg";
+import truckSideImg from "@/assets/truck-side.jpg";
+import truckOnsiteImg from "@/assets/truck-onsite.jpg";
+import truckDeliveryImg from "@/assets/truck-delivery.jpg";
+import truckRefuelImg from "@/assets/truck-refuel.jpg";
+import truckSiteImg from "@/assets/truck-site.jpg";
 
 function PACCNavLogo() {
   return (
@@ -84,9 +89,6 @@ export default function LandingPage() {
             <a href="#contact" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C4A882" }}>Contact</a>
           </div>
           <div className="flex items-center gap-3">
-            <a href="tel:0476186863" className="hidden sm:flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#E8461E" }}>
-              <Phone className="w-3.5 h-3.5" /> 0476 186 863
-            </a>
             <button
               onClick={() => navigate("/login")}
               className="px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all"
@@ -103,7 +105,7 @@ export default function LandingPage() {
       {/* ── HERO ── */}
       <section className="relative overflow-hidden" style={{ minHeight: "min(85vh, 700px)" }}>
         <div className="absolute inset-0">
-          <img src={heroImg} alt="PACC Energy fuel tanker delivering diesel to a Melbourne construction site" width={1920} height={1080} className="w-full h-full object-cover" />
+          <img src={truckOnsiteImg} alt="PACC Energy fuel tanker delivering diesel to a Melbourne construction site" width={1920} height={1080} className="w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(61,43,26,0.7) 0%, rgba(61,43,26,0.5) 40%, rgba(61,43,26,0.85) 100%)" }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 flex flex-col justify-center" style={{ minHeight: "min(85vh, 700px)" }}>
@@ -130,11 +132,11 @@ export default function LandingPage() {
                 Request a Quote <ChevronRight className="w-4 h-4" />
               </a>
               <a
-                href="tel:0476186863"
+                href="mailto:fuel@paccvictoria.com"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all"
                 style={{ background: "rgba(245,230,208,0.08)", color: "#F5E6D0", border: "1px solid rgba(107,82,64,0.5)" }}
               >
-                <Phone className="w-4 h-4" /> Call 0476 186 863
+                <Mail className="w-4 h-4" /> fuel@paccvictoria.com
               </a>
             </div>
           </div>
@@ -209,7 +211,7 @@ export default function LandingPage() {
             </ul>
           </div>
           <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #6B5240" }}>
-            <img src={refuelImg} alt="Fuel bowser refuelling heavy machinery on construction site" width={1280} height={854} loading="lazy" className="w-full h-auto object-cover" />
+            <img src={truckSideImg} alt="PACC Energy fuel tanker on construction site" width={1280} height={854} loading="lazy" className="w-full h-auto object-cover" />
           </div>
         </div>
       </section>
@@ -229,6 +231,30 @@ export default function LandingPage() {
               <span className="text-xs font-medium" style={{ color: "#F5E6D0" }}>{ind}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── PHOTO GALLERY ── */}
+      <section style={{ background: "#4A3525", borderTop: "1px solid #6B5240", borderBottom: "1px solid #6B5240" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+          <div className="text-center mb-10">
+            <p className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#E8461E" }}>In Action</p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: "#F5E6D0" }}>
+              Our Fleet at Work
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { src: truckSideImg, alt: "PACC fuel tanker side view at construction site" },
+              { src: truckOnsiteImg, alt: "PACC driver refuelling excavator on site" },
+              { src: truckDeliveryImg, alt: "Fuel delivery in progress" },
+              { src: truckRefuelImg, alt: "Bowser refuelling on construction site" },
+            ].map((img) => (
+              <div key={img.alt} className="rounded-xl overflow-hidden aspect-[4/3]" style={{ border: "1px solid #6B5240" }}>
+                <img src={img.src} alt={img.alt} loading="lazy" className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -297,11 +323,11 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
-              href="tel:0476186863"
+              href="mailto:fuel@paccvictoria.com"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all"
               style={{ background: "#E8461E", color: "#fff", boxShadow: "0 8px 32px rgba(232,70,30,0.3)" }}
             >
-              <Phone className="w-4 h-4" /> Call 0476 186 863
+              <Mail className="w-4 h-4" /> fuel@paccvictoria.com
             </a>
             <button
               onClick={() => navigate("/login")}
