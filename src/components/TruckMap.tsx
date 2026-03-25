@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Truck, RefreshCw } from "lucide-react";
+import { MapPin, Truck, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 
 const MAPBOX_TOKEN = "pk.eyJ1IjoicGFjY2VuZXJneSIsImEiOiJjbW41ZGRwdDIwOXNwMnNwb3BlaGQ0ZDY2In0.ie912dCPZJAjj-63ytswgw";
 const MELB = { lng: 144.9631, lat: -37.8136 };
@@ -41,11 +41,19 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState(false);
   const [mapAttempt, setMapAttempt] = useState(0);
+  const [expanded, setExpanded] = useState(false);
 
   const { data, isLoading, dataUpdatedAt, refetch } = useTruckLocation();
   const driver = data?.driver;
   const route = data?.route;
   const hasLocation = !!(driver?.lat && driver?.lng);
+
+  // Resize map when expanded changes
+  useEffect(() => {
+    if (mapRef.current && mapReady) {
+      setTimeout(() => mapRef.current?.resize(), 50);
+    }
+  }, [expanded, mapReady]);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -56,7 +64,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
 
     const map = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/dark-v11",
+      style: "mapbox://styles/mapbox/light-v11",
       center: [MELB.lng, MELB.lat],
       zoom: 10,
       attributionControl: false,
@@ -65,9 +73,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
     mapRef.current = map;
 
     const loadTimeout = window.setTimeout(() => {
-      if (!cancelled) {
-        setMapError(true);
-      }
+      if (!cancelled) setMapError(true);
     }, 8000);
 
     map.on("load", () => {
@@ -103,10 +109,10 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
       el.style.cssText = `
         width:36px;height:36px;
         background:#FF4D1C;
-        border:3px solid #F2EDE6;
+        border:3px solid #fff;
         border-radius:50%;
         display:flex;align-items:center;justify-content:center;
-        box-shadow:0 0 0 6px rgba(255,77,28,0.2),0 4px 12px rgba(0,0,0,0.5);
+        box-shadow:0 0 0 6px rgba(255,77,28,0.25),0 4px 12px rgba(0,0,0,0.3);
         cursor:pointer;
       `;
       el.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`;
@@ -123,11 +129,13 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
       zoom: 13,
       duration: 1200,
     });
-  }, [mapReady, hasLocation, driver?.lat, driver?.lng, driver?.lng]);
+  }, [mapReady, hasLocation, driver?.lat, driver?.lng]);
 
   const lastUpdated = dataUpdatedAt
     ? new Date(dataUpdatedAt).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })
     : null;
+
+  const mapHeight = expanded ? 520 : height;
 
   return (
     <div
@@ -137,6 +145,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         borderRadius: 10,
         overflow: "hidden",
         position: "relative",
+        transition: "all 0.3s ease",
       }}
     >
       {!compact && (
@@ -166,6 +175,18 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {lastUpdated && <span style={{ fontSize: 10, color: "#4A3520" }}>Updated {lastUpdated}</span>}
             <button
+              onClick={() => setExpanded((v) => !v)}
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "#4A3520" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#8B7355")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#4A3520")}
+              title={expanded ? "Collapse map" : "Expand map"}
+            >
+              {expanded
+                ? <Minimize2 style={{ width: 12, height: 12 }} />
+                : <Maximize2 style={{ width: 12, height: 12 }} />
+              }
+            </button>
+            <button
               onClick={() => refetch()}
               style={{ background: "transparent", border: "none", cursor: "pointer", color: "#4A3520" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "#8B7355")}
@@ -177,7 +198,14 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         </div>
       )}
 
-      <div ref={mapContainer} style={{ height, width: "100%" }} />
+      <div
+        ref={mapContainer}
+        style={{
+          height: mapHeight,
+          width: "100%",
+          transition: "height 0.3s ease",
+        }}
+      />
 
       {!hasLocation && !isLoading && mapReady && (
         <div
