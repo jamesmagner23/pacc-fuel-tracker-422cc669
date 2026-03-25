@@ -54,7 +54,9 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
+                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, fontSize: 11 }}
+                labelStyle={{ color: "#F5E6D0" }}
+                itemStyle={{ color: "#F5E6D0" }}
                 formatter={(v: number) => {
                   const pctVal = total > 0 ? ((v / total) * 100).toFixed(1) : "0";
                   return [`${(v / 1000).toFixed(1)}k L (${pctVal}%)`, ""];
@@ -63,14 +65,14 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
             </PieChart>
           </ResponsiveContainer>
         </div>
-        <div className="flex flex-col gap-2 min-w-0 w-full sm:flex-1">
+        <div className="flex flex-col gap-2.5 min-w-0 w-full sm:flex-1">
           {topCustomers.map((c, i) => {
             const pctVal = total > 0 ? ((c.litres / total) * 100).toFixed(0) : "0";
             return (
-              <div key={c.name} className="flex items-center gap-2">
+              <div key={c.name} className="flex items-center gap-2.5">
                 <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                <span className="text-xs text-[#E0D0B8] flex-1">{c.name}</span>
-                <span className="text-xs text-[#D4C4A8] tabular-nums shrink-0">
+                <span className="text-xs text-[#E0D0B8] flex-1 truncate">{c.name}</span>
+                <span className="text-xs text-[#D4C4A8] tabular-nums shrink-0 text-right w-[70px] font-medium">
                   {showPct ? `${pctVal}%` : `${(c.litres / 1000).toFixed(1)}k L`}
                 </span>
               </div>
@@ -241,7 +243,9 @@ export default function Overview() {
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
               <YAxis hide />
               <Tooltip
-                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 12 }}
+                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, fontSize: 12 }}
+                labelStyle={{ color: "#F5E6D0" }}
+                itemStyle={{ color: "#F5E6D0" }}
                 formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
               />
@@ -328,7 +332,9 @@ export default function Overview() {
                   <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} width={50} domain={["auto", "auto"]} />
                   <Tooltip
-                    contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
+                    contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, fontSize: 11 }}
+                    labelStyle={{ color: "#F5E6D0" }}
+                    itemStyle={{ color: "#F5E6D0" }}
                     formatter={(v: number) => [`$${v.toFixed(2)}/L`, "Price"]}
                   />
                   <Line type="monotone" dataKey="price" stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: "#10B981" }} />

@@ -428,6 +428,8 @@ export default function ClientPricingTab() {
                     borderRadius: 8,
                     fontSize: 11,
                   }}
+                  labelStyle={{ color: "hsl(var(--foreground))" }}
+                  itemStyle={{ color: "hsl(var(--foreground))" }}
                   formatter={(value: number) => [`${value}%`, "Margin"]}
                   labelFormatter={(_label, payload) => {
                     const item = payload?.[0]?.payload;
@@ -513,6 +515,8 @@ export default function ClientPricingTab() {
                         borderRadius: 8,
                         fontSize: 11,
                       }}
+                      labelStyle={{ color: "hsl(var(--foreground))" }}
+                      itemStyle={{ color: "hsl(var(--foreground))" }}
                       formatter={(value: number, name: string) => [
                         `${value} client${value !== 1 ? "s" : ""}`,
                         name,

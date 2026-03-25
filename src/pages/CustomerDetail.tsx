@@ -37,7 +37,9 @@ export default function CustomerDetail() {
   if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
   if (!customerName) return <div className="p-8 text-muted-foreground">Customer not found.</div>;
 
-  const tooltipStyle = { backgroundColor: "hsl(217 33% 17%)", border: "1px solid hsl(217 33% 25%)", borderRadius: "8px", color: "hsl(210 40% 98%)", fontSize: 12 };
+  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", fontSize: 12 };
+  const tooltipLabelStyle = { color: "#F5E6D0" };
+  const tooltipItemStyle = { color: "#F5E6D0" };
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -56,10 +58,10 @@ export default function CustomerDetail() {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={locationData.slice(0, 8)} layout="vertical">
-                <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} width={100} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                <Bar dataKey="litres" fill="hsl(25 95% 53%)" radius={[0, 4, 4, 0]} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} width={100} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
+                <Bar dataKey="litres" fill="#E8461E" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -70,10 +72,10 @@ export default function CustomerDetail() {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dailyData}>
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                <Line type="monotone" dataKey="litres" stroke="hsl(25 95% 53%)" strokeWidth={2} dot={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
+                <Line type="monotone" dataKey="litres" stroke="#E8461E" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

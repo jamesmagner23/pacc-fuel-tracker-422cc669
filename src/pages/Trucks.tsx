@@ -18,7 +18,9 @@ export default function Trucks() {
   const today = format(new Date(), "yyyy-MM-dd");
   const weekAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
 
-  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", color: "#F5E6D0", fontSize: 12 };
+  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", fontSize: 12 };
+  const tooltipLabelStyle = { color: "#F5E6D0" };
+  const tooltipItemStyle = { color: "#F5E6D0" };
 
   // Discover trucks dynamically from data, fallback to known list
   const trucks = useMemo(() => {
@@ -50,7 +52,7 @@ export default function Trucks() {
             <BarChart data={comparisonData}>
               <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#C4A882" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
               <Bar dataKey="litres" fill="#E8461E" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

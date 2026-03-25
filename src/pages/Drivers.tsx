@@ -8,7 +8,9 @@ export default function Drivers() {
   const { range } = useDateRange();
   const { data: filtered = [], isLoading } = useTransactions(range);
 
-  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", color: "#F5E6D0", fontSize: 12 };
+  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", fontSize: 12 };
+  const tooltipLabelStyle = { color: "#F5E6D0" };
+  const tooltipItemStyle = { color: "#F5E6D0" };
 
   const drivers = useMemo(() => {
     return [...new Set(filtered.map((t) => t.nombre_vendedor).filter(Boolean))] as string[];
@@ -38,7 +40,7 @@ export default function Drivers() {
                 <BarChart data={comparisonData}>
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#C4A882" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
+                  <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
                   <Bar dataKey="litres" fill="#E8461E" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -91,7 +93,7 @@ export default function Drivers() {
                         </defs>
                         <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
+                        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
                         <Area type="monotone" dataKey="litres" stroke="#E8461E" fill={`url(#grad-driver-${i})`} strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
