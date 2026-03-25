@@ -31,7 +31,7 @@ function useTruckLocation() {
 }
 
 function loadMapbox(): Promise<any> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     if ((window as any).mapboxgl) {
       resolve((window as any).mapboxgl);
       return;
@@ -45,14 +45,34 @@ function loadMapbox(): Promise<any> {
       document.head.appendChild(link);
     }
 
+    // Check if script is already being loaded
+    const existing = document.querySelector('script[src*="mapbox-gl"]');
+    if (existing) {
+      existing.addEventListener("load", () => {
+        const mapboxgl = (window as any).mapboxgl;
+        if (mapboxgl) {
+          mapboxgl.accessToken = MAPBOX_TOKEN;
+          resolve(mapboxgl);
+        } else {
+          reject(new Error("mapboxgl not available after load"));
+        }
+      });
+      return;
+    }
+
     // Load JS
     const script = document.createElement("script");
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl/2.15.0/mapbox-gl.min.js";
     script.onload = () => {
       const mapboxgl = (window as any).mapboxgl;
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-      resolve(mapboxgl);
+      if (mapboxgl) {
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        resolve(mapboxgl);
+      } else {
+        reject(new Error("mapboxgl not available"));
+      }
     };
+    script.onerror = () => reject(new Error("Failed to load Mapbox GL JS"));
     document.head.appendChild(script);
   });
 }
@@ -62,6 +82,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   const { data, isLoading, dataUpdatedAt, refetch } = useTruckLocation();
   const driver = data?.driver;
@@ -90,6 +111,12 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
           setMapReady(true);
         }
       });
+
+      map.on("error", () => {
+        if (!cancelled) setMapError(true);
+      });
+    }).catch(() => {
+      if (!cancelled) setMapError(true);
     });
 
     return () => {
@@ -221,19 +248,34 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         </div>
       )}
 
-      {/* Loading overlay */}
+      {/* Loading / error overlay */}
       {!mapReady && (
         <div
           style={{
             position: "absolute",
             inset: 0,
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             background: "#1A1009",
+            gap: 6,
           }}
         >
-          <span style={{ fontSize: 12, color: "#4A3520" }}>Loading map…</span>
+          {mapError ? (
+            <>
+              <MapPin style={{ width: 18, height: 18, color: "#4A3520" }} />
+              <span style={{ fontSize: 12, color: "#8B7355" }}>Map failed to load</span>
+              <button
+                onClick={() => { setMapError(false); setMapReady(false); }}
+                style={{ fontSize: 11, color: "#FF4D1C", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+              >
+                Retry
+              </button>
+            </>
+          ) : (
+            <span style={{ fontSize: 12, color: "#4A3520" }}>Loading map…</span>
+          )}
         </div>
       )}
 
