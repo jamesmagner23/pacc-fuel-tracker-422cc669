@@ -40,7 +40,7 @@ export default function Drivers() {
                 <BarChart data={comparisonData}>
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#C4A882" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
+                  <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
                   <Bar dataKey="litres" fill="#E8461E" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -93,7 +93,7 @@ export default function Drivers() {
                         </defs>
                         <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-                        <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
+                        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
                         <Area type="monotone" dataKey="litres" stroke="#E8461E" fill={`url(#grad-driver-${i})`} strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
