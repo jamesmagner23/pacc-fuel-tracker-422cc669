@@ -53,7 +53,7 @@ export function SyncButton() {
         if (!syncing) (e.currentTarget as HTMLElement).style.background = "#E8461E";
       }}
     >
-      <span className="md:hidden" style={{ padding: "7px 10px", display: "flex", alignItems: "center" }}>
+      <span className="flex md:hidden" style={{ padding: "7px 10px", alignItems: "center" }}>
         <RefreshCw style={{ width: 13, height: 13 }} className={syncing ? "animate-spin" : ""} />
       </span>
       <span
