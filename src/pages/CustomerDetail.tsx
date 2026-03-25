@@ -58,10 +58,10 @@ export default function CustomerDetail() {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={locationData.slice(0, 8)} layout="vertical">
-                <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} width={100} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} width={100} />
                 <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                <Bar dataKey="litres" fill="hsl(25 95% 53%)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="litres" fill="#E8461E" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -72,10 +72,10 @@ export default function CustomerDetail() {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dailyData}>
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "hsl(215 20% 55%)" }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                <Line type="monotone" dataKey="litres" stroke="hsl(25 95% 53%)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="litres" stroke="#E8461E" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
