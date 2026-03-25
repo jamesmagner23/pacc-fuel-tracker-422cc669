@@ -132,11 +132,11 @@ export default function LandingPage() {
                 Request a Quote <ChevronRight className="w-4 h-4" />
               </a>
               <a
-                href="tel:0476186863"
+                href="mailto:fuel@paccvictoria.com"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all"
                 style={{ background: "rgba(245,230,208,0.08)", color: "#F5E6D0", border: "1px solid rgba(107,82,64,0.5)" }}
               >
-                <Phone className="w-4 h-4" /> Call 0476 186 863
+                <Mail className="w-4 h-4" /> fuel@paccvictoria.com
               </a>
             </div>
           </div>
