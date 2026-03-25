@@ -27,73 +27,87 @@ const queryClient = new QueryClient();
 
 type UserRole = "admin" | "client" | "driver" | null;
 
+const PUBLIC_PATHS = ["/login", "/landing", "/reset-password"];
+
+async function getUserRole(userId: string): Promise<UserRole> {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .single();
+
+  if (error) return null;
+
+  return (data?.role as UserRole) || null;
+}
+
 function AuthGate({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
+  const redirectSignedOut = (path: string) => {
+    if (!PUBLIC_PATHS.includes(path) && !path.startsWith("/docket")) {
+      navigate(path === "/" ? "/landing" : "/login", { replace: true });
+    }
+  };
+
+  const redirectByRole = (userRole: UserRole, path: string) => {
+    if (userRole === "client" && !path.startsWith("/portal") && !path.startsWith("/docket")) {
+      navigate("/portal", { replace: true });
+    }
+
+    if (userRole === "driver" && !path.startsWith("/driver") && !path.startsWith("/docket")) {
+      navigate("/driver", { replace: true });
+    }
+  };
+
   useEffect(() => {
+    const loadRole = async (userId: string, path: string) => {
+      const userRole = await getUserRole(userId);
+      setRole(userRole);
+      setLoading(false);
+      redirectByRole(userRole, path);
+    };
+
     // Set up auth listener FIRST (before getSession)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session && !["/login", "/landing", "/reset-password"].includes(location.pathname) && !location.pathname.startsWith("/docket")) {
+      const currentPath = window.location.pathname;
+
+      if (!session) {
         setRole(null);
         setLoading(false);
-        navigate("/login", { replace: true });
-      } else if (session) {
-        supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .single()
-          .then(({ data }) => {
-            const r = (data?.role as UserRole) || null;
-            setRole(r);
-            setLoading(false);
-            if (r === "client" && !window.location.pathname.startsWith("/portal") && !window.location.pathname.startsWith("/docket")) {
-              navigate("/portal", { replace: true });
-            }
-            if (r === "driver" && !window.location.pathname.startsWith("/driver") && !window.location.pathname.startsWith("/docket")) {
-              navigate("/driver", { replace: true });
-            }
-          });
+        redirectSignedOut(currentPath);
+        return;
       }
+
+      void loadRole(session.user.id, currentPath);
     });
 
     // Then check existing session
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      const currentPath = window.location.pathname;
 
       if (!session) {
         setRole(null);
         setLoading(false);
-        const publicPaths = ["/login", "/landing", "/reset-password"];
-        if (!publicPaths.includes(location.pathname) && !location.pathname.startsWith("/docket")) {
-          if (location.pathname === "/") {
-            navigate("/landing", { replace: true });
-          } else {
-            navigate("/login", { replace: true });
-          }
-        }
+        redirectSignedOut(currentPath);
         return;
       }
 
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .single();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-      const userRole = (roleData?.role as UserRole) || null;
-      setRole(userRole);
-      setLoading(false);
+      if (userError || !user) {
+        await supabase.auth.signOut();
+        setRole(null);
+        setLoading(false);
+        redirectSignedOut(currentPath);
+        return;
+      }
 
-      if (userRole === "client" && !location.pathname.startsWith("/portal") && !location.pathname.startsWith("/docket")) {
-        navigate("/portal", { replace: true });
-      }
-      if (userRole === "driver" && !location.pathname.startsWith("/driver") && !location.pathname.startsWith("/docket")) {
-        navigate("/driver", { replace: true });
-      }
+      await loadRole(user.id, currentPath);
     };
 
     checkAuth();
@@ -111,8 +125,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   // Not logged in — allow public pages
   if (!role) {
-    const publicPaths = ["/login", "/landing", "/reset-password"];
-    if (publicPaths.includes(location.pathname) || location.pathname.startsWith("/docket")) {
+    if (PUBLIC_PATHS.includes(location.pathname) || location.pathname.startsWith("/docket")) {
       return <>{children}</>;
     }
     if (location.pathname === "/") {
@@ -121,7 +134,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  const isPublicAuthPath = ["/login", "/landing", "/reset-password"].includes(location.pathname);
+  const isPublicAuthPath = PUBLIC_PATHS.includes(location.pathname);
 
   if (role === "admin" && isPublicAuthPath) {
     return <Navigate to="/" replace />;
