@@ -3,14 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
+import { useMapboxToken } from "@/hooks/useMapboxToken";
 import { MapPin, Truck, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
 const MELB = { lng: 144.9631, lat: -37.8136 };
-
-if (MAPBOX_TOKEN) {
-  mapboxgl.accessToken = MAPBOX_TOKEN;
-}
 
 interface TruckMapProps {
   height?: number;
@@ -46,11 +42,11 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const [expanded, setExpanded] = useState(false);
 
   const { data, isLoading, dataUpdatedAt, refetch } = useTruckLocation();
+  const { data: mapToken, isLoading: isMapTokenLoading } = useMapboxToken();
   const driver = data?.driver;
   const route = data?.route;
   const hasLocation = !!(driver?.lat && driver?.lng);
 
-  // Resize map when expanded changes
   useEffect(() => {
     if (mapRef.current && mapReady) {
       setTimeout(() => mapRef.current?.resize(), 50);
@@ -64,48 +60,59 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
     setMapReady(false);
     setMapError(false);
 
-    if (!MAPBOX_TOKEN) {
+    markerRef.current?.remove();
+    markerRef.current = null;
+    mapRef.current?.remove();
+    mapRef.current = null;
+
+    if (isMapTokenLoading) {
+      return;
+    }
+
+    if (!mapToken) {
       setMapError(true);
       return;
     }
 
+    mapboxgl.accessToken = mapToken;
+
     try {
-    const map = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: [MELB.lng, MELB.lat],
-      zoom: 10,
-      attributionControl: false,
-    });
+      const map = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/light-v11",
+        center: [MELB.lng, MELB.lat],
+        zoom: 10,
+        attributionControl: false,
+      });
 
-    mapRef.current = map;
+      mapRef.current = map;
 
-    const loadTimeout = window.setTimeout(() => {
-      if (!cancelled) setMapError(true);
-    }, 8000);
+      const loadTimeout = window.setTimeout(() => {
+        if (!cancelled) setMapError(true);
+      }, 8000);
 
-    map.on("load", () => {
-      window.clearTimeout(loadTimeout);
-      if (!cancelled) {
-        setMapReady(true);
-        setMapError(false);
-      }
-    });
+      map.on("load", () => {
+        window.clearTimeout(loadTimeout);
+        if (!cancelled) {
+          setMapReady(true);
+          setMapError(false);
+        }
+      });
 
-    return () => {
-      cancelled = true;
-      window.clearTimeout(loadTimeout);
-      markerRef.current?.remove();
-      markerRef.current = null;
-      map.remove();
-      mapRef.current = null;
-      setMapReady(false);
-    };
+      return () => {
+        cancelled = true;
+        window.clearTimeout(loadTimeout);
+        markerRef.current?.remove();
+        markerRef.current = null;
+        map.remove();
+        mapRef.current = null;
+        setMapReady(false);
+      };
     } catch (err) {
       console.warn("Mapbox init failed:", err);
       setMapError(true);
     }
-  }, [mapAttempt]);
+  }, [isMapTokenLoading, mapAttempt, mapToken]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
