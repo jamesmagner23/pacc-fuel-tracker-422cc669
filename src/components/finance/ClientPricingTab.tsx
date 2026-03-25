@@ -517,7 +517,9 @@ export default function ClientPricingTab() {
                         border: "1px solid hsl(var(--border))",
                         borderRadius: 8,
                         fontSize: 11,
-                  }}
+                      }}
+                      labelStyle={{ color: "hsl(var(--foreground))" }}
+                      itemStyle={{ color: "hsl(var(--foreground))" }}
                   labelStyle={{ color: "hsl(var(--foreground))" }}
                   itemStyle={{ color: "hsl(var(--foreground))" }}
                       }}

@@ -153,7 +153,9 @@ export default function BuyPriceTab() {
                 <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                 <Tooltip
-                  contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--primary))", borderRadius: 8, color: "hsl(var(--foreground))", fontSize: 12 }}
+                  contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--primary))", borderRadius: 8, fontSize: 12 }}
+                  labelStyle={{ color: "hsl(var(--foreground))" }}
+                  itemStyle={{ color: "hsl(var(--foreground))" }}
                   formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]}
                   cursor={{ stroke: "hsl(var(--muted-foreground) / 0.2)" }}
                 />
