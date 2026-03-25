@@ -34,7 +34,7 @@ function IntakeLogRow({ log }: { log: any }) {
   );
 }
 
-
+function useDriverTransactions() {
   const today = format(new Date(), "yyyy-MM-dd");
   const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
   const lastWeekStart = format(startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }), "yyyy-MM-dd");
