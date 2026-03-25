@@ -225,29 +225,9 @@ function FuelIntakeForm() {
       {(todayLogs.data || []).length > 0 && (
         <div className="mt-4 pt-4 border-t border-surface-border">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Today's Intake Logs</p>
-          {(todayLogs.data || []).map((log: any) => {
-            const [photoUrl, setPhotoUrl] = React.useState<string | null>(null);
-            React.useEffect(() => {
-              if (log.photo_path) {
-                supabase.storage.from("bowser-photos").createSignedUrl(log.photo_path, 3600).then(({ data }) => {
-                  if (data?.signedUrl) setPhotoUrl(data.signedUrl);
-                });
-              }
-            }, [log.photo_path]);
-            return (
-              <div key={log.id} className="flex items-center gap-3 py-2 border-b border-border-subtle last:border-0">
-                {photoUrl && (
-                  <img src={photoUrl} alt="Bowser" className="w-10 h-10 rounded object-cover border border-surface-border" />
-                )}
-                <div className="flex-1">
-                  <span className="text-sm font-semibold text-foreground">{Number(log.litres_entered).toLocaleString()}L</span>
-                  {log.notes && <span className="text-xs text-muted-foreground ml-2">{log.notes}</span>}
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {log.created_at ? format(new Date(log.created_at), "HH:mm") : ""}
-                </span>
-              </div>
-            );
+          {(todayLogs.data || []).map((log: any) => (
+              <IntakeLogRow key={log.id} log={log} />
+            ))}
           })}
           <div className="flex justify-between mt-2 pt-2 border-t border-surface-border">
             <span className="text-xs font-medium text-muted-foreground">Total Intake</span>
