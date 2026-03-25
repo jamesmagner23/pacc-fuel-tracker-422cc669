@@ -332,7 +332,8 @@ export default function CustomerPortal() {
               ))}
             </div>
 
-            {/* Recent deliveries preview */}
+            <TruckMap height={220} compact={false} />
+
             <div style={card}>
               <div
                 style={{
