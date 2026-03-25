@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/hooks/useActivityLog";
 import { Droplets, Truck, Shield } from "lucide-react";
@@ -35,6 +36,7 @@ function PACCLogoLarge() {
 }
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,7 +50,7 @@ export default function Login() {
     setLoading(true);
     setError("");
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
       setError("Incorrect email or password. Please try again.");
@@ -61,8 +63,22 @@ export default function Login() {
     } catch (_) {
       // Non-critical, don't block login
     }
-    // Use replace to trigger React Router re-render within AuthGate
-    window.location.replace("/");
+
+    let destination = "/";
+    const userId = data.user?.id ?? data.session?.user.id;
+
+    if (userId) {
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .single();
+
+      if (roleData?.role === "client") destination = "/portal";
+      if (roleData?.role === "driver") destination = "/driver";
+    }
+
+    navigate(destination, { replace: true });
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
