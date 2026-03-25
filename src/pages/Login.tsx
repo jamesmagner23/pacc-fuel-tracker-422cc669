@@ -56,8 +56,13 @@ export default function Login() {
       return;
     }
 
-    await logActivity("login", { method: "password" });
-    window.location.href = "/";
+    try {
+      await logActivity("login", { method: "password" });
+    } catch (_) {
+      // Non-critical, don't block login
+    }
+    // Use replace to trigger React Router re-render within AuthGate
+    window.location.replace("/");
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
