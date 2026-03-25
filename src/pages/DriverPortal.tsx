@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
+import { TruckMap } from "@/components/TruckMap";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, subWeeks } from "date-fns";
@@ -304,7 +305,8 @@ export default function DriverPortal() {
           {format(new Date(), "EEEE dd MMMM yyyy")}
         </div>
 
-        {/* HERO — Today's litres */}
+        <TruckMap height={200} compact={true} />
+
         <div className="card p-7 text-center">
           <div className="flex items-center justify-center gap-1.5 mb-3">
             <Droplets className="w-3.5 h-3.5 text-accent" />
