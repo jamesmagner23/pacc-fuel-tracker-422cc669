@@ -378,6 +378,9 @@ export default function DriverPortal() {
         {/* Fuel Intake Log */}
         <FuelIntakeForm />
 
+        {/* Pump Reading Form */}
+        <PumpReadingForm />
+
         {/* Today's delivery log */}
         {today.length > 0 && (
           <div className="card" style={{ padding: 0 }}>
