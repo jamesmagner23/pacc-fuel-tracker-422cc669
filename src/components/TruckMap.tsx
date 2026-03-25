@@ -82,6 +82,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   const { data, isLoading, dataUpdatedAt, refetch } = useTruckLocation();
   const driver = data?.driver;
@@ -110,6 +111,12 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
           setMapReady(true);
         }
       });
+
+      map.on("error", () => {
+        if (!cancelled) setMapError(true);
+      });
+    }).catch(() => {
+      if (!cancelled) setMapError(true);
     });
 
     return () => {
