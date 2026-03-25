@@ -89,9 +89,6 @@ export default function LandingPage() {
             <a href="#contact" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C4A882" }}>Contact</a>
           </div>
           <div className="flex items-center gap-3">
-            <a href="tel:0476186863" className="hidden sm:flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#E8461E" }}>
-              <Phone className="w-3.5 h-3.5" /> 0476 186 863
-            </a>
             <button
               onClick={() => navigate("/login")}
               className="px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all"
