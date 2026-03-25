@@ -234,6 +234,30 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── PHOTO GALLERY ── */}
+      <section style={{ background: "#4A3525", borderTop: "1px solid #6B5240", borderBottom: "1px solid #6B5240" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+          <div className="text-center mb-10">
+            <p className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#E8461E" }}>In Action</p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: "#F5E6D0" }}>
+              Our Fleet at Work
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { src: truckSideImg, alt: "PACC fuel tanker side view at construction site" },
+              { src: truckOnsiteImg, alt: "PACC driver refuelling excavator on site" },
+              { src: truckDeliveryImg, alt: "Fuel delivery in progress" },
+              { src: truckRefuelImg, alt: "Bowser refuelling on construction site" },
+            ].map((img) => (
+              <div key={img.alt} className="rounded-xl overflow-hidden aspect-[4/3]" style={{ border: "1px solid #6B5240" }}>
+                <img src={img.src} alt={img.alt} loading="lazy" className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── TESTIMONIALS ── */}
       <section id="testimonials" style={{ background: "#4A3525", borderTop: "1px solid #6B5240", borderBottom: "1px solid #6B5240" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
