@@ -211,7 +211,7 @@ export default function LandingPage() {
             </ul>
           </div>
           <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #6B5240" }}>
-            <img src={refuelImg} alt="Fuel bowser refuelling heavy machinery on construction site" width={1280} height={854} loading="lazy" className="w-full h-auto object-cover" />
+            <img src={truckSideImg} alt="PACC Energy fuel tanker on construction site" width={1280} height={854} loading="lazy" className="w-full h-auto object-cover" />
           </div>
         </div>
       </section>
