@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { TruckMap } from "@/components/TruckMap";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line,
