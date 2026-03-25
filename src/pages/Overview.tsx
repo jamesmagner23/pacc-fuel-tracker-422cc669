@@ -243,7 +243,9 @@ export default function Overview() {
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
               <YAxis hide />
               <Tooltip
-                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 12 }}
+                contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, fontSize: 12 }}
+                labelStyle={{ color: "#F5E6D0" }}
+                itemStyle={{ color: "#F5E6D0" }}
                 formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
               />
