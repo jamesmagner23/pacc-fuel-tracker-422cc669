@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { TruckMap } from "@/components/TruckMap";
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line,
@@ -308,24 +309,7 @@ export default function Overview() {
           )}
         </div>
       ) : (
-        <div style={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
-          <div className="text-sm font-medium text-foreground mb-1">Daily Volume</div>
-          <div className="text-[11px] text-[#D4C4A8] mb-4">Litres delivered per day</div>
-          <div style={{ height: 280 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyData} barCategoryGap="30%">
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "#C4A882" }} axisLine={false} tickLine={false} width={50} />
-                <Tooltip
-                  contentStyle={{ background: "#4A3525", border: "1px solid #6B5240", borderRadius: 8, color: "#F5E6D0", fontSize: 11 }}
-                  formatter={(v: number) => [`${v.toLocaleString()}L`, ""]}
-                  cursor={{ fill: "rgba(255,255,255,0.02)" }}
-                />
-                <Bar dataKey="litres" fill="#E8461E" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <TruckMap height={260} showStops={true} />
       )}
 
       {/* BOTTOM TWO PANELS */}
