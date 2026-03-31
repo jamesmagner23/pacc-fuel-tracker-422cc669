@@ -483,6 +483,7 @@ export default function Reconciliation() {
   const { data: alerts = [] } = useReconAlerts(startDate, endDate);
   const { data: settings } = useReconSettings();
   const resolveMutation = useResolveAlert();
+  const deleteMutation = useDeletePumpReading();
 
   // Filter transactions to the selected week
   const weekTransactions = useMemo(
