@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { format, startOfWeek, endOfWeek, subWeeks, parseISO } from "date-fns";
-import { AlertTriangle, CheckCircle, Download, Settings, Table2, Bell, Archive } from "lucide-react";
+import { AlertTriangle, CheckCircle, Download, Settings, Table2, Bell, Archive, Trash2, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePumpReadings,
@@ -8,10 +8,12 @@ import {
   useReconSettings,
   useUpdateReconSettings,
   useResolveAlert,
+  useDeletePumpReading,
   computeDailyRecon,
   getVarianceStatus,
   type DailyReconRow,
   type ReconAlert,
+  type PumpReading,
 } from "@/hooks/useReconciliation";
 import { useTransactions } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
