@@ -532,6 +532,15 @@ export default function Reconciliation() {
       </div>
 
       {activeTab === "daily" && <DailyBreakdownTable rows={dailyRows} />}
+      {activeTab === "pump" && (
+        <PumpReadingsTab
+          readings={pumpReadings}
+          onDelete={(id) => deleteMutation.mutate(id, {
+            onSuccess: () => toast.success("Pump reading deleted"),
+            onError: (err) => toast.error(err.message),
+          })}
+        />
+      )}
       {activeTab === "alerts" && (
         <AlertsTab alerts={alerts} onResolve={(id) => resolveMutation.mutate(id)} />
       )}
