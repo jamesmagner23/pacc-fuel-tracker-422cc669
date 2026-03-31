@@ -100,6 +100,25 @@ export function useSubmitPumpReading() {
   });
 }
 
+export function useAdminInsertPumpReading() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { litres: number; reading_date: string; driver_id: string; notes?: string }) => {
+      const { error } = await supabase.from("pump_readings").insert({
+        driver_id: input.driver_id,
+        litres: input.litres,
+        reading_date: input.reading_date,
+        notes: input.notes || null,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pump-readings"] });
+      queryClient.invalidateQueries({ queryKey: ["driver-pump-readings"] });
+    },
+  });
+}
+
 export function useDeletePumpReading() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -9,6 +9,7 @@ import {
   useUpdateReconSettings,
   useResolveAlert,
   useDeletePumpReading,
+  useAdminInsertPumpReading,
   computeDailyRecon,
   getVarianceStatus,
   type DailyReconRow,
