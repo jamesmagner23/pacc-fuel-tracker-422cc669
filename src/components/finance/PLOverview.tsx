@@ -45,9 +45,13 @@ export default function PLOverview() {
   const getTxPricing = useCallback((t: any) => {
     if (t.ppu && t.ppu > 0) return { hasPricing: true, sellPPL: t.ppu };
     const clientId = speedsolToClientId.get((t.nombre_cliente1 || "").toLowerCase());
-    const pricing = clientId ? customerPricing.find((p) => p.client_account_id === clientId) : null;
-    if (!pricing) return { hasPricing: false, sellPPL: 0 };
-    return { hasPricing: true, sellPPL: latestBuyPrice * (1 + pricing.margin_percent / 100) };
+    if (!clientId) return { hasPricing: false, sellPPL: 0 };
+    const tier = findTierForVolume(customerPricing, clientId, t.cantidad || 0);
+    if (!tier) return { hasPricing: false, sellPPL: 0 };
+    const sell = tier.pricing_type === "markup"
+      ? latestBuyPrice + tier.margin_percent / 100
+      : latestBuyPrice * (1 + tier.margin_percent / 100);
+    return { hasPricing: true, sellPPL: sell };
   }, [speedsolToClientId, customerPricing, latestBuyPrice]);
 
   // Only include priced transactions in revenue/profit KPIs
