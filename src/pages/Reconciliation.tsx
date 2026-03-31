@@ -39,30 +39,137 @@ const STATUS_LABELS = {
   critical: "Critical",
 };
 
-function WeekPicker({ weekStart, onChange }: { weekStart: Date; onChange: (d: Date) => void }) {
-  const goBack = () => onChange(subWeeks(weekStart, 1));
-  const goForward = () => {
-    const next = new Date(weekStart);
-    next.setDate(next.getDate() + 7);
-    if (next <= new Date()) onChange(next);
+type RangeMode = "week" | "month" | "custom";
+
+interface DateRangePickerProps {
+  mode: RangeMode;
+  onModeChange: (m: RangeMode) => void;
+  startDate: Date;
+  endDate: Date;
+  onRangeChange: (start: Date, end: Date) => void;
+}
+
+function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange }: DateRangePickerProps) {
+  const goBack = () => {
+    if (mode === "week") {
+      const prev = subWeeks(startDate, 1);
+      onRangeChange(prev, endOfWeek(prev, { weekStartsOn: 1 }));
+    } else if (mode === "month") {
+      const prev = subMonths(startDate, 1);
+      onRangeChange(startOfMonth(prev), endOfMonth(prev));
+    }
   };
-  const canForward = new Date(weekStart.getTime() + 7 * 86400000) <= new Date();
+  const goForward = () => {
+    if (mode === "week") {
+      const next = new Date(startDate);
+      next.setDate(next.getDate() + 7);
+      if (next <= new Date()) onRangeChange(next, endOfWeek(next, { weekStartsOn: 1 }));
+    } else if (mode === "month") {
+      const next = new Date(startDate);
+      next.setMonth(next.getMonth() + 1);
+      if (next <= new Date()) onRangeChange(startOfMonth(next), endOfMonth(next));
+    }
+  };
+
+  const canForward = mode === "week"
+    ? new Date(startDate.getTime() + 7 * 86400000) <= new Date()
+    : mode === "month"
+    ? new Date(startDate.getFullYear(), startDate.getMonth() + 1, 1) <= new Date()
+    : false;
+
+  const handleModeChange = (m: RangeMode) => {
+    onModeChange(m);
+    const now = new Date();
+    if (m === "week") {
+      const ws = startOfWeek(now, { weekStartsOn: 1 });
+      onRangeChange(ws, endOfWeek(ws, { weekStartsOn: 1 }));
+    } else if (m === "month") {
+      onRangeChange(startOfMonth(now), endOfMonth(now));
+    }
+    // custom keeps current range
+  };
 
   return (
-    <div className="flex items-center gap-3">
-      <button onClick={goBack} className="text-xs text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer">
-        ← Prev
-      </button>
-      <span className="text-sm font-medium text-foreground">
-        {format(weekStart, "dd MMM")} – {format(endOfWeek(weekStart, { weekStartsOn: 1 }), "dd MMM yyyy")}
-      </span>
-      <button
-        onClick={goForward}
-        disabled={!canForward}
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-      >
-        Next →
-      </button>
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      {/* Mode toggle */}
+      <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: "hsl(var(--surface-raised))", border: "1px solid hsl(var(--border))" }}>
+        {(["week", "month", "custom"] as RangeMode[]).map((m) => (
+          <button
+            key={m}
+            onClick={() => handleModeChange(m)}
+            className={cn(
+              "px-3 py-1 rounded-full text-xs font-medium transition-colors border-none cursor-pointer capitalize",
+              mode === m
+                ? "bg-accent text-accent-foreground"
+                : "bg-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+
+      {/* Navigation for week/month */}
+      {mode !== "custom" && (
+        <div className="flex items-center gap-3">
+          <button onClick={goBack} className="text-xs text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer">
+            ← Prev
+          </button>
+          <span className="text-sm font-medium text-foreground">
+            {format(startDate, "dd MMM")} – {format(endDate, "dd MMM yyyy")}
+          </span>
+          <button
+            onClick={goForward}
+            disabled={!canForward}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Next →
+          </button>
+        </div>
+      )}
+
+      {/* Custom date pickers */}
+      {mode === "custom" && (
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-input bg-background text-sm text-foreground cursor-pointer">
+                <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                {format(startDate, "dd MMM yyyy")}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={startDate}
+                onSelect={(d) => d && onRangeChange(d, endDate < d ? d : endDate)}
+                disabled={(d) => d > new Date()}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          <span className="text-xs text-muted-foreground">to</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-input bg-background text-sm text-foreground cursor-pointer">
+                <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                {format(endDate, "dd MMM yyyy")}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={endDate}
+                onSelect={(d) => d && onRangeChange(startDate > d ? d : startDate, d)}
+                disabled={(d) => d > new Date()}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
     </div>
   );
 }
