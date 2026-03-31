@@ -91,10 +91,10 @@ function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any
       </div>
       <div className="card p-4">
         <p className="kpi-label mb-1">Variance</p>
-        <p className="text-xl font-bold" style={{ color: STATUS_COLORS[status] }}>
+        <p className="text-xl font-bold" style={{ color: varianceColor(variance) }}>
           {variance >= 0 ? "+" : ""}{variance.toLocaleString()}L
         </p>
-        <p className="text-xs" style={{ color: STATUS_COLORS[status] }}>
+        <p className="text-xs" style={{ color: varianceColor(variance) }}>
           {variancePct >= 0 ? "+" : ""}{variancePct.toFixed(2)}%
         </p>
       </div>
