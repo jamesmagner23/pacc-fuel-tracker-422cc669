@@ -41,6 +41,10 @@ const STATUS_LABELS = {
 
 type RangeMode = "week" | "month" | "custom";
 
+/** Hard cutoff — no pump data exists before this date */
+const RECON_MIN_DATE = new Date(2025, 2, 16); // 16 March 2025 (months are 0-indexed)
+const RECON_MIN_DATE_STR = "2025-03-16";
+
 interface DateRangePickerProps {
   mode: RangeMode;
   onModeChange: (m: RangeMode) => void;
