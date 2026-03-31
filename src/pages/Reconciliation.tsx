@@ -122,7 +122,7 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
       {/* Navigation for week/month */}
       {mode !== "custom" && (
         <div className="flex items-center gap-3">
-          <button onClick={goBack} className="text-xs text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer">
+          <button onClick={goBack} disabled={!canBack} className="text-xs text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
             ← Prev
           </button>
           <span className="text-sm font-medium text-foreground">
