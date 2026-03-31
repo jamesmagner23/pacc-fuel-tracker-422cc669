@@ -41,6 +41,10 @@ const STATUS_LABELS = {
 
 type RangeMode = "week" | "month" | "custom";
 
+/** Hard cutoff — no pump data exists before this date */
+const RECON_MIN_DATE = new Date(2025, 2, 16); // 16 March 2025 (months are 0-indexed)
+const RECON_MIN_DATE_STR = "2025-03-16";
+
 interface DateRangePickerProps {
   mode: RangeMode;
   onModeChange: (m: RangeMode) => void;
@@ -53,12 +57,18 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
   const goBack = () => {
     if (mode === "week") {
       const prev = subWeeks(startDate, 1);
-      onRangeChange(prev, endOfWeek(prev, { weekStartsOn: 1 }));
+      if (prev >= RECON_MIN_DATE) onRangeChange(prev, endOfWeek(prev, { weekStartsOn: 1 }));
     } else if (mode === "month") {
       const prev = subMonths(startDate, 1);
-      onRangeChange(startOfMonth(prev), endOfMonth(prev));
+      if (prev >= RECON_MIN_DATE) onRangeChange(startOfMonth(prev), endOfMonth(prev));
     }
   };
+
+  const canBack = mode === "week"
+    ? subWeeks(startDate, 1) >= RECON_MIN_DATE
+    : mode === "month"
+    ? subMonths(startDate, 1) >= RECON_MIN_DATE
+    : false;
   const goForward = () => {
     if (mode === "week") {
       const next = new Date(startDate);
@@ -112,7 +122,7 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
       {/* Navigation for week/month */}
       {mode !== "custom" && (
         <div className="flex items-center gap-3">
-          <button onClick={goBack} className="text-xs text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer">
+          <button onClick={goBack} disabled={!canBack} className="text-xs text-muted-foreground hover:text-foreground transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
             ← Prev
           </button>
           <span className="text-sm font-medium text-foreground">
@@ -143,7 +153,7 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
                 mode="single"
                 selected={startDate}
                 onSelect={(d) => d && onRangeChange(d, endDate < d ? d : endDate)}
-                disabled={(d) => d > new Date()}
+                disabled={(d) => d > new Date() || d < RECON_MIN_DATE}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
               />
@@ -162,7 +172,7 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
                 mode="single"
                 selected={endDate}
                 onSelect={(d) => d && onRangeChange(startDate > d ? d : startDate, d)}
-                disabled={(d) => d > new Date()}
+                disabled={(d) => d > new Date() || d < RECON_MIN_DATE}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
               />
@@ -671,7 +681,9 @@ export default function Reconciliation() {
 
   const handleRangeChange = (s: Date, e: Date) => { setDateStart(s); setDateEnd(e); };
 
-  const startDate = format(dateStart, "yyyy-MM-dd");
+  // Clamp to minimum recon date
+  const clampedStart = dateStart < RECON_MIN_DATE ? RECON_MIN_DATE : dateStart;
+  const startDate = format(clampedStart, "yyyy-MM-dd");
   const endDate = format(dateEnd, "yyyy-MM-dd");
 
   const { data: pumpReadings = [] } = usePumpReadings(startDate, endDate);
