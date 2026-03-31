@@ -287,6 +287,7 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           id: string
+          line_items: Json | null
           margin_percent: number
           notes: string | null
           sell_price_per_litre: number
@@ -304,6 +305,7 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           id?: string
+          line_items?: Json | null
           margin_percent: number
           notes?: string | null
           sell_price_per_litre: number
@@ -321,6 +323,7 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           id?: string
+          line_items?: Json | null
           margin_percent?: number
           notes?: string | null
           sell_price_per_litre?: number
