@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from "react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfWeek, getISOWeek } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
