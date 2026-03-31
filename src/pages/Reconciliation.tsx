@@ -18,7 +18,7 @@ import {
 import { useTransactions } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
 
-type TabId = "daily" | "alerts" | "reports" | "settings";
+type TabId = "daily" | "pump" | "alerts" | "reports" | "settings";
 
 const STATUS_COLORS = {
   none: "var(--positive)",
