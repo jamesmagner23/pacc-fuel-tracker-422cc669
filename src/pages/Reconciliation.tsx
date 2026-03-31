@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
-import { format, startOfWeek, endOfWeek, subWeeks, parseISO } from "date-fns";
-import { AlertTriangle, CheckCircle, Download, Settings, Table2, Bell, Archive, Trash2, Gauge, Plus } from "lucide-react";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, parseISO } from "date-fns";
+import { AlertTriangle, CheckCircle, Download, Settings, Table2, Bell, Archive, Trash2, Gauge, Plus, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   usePumpReadings,
   useReconAlerts,
