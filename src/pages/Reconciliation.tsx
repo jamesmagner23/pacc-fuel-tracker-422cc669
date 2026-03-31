@@ -27,6 +27,9 @@ const STATUS_COLORS = {
   critical: "var(--negative)",
 };
 
+// Sign-based colors: positive variance (fuel unaccounted) = bad, negative (all delivered) = good
+const varianceColor = (v: number) => v > 0 ? "var(--negative, #EF4444)" : v < 0 ? "var(--positive, #10B981)" : "var(--muted-foreground)";
+
 const STATUS_LABELS = {
   none: "OK",
   warning: "Warning",
@@ -87,10 +90,10 @@ function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any
       </div>
       <div className="card p-4">
         <p className="kpi-label mb-1">Variance</p>
-        <p className="text-xl font-bold" style={{ color: STATUS_COLORS[status] }}>
+        <p className="text-xl font-bold" style={{ color: varianceColor(variance) }}>
           {variance >= 0 ? "+" : ""}{variance.toLocaleString()}L
         </p>
-        <p className="text-xs" style={{ color: STATUS_COLORS[status] }}>
+        <p className="text-xs" style={{ color: varianceColor(variance) }}>
           {variancePct >= 0 ? "+" : ""}{variancePct.toFixed(2)}%
         </p>
       </div>
@@ -136,12 +139,12 @@ function DailyBreakdownTable({ rows }: { rows: DailyReconRow[] }) {
                   <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
                     {row.speedsolLitres > 0 ? row.speedsolLitres.toLocaleString() : "—"}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums font-semibold" style={{ color: STATUS_COLORS[row.alertStatus] }}>
+                  <td className="px-4 py-3 text-right tabular-nums font-semibold" style={{ color: (row.pumpLitres > 0 || row.speedsolLitres > 0) ? varianceColor(row.varianceLitres) : undefined }}>
                     {row.pumpLitres > 0 || row.speedsolLitres > 0
                       ? `${row.varianceLitres >= 0 ? "+" : ""}${row.varianceLitres.toLocaleString()}`
                       : "—"}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums" style={{ color: STATUS_COLORS[row.alertStatus] }}>
+                  <td className="px-4 py-3 text-right tabular-nums" style={{ color: row.pumpLitres > 0 ? varianceColor(row.variancePct) : undefined }}>
                     {row.pumpLitres > 0 ? `${row.variancePct >= 0 ? "+" : ""}${row.variancePct.toFixed(1)}%` : "—"}
                   </td>
                   <td className="px-4 py-3 text-center">
