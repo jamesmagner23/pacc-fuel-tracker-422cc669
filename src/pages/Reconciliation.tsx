@@ -140,12 +140,12 @@ function DailyBreakdownTable({ rows }: { rows: DailyReconRow[] }) {
                   <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
                     {row.speedsolLitres > 0 ? row.speedsolLitres.toLocaleString() : "—"}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums font-semibold" style={{ color: STATUS_COLORS[row.alertStatus] }}>
+                  <td className="px-4 py-3 text-right tabular-nums font-semibold" style={{ color: (row.pumpLitres > 0 || row.speedsolLitres > 0) ? varianceColor(row.varianceLitres) : undefined }}>
                     {row.pumpLitres > 0 || row.speedsolLitres > 0
                       ? `${row.varianceLitres >= 0 ? "+" : ""}${row.varianceLitres.toLocaleString()}`
                       : "—"}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums" style={{ color: STATUS_COLORS[row.alertStatus] }}>
+                  <td className="px-4 py-3 text-right tabular-nums" style={{ color: row.pumpLitres > 0 ? varianceColor(row.variancePct) : undefined }}>
                     {row.pumpLitres > 0 ? `${row.variancePct >= 0 ? "+" : ""}${row.variancePct.toFixed(1)}%` : "—"}
                   </td>
                   <td className="px-4 py-3 text-center">
