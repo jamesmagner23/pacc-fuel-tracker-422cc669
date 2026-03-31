@@ -230,11 +230,17 @@ export default function ClientPricingTab() {
       if (tierFormEditId) {
         await updatePricing.mutateAsync({ id: tierFormEditId, ...tierData });
         toast.success("Tier updated");
+        resetTierForm();
       } else {
         await insertPricing.mutateAsync(tierData);
-        toast.success("Tier added");
+        toast.success("Tier added — add another or click Done");
+        // Keep form open for same client, auto-advance min litres
+        setTierFormEditId(null);
+        setFormMinLitres(maxL != null ? String(maxL + 1) : "");
+        setFormMaxLitres("");
+        setFormMargin("");
+        setFormNotes("");
       }
-      resetTierForm();
       if (clientId) setExpandedClient(clientId);
     } catch {
       toast.error("Failed to save tier");
