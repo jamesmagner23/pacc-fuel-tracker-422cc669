@@ -740,7 +740,7 @@ export default function Reconciliation() {
       {activeTab === "alerts" && (
         <AlertsTab alerts={alerts} onResolve={(id) => resolveMutation.mutate(id)} />
       )}
-      {activeTab === "reports" && <ReportsTab weekStart={weekStart} />}
+      {activeTab === "reports" && <ReportsTab weekStart={dateStart} />}
       {activeTab === "settings" && <SettingsTab />}
     </div>
   );
