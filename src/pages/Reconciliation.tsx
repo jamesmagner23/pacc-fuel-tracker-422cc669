@@ -153,7 +153,7 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
                 mode="single"
                 selected={startDate}
                 onSelect={(d) => d && onRangeChange(d, endDate < d ? d : endDate)}
-                disabled={(d) => d > new Date()}
+                disabled={(d) => d > new Date() || d < RECON_MIN_DATE}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
               />
@@ -172,7 +172,7 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
                 mode="single"
                 selected={endDate}
                 onSelect={(d) => d && onRangeChange(startDate > d ? d : startDate, d)}
-                disabled={(d) => d > new Date()}
+                disabled={(d) => d > new Date() || d < RECON_MIN_DATE}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
               />
