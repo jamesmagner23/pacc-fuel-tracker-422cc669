@@ -498,6 +498,7 @@ export default function Reconciliation() {
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
     { id: "daily", label: "Daily Breakdown", icon: <Table2 className="w-3.5 h-3.5" /> },
+    { id: "pump", label: `Pump Readings (${pumpReadings.length})`, icon: <Gauge className="w-3.5 h-3.5" /> },
     { id: "alerts", label: `Alerts (${alerts.filter((a) => a.status === "new").length})`, icon: <Bell className="w-3.5 h-3.5" /> },
     { id: "reports", label: "Reports", icon: <Archive className="w-3.5 h-3.5" /> },
     { id: "settings", label: "Settings", icon: <Settings className="w-3.5 h-3.5" /> },
