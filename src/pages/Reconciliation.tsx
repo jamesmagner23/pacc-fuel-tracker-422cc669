@@ -664,13 +664,15 @@ function PumpReadingsTab({ readings, onDelete }: { readings: PumpReading[]; onDe
 }
 
 export default function Reconciliation() {
-  const [weekStart, setWeekStart] = useState(() =>
-    startOfWeek(new Date(), { weekStartsOn: 1 })
-  );
+  const [rangeMode, setRangeMode] = useState<RangeMode>("week");
+  const [dateStart, setDateStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [dateEnd, setDateEnd] = useState(() => endOfWeek(new Date(), { weekStartsOn: 1 }));
   const [activeTab, setActiveTab] = useState<TabId>("daily");
 
-  const startDate = format(weekStart, "yyyy-MM-dd");
-  const endDate = format(endOfWeek(weekStart, { weekStartsOn: 1 }), "yyyy-MM-dd");
+  const handleRangeChange = (s: Date, e: Date) => { setDateStart(s); setDateEnd(e); };
+
+  const startDate = format(dateStart, "yyyy-MM-dd");
+  const endDate = format(dateEnd, "yyyy-MM-dd");
 
   const { data: pumpReadings = [] } = usePumpReadings(startDate, endDate);
   const { data: transactions = [] } = useTransactions("month"); // Get wide range
@@ -679,15 +681,15 @@ export default function Reconciliation() {
   const resolveMutation = useResolveAlert();
   const deleteMutation = useDeletePumpReading();
 
-  // Filter transactions to the selected week
-  const weekTransactions = useMemo(
+  // Filter transactions to the selected range
+  const rangeTransactions = useMemo(
     () => transactions.filter((t) => t.date && t.date >= startDate && t.date <= endDate),
     [transactions, startDate, endDate]
   );
 
   const dailyRows = useMemo(
-    () => computeDailyRecon(pumpReadings, weekTransactions, startDate, endDate, settings?.calibration_factor),
-    [pumpReadings, weekTransactions, startDate, endDate, settings?.calibration_factor]
+    () => computeDailyRecon(pumpReadings, rangeTransactions, startDate, endDate, settings?.calibration_factor),
+    [pumpReadings, rangeTransactions, startDate, endDate, settings?.calibration_factor]
   );
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
@@ -700,9 +702,9 @@ export default function Reconciliation() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col gap-3">
         <h1 className="text-xl font-bold text-foreground">Fuel Reconciliation</h1>
-        <WeekPicker weekStart={weekStart} onChange={setWeekStart} />
+        <DateRangePicker mode={rangeMode} onModeChange={setRangeMode} startDate={dateStart} endDate={dateEnd} onRangeChange={handleRangeChange} />
       </div>
 
       <SummaryCards rows={dailyRows} settings={settings} />
