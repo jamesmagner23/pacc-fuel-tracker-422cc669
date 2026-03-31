@@ -681,7 +681,9 @@ export default function Reconciliation() {
 
   const handleRangeChange = (s: Date, e: Date) => { setDateStart(s); setDateEnd(e); };
 
-  const startDate = format(dateStart, "yyyy-MM-dd");
+  // Clamp to minimum recon date
+  const clampedStart = dateStart < RECON_MIN_DATE ? RECON_MIN_DATE : dateStart;
+  const startDate = format(clampedStart, "yyyy-MM-dd");
   const endDate = format(dateEnd, "yyyy-MM-dd");
 
   const { data: pumpReadings = [] } = usePumpReadings(startDate, endDate);
