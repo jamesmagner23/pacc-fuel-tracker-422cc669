@@ -57,12 +57,18 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
   const goBack = () => {
     if (mode === "week") {
       const prev = subWeeks(startDate, 1);
-      onRangeChange(prev, endOfWeek(prev, { weekStartsOn: 1 }));
+      if (prev >= RECON_MIN_DATE) onRangeChange(prev, endOfWeek(prev, { weekStartsOn: 1 }));
     } else if (mode === "month") {
       const prev = subMonths(startDate, 1);
-      onRangeChange(startOfMonth(prev), endOfMonth(prev));
+      if (prev >= RECON_MIN_DATE) onRangeChange(startOfMonth(prev), endOfMonth(prev));
     }
   };
+
+  const canBack = mode === "week"
+    ? subWeeks(startDate, 1) >= RECON_MIN_DATE
+    : mode === "month"
+    ? subMonths(startDate, 1) >= RECON_MIN_DATE
+    : false;
   const goForward = () => {
     if (mode === "week") {
       const next = new Date(startDate);
