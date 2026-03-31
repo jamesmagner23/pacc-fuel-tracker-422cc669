@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { format, startOfWeek, endOfWeek, subWeeks, parseISO } from "date-fns";
-import { AlertTriangle, CheckCircle, Download, Settings, Table2, Bell, Archive } from "lucide-react";
+import { AlertTriangle, CheckCircle, Download, Settings, Table2, Bell, Archive, Trash2, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePumpReadings,
@@ -8,15 +8,17 @@ import {
   useReconSettings,
   useUpdateReconSettings,
   useResolveAlert,
+  useDeletePumpReading,
   computeDailyRecon,
   getVarianceStatus,
   type DailyReconRow,
   type ReconAlert,
+  type PumpReading,
 } from "@/hooks/useReconciliation";
 import { useTransactions } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
 
-type TabId = "daily" | "alerts" | "reports" | "settings";
+type TabId = "daily" | "pump" | "alerts" | "reports" | "settings";
 
 const STATUS_COLORS = {
   none: "var(--positive)",
@@ -396,6 +398,77 @@ function ReportsTab({ weekStart }: { weekStart: Date }) {
   );
 }
 
+function PumpReadingsTab({ readings, onDelete }: { readings: PumpReading[]; onDelete: (id: string) => void }) {
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  if (readings.length === 0) {
+    return (
+      <div className="card p-8 text-center">
+        <Gauge className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">No pump readings this week</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-surface-border">
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Date</th>
+              <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Litres</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Notes</th>
+              <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {readings.map((r) => (
+              <tr key={r.id} className="border-b border-border-subtle hover:bg-surface-raised/50 transition-colors">
+                <td className="px-4 py-3 font-medium text-foreground">
+                  {format(parseISO(r.reading_date), "EEE dd MMM")}
+                </td>
+                <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
+                  {Number(r.litres).toLocaleString()}L
+                </td>
+                <td className="px-4 py-3 text-muted-foreground text-xs">
+                  {r.notes || "—"}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  {confirmId === r.id ? (
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => { onDelete(r.id); setConfirmId(null); }}
+                        className="text-xs px-2 py-1 rounded bg-negative/20 text-negative hover:bg-negative/30 transition-colors cursor-pointer border-none"
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => setConfirmId(null)}
+                        className="text-xs px-2 py-1 rounded bg-surface-raised text-muted-foreground hover:text-foreground transition-colors cursor-pointer border-none"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmId(r.id)}
+                      className="text-muted-foreground hover:text-negative transition-colors cursor-pointer bg-transparent border-none p-1"
+                      title="Delete reading"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function Reconciliation() {
   const [weekStart, setWeekStart] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -410,6 +483,7 @@ export default function Reconciliation() {
   const { data: alerts = [] } = useReconAlerts(startDate, endDate);
   const { data: settings } = useReconSettings();
   const resolveMutation = useResolveAlert();
+  const deleteMutation = useDeletePumpReading();
 
   // Filter transactions to the selected week
   const weekTransactions = useMemo(
@@ -424,6 +498,7 @@ export default function Reconciliation() {
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
     { id: "daily", label: "Daily Breakdown", icon: <Table2 className="w-3.5 h-3.5" /> },
+    { id: "pump", label: `Pump Readings (${pumpReadings.length})`, icon: <Gauge className="w-3.5 h-3.5" /> },
     { id: "alerts", label: `Alerts (${alerts.filter((a) => a.status === "new").length})`, icon: <Bell className="w-3.5 h-3.5" /> },
     { id: "reports", label: "Reports", icon: <Archive className="w-3.5 h-3.5" /> },
     { id: "settings", label: "Settings", icon: <Settings className="w-3.5 h-3.5" /> },
@@ -457,6 +532,15 @@ export default function Reconciliation() {
       </div>
 
       {activeTab === "daily" && <DailyBreakdownTable rows={dailyRows} />}
+      {activeTab === "pump" && (
+        <PumpReadingsTab
+          readings={pumpReadings}
+          onDelete={(id) => deleteMutation.mutate(id, {
+            onSuccess: () => toast.success("Pump reading deleted"),
+            onError: (err) => toast.error(err.message),
+          })}
+        />
+      )}
       {activeTab === "alerts" && (
         <AlertsTab alerts={alerts} onResolve={(id) => resolveMutation.mutate(id)} />
       )}

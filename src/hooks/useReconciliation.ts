@@ -100,6 +100,23 @@ export function useSubmitPumpReading() {
   });
 }
 
+export function useDeletePumpReading() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (readingId: string) => {
+      const { error } = await supabase
+        .from("pump_readings")
+        .delete()
+        .eq("id", readingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pump-readings"] });
+      queryClient.invalidateQueries({ queryKey: ["driver-pump-readings"] });
+    },
+  });
+}
+
 export function useReconAlerts(startDate: string, endDate: string) {
   return useQuery({
     queryKey: ["recon-alerts", startDate, endDate],
