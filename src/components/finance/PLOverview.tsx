@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
-import { useCustomerPricing } from "@/hooks/useCustomerPricing";
+import { useCustomerPricing, findTierForVolume } from "@/hooks/useCustomerPricing";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
