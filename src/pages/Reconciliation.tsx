@@ -24,12 +24,11 @@ type TabId = "daily" | "pump" | "alerts" | "reports" | "settings";
 const STATUS_COLORS = {
   none: "var(--positive)",
   warning: "var(--warning)",
+  critical: "var(--negative)",
 };
 
 // Sign-based colors: positive variance (fuel unaccounted) = bad, negative (all delivered) = good
 const varianceColor = (v: number) => v > 0 ? "var(--negative, #EF4444)" : v < 0 ? "var(--positive, #10B981)" : "var(--muted-foreground)";
-  critical: "var(--negative)",
-};
 
 const STATUS_LABELS = {
   none: "OK",
