@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { format, startOfWeek, endOfWeek, subWeeks, parseISO } from "date-fns";
-import { AlertTriangle, CheckCircle, Download, Settings, Table2, Bell, Archive, Trash2, Gauge } from "lucide-react";
+import { AlertTriangle, CheckCircle, Download, Settings, Table2, Bell, Archive, Trash2, Gauge, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePumpReadings,
