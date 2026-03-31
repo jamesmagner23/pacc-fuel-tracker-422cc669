@@ -148,8 +148,11 @@ export type Database = {
           created_at: string | null
           id: string
           margin_percent: number
+          max_litres: number | null
+          min_litres: number
           notes: string | null
           payment_terms: string
+          pricing_type: string
           updated_at: string | null
           weekly_volume_tier: string
         }
@@ -158,8 +161,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           margin_percent?: number
+          max_litres?: number | null
+          min_litres?: number
           notes?: string | null
           payment_terms?: string
+          pricing_type?: string
           updated_at?: string | null
           weekly_volume_tier?: string
         }
@@ -168,8 +174,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           margin_percent?: number
+          max_litres?: number | null
+          min_litres?: number
           notes?: string | null
           payment_terms?: string
+          pricing_type?: string
           updated_at?: string | null
           weekly_volume_tier?: string
         }
@@ -177,7 +186,7 @@ export type Database = {
           {
             foreignKeyName: "customer_pricing_client_account_id_fkey"
             columns: ["client_account_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "client_accounts"
             referencedColumns: ["id"]
           },
