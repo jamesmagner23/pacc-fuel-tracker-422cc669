@@ -194,3 +194,52 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
+
+/* Thermal receipt print styles (80mm paper) */
+@media print {
+  .thermal-print {
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 !important;
+    padding: 2mm !important;
+    font-size: 9px !important;
+  }
+
+  .thermal-print #docket {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+
+  .thermal-print .thermal-hide {
+    display: none !important;
+  }
+
+  .thermal-print h1 {
+    font-size: 11px !important;
+  }
+
+  .thermal-print table {
+    font-size: 8px !important;
+  }
+
+  .thermal-print table th,
+  .thermal-print table td {
+    padding: 1px 2px !important;
+  }
+
+  .thermal-print .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+
+  .thermal-print .grid.gap-10 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 2mm;
+  }
+}
