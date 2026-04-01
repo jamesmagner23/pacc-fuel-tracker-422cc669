@@ -225,7 +225,7 @@ export default function PricingTab() {
         total_ex_gst: grandTotalEx,
         total_inc_gst: grandTotalInc,
         notes: notes || null,
-        valid_until: format(addDays(new Date(), parseInt(validDays) || 7), "yyyy-MM-dd"),
+        valid_until: format(addDays(new Date(), 1), "yyyy-MM-dd"),
         line_items: lineItemsData,
       } as any);
       toast.success("Quote created");
