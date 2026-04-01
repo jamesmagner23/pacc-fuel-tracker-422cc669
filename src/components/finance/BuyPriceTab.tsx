@@ -123,15 +123,17 @@ export default function BuyPriceTab() {
         </div>
       )}
 
-      {/* TGP vs Buy Price comparison */}
+      {/* TGP vs Buy Price comparison — all values ex GST */}
       {latest && (() => {
+        const GST = 1.1;
         const buy = latest.price_per_litre;
-        const tgp = todayTGP?.price_per_litre;
+        const tgpIncGst = todayTGP?.price_per_litre;
+        const tgp = tgpIncGst ? tgpIncGst / GST : null;
         const tgpDiff = tgp ? buy - tgp : null;
         const tgpPct = tgp && tgp > 0 ? ((tgpDiff! / tgp) * 100) : null;
 
-        // Build overlay chart data
-        const tgpMap = new Map(tgpPrices.map(t => [t.price_date, t.price_per_litre]));
+        // Build overlay chart data — convert TGP to ex GST
+        const tgpMap = new Map(tgpPrices.map(t => [t.price_date, t.price_per_litre / GST]));
         const buyMap = new Map(prices.slice(0, 30).map(p => [p.price_date, p.price_per_litre]));
         const allDates = [...new Set([...tgpMap.keys(), ...buyMap.keys()])].sort();
         const overlayData = allDates.map(d => ({
@@ -143,7 +145,7 @@ export default function BuyPriceTab() {
         return (
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3.5">
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Terminal Gate Price vs Your Buy Price — Melbourne Diesel</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Terminal Gate Price vs Your Buy Price — Melbourne Diesel (All Ex GST)</div>
               <button
                 onClick={handleRefreshTGP}
                 disabled={refreshingTGP}
@@ -160,6 +162,7 @@ export default function BuyPriceTab() {
                   <div>
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Your Buy (Pacific)</div>
                     <div className="text-xl sm:text-2xl font-semibold text-foreground tabular-nums">${buy.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">ex GST</div>
                   </div>
                   <div className="text-center">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Variance</div>
@@ -175,7 +178,7 @@ export default function BuyPriceTab() {
                   <div className="text-right">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">TGP (AIP Avg)</div>
                     <div className="text-xl sm:text-2xl font-semibold text-muted-foreground tabular-nums">${tgp.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">inc GST</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">ex GST (converted)</div>
                   </div>
                 </div>
 
@@ -188,15 +191,15 @@ export default function BuyPriceTab() {
                         <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                         <Tooltip
                           contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
-                          formatter={(v: number, name: string) => [`$${v?.toFixed(4)}/L`, name === "tgp" ? "TGP (AIP)" : "Your Buy"]}
+                          formatter={(v: number, name: string) => [`$${v?.toFixed(4)}/L ex GST`, name === "tgp" ? "TGP (AIP)" : "Your Buy"]}
                         />
                         <Line type="monotone" dataKey="tgp" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="4 4" dot={{ r: 2, fill: "hsl(var(--muted-foreground))", strokeWidth: 0 }} connectNulls />
                         <Line type="monotone" dataKey="buy" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: "hsl(var(--primary))", strokeWidth: 0 }} connectNulls />
                       </LineChart>
                     </ResponsiveContainer>
                     <div className="flex items-center justify-center gap-4 mt-1">
-                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-primary rounded" /><span className="text-[10px] text-muted-foreground">Your Buy</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 border-t border-dashed border-muted-foreground" /><span className="text-[10px] text-muted-foreground">TGP (AIP)</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-primary rounded" /><span className="text-[10px] text-muted-foreground">Your Buy (ex GST)</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 border-t border-dashed border-muted-foreground" /><span className="text-[10px] text-muted-foreground">TGP (ex GST)</span></div>
                     </div>
                   </div>
                 )}
