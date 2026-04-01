@@ -17,12 +17,19 @@ const navItems = [
   { to: "/admin", label: "Admin" },
 ];
 
-const BG = "#3D2B1A";
-const BORDER = "#6B5240";
-const DEFAULT_ACCENT = "#E8461E";
-const TEXT_DIM = "#C4A882";
-const TEXT_MID = "#C4A882";
-const TEXT_ACTIVE = "#F5E6D0";
+// PACC brand colors (used when NOT in demo)
+const PACC_BG = "#3D2B1A";
+const PACC_BORDER = "#6B5240";
+const PACC_ACCENT = "#E8461E";
+const PACC_TEXT_DIM = "#C4A882";
+const PACC_TEXT_ACTIVE = "#F5E6D0";
+
+// Neutral demo colors
+const DEMO_BG = "#1a1f2e";
+const DEMO_BORDER = "#3d4459";
+const DEMO_ACCENT = "#3B82F6";
+const DEMO_TEXT_DIM = "#9ca3b8";
+const DEMO_TEXT_ACTIVE = "#e8eaf0";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -30,6 +37,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isDemo, accentColor } = useDemoContext();
   const [params] = useSearchParams();
   const bannerOffset = isDemo ? 28 : 0;
+
+  // Pick color palette based on demo vs production
+  const BG = isDemo ? DEMO_BG : PACC_BG;
+  const BORDER = isDemo ? DEMO_BORDER : PACC_BORDER;
+  const DEFAULT_ACCENT = isDemo ? DEMO_ACCENT : PACC_ACCENT;
+  const TEXT_DIM = isDemo ? DEMO_TEXT_DIM : PACC_TEXT_DIM;
+  const TEXT_MID = TEXT_DIM;
+  const TEXT_ACTIVE = isDemo ? DEMO_TEXT_ACTIVE : PACC_TEXT_ACTIVE;
+
   const ACCENT = accentColor ? `hsl(${accentColor})` : DEFAULT_ACCENT;
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
@@ -182,8 +198,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     gap: 16,
                     padding: "18px 24px",
                     textDecoration: "none",
-                    borderBottom: `1px solid #56402E`,
-                    background: isActive ? "rgba(255,77,28,0.06)" : "transparent",
+                    borderBottom: `1px solid ${BORDER}`,
+                    background: isActive ? `${ACCENT}11` : "transparent",
                   }}
                 >
                   <span

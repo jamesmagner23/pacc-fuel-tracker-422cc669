@@ -7,11 +7,7 @@ export function DemoBanner() {
 
   const bgColor = accentColor
     ? `hsl(${accentColor})`
-    : "linear-gradient(90deg, #E8461E, #FF6B42)";
-
-  const bgStyle = accentColor
-    ? { background: bgColor }
-    : { background: "linear-gradient(90deg, #E8461E, #FF6B42)" };
+    : "#3B82F6";
 
   return (
     <div
@@ -21,7 +17,7 @@ export function DemoBanner() {
         left: 0,
         right: 0,
         zIndex: 200,
-        ...bgStyle,
+        background: bgColor,
         color: "#fff",
         display: "flex",
         alignItems: "center",
