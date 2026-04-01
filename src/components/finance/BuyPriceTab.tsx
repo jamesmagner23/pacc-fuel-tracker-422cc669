@@ -6,6 +6,8 @@ import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice } from "@/hooks/useB
 import { useTGPrices, useTodayTGP, useFetchTGP } from "@/hooks/useTGPrices";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_FUEL_INTAKE_LOGS } from "@/data/demoData";
 import { toast } from "sonner";
 
 export default function BuyPriceTab() {
