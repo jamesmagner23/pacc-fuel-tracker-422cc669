@@ -33,8 +33,8 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
   const total = topCustomers.reduce((s, x) => s + x.litres, 0);
   const tc = useThemeColors();
 
-  // Generate accent-based pie colors
-  const PIE_COLORS = [tc.accent, `${tc.accent}cc`, `${tc.accent}88`, `${tc.accent}55`, `${tc.accent}44`, `${tc.accent}33`];
+  // Distinct colors for pie slices — avoids low-opacity values that look black on dark backgrounds
+  const PIE_COLORS = ["#3B82F6", "#60A5FA", "#93C5FD", "#6366F1", "#A78BFA", "#38BDF8"];
 
   return (
     <div style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12, padding: "20px 24px" }}>
