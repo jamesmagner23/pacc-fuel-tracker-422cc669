@@ -260,16 +260,31 @@ export const DEMO_SCHEDULED_DELIVERIES = [
   { id: "sd-3", client_account_id: 5, site_name: "Mine Site Alpha", scheduled_date: d(-5), estimated_litres: 8000, notes: "Access via Gate B", status: "scheduled", created_at: ts(2), client_accounts: { company_name: "Southern Cross Mining" } },
 ];
 
-// ── Demo Pump Readings (last 14 days) ──
-function generatePumpReadings() {
+// ── Demo Pump Readings (last 14 days — closely track transaction totals) ──
+function generatePumpReadingsFromTxns(txns: Transaction[]) {
   const readings: any[] = [];
+
   for (let day = 0; day < 14; day++) {
+    const dateStr = d(day);
+    // Sum actual transaction litres for this day
+    const dayTxns = txns.filter(t => t.date === dateStr);
+    const dayTotal = dayTxns.reduce((sum, t) => sum + (t.cantidad || 0), 0);
+    if (dayTotal === 0) continue;
+
+    // Split into 1-3 pump readings that sum close to the day total
+    // Apply a small variance (-1.5% to +1.5%) to make it realistic
+    const varianceFactor = 0.985 + Math.random() * 0.03; // 98.5% to 101.5%
+    const adjustedTotal = Math.round(dayTotal * varianceFactor);
     const numReadings = randomBetween(1, 3);
+    let remaining = adjustedTotal;
+
     for (let j = 0; j < numReadings; j++) {
-      const litres = randomBetween(800, 3500);
+      const isLast = j === numReadings - 1;
+      const litres = isLast ? remaining : Math.round(remaining * (0.3 + Math.random() * 0.4));
+      remaining -= litres;
       readings.push({
         id: `pr-${day}-${j}`,
-        reading_date: d(day),
+        reading_date: dateStr,
         litres,
         driver_id: `u${randomBetween(6, 8)}`,
         notes: j === 0 && day % 3 === 0 ? "Morning fill at Pacific Dandenong" : null,
@@ -282,9 +297,9 @@ function generatePumpReadings() {
 
 // ── Demo Reconciliation Alerts ──
 export const DEMO_RECON_ALERTS = [
-  { id: "ra-1", alert_date: d(1), alert_type: "high_variance", values: { variance_pct: 3.2, variance_litres: 85 }, status: "new", suggested_action: "Check pump calibration", created_at: ts(1), resolved_at: null, resolved_by: null },
+  { id: "ra-1", alert_date: d(1), alert_type: "high_variance", values: { variance_pct: 1.1, variance_litres: 28 }, status: "new", suggested_action: "Check pump calibration", created_at: ts(1), resolved_at: null, resolved_by: null },
   { id: "ra-2", alert_date: d(3), alert_type: "missing_pump", values: { date: d(3) }, status: "new", suggested_action: "Request driver to submit reading", created_at: ts(3), resolved_at: null, resolved_by: null },
-  { id: "ra-3", alert_date: d(7), alert_type: "unusual_volume", values: { volume: 8500, avg: 4200 }, status: "resolved", suggested_action: null, created_at: ts(7), resolved_at: ts(6), resolved_by: "u1" },
+  { id: "ra-3", alert_date: d(7), alert_type: "unusual_volume", values: { volume: 5100, avg: 4200 }, status: "resolved", suggested_action: null, created_at: ts(7), resolved_at: ts(6), resolved_by: "u1" },
 ];
 
 // ── Demo Recon Settings ──
@@ -309,12 +324,13 @@ export const DEMO_FUEL_INTAKE_LOGS = [
 let _cache: ReturnType<typeof _generate> | null = null;
 
 function _generate() {
+  const transactions = generateTransactions();
   return {
-    transactions: generateTransactions(),
+    transactions,
     buyPrices: generateBuyPrices(),
     tgp: generateTGP(),
     customerPricing: generateCustomerPricing(),
-    pumpReadings: generatePumpReadings(),
+    pumpReadings: generatePumpReadingsFromTxns(transactions),
   };
 }
 
