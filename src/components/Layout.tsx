@@ -243,7 +243,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             padding: "0 16px",
             flexShrink: 0,
             position: "sticky",
-            top: 0,
+            top: bannerOffset,
             zIndex: 50,
             gap: 8,
           }}
