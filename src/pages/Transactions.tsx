@@ -79,7 +79,8 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
 
   const openCombinedDocket = () => {
     const ids = Array.from(selected).join(",");
-    navigate(`/docket/multi?ids=${ids}`);
+    const extra = isDemo ? `&${params.toString()}` : "";
+    navigate(`/docket/multi?ids=${ids}${extra}`);
   };
 
   const selectedLitres = useMemo(() => {
