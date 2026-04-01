@@ -8,6 +8,8 @@ import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { useCustomerPricing, findTierForVolume } from "@/hooks/useCustomerPricing";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 
 export default function PLOverview() {
   const { range } = useDateRange();
@@ -15,9 +17,18 @@ export default function PLOverview() {
   const { data: previous = [] } = usePreviousTransactions(range);
   const { data: buyPrices = [] } = useBuyPrices(365);
   const { data: customerPricing = [] } = useCustomerPricing();
+  const isDemo = useDemo();
   const { data: clients = [] } = useQuery({
-    queryKey: ["client-accounts"],
+    queryKey: ["client-accounts", isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return DEMO_CLIENT_ACCOUNTS.map(c => ({
+          id: c.id,
+          company_name: c.company_name,
+          speedsol_name: c.speedsol_name,
+          speedsol_names: c.speedsol_names,
+        }));
+      }
       const { data, error } = await supabase
         .from("client_accounts")
         .select("id, company_name, speedsol_name, speedsol_names")

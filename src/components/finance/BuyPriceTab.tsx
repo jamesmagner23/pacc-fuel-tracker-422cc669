@@ -6,6 +6,8 @@ import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice } from "@/hooks/useB
 import { useTGPrices, useTodayTGP, useFetchTGP } from "@/hooks/useTGPrices";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_FUEL_INTAKE_LOGS } from "@/data/demoData";
 import { toast } from "sonner";
 
 export default function BuyPriceTab() {
@@ -32,10 +34,16 @@ export default function BuyPriceTab() {
     }
   };
 
+  const isDemo = useDemo();
+
   // Latest bowser retail price from driver intake logs
   const bowserRetailQuery = useQuery({
-    queryKey: ["bowser-retail-latest"],
+    queryKey: ["bowser-retail-latest", isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        const log = DEMO_FUEL_INTAKE_LOGS.find(l => l.bowser_retail_price != null);
+        return log ? { bowser_retail_price: log.bowser_retail_price, log_date: log.log_date, created_at: log.created_at } : null;
+      }
       const { data, error } = await supabase
         .from("fuel_intake_logs")
         .select("bowser_retail_price, log_date, created_at")
