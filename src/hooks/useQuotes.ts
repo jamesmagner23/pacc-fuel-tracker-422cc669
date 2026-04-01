@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "./useDemo";
+import { DEMO_QUOTES, DEMO_PRICING_TIERS } from "@/data/demoData";
 
 export interface Quote {
   id: string;
@@ -29,9 +31,11 @@ export interface PricingTier {
 }
 
 export function usePricingTiers() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["pricing-tiers"],
+    queryKey: ["pricing-tiers", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_PRICING_TIERS as PricingTier[];
       const { data, error } = await supabase
         .from("pricing_tiers")
         .select("*")
@@ -66,9 +70,11 @@ export function useDeleteTier() {
 }
 
 export function useQuotes() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["quotes"],
+    queryKey: ["quotes", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_QUOTES as unknown as Quote[];
       const { data, error } = await supabase
         .from("quotes")
         .select("*")

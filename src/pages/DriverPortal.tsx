@@ -98,6 +98,7 @@ function useDriverTransactions() {
 }
 
 function FuelIntakeForm() {
+  const isDemo = useDemo();
   const [litres, setLitres] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -107,8 +108,9 @@ function FuelIntakeForm() {
   const queryClient = useQueryClient();
 
   const todayLogs = useQuery({
-    queryKey: ["fuel-intake-today"],
+    queryKey: ["fuel-intake-today", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_FUEL_INTAKE_LOGS;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
       const { data, error } = await supabase
