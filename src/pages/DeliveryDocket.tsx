@@ -15,6 +15,7 @@ export default function DeliveryDocket() {
   const [items, setItems] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const isDemo = useDemo();
 
   // Support both single docket (/docket/123) and multi (/docket/multi?ids=1,2,3)
   const isMulti = id === "multi";
@@ -24,6 +25,24 @@ export default function DeliveryDocket() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (isDemo) {
+      const allTxns = getDemoData().transactions;
+      if (isMulti) {
+        const found = allTxns.filter(t => multiIds.includes(t.id));
+        setItems(found.sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()));
+      } else if (id) {
+        const anchor = allTxns.find(t => t.id === Number(id));
+        if (anchor) {
+          const related = allTxns.filter(
+            t => t.date === anchor.date && t.nombre_cliente1 === anchor.nombre_cliente1 && t.estacion === anchor.estacion
+          ).sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+          setItems(related.length > 0 ? related : [anchor]);
+        }
+      }
+      setLoading(false);
+      return;
+    }
+
     async function fetchSingle() {
       const { data: anchor, error } = await supabase
         .from("transactions")
@@ -59,7 +78,7 @@ export default function DeliveryDocket() {
 
     if (isMulti) fetchMulti();
     else if (id) fetchSingle();
-  }, [id, isMulti, multiIds]);
+  }, [id, isMulti, multiIds, isDemo]);
 
   const handlePrint = () => window.print();
 
