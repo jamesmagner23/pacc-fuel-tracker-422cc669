@@ -8,6 +8,8 @@ import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { useCustomerPricing, findTierForVolume } from "@/hooks/useCustomerPricing";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 
 export default function PLOverview() {
   const { range } = useDateRange();
