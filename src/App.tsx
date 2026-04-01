@@ -229,7 +229,6 @@ const App = () => (
             <DateRangeProvider>
               <DemoBanner />
               <DemoAwareRoutes />
-              </Routes>
             </DateRangeProvider>
           </AuthGate>
         </DemoProvider>
