@@ -128,14 +128,16 @@ function generateTGP(): TerminalGatePrice[] {
 // ── Customer Pricing ──
 function generateCustomerPricing(): CustomerPricing[] {
   const pricing: CustomerPricing[] = [];
-  const clientIds = [1, 2, 3, 4, 5, 6, 7, 8];
-  const margins = [12, 10, 8, 7, 9, 11, 6, 10];
+  const clientIds = Array.from({ length: CUSTOMERS.length }, (_, i) => i + 1);
+  // Margins that blend to ~20%: mix of higher and lower values
+  const margins = [22, 18, 24, 16, 20, 25, 15, 19, 23, 17, 21, 20, 18, 22, 20];
   clientIds.forEach((id, i) => {
+    const m = margins[i % margins.length];
     pricing.push({
       id: `cp-${id}-1`,
       client_account_id: id,
-      margin_percent: margins[i],
-      payment_terms: i < 3 ? "7 days" : "30 days",
+      margin_percent: m,
+      payment_terms: i < 5 ? "7 days" : i < 10 ? "14 days" : "30 days",
       weekly_volume_tier: "0-500",
       min_litres: 0,
       max_litres: 500,
@@ -147,11 +149,24 @@ function generateCustomerPricing(): CustomerPricing[] {
     pricing.push({
       id: `cp-${id}-2`,
       client_account_id: id,
-      margin_percent: Math.max(5, margins[i] - 2),
-      payment_terms: i < 3 ? "7 days" : "30 days",
+      margin_percent: Math.max(12, m - 3),
+      payment_terms: i < 5 ? "7 days" : i < 10 ? "14 days" : "30 days",
       weekly_volume_tier: "500-1,000",
       min_litres: 500,
       max_litres: 1000,
+      pricing_type: "margin",
+      notes: null,
+      created_at: ts(30),
+      updated_at: ts(5),
+    });
+    pricing.push({
+      id: `cp-${id}-3`,
+      client_account_id: id,
+      margin_percent: Math.max(10, m - 5),
+      payment_terms: i < 5 ? "7 days" : i < 10 ? "14 days" : "30 days",
+      weekly_volume_tier: "1,000-2,000",
+      min_litres: 1000,
+      max_litres: 2000,
       pricing_type: "margin",
       notes: null,
       created_at: ts(30),
