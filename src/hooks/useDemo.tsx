@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, useEffect } from "react";
+import { createContext, useContext, useMemo, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { DemoGate } from "@/components/DemoGate";
 
 interface DemoContextValue {
   isDemo: boolean;
@@ -27,9 +28,8 @@ function resolveColor(color: string | null): string | null {
   if (!color) return null;
   const lower = color.toLowerCase();
   if (COLOR_PRESETS[lower]) return COLOR_PRESETS[lower];
-  // Accept raw hex — convert to HSL-ish for CSS var
   if (lower.startsWith("#") && (lower.length === 4 || lower.length === 7)) {
-    return null; // fallback: apply hex directly
+    return null;
   }
   return null;
 }
@@ -39,6 +39,10 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   const isDemo = params.get("demo") === "true";
   const brand = params.get("brand") || null;
   const rawColor = params.get("color") || null;
+
+  const [unlocked, setUnlocked] = useState(() =>
+    sessionStorage.getItem("demo_unlocked") === "true"
+  );
 
   const accentColor = useMemo(() => resolveColor(rawColor), [rawColor]);
   const hexColor = useMemo(() => {
@@ -56,7 +60,6 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     if (accentColor) {
       root.style.setProperty("--primary", accentColor);
       root.style.setProperty("--accent", accentColor);
-      // Also set a CSS variable for inline style usage
       root.style.setProperty("--demo-accent", `hsl(${accentColor})`);
       return () => {
         root.style.removeProperty("--primary");
@@ -75,6 +78,19 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     () => ({ isDemo, brand, accentColor: accentColor || hexColor }),
     [isDemo, brand, accentColor, hexColor]
   );
+
+  // Show gate if demo mode is active but not yet unlocked
+  if (isDemo && !unlocked) {
+    return (
+      <DemoContext.Provider value={value}>
+        <DemoGate
+          brand={brand}
+          color={rawColor}
+          onUnlock={() => setUnlocked(true)}
+        />
+      </DemoContext.Provider>
+    );
+  }
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }

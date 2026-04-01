@@ -192,6 +192,39 @@ export type Database = {
           },
         ]
       }
+      demo_leads: {
+        Row: {
+          brand_param: string | null
+          color_param: string | null
+          company_name: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+        }
+        Insert: {
+          brand_param?: string | null
+          color_param?: string | null
+          company_name: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          phone?: string | null
+        }
+        Update: {
+          brand_param?: string | null
+          color_param?: string | null
+          company_name?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
       fuel_intake_logs: {
         Row: {
           bowser_retail_price: number | null
