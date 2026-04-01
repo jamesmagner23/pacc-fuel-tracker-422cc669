@@ -283,6 +283,7 @@ function FuelIntakeForm() {
 }
 
 export default function DriverPortal() {
+  const isDemo = useDemo();
   const { todayQuery, weekQuery, lastWeekQuery } = useDriverTransactions();
 
   useEffect(() => {
