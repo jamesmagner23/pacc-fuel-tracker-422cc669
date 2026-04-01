@@ -65,37 +65,47 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty("--surface", "#232838");
     root.style.setProperty("--surface-raised", "#2b3145");
     root.style.setProperty("--surface-border", "#3d4459");
+    root.style.setProperty("--surface-hover", "#323850");
     root.style.setProperty("--border", "#3d4459");
+    root.style.setProperty("--border-subtle", "#2b3145");
     root.style.setProperty("--text-primary", "#e8eaf0");
     root.style.setProperty("--text-secondary", "#9ca3b8");
     root.style.setProperty("--text-muted", "#6b7280");
+    root.style.setProperty("--map-bg", "#141825");
+    root.style.setProperty("--map-border", "#232838");
 
-    if (accentColor) {
-      root.style.setProperty("--primary", accentColor);
-      root.style.setProperty("--accent", `hsl(${accentColor})`);
-      root.style.setProperty("--accent-hover", `hsl(${accentColor})`);
-      root.style.setProperty("--accent-light", `hsla(${accentColor} / 0.15)`);
-      root.style.setProperty("--accent-text", `hsl(${accentColor})`);
-      root.style.setProperty("--demo-accent", `hsl(${accentColor})`);
-    } else if (hexColor) {
-      root.style.setProperty("--demo-accent", hexColor);
-    }
+    // Override shadcn compat
+    root.style.setProperty("--foreground", "#e8eaf0");
+    root.style.setProperty("--card", "#232838");
+    root.style.setProperty("--card-foreground", "#e8eaf0");
+    root.style.setProperty("--popover", "#2b3145");
+    root.style.setProperty("--popover-foreground", "#e8eaf0");
+    root.style.setProperty("--secondary", "#2b3145");
+    root.style.setProperty("--secondary-foreground", "#e8eaf0");
+    root.style.setProperty("--muted", "#3d4459");
+    root.style.setProperty("--muted-foreground", "#9ca3b8");
+    root.style.setProperty("--input", "#3d4459");
+
+    const resolvedAccent = accentColor || "217 91% 50%";
+    root.style.setProperty("--accent", `hsl(${resolvedAccent})`);
+    root.style.setProperty("--accent-hover", `hsl(${resolvedAccent})`);
+    root.style.setProperty("--accent-light", `hsla(${resolvedAccent} / 0.15)`);
+    root.style.setProperty("--accent-text", `hsl(${resolvedAccent})`);
+    root.style.setProperty("--primary", resolvedAccent);
+    root.style.setProperty("--ring", `hsl(${resolvedAccent})`);
+    root.style.setProperty("--demo-accent", `hsl(${resolvedAccent})`);
 
     return () => {
-      root.style.removeProperty("--background");
-      root.style.removeProperty("--surface");
-      root.style.removeProperty("--surface-raised");
-      root.style.removeProperty("--surface-border");
-      root.style.removeProperty("--border");
-      root.style.removeProperty("--text-primary");
-      root.style.removeProperty("--text-secondary");
-      root.style.removeProperty("--text-muted");
-      root.style.removeProperty("--primary");
-      root.style.removeProperty("--accent");
-      root.style.removeProperty("--accent-hover");
-      root.style.removeProperty("--accent-light");
-      root.style.removeProperty("--accent-text");
-      root.style.removeProperty("--demo-accent");
+      const props = [
+        "--background", "--surface", "--surface-raised", "--surface-border", "--surface-hover",
+        "--border", "--border-subtle", "--text-primary", "--text-secondary", "--text-muted",
+        "--map-bg", "--map-border",
+        "--foreground", "--card", "--card-foreground", "--popover", "--popover-foreground",
+        "--secondary", "--secondary-foreground", "--muted", "--muted-foreground", "--input",
+        "--accent", "--accent-hover", "--accent-light", "--accent-text",
+        "--primary", "--ring", "--demo-accent",
+      ];
+      props.forEach(p => root.style.removeProperty(p));
     };
   }, [isDemo, accentColor, hexColor]);
 
