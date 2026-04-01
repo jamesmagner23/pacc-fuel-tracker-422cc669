@@ -172,7 +172,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               return (
                 <RouterNavLink
                   key={item.to}
-                  to={isDemo ? `${item.to}?demo=true` : item.to}
+                  to={`${item.to}${demoSuffix}`}
                   onClick={() => setMobileMenuOpen(false)}
                   style={{
                     display: "flex",
