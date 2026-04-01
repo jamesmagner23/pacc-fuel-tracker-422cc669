@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail } from "lucide-react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye } from "lucide-react";
 import heroImg from "@/assets/hero-construction.jpg";
 import refuelImg from "@/assets/refuelling-closeup.jpg";
 import truckSideImg from "@/assets/truck-side.jpg";
@@ -88,10 +88,19 @@ export default function LandingPage() {
             <a href="#coverage" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C4A882" }}>Coverage</a>
             <a href="#contact" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C4A882" }}>Contact</a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => navigate("/?demo=true")}
+              className="px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5"
+              style={{ background: "rgba(245,230,208,0.08)", color: "#F5E6D0", border: "1px solid rgba(107,82,64,0.5)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.14)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.08)"; }}
+            >
+              <Eye className="w-3 h-3" /> Try Demo
+            </button>
             <button
               onClick={() => navigate("/login")}
-              className="px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all"
+              className="px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all"
               style={{ background: "#E8461E", color: "#fff", border: "none" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "#D13A14"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "#E8461E"; }}
