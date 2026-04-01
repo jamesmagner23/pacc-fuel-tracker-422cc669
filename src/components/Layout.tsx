@@ -137,7 +137,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div style={{ padding: "16px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
           <SyncStatus />
           <button
-            onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
+            onClick={async () => { sessionStorage.removeItem("demo_unlocked"); await supabase.auth.signOut(); window.location.href = isDemo ? "/landing" : "/login"; }}
             style={{
               display: "flex", alignItems: "center", gap: 8,
               background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 8,
@@ -237,7 +237,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div style={{ padding: "20px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
             <SyncStatus />
             <button
-              onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
+              onClick={async () => { sessionStorage.removeItem("demo_unlocked"); await supabase.auth.signOut(); window.location.href = isDemo ? "/landing" : "/login"; }}
               style={{
                 display: "flex", alignItems: "center", gap: 8,
                 background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 8,
