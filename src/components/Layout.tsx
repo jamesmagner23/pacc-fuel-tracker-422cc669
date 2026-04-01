@@ -28,6 +28,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isDemo, accentColor } = useDemoContext();
   const [params] = useSearchParams();
   const bannerOffset = isDemo ? 28 : 0;
+  const ACCENT = accentColor ? `hsl(${accentColor})` : DEFAULT_ACCENT;
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   return (
