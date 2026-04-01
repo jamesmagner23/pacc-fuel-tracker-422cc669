@@ -221,7 +221,7 @@ export default function BuyPriceTab() {
         const logDate = bowserRetailQuery.data.log_date;
         return (
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Buy Price vs Bowser Retail</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Buy Price vs Bowser Retail (All Ex GST)</div>
             <div className="grid grid-cols-3 gap-4 items-end">
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Your Buy (Pacific)</div>
