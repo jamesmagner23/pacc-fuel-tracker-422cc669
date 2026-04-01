@@ -43,15 +43,28 @@ function randomBetween(min: number, max: number) {
 }
 
 // ── Transactions (last 65 days — covers current + previous period) ──
-function generateTransactions(): Transaction[] {
+// We need buy prices first to derive realistic sell prices
+function generateTransactions(buyPrices: BuyPrice[]): Transaction[] {
   const txns: Transaction[] = [];
+  // Margins per customer aligned with customerPricing (~20% blended)
+  const CUSTOMER_MARGINS = [22, 18, 24, 16, 20, 25, 15, 19, 23, 17, 21, 20, 18, 22, 20];
+
   for (let day = 0; day < 65; day++) {
     const deliveries = randomBetween(3, 8);
+    // Find buy price for this day (or closest)
+    const dateStr = d(day);
+    const bp = buyPrices.find(p => p.price_date === dateStr);
+    const baseBuy = bp ? bp.price_per_litre : 1.48;
+
     for (let j = 0; j < deliveries; j++) {
       const qty = randomBetween(200, 2800);
-      const ppu = 1.65 + Math.random() * 0.35;
+      const custIdx = Math.floor(Math.random() * CUSTOMERS.length);
+      const customer = CUSTOMERS[custIdx];
+      const margin = CUSTOMER_MARGINS[custIdx];
+      // Derive sell price: buy / (1 - margin%) with small random noise ±1%
+      const noise = 0.99 + Math.random() * 0.02;
+      const ppu = (baseBuy / (1 - margin / 100)) * noise;
       const total = qty * ppu;
-      const customer = CUSTOMERS[Math.floor(Math.random() * CUSTOMERS.length)];
       const driver = DRIVERS[Math.floor(Math.random() * DRIVERS.length)];
       const truck = TRUCKS[Math.floor(Math.random() * TRUCKS.length)];
       const location = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
@@ -348,10 +361,11 @@ export const DEMO_FUEL_INTAKE_LOGS = [
 let _cache: ReturnType<typeof _generate> | null = null;
 
 function _generate() {
-  const transactions = generateTransactions();
+  const buyPrices = generateBuyPrices();
+  const transactions = generateTransactions(buyPrices);
   return {
     transactions,
-    buyPrices: generateBuyPrices(),
+    buyPrices,
     tgp: generateTGP(),
     customerPricing: generateCustomerPricing(),
     pumpReadings: generatePumpReadingsFromTxns(transactions),
