@@ -395,12 +395,18 @@ export default function PricingTab() {
   return (
     <div className="flex flex-col gap-4">
       {/* Buy price */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+      <div className={`bg-surface border rounded-[10px] p-4 sm:p-5 ${hasTodayPrice ? "border-surface-border" : "border-destructive/50"}`}>
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Today's Buy Price (Base)</div>
-        <div className="text-2xl sm:text-3xl font-light text-foreground tracking-tighter tabular-nums">
-          {latestBuyPrice > 0 ? `$${latestBuyPrice.toFixed(4)}` : "—"}
-          <span className="text-sm text-muted-foreground">/L</span>
-        </div>
+        {hasTodayPrice ? (
+          <div className="text-2xl sm:text-3xl font-light text-foreground tracking-tighter tabular-nums">
+            ${latestBuyPrice.toFixed(4)}
+            <span className="text-sm text-muted-foreground">/L</span>
+          </div>
+        ) : (
+          <div className="text-sm text-destructive font-medium">
+            No price entered for today — quotes cannot be created until today's buy price is set in the Buy Price tab.
+          </div>
+        )}
       </div>
 
       {/* Default tiers (collapsed) */}
