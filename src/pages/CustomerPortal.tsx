@@ -139,8 +139,8 @@ function exportCSV(transactions: any[], filename: string) {
 }
 
 // ── Open branded docket page for single delivery ──
-function openDocket(tx: any) {
-  window.open(`/docket/${tx.id}`, "_blank");
+function openDocket(tx: any, demoSuffix = "") {
+  window.open(`/docket/${tx.id}${demoSuffix}`, "_blank");
   logActivity("export", { type: "docket", invoice: tx.factura || tx.id });
 }
 

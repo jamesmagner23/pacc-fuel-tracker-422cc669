@@ -353,8 +353,8 @@ export const DEMO_RECON_SETTINGS = {
 
 // ── Demo Fuel Intake Logs ──
 export const DEMO_FUEL_INTAKE_LOGS = [
-  { id: "fil-1", driver_user_id: "u6", litres_entered: 3200, log_date: d(0), photo_path: null, bowser_retail_price: 1.85, notes: "Pacific Dandenong", created_at: ts(0, 7) },
-  { id: "fil-2", driver_user_id: "u6", litres_entered: 2800, log_date: d(0), photo_path: null, bowser_retail_price: 1.84, notes: "Altona terminal", created_at: ts(0, 14) },
+  { id: "fil-1", driver_user_id: "u6", litres_entered: 3200, log_date: d(0), photo_path: null, bowser_retail_price: 1.85, notes: "Ampol Dandenong", created_at: ts(0, 7) },
+  { id: "fil-2", driver_user_id: "u6", litres_entered: 2800, log_date: d(0), photo_path: null, bowser_retail_price: 1.84, notes: "Ampol Altona", created_at: ts(0, 14) },
 ];
 
 // ── Export all generated data (memoize-friendly) ──

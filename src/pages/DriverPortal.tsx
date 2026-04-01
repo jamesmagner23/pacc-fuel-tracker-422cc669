@@ -250,7 +250,7 @@ function FuelIntakeForm() {
           type="text"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="e.g. Pacific Dandenong"
+          placeholder="e.g. Ampol Dandenong"
           className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
         />
       </div>
