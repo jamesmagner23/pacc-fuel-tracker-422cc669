@@ -60,9 +60,11 @@ function useAdminUsers() {
 }
 
 function useActivityLogs(days = 30) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["admin-activity", days],
+    queryKey: ["admin-activity", days, isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_ACTIVITY as ActivityRow[];
       const since = format(subDays(new Date(), days), "yyyy-MM-dd");
       const { data, error } = await supabase
         .from("auth_activity_log")
@@ -72,7 +74,6 @@ function useActivityLogs(days = 30) {
         .limit(200);
       if (error) throw error;
 
-      // Enrich with user names
       const userIds = [...new Set((data || []).map(d => d.user_id))];
       let nameMap: Record<string, { full_name: string; email: string }> = {};
       if (userIds.length > 0) {
