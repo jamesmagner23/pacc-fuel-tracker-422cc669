@@ -1,9 +1,17 @@
-import { useDemo } from "@/hooks/useDemo";
+import { useDemoContext } from "@/hooks/useDemo";
 import { Eye } from "lucide-react";
 
 export function DemoBanner() {
-  const isDemo = useDemo();
+  const { isDemo, brand, accentColor } = useDemoContext();
   if (!isDemo) return null;
+
+  const bgColor = accentColor
+    ? `hsl(${accentColor})`
+    : "linear-gradient(90deg, #E8461E, #FF6B42)";
+
+  const bgStyle = accentColor
+    ? { background: bgColor }
+    : { background: "linear-gradient(90deg, #E8461E, #FF6B42)" };
 
   return (
     <div
@@ -13,7 +21,7 @@ export function DemoBanner() {
         left: 0,
         right: 0,
         zIndex: 200,
-        background: "linear-gradient(90deg, #E8461E, #FF6B42)",
+        ...bgStyle,
         color: "#fff",
         display: "flex",
         alignItems: "center",
@@ -26,7 +34,7 @@ export function DemoBanner() {
       }}
     >
       <Eye style={{ width: 14, height: 14 }} />
-      DEMO MODE — Sample data only
+      DEMO MODE{brand ? ` — ${brand}` : ""} — Sample data only
     </div>
   );
 }
