@@ -192,8 +192,12 @@ export default function PricingTab() {
   };
 
   const handleCreateQuote = async () => {
-    if (!name || !email || grandVolume <= 0 || latestBuyPrice <= 0) {
-      toast.error("Fill in customer, at least one line item with volume, and ensure a buy price is set");
+    if (!hasTodayPrice) {
+      toast.error("Today's buy price has not been entered yet — go to Buy Price tab first");
+      return;
+    }
+    if (!name || !email || grandVolume <= 0) {
+      toast.error("Fill in customer and at least one line item with volume");
       return;
     }
     // Validate all line items have margin
