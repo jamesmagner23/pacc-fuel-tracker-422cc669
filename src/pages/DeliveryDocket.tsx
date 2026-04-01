@@ -82,6 +82,15 @@ export default function DeliveryDocket() {
 
   const handlePrint = () => window.print();
 
+  const handleThermalPrint = () => {
+    const root = document.getElementById("docket-root");
+    if (root) root.classList.add("thermal-print");
+    setTimeout(() => {
+      window.print();
+      root?.classList.remove("thermal-print");
+    }, 100);
+  };
+
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(window.location.href);
     setCopied(true);
