@@ -595,7 +595,7 @@ export default function CustomerPortal() {
                   No upcoming deliveries scheduled
                 </p>
                 <p style={{ fontSize: 12, color: "var(--text-secondary, #C4A882)", margin: "6px 0 0" }}>
-                  Contact PACC Energy to arrange your next delivery
+                  Contact your supplier to arrange your next delivery
                 </p>
               </div>
             ) : (
