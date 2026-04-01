@@ -4,13 +4,22 @@ import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions } from "@/hooks/useTransactions";
 import { format, parseISO } from "date-fns";
 
+const cssVar = (name: string, fallback: string) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
 export default function Drivers() {
   const { range } = useDateRange();
   const { data: filtered = [], isLoading } = useTransactions(range);
 
-  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", fontSize: 12 };
-  const tooltipLabelStyle = { color: "#F5E6D0" };
-  const tooltipItemStyle = { color: "#F5E6D0" };
+  const surface = cssVar("--surface", "#4A3525");
+  const border = cssVar("--surface-border", "#6B5240");
+  const textPrimary = cssVar("--text-primary", "#F5E6D0");
+  const textSecondary = cssVar("--text-secondary", "#C4A882");
+  const accent = cssVar("--accent", "#E8461E");
+
+  const tooltipStyle = { backgroundColor: surface, border: `1px solid ${border}`, borderRadius: "8px", fontSize: 12 };
+  const tooltipLabelStyle = { color: textPrimary };
+  const tooltipItemStyle = { color: textPrimary };
 
   const drivers = useMemo(() => {
     return [...new Set(filtered.map((t) => t.nombre_vendedor).filter(Boolean))] as string[];
