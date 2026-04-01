@@ -55,7 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 16px" }}>
-          {navItems.map((item, i) => {
+          {navItems.filter(item => !item.demoOnly || isDemo).map((item, i) => {
             const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
             return (
               <RouterNavLink
