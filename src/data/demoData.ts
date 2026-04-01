@@ -361,10 +361,11 @@ export const DEMO_FUEL_INTAKE_LOGS = [
 let _cache: ReturnType<typeof _generate> | null = null;
 
 function _generate() {
-  const transactions = generateTransactions();
+  const buyPrices = generateBuyPrices();
+  const transactions = generateTransactions(buyPrices);
   return {
     transactions,
-    buyPrices: generateBuyPrices(),
+    buyPrices,
     tgp: generateTGP(),
     customerPricing: generateCustomerPricing(),
     pumpReadings: generatePumpReadingsFromTxns(transactions),
