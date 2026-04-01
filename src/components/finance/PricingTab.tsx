@@ -62,7 +62,7 @@ export default function PricingTab() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
-  const [validDays, setValidDays] = useState("7");
+  
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
