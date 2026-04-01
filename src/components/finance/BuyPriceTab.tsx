@@ -193,8 +193,8 @@ export default function BuyPriceTab() {
                           contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
                           formatter={(v: number, name: string) => [`$${v?.toFixed(4)}/L ex GST`, name === "tgp" ? "TGP (AIP)" : "Your Buy"]}
                         />
-                        <Line type="monotone" dataKey="tgp" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="4 4" dot={{ r: 2, fill: "hsl(var(--muted-foreground))", strokeWidth: 0 }} connectNulls />
-                        <Line type="monotone" dataKey="buy" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: "hsl(var(--primary))", strokeWidth: 0 }} connectNulls />
+                        <Line type="monotone" dataKey="tgp" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} dot={false} connectNulls />
+                        <Line type="monotone" dataKey="buy" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} connectNulls />
                       </LineChart>
                     </ResponsiveContainer>
                     <div className="flex items-center justify-center gap-4 mt-1">
