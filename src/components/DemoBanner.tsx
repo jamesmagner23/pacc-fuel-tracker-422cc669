@@ -1,8 +1,13 @@
 import { useDemoContext } from "@/hooks/useDemo";
+import { useLocation } from "react-router-dom";
 import { Eye } from "lucide-react";
 
 export function DemoBanner() {
   const { isDemo, brand, accentColor } = useDemoContext();
+  const location = useLocation();
+
+  // Hide banner on docket pages so it doesn't interfere with print layout
+  if (!isDemo || location.pathname.startsWith("/docket")) return null;
   if (!isDemo) return null;
 
   const bgColor = accentColor
