@@ -193,13 +193,13 @@ export default function BuyPriceTab() {
                           contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
                           formatter={(v: number, name: string) => [`$${v?.toFixed(4)}/L ex GST`, name === "tgp" ? "TGP (AIP)" : "Your Buy"]}
                         />
-                        <Line type="monotone" dataKey="tgp" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="4 4" dot={{ r: 2, fill: "hsl(var(--muted-foreground))", strokeWidth: 0 }} connectNulls />
-                        <Line type="monotone" dataKey="buy" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: "hsl(var(--primary))", strokeWidth: 0 }} connectNulls />
+                        <Line type="monotone" dataKey="tgp" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} dot={false} connectNulls />
+                        <Line type="monotone" dataKey="buy" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} connectNulls />
                       </LineChart>
                     </ResponsiveContainer>
                     <div className="flex items-center justify-center gap-4 mt-1">
                       <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-primary rounded" /><span className="text-[10px] text-muted-foreground">Your Buy (ex GST)</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 border-t border-dashed border-muted-foreground" /><span className="text-[10px] text-muted-foreground">TGP (ex GST)</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-muted-foreground rounded" /><span className="text-[10px] text-muted-foreground">TGP (ex GST)</span></div>
                     </div>
                   </div>
                 )}
@@ -212,18 +212,21 @@ export default function BuyPriceTab() {
       })()}
 
       {latest && bowserRetailQuery.data && (() => {
-        const retail = Number(bowserRetailQuery.data.bowser_retail_price);
+        const GST_DIVISOR = 1.1;
+        const retailIncGst = Number(bowserRetailQuery.data.bowser_retail_price);
+        const retail = retailIncGst / GST_DIVISOR; // convert to ex GST
         const buy = latest.price_per_litre;
         const diff = retail - buy;
         const pct = buy > 0 ? ((diff / buy) * 100) : 0;
         const logDate = bowserRetailQuery.data.log_date;
         return (
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Buy Price vs Bowser Retail</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Buy Price vs Bowser Retail (All Ex GST)</div>
             <div className="grid grid-cols-3 gap-4 items-end">
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Your Buy (Pacific)</div>
                 <div className="text-xl sm:text-2xl font-semibold text-foreground tabular-nums">${buy.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">ex GST</div>
               </div>
               <div className="text-center">
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Difference</div>
@@ -237,6 +240,7 @@ export default function BuyPriceTab() {
               <div className="text-right">
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Bowser Retail</div>
                 <div className="text-xl sm:text-2xl font-semibold text-muted-foreground tabular-nums">${retail.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">ex GST</div>
                 {logDate && <div className="text-[10px] text-muted-foreground mt-0.5">logged {format(parseISO(logDate), "dd MMM")}</div>}
               </div>
             </div>
@@ -266,8 +270,8 @@ export default function BuyPriceTab() {
                   formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]}
                   cursor={{ stroke: "hsl(var(--muted-foreground) / 0.2)" }}
                 />
-                {avgPrice > 0 && <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" />}
-                <Line type="monotone" dataKey="price" stroke="hsl(var(--foreground))" strokeWidth={1.5} dot={{ fill: "hsl(var(--foreground))", r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: "hsl(var(--primary))" }} />
+                {avgPrice > 0 && <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground) / 0.4)" strokeWidth={1} />}
+                <Line type="monotone" dataKey="price" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 5, fill: "hsl(var(--primary))" }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
