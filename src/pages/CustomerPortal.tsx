@@ -265,7 +265,7 @@ export default function CustomerPortal() {
         >
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{companyName}</h1>
-            <p style={{ fontSize: 13, color: "#C4A882", margin: "4px 0 0" }}>
+            <p style={{ fontSize: 13, color: "var(--text-secondary, #C4A882)", margin: "4px 0 0" }}>
               Fuel delivery portal
             </p>
           </div>
@@ -279,8 +279,8 @@ export default function CustomerPortal() {
                   borderRadius: 16,
                   fontSize: 11,
                   fontWeight: range === r ? 500 : 400,
-                  color: range === r ? "#F5E6D0" : "#444444",
-                  background: range === r ? "#E8461E" : "transparent",
+                  color: range === r ? "var(--text-primary, #F5E6D0)" : "var(--text-muted, #444444)",
+                  background: range === r ? "var(--accent, #E8461E)" : "transparent",
                   border: "none",
                   cursor: "pointer",
                 }}
@@ -308,7 +308,7 @@ export default function CustomerPortal() {
                 padding: "8px 16px",
                 fontSize: 13,
                 fontWeight: activeTab === tab ? 500 : 400,
-                color: activeTab === tab ? "#F5E6D0" : "#444444",
+                color: activeTab === tab ? "var(--text-primary, #F5E6D0)" : "var(--text-muted, #444444)",
                 background: "transparent",
                 border: "none",
                 borderBottom:
@@ -353,10 +353,10 @@ export default function CustomerPortal() {
                       marginBottom: 8,
                     }}
                   >
-                    <span style={{ fontSize: 10, color: "#C4A882", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <span style={{ fontSize: 10, color: "var(--text-secondary, #C4A882)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       {k.label}
                     </span>
-                    <span style={{ color: "#C4A882" }}>{k.icon}</span>
+                    <span style={{ color: "var(--text-secondary, #C4A882)" }}>{k.icon}</span>
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 600 }}>{k.value}</div>
                 </div>
@@ -379,7 +379,7 @@ export default function CustomerPortal() {
                   onClick={() => setActiveTab("Deliveries")}
                   style={{
                     fontSize: 11,
-                    color: "#E8461E",
+                    color: "var(--accent, #E8461E)",
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
@@ -401,7 +401,7 @@ export default function CustomerPortal() {
                 >
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{t.nombre_cliente1}</div>
-                    <div style={{ fontSize: 11, color: "#C4A882" }}>
+                    <div style={{ fontSize: 11, color: "var(--text-secondary, #C4A882)" }}>
                       {t.date ? format(parseISO(t.date), "dd MMM yyyy") : "—"}
                     </div>
                   </div>
@@ -423,10 +423,10 @@ export default function CustomerPortal() {
                 value={siteFilter}
                 onChange={(e) => setSiteFilter(e.target.value)}
                 style={{
-                  background: "#4A3525",
+                  background: "var(--surface, #4A3525)",
                   border: "1px solid #6B5240",
                   borderRadius: 8,
-                  color: "#F5E6D0",
+                  color: "var(--text-primary, #F5E6D0)",
                   padding: "7px 12px",
                   fontSize: 12,
                   outline: "none",
@@ -450,8 +450,8 @@ export default function CustomerPortal() {
                   display: "flex",
                   alignItems: "center",
                   gap: 6,
-                  background: "#E8461E",
-                  color: "#F5E6D0",
+                  background: "var(--accent, #E8461E)",
+                  color: "var(--text-primary, #F5E6D0)",
                   border: "none",
                   borderRadius: 20,
                   padding: "7px 16px",
@@ -468,11 +468,11 @@ export default function CustomerPortal() {
             {/* Transaction list */}
             <div style={card}>
               {isLoading ? (
-                <div style={{ color: "#C4A882", fontSize: 13, textAlign: "center", padding: 20 }}>
+                <div style={{ color: "var(--text-secondary, #C4A882)", fontSize: 13, textAlign: "center", padding: 20 }}>
                   Loading...
                 </div>
               ) : filtered.length === 0 ? (
-                <div style={{ color: "#C4A882", fontSize: 13, textAlign: "center", padding: 20 }}>
+                <div style={{ color: "var(--text-secondary, #C4A882)", fontSize: 13, textAlign: "center", padding: 20 }}>
                   No deliveries found
                 </div>
               ) : (
@@ -489,7 +489,7 @@ export default function CustomerPortal() {
                   >
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 500 }}>{t.nombre_cliente1}</div>
-                      <div style={{ fontSize: 11, color: "#C4A882" }}>
+                      <div style={{ fontSize: 11, color: "var(--text-secondary, #C4A882)" }}>
                         {t.date ? format(parseISO(t.date), "EEE dd MMM yyyy") : "—"}
                         {t.factura ? ` · #${t.factura}` : ""}
                       </div>
@@ -505,14 +505,14 @@ export default function CustomerPortal() {
                           background: "transparent",
                           border: "1px solid #6B5240",
                           borderRadius: 6,
-                          color: "#9B8060",
+                          color: "var(--text-muted, #9B8060)",
                           cursor: "pointer",
                           padding: "5px 8px",
                           display: "flex",
                           alignItems: "center",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "#E8461E")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "#9B8060")}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent, #E8461E)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted, #9B8060)")}
                       >
                         <FileText className="w-3.5 h-3.5" />
                       </button>
@@ -538,10 +538,10 @@ export default function CustomerPortal() {
                 >
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                      <MapPin className="w-3.5 h-3.5" style={{ color: "#E8461E" }} />
+                      <MapPin className="w-3.5 h-3.5" style={{ color: "var(--accent, #E8461E)" }} />
                       <span style={{ fontSize: 14, fontWeight: 500 }}>{s.site}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: "#C4A882" }}>
+                    <div style={{ fontSize: 11, color: "var(--text-secondary, #C4A882)" }}>
                       {s.count} deliveries · Last:{" "}
                       {s.lastDate ? format(parseISO(s.lastDate), "dd MMM") : "—"}
                     </div>
@@ -550,14 +550,14 @@ export default function CustomerPortal() {
                     <div style={{ fontSize: 18, fontWeight: 600 }}>
                       {s.litres.toLocaleString()}L
                     </div>
-                    <div style={{ fontSize: 10, color: "#C4A882", marginTop: 2 }}>
+                    <div style={{ fontSize: 10, color: "var(--text-secondary, #C4A882)", marginTop: 2 }}>
                       <span
                         style={{
                           display: "inline-block",
                           width: 60,
                           height: 4,
                           borderRadius: 2,
-                          background: "#6B5240",
+                          background: "var(--surface-border, #6B5240)",
                           overflow: "hidden",
                         }}
                       >
@@ -566,7 +566,7 @@ export default function CustomerPortal() {
                             display: "block",
                             height: "100%",
                             width: `${Math.min((s.litres / (siteBreakdown[0]?.litres || 1)) * 100, 100)}%`,
-                            background: "#E8461E",
+                            background: "var(--accent, #E8461E)",
                             borderRadius: 2,
                           }}
                         />
@@ -590,11 +590,11 @@ export default function CustomerPortal() {
                   padding: 40,
                 }}
               >
-                <Calendar className="w-8 h-8" style={{ color: "#C4A882", margin: "0 auto 12px" }} />
-                <p style={{ fontSize: 14, color: "#C4A882", margin: 0 }}>
+                <Calendar className="w-8 h-8" style={{ color: "var(--text-secondary, #C4A882)", margin: "0 auto 12px" }} />
+                <p style={{ fontSize: 14, color: "var(--text-secondary, #C4A882)", margin: 0 }}>
                   No upcoming deliveries scheduled
                 </p>
-                <p style={{ fontSize: 12, color: "#C4A882", margin: "6px 0 0" }}>
+                <p style={{ fontSize: 12, color: "var(--text-secondary, #C4A882)", margin: "6px 0 0" }}>
                   Contact PACC Energy to arrange your next delivery
                 </p>
               </div>
@@ -612,11 +612,11 @@ export default function CustomerPortal() {
                       <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
                         {s.site_name}
                       </div>
-                      <div style={{ fontSize: 12, color: "#E8461E" }}>
+                      <div style={{ fontSize: 12, color: "var(--accent, #E8461E)" }}>
                         {format(parseISO(s.scheduled_date), "EEEE dd MMM yyyy")}
                       </div>
                       {s.notes && (
-                        <p style={{ fontSize: 11, color: "#C4A882", margin: "6px 0 0" }}>
+                        <p style={{ fontSize: 11, color: "var(--text-secondary, #C4A882)", margin: "6px 0 0" }}>
                           {s.notes}
                         </p>
                       )}
@@ -630,7 +630,7 @@ export default function CustomerPortal() {
                       <div
                         style={{
                           fontSize: 10,
-                          color: s.status === "scheduled" ? "#E8461E" : "#10B981",
+                          color: s.status === "scheduled" ? "var(--accent, #E8461E)" : "#10B981",
                           textTransform: "uppercase",
                           letterSpacing: "0.05em",
                           marginTop: 4,
