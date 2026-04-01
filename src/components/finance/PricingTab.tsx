@@ -197,7 +197,9 @@ export default function PricingTab() {
     // Validate all line items have margin
     for (let i = 0; i < lineItems.length; i++) {
       const vol = parseFloat(lineItems[i].volume);
+      const margin = parseFloat(lineItems[i].margin);
       if (!vol || vol <= 0) { toast.error(`Line ${i + 1}: enter a volume`); return; }
+      if (isNaN(margin)) { toast.error(`Line ${i + 1}: enter a margin %`); return; }
     }
 
     const lineItemsData = lineItems.map((li, i) => ({
