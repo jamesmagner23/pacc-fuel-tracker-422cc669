@@ -123,7 +123,91 @@ export default function BuyPriceTab() {
         </div>
       )}
 
-      {/* Buy vs Retail comparison */}
+      {/* TGP vs Buy Price comparison */}
+      {latest && (() => {
+        const buy = latest.price_per_litre;
+        const tgp = todayTGP?.price_per_litre;
+        const tgpDiff = tgp ? buy - tgp : null;
+        const tgpPct = tgp && tgp > 0 ? ((tgpDiff! / tgp) * 100) : null;
+
+        // Build overlay chart data
+        const tgpMap = new Map(tgpPrices.map(t => [t.price_date, t.price_per_litre]));
+        const buyMap = new Map(prices.slice(0, 30).map(p => [p.price_date, p.price_per_litre]));
+        const allDates = [...new Set([...tgpMap.keys(), ...buyMap.keys()])].sort();
+        const overlayData = allDates.map(d => ({
+          date: format(parseISO(d), "dd MMM"),
+          tgp: tgpMap.get(d) ?? null,
+          buy: buyMap.get(d) ?? null,
+        }));
+
+        return (
+          <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Terminal Gate Price vs Your Buy Price — Melbourne Diesel</div>
+              <button
+                onClick={handleRefreshTGP}
+                disabled={refreshingTGP}
+                className="bg-transparent border border-surface-border rounded-full px-3 py-1 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3 h-3 ${refreshingTGP ? "animate-spin" : ""}`} />
+                {refreshingTGP ? "Syncing…" : "Refresh TGP"}
+              </button>
+            </div>
+
+            {tgp ? (
+              <>
+                <div className="grid grid-cols-3 gap-4 items-end">
+                  <div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Your Buy (Pacific)</div>
+                    <div className="text-xl sm:text-2xl font-semibold text-foreground tabular-nums">${buy.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Variance</div>
+                    <div className={`text-xl sm:text-2xl font-semibold tabular-nums ${tgpDiff !== null && tgpDiff <= 0 ? "text-positive" : "text-destructive"}`}>
+                      {tgpDiff !== null ? `${tgpDiff >= 0 ? "+" : ""}${tgpDiff.toFixed(4)}` : "—"}
+                    </div>
+                    {tgpPct !== null && (
+                      <div className={`text-[11px] font-medium ${tgpDiff !== null && tgpDiff <= 0 ? "text-positive" : "text-destructive"}`}>
+                        {tgpPct >= 0 ? "+" : ""}{tgpPct.toFixed(1)}% {tgpDiff !== null && tgpDiff <= 0 ? "below TGP" : "above TGP"}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">TGP (AIP Avg)</div>
+                    <div className="text-xl sm:text-2xl font-semibold text-muted-foreground tabular-nums">${tgp.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">inc GST</div>
+                  </div>
+                </div>
+
+                {/* Overlay chart */}
+                {overlayData.length > 1 && (
+                  <div className="mt-4 h-32">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={overlayData}>
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                        <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
+                        <Tooltip
+                          contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                          formatter={(v: number, name: string) => [`$${v?.toFixed(4)}/L`, name === "tgp" ? "TGP (AIP)" : "Your Buy"]}
+                        />
+                        <Line type="monotone" dataKey="tgp" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} strokeDasharray="4 4" dot={{ r: 2, fill: "hsl(var(--muted-foreground))", strokeWidth: 0 }} connectNulls />
+                        <Line type="monotone" dataKey="buy" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: "hsl(var(--primary))", strokeWidth: 0 }} connectNulls />
+                      </LineChart>
+                    </ResponsiveContainer>
+                    <div className="flex items-center justify-center gap-4 mt-1">
+                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-primary rounded" /><span className="text-[10px] text-muted-foreground">Your Buy</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 border-t border-dashed border-muted-foreground" /><span className="text-[10px] text-muted-foreground">TGP (AIP)</span></div>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-sm text-muted-foreground">No TGP data for today. Click Refresh TGP to fetch latest pricing from AIP.</div>
+            )}
+          </div>
+        );
+      })()}
+
       {latest && bowserRetailQuery.data && (() => {
         const retail = Number(bowserRetailQuery.data.bowser_retail_price);
         const buy = latest.price_per_litre;
