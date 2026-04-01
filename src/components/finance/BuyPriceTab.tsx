@@ -226,6 +226,7 @@ export default function BuyPriceTab() {
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Your Buy (Pacific)</div>
                 <div className="text-xl sm:text-2xl font-semibold text-foreground tabular-nums">${buy.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">ex GST</div>
               </div>
               <div className="text-center">
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Difference</div>
