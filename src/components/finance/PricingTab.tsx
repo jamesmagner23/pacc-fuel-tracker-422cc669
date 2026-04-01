@@ -497,7 +497,7 @@ export default function PricingTab() {
                         <input type="number" value={li.volume} onChange={(e) => updateLine(li.key, "volume", e.target.value)} placeholder="Litres" className={smInput} />
                       </td>
                       <td className="px-2 py-2">
-                        <input type="number" step="0.5" value={li.margin} onChange={(e) => updateLine(li.key, "margin", e.target.value)} placeholder={`Auto (${getTierForVolume(tiers, parseFloat(li.volume) || 0)?.margin_percent ?? 10}%)`} className={smInput} />
+                        <input type="number" step="0.5" value={li.margin} onChange={(e) => updateLine(li.key, "margin", e.target.value)} placeholder="e.g. 8" className={smInput} />
                       </td>
                       {latestBuyPrice > 0 && (
                         <td className="px-2 py-2 text-foreground tabular-nums whitespace-nowrap">
