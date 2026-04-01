@@ -186,7 +186,7 @@ const App = () => (
                       <Route path="/customers/:name" element={<CustomerDetail />} />
                       <Route path="/performance" element={<Performance />} />
                       <Route path="/transactions" element={<Transactions />} />
-                      <Route path="/clients" element={<Clients />} />
+                      
                       <Route path="/finance" element={<Finance />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="*" element={<NotFound />} />
