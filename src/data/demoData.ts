@@ -325,12 +325,13 @@ export const DEMO_FUEL_INTAKE_LOGS = [
 let _cache: ReturnType<typeof _generate> | null = null;
 
 function _generate() {
+  const transactions = generateTransactions();
   return {
-    transactions: generateTransactions(),
+    transactions,
     buyPrices: generateBuyPrices(),
     tgp: generateTGP(),
     customerPricing: generateCustomerPricing(),
-    pumpReadings: generatePumpReadings(),
+    pumpReadings: generatePumpReadingsFromTxns(transactions),
   };
 }
 
