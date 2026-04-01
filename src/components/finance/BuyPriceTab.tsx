@@ -124,6 +124,12 @@ export default function BuyPriceTab() {
       )}
 
       {/* TGP vs Buy Price comparison — only show when today's buy price has been entered */}
+      {latest && latest.price_date !== format(new Date(), "yyyy-MM-dd") && (
+        <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Terminal Gate Price vs Your Buy Price</div>
+          <p className="text-sm text-muted-foreground">Enter today's buy price to see TGP comparison.</p>
+        </div>
+      )}
       {latest && latest.price_date === format(new Date(), "yyyy-MM-dd") && (() => {
         const GST = 1.1;
         const buy = latest.price_per_litre;
