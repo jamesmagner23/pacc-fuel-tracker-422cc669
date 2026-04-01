@@ -212,7 +212,9 @@ export default function BuyPriceTab() {
       })()}
 
       {latest && bowserRetailQuery.data && (() => {
-        const retail = Number(bowserRetailQuery.data.bowser_retail_price);
+        const GST_DIVISOR = 1.1;
+        const retailIncGst = Number(bowserRetailQuery.data.bowser_retail_price);
+        const retail = retailIncGst / GST_DIVISOR; // convert to ex GST
         const buy = latest.price_per_litre;
         const diff = retail - buy;
         const pct = buy > 0 ? ((diff / buy) * 100) : 0;
