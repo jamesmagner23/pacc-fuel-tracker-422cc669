@@ -263,7 +263,6 @@ export const DEMO_SCHEDULED_DELIVERIES = [
 // ── Demo Pump Readings (last 14 days — closely track transaction totals) ──
 function generatePumpReadingsFromTxns(txns: Transaction[]) {
   const readings: any[] = [];
-  const txns = generateTransactions();
 
   for (let day = 0; day < 14; day++) {
     const dateStr = d(day);
