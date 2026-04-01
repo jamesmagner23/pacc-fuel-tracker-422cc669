@@ -6,20 +6,30 @@ import { format, parseISO, subDays } from "date-fns";
 import { Download, MapPin, Calendar, Droplets, FileText, LogOut } from "lucide-react";
 import { PACCLogo } from "@/components/PACCLogo";
 import { logActivity } from "@/hooks/useActivityLog";
+import { useDemo } from "@/hooks/useDemo";
+import { getDemoData, DEMO_CLIENT_ACCOUNTS, DEMO_SCHEDULED_DELIVERIES } from "@/data/demoData";
 
 const tabs = ["Overview", "Deliveries", "Sites", "Scheduled"] as const;
 type Tab = (typeof tabs)[number];
 
 // ── Fetch customer's own transactions (filtered by speedsol_names) ──
 function useCustomerTransactions(range: "week" | "month" | "all", speedsolNames: string[]) {
+  const isDemo = useDemo();
   const start =
     range === "all"
       ? null
       : format(subDays(new Date(), range === "week" ? 7 : 30), "yyyy-MM-dd");
 
   return useQuery({
-    queryKey: ["customer-transactions", range, speedsolNames],
+    queryKey: ["customer-transactions", range, speedsolNames, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        const txns = getDemoData().transactions.filter(
+          (t) => speedsolNames.includes(t.nombre_cliente1 || "")
+        );
+        if (start) return txns.filter((t) => (t.date || "") >= start);
+        return txns;
+      }
       if (speedsolNames.length === 0) return [];
       let q = supabase
         .from("transactions")
@@ -37,9 +47,15 @@ function useCustomerTransactions(range: "week" | "month" | "all", speedsolNames:
 
 // ── Fetch scheduled deliveries ──
 function useScheduledDeliveries(clientAccountId: number | null) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["scheduled-deliveries", clientAccountId],
+    queryKey: ["scheduled-deliveries", clientAccountId, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return DEMO_SCHEDULED_DELIVERIES.filter(
+          (d) => d.client_account_id === clientAccountId
+        );
+      }
       const { data, error } = await supabase
         .from("scheduled_deliveries")
         .select("*")
@@ -55,9 +71,20 @@ function useScheduledDeliveries(clientAccountId: number | null) {
 
 // ── Fetch current user profile ──
 function useCustomerProfile() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["customer-profile"],
+    queryKey: ["customer-profile", isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        const account = DEMO_CLIENT_ACCOUNTS[0];
+        return {
+          user_id: "u3",
+          role: "client",
+          client_account_id: account.id,
+          companyName: account.company_name,
+          speedsolNames: account.speedsol_names,
+        };
+      }
       const {
         data: { user },
       } = await supabase.auth.getUser();

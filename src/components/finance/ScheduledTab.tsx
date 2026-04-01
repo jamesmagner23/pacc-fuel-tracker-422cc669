@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_CLIENT_ACCOUNTS, DEMO_SCHEDULED_DELIVERIES } from "@/data/demoData";
 
 interface ScheduledForm {
   client_account_id: string;
@@ -31,13 +33,17 @@ const emptyForm: ScheduledForm = {
 };
 
 export default function ScheduledTab() {
+  const isDemo = useDemo();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ScheduledForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const { data: clients = [] } = useQuery({
-    queryKey: ["client-accounts-list"],
+    queryKey: ["client-accounts-list", isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return DEMO_CLIENT_ACCOUNTS.map((c) => ({ id: c.id, company_name: c.company_name }));
+      }
       const { data, error } = await supabase
         .from("client_accounts")
         .select("id, company_name")
@@ -49,8 +55,9 @@ export default function ScheduledTab() {
   });
 
   const { data: deliveries = [], isLoading } = useQuery({
-    queryKey: ["scheduled-deliveries-admin"],
+    queryKey: ["scheduled-deliveries-admin", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_SCHEDULED_DELIVERIES;
       const { data, error } = await supabase
         .from("scheduled_deliveries")
         .select("*, client_accounts(company_name)")

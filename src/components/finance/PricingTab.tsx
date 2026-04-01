@@ -19,6 +19,8 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import QuoteEditModal from "./QuoteEditModal";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 
 const GST_RATE = 0.1;
 
@@ -37,14 +39,24 @@ const newLineItem = (): LineItem => ({
 });
 
 export default function PricingTab() {
+  const isDemo = useDemo();
   const queryClient = useQueryClient();
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { data: todayBuyPrice } = useTodayBuyPrice();
   const { data: tiers = [], isLoading: tiersLoading } = usePricingTiers();
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
   const { data: clients = [] } = useQuery({
-    queryKey: ["client-accounts"],
+    queryKey: ["client-accounts", isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return DEMO_CLIENT_ACCOUNTS.map((c) => ({
+          id: c.id,
+          company_name: c.company_name,
+          contact_email: c.contact_email,
+          contact_name: c.contact_name,
+          contact_phone: c.contact_phone,
+        }));
+      }
       const { data, error } = await supabase.from("client_accounts").select("id, company_name, contact_email, contact_name, contact_phone").eq("is_active", true).order("company_name");
       if (error) throw error;
       return data || [];

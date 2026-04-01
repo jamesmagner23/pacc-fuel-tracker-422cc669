@@ -245,6 +245,66 @@ export const DEMO_QUOTES = [
   },
 ];
 
+// ── Demo Pricing Tiers ──
+export const DEMO_PRICING_TIERS = [
+  { id: "pt-1", tier_name: "Small", min_litres: 0, max_litres: 500, margin_percent: 12, created_at: ts(30) },
+  { id: "pt-2", tier_name: "Medium", min_litres: 500, max_litres: 2000, margin_percent: 10, created_at: ts(30) },
+  { id: "pt-3", tier_name: "Large", min_litres: 2000, max_litres: 5000, margin_percent: 8, created_at: ts(30) },
+  { id: "pt-4", tier_name: "Bulk", min_litres: 5000, max_litres: null, margin_percent: 6, created_at: ts(30) },
+];
+
+// ── Demo Scheduled Deliveries ──
+export const DEMO_SCHEDULED_DELIVERIES = [
+  { id: "sd-1", client_account_id: 1, site_name: "Dandenong Depot", scheduled_date: d(-2), estimated_litres: 3000, notes: "Morning delivery", status: "scheduled", created_at: ts(1), client_accounts: { company_name: "Metro Construction Group" } },
+  { id: "sd-2", client_account_id: 2, site_name: "Laverton Yard", scheduled_date: d(-3), estimated_litres: 2500, notes: null, status: "scheduled", created_at: ts(1), client_accounts: { company_name: "Citywide Earthworks" } },
+  { id: "sd-3", client_account_id: 5, site_name: "Mine Site Alpha", scheduled_date: d(-5), estimated_litres: 8000, notes: "Access via Gate B", status: "scheduled", created_at: ts(2), client_accounts: { company_name: "Southern Cross Mining" } },
+];
+
+// ── Demo Pump Readings (last 14 days) ──
+function generatePumpReadings() {
+  const readings: any[] = [];
+  for (let day = 0; day < 14; day++) {
+    const numReadings = randomBetween(1, 3);
+    for (let j = 0; j < numReadings; j++) {
+      const litres = randomBetween(800, 3500);
+      readings.push({
+        id: `pr-${day}-${j}`,
+        reading_date: d(day),
+        litres,
+        driver_id: `u${randomBetween(6, 8)}`,
+        notes: j === 0 && day % 3 === 0 ? "Morning fill at Pacific Dandenong" : null,
+        created_at: ts(day, 6 + j * 4),
+      });
+    }
+  }
+  return readings;
+}
+
+// ── Demo Reconciliation Alerts ──
+export const DEMO_RECON_ALERTS = [
+  { id: "ra-1", alert_date: d(1), alert_type: "high_variance", values: { variance_pct: 3.2, variance_litres: 85 }, status: "new", suggested_action: "Check pump calibration", created_at: ts(1), resolved_at: null, resolved_by: null },
+  { id: "ra-2", alert_date: d(3), alert_type: "missing_pump", values: { date: d(3) }, status: "new", suggested_action: "Request driver to submit reading", created_at: ts(3), resolved_at: null, resolved_by: null },
+  { id: "ra-3", alert_date: d(7), alert_type: "unusual_volume", values: { volume: 8500, avg: 4200 }, status: "resolved", suggested_action: null, created_at: ts(7), resolved_at: ts(6), resolved_by: "u1" },
+];
+
+// ── Demo Recon Settings ──
+export const DEMO_RECON_SETTINGS = {
+  id: 1,
+  variance_threshold_pct: 2,
+  variance_threshold_litres: 50,
+  alert_sensitivity: "medium",
+  calibration_factor: 0,
+  auto_weekly_report: true,
+  report_email: "admin@paccfuel.com",
+  updated_at: ts(5),
+};
+
+// ── Demo Fuel Intake Logs ──
+export const DEMO_FUEL_INTAKE_LOGS = [
+  { id: "fil-1", driver_user_id: "u6", litres_entered: 3200, log_date: d(0), photo_path: null, bowser_retail_price: 1.85, notes: "Pacific Dandenong", created_at: ts(0, 7) },
+  { id: "fil-2", driver_user_id: "u6", litres_entered: 2800, log_date: d(0), photo_path: null, bowser_retail_price: 1.84, notes: "Altona terminal", created_at: ts(0, 14) },
+];
+
 // ── Export all generated data (memoize-friendly) ──
 let _cache: ReturnType<typeof _generate> | null = null;
 
@@ -254,6 +314,7 @@ function _generate() {
     buyPrices: generateBuyPrices(),
     tgp: generateTGP(),
     customerPricing: generateCustomerPricing(),
+    pumpReadings: generatePumpReadings(),
   };
 }
 

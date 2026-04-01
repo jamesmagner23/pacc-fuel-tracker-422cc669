@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfWeek, endOfWeek, subDays, eachDayOfInterval } from "date-fns";
+import { useDemo } from "./useDemo";
+import { getDemoData, DEMO_RECON_ALERTS, DEMO_RECON_SETTINGS } from "@/data/demoData";
 
 export interface PumpReading {
   id: string;
@@ -45,9 +47,15 @@ export interface DailyReconRow {
 }
 
 export function usePumpReadings(startDate: string, endDate: string) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["pump-readings", startDate, endDate],
+    queryKey: ["pump-readings", startDate, endDate, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return getDemoData().pumpReadings.filter(
+          (p: any) => p.reading_date >= startDate && p.reading_date <= endDate
+        ) as PumpReading[];
+      }
       const { data, error } = await supabase
         .from("pump_readings")
         .select("*")
@@ -61,9 +69,16 @@ export function usePumpReadings(startDate: string, endDate: string) {
 }
 
 export function useDriverPumpReadings(days = 7) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["driver-pump-readings", days],
+    queryKey: ["driver-pump-readings", days, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        const startDate = format(subDays(new Date(), days), "yyyy-MM-dd");
+        return getDemoData().pumpReadings.filter(
+          (p: any) => p.reading_date >= startDate
+        ) as PumpReading[];
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
       const startDate = format(subDays(new Date(), days), "yyyy-MM-dd");
@@ -137,9 +152,15 @@ export function useDeletePumpReading() {
 }
 
 export function useReconAlerts(startDate: string, endDate: string) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["recon-alerts", startDate, endDate],
+    queryKey: ["recon-alerts", startDate, endDate, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return DEMO_RECON_ALERTS.filter(
+          (a) => a.alert_date >= startDate && a.alert_date <= endDate
+        ) as ReconAlert[];
+      }
       const { data, error } = await supabase
         .from("reconciliation_alerts")
         .select("*")
@@ -170,9 +191,11 @@ export function useResolveAlert() {
 }
 
 export function useReconSettings() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["recon-settings"],
+    queryKey: ["recon-settings", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_RECON_SETTINGS as ReconSettings;
       const { data, error } = await supabase
         .from("recon_settings")
         .select("*")
