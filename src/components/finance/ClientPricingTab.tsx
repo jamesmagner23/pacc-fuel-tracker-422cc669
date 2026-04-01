@@ -13,6 +13,8 @@ import {
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_CLIENT_ACCOUNTS, getDemoData } from "@/data/demoData";
 
 interface TierRow {
   key: string;
@@ -31,12 +33,14 @@ const newTierRow = (min = ""): TierRow => ({
 });
 
 export default function ClientPricingTab() {
+  const isDemo = useDemo();
   const { data: pricing = [], isLoading } = useCustomerPricing();
   const { data: buyPrices = [] } = useBuyPrices(30);
   const qc = useQueryClient();
   const { data: clients = [] } = useQuery({
-    queryKey: ["client-accounts"],
+    queryKey: ["client-accounts", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_CLIENT_ACCOUNTS;
       const { data, error } = await supabase
         .from("client_accounts")
         .select("id, company_name, contact_email, contact_phone, speedsol_name, speedsol_names")
@@ -47,8 +51,11 @@ export default function ClientPricingTab() {
     },
   });
   const { data: txnCustomers = [] } = useQuery({
-    queryKey: ["speedsol-all-names"],
+    queryKey: ["speedsol-all-names", isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return [...new Set(getDemoData().transactions.map(t => t.nombre_cliente1).filter(Boolean))].sort() as string[];
+      }
       const { data, error } = await supabase
         .from("transactions")
         .select("nombre_cliente1")

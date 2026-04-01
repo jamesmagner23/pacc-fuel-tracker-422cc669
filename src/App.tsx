@@ -3,8 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { DateRangeProvider } from "@/hooks/useDateRange";
+import { DemoProvider } from "@/hooks/useDemo";
 import { Layout } from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import Overview from "./pages/Overview";
@@ -22,6 +23,7 @@ import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+import { DemoBanner } from "./components/DemoBanner";
 
 const queryClient = new QueryClient();
 
@@ -46,24 +48,32 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const [params] = useSearchParams();
+  const isDemo = params.get("demo") === "true";
 
-  const redirectSignedOut = (path: string) => {
-    if (!PUBLIC_PATHS.includes(path) && !path.startsWith("/docket")) {
-      navigate(path === "/" ? "/landing" : "/login", { replace: true });
-    }
-  };
-
-  const redirectByRole = (userRole: UserRole, path: string) => {
-    if (userRole === "client" && !path.startsWith("/portal") && !path.startsWith("/docket")) {
-      navigate("/portal", { replace: true });
-    }
-
-    if (userRole === "driver" && !path.startsWith("/driver") && !path.startsWith("/docket")) {
-      navigate("/driver", { replace: true });
-    }
-  };
-
+  // In demo mode, skip auth entirely
   useEffect(() => {
+    if (isDemo) {
+      setRole("admin");
+      setLoading(false);
+      return;
+    }
+
+    const redirectSignedOut = (path: string) => {
+      if (!PUBLIC_PATHS.includes(path) && !path.startsWith("/docket")) {
+        navigate(path === "/" ? "/landing" : "/login", { replace: true });
+      }
+    };
+
+    const redirectByRole = (userRole: UserRole, path: string) => {
+      if (userRole === "client" && !path.startsWith("/portal") && !path.startsWith("/docket")) {
+        navigate("/portal", { replace: true });
+      }
+      if (userRole === "driver" && !path.startsWith("/driver") && !path.startsWith("/docket")) {
+        navigate("/driver", { replace: true });
+      }
+    };
+
     const loadRole = async (userId: string, path: string) => {
       const userRole = await getUserRole(userId);
       setRole(userRole);
@@ -71,34 +81,27 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       redirectByRole(userRole, path);
     };
 
-    // Set up auth listener FIRST (before getSession)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const currentPath = window.location.pathname;
-
       if (!session) {
         setRole(null);
         setLoading(false);
         redirectSignedOut(currentPath);
         return;
       }
-
       void loadRole(session.user.id, currentPath);
     });
 
-    // Then check existing session
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       const currentPath = window.location.pathname;
-
       if (!session) {
         setRole(null);
         setLoading(false);
         redirectSignedOut(currentPath);
         return;
       }
-
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-
       if (userError || !user) {
         await supabase.auth.signOut();
         setRole(null);
@@ -106,14 +109,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         redirectSignedOut(currentPath);
         return;
       }
-
       await loadRole(user.id, currentPath);
     };
 
     checkAuth();
-
     return () => subscription.unsubscribe();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isDemo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -124,7 +125,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   // Not logged in — allow public pages
-  if (!role) {
+  if (!role && !isDemo) {
     if (PUBLIC_PATHS.includes(location.pathname) || location.pathname.startsWith("/docket")) {
       return <>{children}</>;
     }
@@ -137,26 +138,24 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const isPublicAuthPath = PUBLIC_PATHS.includes(location.pathname);
 
   if (role === "admin" && isPublicAuthPath) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={`/?demo=true`} replace />;
   }
 
-  // Client role — allow portal + docket routes
-  if (role === "client") {
-    if (location.pathname.startsWith("/portal") || location.pathname.startsWith("/docket")) {
-      return <>{children}</>;
+  if (!isDemo) {
+    if (role === "client") {
+      if (location.pathname.startsWith("/portal") || location.pathname.startsWith("/docket")) {
+        return <>{children}</>;
+      }
+      return <Navigate to="/portal" replace />;
     }
-    return <Navigate to="/portal" replace />;
-  }
-
-  // Driver role — allow driver + docket routes
-  if (role === "driver") {
-    if (location.pathname.startsWith("/driver") || location.pathname.startsWith("/docket")) {
-      return <>{children}</>;
+    if (role === "driver") {
+      if (location.pathname.startsWith("/driver") || location.pathname.startsWith("/docket")) {
+        return <>{children}</>;
+      }
+      return <Navigate to="/driver" replace />;
     }
-    return <Navigate to="/driver" replace />;
   }
 
-  // Admin or login page — render normally
   return <>{children}</>;
 }
 
@@ -166,37 +165,39 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthGate>
-          <DateRangeProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/landing" element={<LandingPage />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/portal" element={<CustomerPortal />} />
-              <Route path="/driver" element={<DriverPortal />} />
-              <Route path="/docket/multi" element={<DeliveryDocket />} />
-              <Route path="/docket/:id" element={<DeliveryDocket />} />
-              <Route
-                path="/*"
-                element={
-                  <Layout>
-                    <Routes>
-                      <Route path="/" element={<Overview />} />
-                      <Route path="/customers" element={<Customers />} />
-                      <Route path="/customers/:name" element={<CustomerDetail />} />
-                      <Route path="/performance" element={<Performance />} />
-                      <Route path="/transactions" element={<Transactions />} />
-                      
-                      <Route path="/finance" element={<Finance />} />
-                      <Route path="/admin" element={<Admin />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Layout>
-                }
-              />
-            </Routes>
-          </DateRangeProvider>
-        </AuthGate>
+        <DemoProvider>
+          <AuthGate>
+            <DateRangeProvider>
+              <DemoBanner />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/landing" element={<LandingPage />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/portal" element={<CustomerPortal />} />
+                <Route path="/driver" element={<DriverPortal />} />
+                <Route path="/docket/multi" element={<DeliveryDocket />} />
+                <Route path="/docket/:id" element={<DeliveryDocket />} />
+                <Route
+                  path="/*"
+                  element={
+                    <Layout>
+                      <Routes>
+                        <Route path="/" element={<Overview />} />
+                        <Route path="/customers" element={<Customers />} />
+                        <Route path="/customers/:name" element={<CustomerDetail />} />
+                        <Route path="/performance" element={<Performance />} />
+                        <Route path="/transactions" element={<Transactions />} />
+                        <Route path="/finance" element={<Finance />} />
+                        <Route path="/admin" element={<Admin />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Layout>
+                  }
+                />
+              </Routes>
+            </DateRangeProvider>
+          </AuthGate>
+        </DemoProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

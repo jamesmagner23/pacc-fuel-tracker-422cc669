@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "./useDemo";
+import { getDemoData } from "@/data/demoData";
 
 export interface CustomerPricing {
   id: string;
@@ -35,9 +37,13 @@ export const PAYMENT_TERMS = [
 ] as const;
 
 export function useCustomerPricing() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["customer-pricing"],
+    queryKey: ["customer-pricing", isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return getDemoData().customerPricing;
+      }
       const { data, error } = await supabase
         .from("customer_pricing")
         .select("*")

@@ -5,6 +5,8 @@ import { format, parseISO, subDays } from "date-fns";
 import { Users, Activity, Shield, Trash2, Pencil, LogIn, Download, Eye, X, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import Reconciliation from "./Reconciliation";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_USERS, DEMO_ACTIVITY } from "@/data/demoData";
 
 interface UserRow {
   id: string;
@@ -27,9 +29,11 @@ interface ActivityRow {
 }
 
 function useAdminUsers() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["admin-users"],
+    queryKey: ["admin-users", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_USERS as UserRow[];
       const { data: roles, error } = await supabase
         .from("user_roles")
         .select("id, user_id, role, full_name, email, client_account_id")
@@ -56,9 +60,11 @@ function useAdminUsers() {
 }
 
 function useActivityLogs(days = 30) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["admin-activity", days],
+    queryKey: ["admin-activity", days, isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_ACTIVITY as ActivityRow[];
       const since = format(subDays(new Date(), days), "yyyy-MM-dd");
       const { data, error } = await supabase
         .from("auth_activity_log")
@@ -68,7 +74,6 @@ function useActivityLogs(days = 30) {
         .limit(200);
       if (error) throw error;
 
-      // Enrich with user names
       const userIds = [...new Set((data || []).map(d => d.user_id))];
       let nameMap: Record<string, { full_name: string; email: string }> = {};
       if (userIds.length > 0) {

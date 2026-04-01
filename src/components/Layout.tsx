@@ -1,4 +1,4 @@
-import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
+import { NavLink as RouterNavLink, useLocation, useSearchParams } from "react-router-dom";
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
@@ -24,6 +24,9 @@ const TEXT_ACTIVE = "#F5E6D0";
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [params] = useSearchParams();
+  const isDemo = params.get("demo") === "true";
+  const bannerOffset = isDemo ? 28 : 0;
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", background: BG, color: TEXT_ACTIVE }}>
@@ -35,7 +38,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           background: BG,
           borderRight: `1px solid ${BORDER}`,
           flexDirection: "column",
-          padding: "28px 0",
+          padding: `${28 + bannerOffset}px 0 28px`,
           flexShrink: 0,
           position: "sticky",
           top: 0,
@@ -52,7 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             return (
               <RouterNavLink
                 key={item.to}
-                to={item.to}
+                to={isDemo ? `${item.to}?demo=true` : item.to}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -166,7 +169,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               return (
                 <RouterNavLink
                   key={item.to}
-                  to={item.to}
+                  to={isDemo ? `${item.to}?demo=true` : item.to}
                   onClick={() => setMobileMenuOpen(false)}
                   style={{
                     display: "flex",
@@ -240,7 +243,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             padding: "0 16px",
             flexShrink: 0,
             position: "sticky",
-            top: 0,
+            top: bannerOffset,
             zIndex: 50,
             gap: 8,
           }}
