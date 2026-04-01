@@ -27,6 +27,65 @@ import { DemoBanner } from "./components/DemoBanner";
 
 const queryClient = new QueryClient();
 
+function DemoAwareRoutes() {
+  const [params] = useSearchParams();
+  const isDemo = params.get("demo") === "true";
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/landing" element={<LandingPage />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/docket/multi" element={<DeliveryDocket />} />
+      <Route path="/docket/:id" element={<DeliveryDocket />} />
+      {/* In demo mode, portal/driver get the sidebar Layout */}
+      {isDemo ? (
+        <Route
+          path="/*"
+          element={
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Overview />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/customers/:name" element={<CustomerDetail />} />
+                <Route path="/performance" element={<Performance />} />
+                <Route path="/transactions" element={<Transactions />} />
+                <Route path="/finance" element={<Finance />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/portal" element={<CustomerPortal />} />
+                <Route path="/driver" element={<DriverPortal />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Layout>
+          }
+        />
+      ) : (
+        <>
+          <Route path="/portal" element={<CustomerPortal />} />
+          <Route path="/driver" element={<DriverPortal />} />
+          <Route
+            path="/*"
+            element={
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Overview />} />
+                  <Route path="/customers" element={<Customers />} />
+                  <Route path="/customers/:name" element={<CustomerDetail />} />
+                  <Route path="/performance" element={<Performance />} />
+                  <Route path="/transactions" element={<Transactions />} />
+                  <Route path="/finance" element={<Finance />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Layout>
+            }
+          />
+        </>
+      )}
+    </Routes>
+  );
+}
+
 type UserRole = "admin" | "client" | "driver" | null;
 
 const PUBLIC_PATHS = ["/login", "/landing", "/reset-password"];

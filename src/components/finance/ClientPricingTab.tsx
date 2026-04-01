@@ -474,7 +474,7 @@ export default function ClientPricingTab() {
                     const bAvg = b.tiers.reduce((s, t) => s + t.margin_percent, 0) / b.tiers.length;
                     return bAvg - aAvg;
                   }).map(([id]) => (
-                    <Cell key={id} fill="var(--primary)" />
+                    <Cell key={id} fill="hsl(var(--primary))" />
                   ))}
                 </Bar>
               </BarChart>

@@ -12,10 +12,7 @@ export function DemoBanner() {
   return (
     <div
       style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
+        position: "relative",
         zIndex: 200,
         background: bgColor,
         color: "#fff",
@@ -23,8 +20,8 @@ export function DemoBanner() {
         alignItems: "center",
         justifyContent: "center",
         gap: 8,
-        padding: "6px 16px",
-        fontSize: 12,
+        padding: "5px 16px",
+        fontSize: 11,
         fontWeight: 600,
         letterSpacing: "0.02em",
       }}
