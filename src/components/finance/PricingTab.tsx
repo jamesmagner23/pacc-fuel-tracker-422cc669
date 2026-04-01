@@ -88,7 +88,7 @@ export default function PricingTab() {
     return lineItems.map((li) => {
       const vol = parseFloat(li.volume) || 0;
       const margin = parseFloat(li.margin);
-      const marginPct = !isNaN(margin) ? margin : (getTierForVolume(tiers, vol)?.margin_percent ?? 10);
+      const marginPct = !isNaN(margin) ? margin : 0;
       const sellPrice = latestBuyPrice > 0 ? latestBuyPrice * (1 + marginPct / 100) : 0;
       const totalEx = sellPrice * vol;
       return { vol, marginPct, sellPrice, totalEx };
@@ -197,7 +197,9 @@ export default function PricingTab() {
     // Validate all line items have margin
     for (let i = 0; i < lineItems.length; i++) {
       const vol = parseFloat(lineItems[i].volume);
+      const margin = parseFloat(lineItems[i].margin);
       if (!vol || vol <= 0) { toast.error(`Line ${i + 1}: enter a volume`); return; }
+      if (isNaN(margin)) { toast.error(`Line ${i + 1}: enter a margin %`); return; }
     }
 
     const lineItemsData = lineItems.map((li, i) => ({
@@ -495,7 +497,7 @@ export default function PricingTab() {
                         <input type="number" value={li.volume} onChange={(e) => updateLine(li.key, "volume", e.target.value)} placeholder="Litres" className={smInput} />
                       </td>
                       <td className="px-2 py-2">
-                        <input type="number" step="0.5" value={li.margin} onChange={(e) => updateLine(li.key, "margin", e.target.value)} placeholder={`Auto (${getTierForVolume(tiers, parseFloat(li.volume) || 0)?.margin_percent ?? 10}%)`} className={smInput} />
+                        <input type="number" step="0.5" value={li.margin} onChange={(e) => updateLine(li.key, "margin", e.target.value)} placeholder="e.g. 8" className={smInput} />
                       </td>
                       {latestBuyPrice > 0 && (
                         <td className="px-2 py-2 text-foreground tabular-nums whitespace-nowrap">
