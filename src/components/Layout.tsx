@@ -24,6 +24,9 @@ const TEXT_ACTIVE = "#F5E6D0";
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [params] = useSearchParams();
+  const isDemo = params.get("demo") === "true";
+  const bannerOffset = isDemo ? 28 : 0;
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", background: BG, color: TEXT_ACTIVE }}>
