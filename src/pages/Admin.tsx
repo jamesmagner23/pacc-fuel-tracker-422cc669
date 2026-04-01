@@ -29,9 +29,11 @@ interface ActivityRow {
 }
 
 function useAdminUsers() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["admin-users"],
+    queryKey: ["admin-users", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_USERS as UserRow[];
       const { data: roles, error } = await supabase
         .from("user_roles")
         .select("id, user_id, role, full_name, email, client_account_id")
