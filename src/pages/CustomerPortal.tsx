@@ -156,6 +156,9 @@ export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [range, setRange] = useState<"week" | "month" | "all">("month");
   const [siteFilter, setSiteFilter] = useState("all");
+  const isDemo = useDemo();
+  const [params] = useSearchParams();
+  const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   const { data: profile } = useCustomerProfile();
   const speedsolNames = profile?.speedsolNames || [];
