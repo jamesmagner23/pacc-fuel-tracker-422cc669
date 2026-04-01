@@ -183,6 +183,8 @@ export const DEMO_USERS = [
   { id: "u3", user_id: "u3", role: "client", full_name: "Rachel Green", email: "rachel@metroconstruction.com", client_account_id: 1, company_name: "Metro Construction Group" },
   { id: "u4", user_id: "u4", role: "client", full_name: "David Kim", email: "david@citywideearth.com", client_account_id: 2, company_name: "Citywide Earthworks" },
   { id: "u5", user_id: "u5", role: "client", full_name: "Lisa Nguyen", email: "lisa@peninsulalogistics.com", client_account_id: 3, company_name: "Peninsula Logistics" },
+  { id: "u9", user_id: "u9", role: "client", full_name: "Mark Stevens", email: "mark@oakridgecivil.com", client_account_id: 9, company_name: "Oakridge Civil Engineering" },
+  { id: "u10", user_id: "u10", role: "client", full_name: "Emma Walsh", email: "emma@murrayvalley.com", client_account_id: 10, company_name: "Murray Valley Haulage" },
   { id: "u6", user_id: "u6", role: "driver", full_name: "Jake Mitchell", email: "jake@driver.com", client_account_id: null, company_name: null },
   { id: "u7", user_id: "u7", role: "driver", full_name: "Sarah Chen", email: "sarah@driver.com", client_account_id: null, company_name: null },
   { id: "u8", user_id: "u8", role: "driver", full_name: "Tom Bradley", email: "tom@driver.com", client_account_id: null, company_name: null },
