@@ -35,10 +35,10 @@ function randomBetween(min: number, max: number) {
   return Math.round(min + Math.random() * (max - min));
 }
 
-// ── Transactions (last 30 days) ──
+// ── Transactions (last 65 days — covers current + previous period) ──
 function generateTransactions(): Transaction[] {
   const txns: Transaction[] = [];
-  for (let day = 0; day < 30; day++) {
+  for (let day = 0; day < 65; day++) {
     const deliveries = randomBetween(3, 8);
     for (let j = 0; j < deliveries; j++) {
       const qty = randomBetween(200, 2800);
