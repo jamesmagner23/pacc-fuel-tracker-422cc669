@@ -56,7 +56,8 @@ export default function PricingTab() {
   const deleteTier = useDeleteTier();
   const updateQuoteStatus = useUpdateQuoteStatus();
 
-  const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
+  const latestBuyPrice = todayBuyPrice?.price_per_litre || 0;
+  const hasTodayPrice = !!todayBuyPrice;
 
   const [showTierConfig, setShowTierConfig] = useState(false);
   const [name, setName] = useState("");
