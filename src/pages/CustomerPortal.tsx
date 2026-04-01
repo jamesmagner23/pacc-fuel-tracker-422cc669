@@ -296,7 +296,7 @@ export default function CustomerPortal() {
           style={{
             display: "flex",
             gap: 0,
-            borderBottom: "1px solid #6B5240",
+            borderBottom: "1px solid var(--surface-border, #6B5240)",
             marginBottom: 20,
           }}
         >
@@ -313,7 +313,7 @@ export default function CustomerPortal() {
                 border: "none",
                 borderBottom:
                   activeTab === tab
-                    ? "2px solid #E8461E"
+                    ? "2px solid var(--accent, #E8461E)"
                     : "2px solid transparent",
                 cursor: "pointer",
                 marginBottom: -1,
@@ -396,7 +396,7 @@ export default function CustomerPortal() {
                     justifyContent: "space-between",
                     alignItems: "center",
                     padding: "8px 0",
-                    borderTop: i > 0 ? "1px solid #6B5240" : "none",
+                    borderTop: i > 0 ? "1px solid var(--surface-border, #6B5240)" : "none",
                   }}
                 >
                   <div>
@@ -424,7 +424,7 @@ export default function CustomerPortal() {
                 onChange={(e) => setSiteFilter(e.target.value)}
                 style={{
                   background: "var(--surface, #4A3525)",
-                  border: "1px solid #6B5240",
+                  border: "1px solid var(--surface-border, #6B5240)",
                   borderRadius: 8,
                   color: "var(--text-primary, #F5E6D0)",
                   padding: "7px 12px",
@@ -484,7 +484,7 @@ export default function CustomerPortal() {
                       justifyContent: "space-between",
                       alignItems: "center",
                       padding: "10px 0",
-                      borderTop: i > 0 ? "1px solid #6B5240" : "none",
+                      borderTop: i > 0 ? "1px solid var(--surface-border, #6B5240)" : "none",
                     }}
                   >
                     <div>
@@ -503,7 +503,7 @@ export default function CustomerPortal() {
                         title="Download docket"
                         style={{
                           background: "transparent",
-                          border: "1px solid #6B5240",
+                          border: "1px solid var(--surface-border, #6B5240)",
                           borderRadius: 6,
                           color: "var(--text-muted, #9B8060)",
                           cursor: "pointer",
