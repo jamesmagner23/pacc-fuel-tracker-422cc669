@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Download, ArrowUpDown, FileText, CheckSquare, Square, Send } from "lucide-react";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useDemo } from "@/hooks/useDemo";
 import { format, parseISO } from "date-fns";
 
 type SortKey = "fecha" | "nombre_cliente1" | "ciudad" | "cantidad" | "ppu" | "dinero_total" | "factura";
