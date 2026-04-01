@@ -443,7 +443,7 @@ export default function CustomerPortal() {
                 onClick={() =>
                   exportCSV(
                     filtered,
-                    `pacc-deliveries-${format(new Date(), "yyyy-MM-dd")}.csv`
+                    `deliveries-${format(new Date(), "yyyy-MM-dd")}.csv`
                   )
                 }
                 style={{
