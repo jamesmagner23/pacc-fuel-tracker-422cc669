@@ -324,7 +324,7 @@ function generatePumpReadingsFromTxns(txns: Transaction[]) {
         reading_date: dateStr,
         litres,
         driver_id: `u${randomBetween(6, 8)}`,
-        notes: j === 0 && day % 3 === 0 ? "Morning fill at Pacific Dandenong" : null,
+        notes: j === 0 && day % 3 === 0 ? "Morning fill at Ampol Dandenong" : null,
         created_at: ts(day, 6 + j * 4),
       });
     }
