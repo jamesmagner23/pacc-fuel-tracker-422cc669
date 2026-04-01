@@ -12,7 +12,6 @@ import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
 import Performance from "./pages/Performance";
 import Transactions from "./pages/Transactions";
-import Clients from "./pages/Clients";
 import Finance from "./pages/Finance";
 import DeliveryDocket from "./pages/DeliveryDocket";
 import CustomerPortal from "./pages/CustomerPortal";
