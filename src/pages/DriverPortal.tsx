@@ -8,6 +8,8 @@ import { PumpReadingForm } from "@/components/reconciliation/PumpReadingForm";
 import { PACCLogo } from "@/components/PACCLogo";
 import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
+import { useDemo } from "@/hooks/useDemo";
+import { getDemoData, DEMO_FUEL_INTAKE_LOGS } from "@/data/demoData";
 
 function IntakeLogRow({ log }: { log: any }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -36,13 +38,17 @@ function IntakeLogRow({ log }: { log: any }) {
 }
 
 function useDriverTransactions() {
+  const isDemo = useDemo();
   const today = format(new Date(), "yyyy-MM-dd");
   const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
   const lastWeekStart = format(startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 }), "yyyy-MM-dd");
 
   const todayQuery = useQuery({
-    queryKey: ["driver-today", today],
+    queryKey: ["driver-today", today, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return getDemoData().transactions.filter((t) => t.date === today);
+      }
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
@@ -51,12 +57,15 @@ function useDriverTransactions() {
       if (error) throw error;
       return data || [];
     },
-    refetchInterval: 60000,
+    refetchInterval: isDemo ? false : 60000,
   });
 
   const weekQuery = useQuery({
-    queryKey: ["driver-week", weekStart],
+    queryKey: ["driver-week", weekStart, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return getDemoData().transactions.filter((t) => (t.date || "") >= weekStart);
+      }
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
@@ -68,8 +77,13 @@ function useDriverTransactions() {
   });
 
   const lastWeekQuery = useQuery({
-    queryKey: ["driver-lastweek", lastWeekStart, weekStart],
+    queryKey: ["driver-lastweek", lastWeekStart, weekStart, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return getDemoData().transactions.filter(
+          (t) => (t.date || "") >= lastWeekStart && (t.date || "") < weekStart
+        );
+      }
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
