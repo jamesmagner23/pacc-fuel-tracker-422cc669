@@ -35,9 +35,9 @@ Deno.serve(async (req) => {
     }
     const html = await response.text();
 
-    // Parse dates from headers (e.g., "Thursday26 March 2026")
+    // Parse dates from headers - they contain <br/> tags like "Thursday<br/>26 March 2026"
     const headerRegex =
-      /<th[^>]*>(?:<[^>]*>)*\s*(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*(\d{1,2}\s+\w+\s+\d{4})\s*(?:<[^>]*>)*<\/th>/gi;
+      /<th[^>]*>\s*(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s*(?:<br\s*\/?>)\s*(\d{1,2}\s+\w+\s+\d{4})\s*<\/th>/gi;
     const allDateMatches: string[] = [];
     let match;
     while ((match = headerRegex.exec(html)) !== null) {
