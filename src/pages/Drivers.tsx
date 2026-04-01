@@ -47,10 +47,10 @@ export default function Drivers() {
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={comparisonData}>
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: textSecondary }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: textSecondary }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                   <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                  <Bar dataKey="litres" fill="#E8461E" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="litres" fill={accent} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
