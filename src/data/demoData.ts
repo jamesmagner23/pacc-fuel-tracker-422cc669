@@ -260,16 +260,32 @@ export const DEMO_SCHEDULED_DELIVERIES = [
   { id: "sd-3", client_account_id: 5, site_name: "Mine Site Alpha", scheduled_date: d(-5), estimated_litres: 8000, notes: "Access via Gate B", status: "scheduled", created_at: ts(2), client_accounts: { company_name: "Southern Cross Mining" } },
 ];
 
-// ── Demo Pump Readings (last 14 days) ──
+// ── Demo Pump Readings (last 14 days — closely track transaction totals) ──
 function generatePumpReadings() {
   const readings: any[] = [];
+  const txns = generateTransactions();
+
   for (let day = 0; day < 14; day++) {
+    const dateStr = d(day);
+    // Sum actual transaction litres for this day
+    const dayTxns = txns.filter(t => t.date === dateStr);
+    const dayTotal = dayTxns.reduce((sum, t) => sum + (t.cantidad || 0), 0);
+    if (dayTotal === 0) continue;
+
+    // Split into 1-3 pump readings that sum close to the day total
+    // Apply a small variance (-1.5% to +1.5%) to make it realistic
+    const varianceFactor = 0.985 + Math.random() * 0.03; // 98.5% to 101.5%
+    const adjustedTotal = Math.round(dayTotal * varianceFactor);
     const numReadings = randomBetween(1, 3);
+    let remaining = adjustedTotal;
+
     for (let j = 0; j < numReadings; j++) {
-      const litres = randomBetween(800, 3500);
+      const isLast = j === numReadings - 1;
+      const litres = isLast ? remaining : Math.round(remaining * (0.3 + Math.random() * 0.4));
+      remaining -= litres;
       readings.push({
         id: `pr-${day}-${j}`,
-        reading_date: d(day),
+        reading_date: dateStr,
         litres,
         driver_id: `u${randomBetween(6, 8)}`,
         notes: j === 0 && day % 3 === 0 ? "Morning fill at Pacific Dandenong" : null,
