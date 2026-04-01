@@ -476,8 +476,8 @@ export default function PricingTab() {
             <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" className={inputClass} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Valid For (Days)</label>
-            <input value={validDays} onChange={(e) => setValidDays(e.target.value)} type="number" className={inputClass} />
+            <label className="text-[11px] text-muted-foreground">Validity</label>
+            <div className="text-[12px] text-muted-foreground px-3 py-2">1 day</div>
           </div>
         </div>
 
