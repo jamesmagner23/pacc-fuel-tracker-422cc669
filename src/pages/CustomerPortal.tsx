@@ -214,11 +214,12 @@ export default function CustomerPortal() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#3D2B1A", color: "#F5E6D0" }}>
-      {/* Header */}
+    <div style={{ minHeight: isDemo ? undefined : "100vh", background: "var(--background, #3D2B1A)", color: "var(--text-primary, #F5E6D0)" }}>
+      {/* Header — hidden in demo mode since Layout provides navigation */}
+      {!isDemo && (
       <div
         style={{
-          borderBottom: "1px solid #6B5240",
+          borderBottom: "1px solid var(--surface-border, #6B5240)",
           padding: "12px 20px",
           display: "flex",
           alignItems: "center",
@@ -227,7 +228,7 @@ export default function CustomerPortal() {
       >
         <PACCLogo />
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 13, color: "#D4C4A8" }}>{companyName}</span>
+          <span style={{ fontSize: 13, color: "var(--text-secondary, #D4C4A8)" }}>{companyName}</span>
           <button
             onClick={handleSignOut}
             style={{
@@ -236,20 +237,19 @@ export default function CustomerPortal() {
               gap: 6,
               background: "transparent",
               border: "none",
-              color: "#C4A882",
+              color: "var(--text-secondary, #C4A882)",
               fontSize: 12,
               cursor: "pointer",
               padding: "6px 10px",
               borderRadius: 8,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#D4C4A8")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#C4A882")}
           >
             <LogOut className="w-3.5 h-3.5" />
             Sign out
           </button>
         </div>
       </div>
+      )}
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
         {/* Page title + range toggle */}
