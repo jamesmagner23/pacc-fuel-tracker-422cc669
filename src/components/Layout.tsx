@@ -38,7 +38,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           background: BG,
           borderRight: `1px solid ${BORDER}`,
           flexDirection: "column",
-          padding: "28px 0",
+          padding: `${28 + bannerOffset}px 0 28px`,
           flexShrink: 0,
           position: "sticky",
           top: 0,
