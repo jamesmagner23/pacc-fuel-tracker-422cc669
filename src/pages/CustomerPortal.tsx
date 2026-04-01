@@ -146,8 +146,8 @@ function openDocket(tx: any, demoSuffix = "") {
 }
 
 const card: React.CSSProperties = {
-  background: "#4A3525",
-  border: "1px solid #6B5240",
+  background: "var(--surface, #4A3525)",
+  border: "1px solid var(--surface-border, #6B5240)",
   borderRadius: 10,
   padding: "18px 20px",
 };
