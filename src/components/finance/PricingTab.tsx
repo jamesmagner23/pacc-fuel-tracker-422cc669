@@ -62,7 +62,7 @@ export default function PricingTab() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
-  const [validDays, setValidDays] = useState("7");
+  
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -225,7 +225,7 @@ export default function PricingTab() {
         total_ex_gst: grandTotalEx,
         total_inc_gst: grandTotalInc,
         notes: notes || null,
-        valid_until: format(addDays(new Date(), parseInt(validDays) || 7), "yyyy-MM-dd"),
+        valid_until: format(addDays(new Date(), 1), "yyyy-MM-dd"),
         line_items: lineItemsData,
       } as any);
       toast.success("Quote created");
@@ -343,7 +343,7 @@ export default function PricingTab() {
     // Validity & Melbourne metro
     if (q.valid_until) {
       y += 10; doc.setFontSize(8); doc.setTextColor(153, 153, 153);
-      doc.text(`This quote is valid until ${format(parseISO(q.valid_until), "dd MMMM yyyy")}. Valid for Melbourne Metro delivery only.`, margin, y);
+      doc.text(`This quote is valid for 1 day only — until ${format(parseISO(q.valid_until), "dd MMMM yyyy")}. Valid for Melbourne Metro delivery only.`, margin, y);
     }
 
     // Tagline & portal info
@@ -476,8 +476,8 @@ export default function PricingTab() {
             <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" className={inputClass} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Valid For (Days)</label>
-            <input value={validDays} onChange={(e) => setValidDays(e.target.value)} type="number" className={inputClass} />
+            <label className="text-[11px] text-muted-foreground">Validity</label>
+            <div className="text-[12px] text-muted-foreground px-3 py-2">1 day</div>
           </div>
         </div>
 
