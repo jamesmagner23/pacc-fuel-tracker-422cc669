@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PACCLogo } from "./PACCLogo";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 interface DemoGateProps {
@@ -41,131 +40,71 @@ export function DemoGate({ brand, color, onUnlock }: DemoGateProps) {
       return;
     }
 
-    // Persist so they don't see the gate again this session
     sessionStorage.setItem("demo_unlocked", "true");
     onUnlock();
   };
 
+  const displayBrand = brand || "FuelTrack";
+  const ACCENT = "#3B82F6"; // neutral blue
+
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: "#3D2B1A" }}
+      style={{ background: "#1a1f2e" }}
     >
       <div
         className="w-full max-w-md rounded-2xl p-8 space-y-6"
         style={{
-          background: "rgba(86,64,46,0.5)",
-          border: "1px solid rgba(107,82,64,0.6)",
+          background: "rgba(35,40,56,0.7)",
+          border: "1px solid rgba(61,68,89,0.6)",
           backdropFilter: "blur(12px)",
         }}
       >
         <div className="text-center space-y-2">
-          <PACCLogo size="md" />
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#e8eaf0", letterSpacing: "-0.02em", textTransform: "uppercase" }}>
+            {displayBrand}
+          </div>
           <h1
             className="text-xl font-bold mt-4"
-            style={{ color: "#F5E6D0" }}
+            style={{ color: "#e8eaf0" }}
           >
-            {brand ? `${brand} Demo` : "Try the Demo"}
+            Try the Demo
           </h1>
-          <p className="text-sm" style={{ color: "#C4A882" }}>
+          <p className="text-sm" style={{ color: "#9ca3b8" }}>
             Enter your details to explore the full platform with sample data.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: "#C4A882" }}
-            >
-              Full Name <span style={{ color: "#E8461E" }}>*</span>
-            </label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Jane Smith"
-              required
-              maxLength={100}
-              className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
-              style={{
-                background: "rgba(61,43,26,0.8)",
-                border: "1px solid rgba(107,82,64,0.5)",
-                color: "#F5E6D0",
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: "#C4A882" }}
-            >
-              Email <span style={{ color: "#E8461E" }}>*</span>
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="jane@company.com"
-              required
-              maxLength={255}
-              className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
-              style={{
-                background: "rgba(61,43,26,0.8)",
-                border: "1px solid rgba(107,82,64,0.5)",
-                color: "#F5E6D0",
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: "#C4A882" }}
-            >
-              Phone
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="04XX XXX XXX"
-              maxLength={20}
-              className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
-              style={{
-                background: "rgba(61,43,26,0.8)",
-                border: "1px solid rgba(107,82,64,0.5)",
-                color: "#F5E6D0",
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              className="block text-xs font-medium mb-1.5"
-              style={{ color: "#C4A882" }}
-            >
-              Company <span style={{ color: "#E8461E" }}>*</span>
-            </label>
-            <input
-              type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Acme Logistics"
-              required
-              maxLength={100}
-              className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
-              style={{
-                background: "rgba(61,43,26,0.8)",
-                border: "1px solid rgba(107,82,64,0.5)",
-                color: "#F5E6D0",
-              }}
-            />
-          </div>
+          {[
+            { label: "Full Name", value: fullName, set: setFullName, type: "text", placeholder: "Jane Smith", required: true },
+            { label: "Email", value: email, set: setEmail, type: "email", placeholder: "jane@company.com", required: true },
+            { label: "Phone", value: phone, set: setPhone, type: "tel", placeholder: "04XX XXX XXX", required: false },
+            { label: "Company", value: companyName, set: setCompanyName, type: "text", placeholder: "Acme Logistics", required: true },
+          ].map((f) => (
+            <div key={f.label}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: "#9ca3b8" }}>
+                {f.label} {f.required && <span style={{ color: ACCENT }}>*</span>}
+              </label>
+              <input
+                type={f.type}
+                value={f.value}
+                onChange={(e) => f.set(e.target.value)}
+                placeholder={f.placeholder}
+                required={f.required}
+                maxLength={f.type === "email" ? 255 : 100}
+                className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition-colors"
+                style={{
+                  background: "rgba(26,31,46,0.8)",
+                  border: "1px solid rgba(61,68,89,0.5)",
+                  color: "#e8eaf0",
+                }}
+              />
+            </div>
+          ))}
 
           {error && (
-            <p className="text-xs text-center" style={{ color: "#E8461E" }}>
+            <p className="text-xs text-center" style={{ color: "#EF4444" }}>
               {error}
             </p>
           )}
@@ -174,10 +113,7 @@ export function DemoGate({ brand, color, onUnlock }: DemoGateProps) {
             type="submit"
             disabled={!isValid || submitting}
             className="w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition-all disabled:opacity-50"
-            style={{
-              background: "#E8461E",
-              color: "#fff",
-            }}
+            style={{ background: ACCENT, color: "#fff" }}
           >
             {submitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -191,7 +127,7 @@ export function DemoGate({ brand, color, onUnlock }: DemoGateProps) {
 
         <p
           className="text-[10px] text-center"
-          style={{ color: "rgba(196,168,130,0.5)" }}
+          style={{ color: "rgba(156,163,184,0.5)" }}
         >
           Your details are stored securely and used only for follow-up.
         </p>

@@ -4,9 +4,10 @@ export function PACCLogo({ size = "md" }: { size?: "sm" | "md" }) {
   const { isDemo, brand, accentColor } = useDemoContext();
   const fontSize = size === "sm" ? 14 : 17;
 
-  const displayName = isDemo && brand ? brand : "PACC";
-  const accentStyle = accentColor ? `hsl(${accentColor})` : "#E8461E";
-  const showSubtitle = !brand; // Only show "FUEL" subtitle for default branding
+  const displayName = isDemo ? (brand || "FuelTrack") : "PACC";
+  const accentStyle = isDemo
+    ? (accentColor ? `hsl(${accentColor})` : "#3B82F6")
+    : "#E8461E";
 
   return (
     <div style={{ display: "flex", alignItems: "center" }}>
@@ -15,18 +16,18 @@ export function PACCLogo({ size = "md" }: { size?: "sm" | "md" }) {
           style={{
             fontSize,
             fontWeight: 800,
-            color: "#F5E6D0",
+            color: isDemo ? "#e8eaf0" : "#F5E6D0",
             letterSpacing: "-0.02em",
             textTransform: "uppercase",
             lineHeight: 1,
           }}
         >
           {displayName}
-          {!brand && (
+          {!isDemo && (
             <span style={{ color: accentStyle, fontSize: fontSize * 0.65 }}>®</span>
           )}
         </div>
-        {showSubtitle && (
+        {!isDemo && (
           <div
             style={{
               fontSize: size === "sm" ? 7 : 8,
