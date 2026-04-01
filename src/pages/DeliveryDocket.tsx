@@ -123,19 +123,22 @@ export default function DeliveryDocket() {
   const isDateRange = deliveryDate !== lastDate;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4 min-h-screen bg-white p-4 sm:p-6" style={{ background: "#fff" }}>
+    <div id="docket-root" className="max-w-2xl mx-auto space-y-4 min-h-screen bg-white p-4 sm:p-6" style={{ background: "#fff" }}>
       {/* Action bar — hidden when printing */}
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex items-center justify-between flex-wrap gap-2 print:hidden">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={handleCopyLink} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
             {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
             {copied ? "Copied" : "Copy Link"}
           </button>
           <button onClick={handleShare} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
             <Share2 className="w-3.5 h-3.5" /> Share
+          </button>
+          <button onClick={handleThermalPrint} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
+            <Printer className="w-3.5 h-3.5" /> Receipt
           </button>
           <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">
             <Printer className="w-3.5 h-3.5" /> Print
