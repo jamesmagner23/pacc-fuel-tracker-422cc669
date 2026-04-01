@@ -473,6 +473,39 @@ export type Database = {
         }
         Relationships: []
       }
+      terminal_gate_prices: {
+        Row: {
+          created_at: string | null
+          id: string
+          location: string
+          price_cpl: number
+          price_date: string
+          price_per_litre: number | null
+          product: string
+          source: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          location?: string
+          price_cpl: number
+          price_date: string
+          price_per_litre?: number | null
+          product?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          location?: string
+          price_cpl?: number
+          price_date?: string
+          price_per_litre?: number | null
+          product?: string
+          source?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           cantidad: number | null
