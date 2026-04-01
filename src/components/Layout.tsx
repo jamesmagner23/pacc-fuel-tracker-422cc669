@@ -169,7 +169,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-            {navItems.map((item, i) => {
+            {navItems.filter(item => !item.demoOnly || isDemo).map((item, i) => {
               const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
               return (
                 <RouterNavLink
