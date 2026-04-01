@@ -36,7 +36,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isDemo, accentColor } = useDemoContext();
   const [params] = useSearchParams();
-  const bannerOffset = isDemo ? 28 : 0;
+  const bannerOffset = 0;
 
   // Pick color palette based on demo vs production
   const BG = isDemo ? DEMO_BG : PACC_BG;

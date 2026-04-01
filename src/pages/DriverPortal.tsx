@@ -283,6 +283,7 @@ function FuelIntakeForm() {
 }
 
 export default function DriverPortal() {
+  const isDemo = useDemo();
   const { todayQuery, weekQuery, lastWeekQuery } = useDriverTransactions();
 
   useEffect(() => {
@@ -312,8 +313,9 @@ export default function DriverPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
+    <div className={isDemo ? "bg-background text-foreground" : "min-h-screen bg-background text-foreground"}>
+      {/* Header — hidden in demo mode since Layout provides navigation */}
+      {!isDemo && (
       <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
         <PACCLogo size="sm" />
         <div className="flex items-center gap-3">
@@ -326,6 +328,7 @@ export default function DriverPortal() {
           </button>
         </div>
       </div>
+      )}
 
       <div className="px-4 py-5 max-w-[520px] mx-auto flex flex-col gap-4">
         {/* Date */}
