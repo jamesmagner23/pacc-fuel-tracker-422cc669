@@ -240,6 +240,7 @@ export default function BuyPriceTab() {
               <div className="text-right">
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Bowser Retail</div>
                 <div className="text-xl sm:text-2xl font-semibold text-muted-foreground tabular-nums">${retail.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">ex GST</div>
                 {logDate && <div className="text-[10px] text-muted-foreground mt-0.5">logged {format(parseISO(logDate), "dd MMM")}</div>}
               </div>
             </div>
