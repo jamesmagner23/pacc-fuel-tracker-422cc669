@@ -468,14 +468,7 @@ export default function ClientPricingTab() {
                     return item ? `${item.fullName} · ${item.tiers} tier${item.tiers !== 1 ? "s" : ""}` : _l;
                   }}
                 />
-                <Bar dataKey="margin" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                  {Array.from(clientGroups.entries()).sort(([, a], [, b]) => {
-                    const aAvg = a.tiers.reduce((s, t) => s + t.margin_percent, 0) / a.tiers.length;
-                    const bAvg = b.tiers.reduce((s, t) => s + t.margin_percent, 0) / b.tiers.length;
-                    return bAvg - aAvg;
-                  }).map(([id]) => (
-                    <Cell key={id} fill="hsl(var(--primary))" />
-                  ))}
+                <Bar dataKey="margin" radius={[4, 4, 0, 0]} maxBarSize={60} fill="#3B82F6">
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

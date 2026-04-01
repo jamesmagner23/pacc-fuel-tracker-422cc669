@@ -96,14 +96,14 @@ export default function Drivers() {
                       <AreaChart data={dailyData}>
                         <defs>
                           <linearGradient id={`grad-driver-${i}`} x1="0" y1="0" x2="0" y2="1">
-                             <stop offset="0%" stopColor="#E8461E" stopOpacity={0.3} />
-                             <stop offset="100%" stopColor="#E8461E" stopOpacity={0} />
+                             <stop offset="0%" stopColor={accent} stopOpacity={0.3} />
+                             <stop offset="100%" stopColor={accent} stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: textSecondary }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 9, fill: textSecondary }} axisLine={false} tickLine={false} />
                         <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                        <Area type="monotone" dataKey="litres" stroke="#E8461E" fill={`url(#grad-driver-${i})`} strokeWidth={2} />
+                        <Area type="monotone" dataKey="litres" stroke={accent} fill={`url(#grad-driver-${i})`} strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
