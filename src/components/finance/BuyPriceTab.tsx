@@ -9,9 +9,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function BuyPriceTab() {
+  const queryClient = useQueryClient();
   const { data: prices = [], isLoading } = useBuyPrices(365);
   const upsert = useUpsertBuyPrice();
   const del = useDeleteBuyPrice();
+  const { data: tgpPrices = [] } = useTGPrices("Melbourne", "Diesel", 30);
+  const { data: todayTGP } = useTodayTGP("Melbourne", "Diesel");
+  const fetchTGP = useFetchTGP();
+  const [refreshingTGP, setRefreshingTGP] = useState(false);
+
+  const handleRefreshTGP = async () => {
+    setRefreshingTGP(true);
+    try {
+      const result = await fetchTGP();
+      toast.success(`TGP updated — ${result.records_upserted} records synced`);
+      queryClient.invalidateQueries({ queryKey: ["tgp"] });
+      queryClient.invalidateQueries({ queryKey: ["tgp-today"] });
+    } catch {
+      toast.error("Failed to fetch TGP data");
+    } finally {
+      setRefreshingTGP(false);
+    }
+  };
 
   // Latest bowser retail price from driver intake logs
   const bowserRetailQuery = useQuery({
