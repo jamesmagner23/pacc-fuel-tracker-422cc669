@@ -1,4 +1,4 @@
-import { NavLink as RouterNavLink, useLocation } from "react-router-dom";
+import { NavLink as RouterNavLink, useLocation, useSearchParams } from "react-router-dom";
 import { DateRangeToggle } from "./DateRangeToggle";
 import { SyncButton } from "./SyncButton";
 import { SyncStatus } from "./SyncStatus";
