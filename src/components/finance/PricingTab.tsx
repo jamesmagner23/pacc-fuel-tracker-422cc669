@@ -343,7 +343,7 @@ export default function PricingTab() {
     // Validity & Melbourne metro
     if (q.valid_until) {
       y += 10; doc.setFontSize(8); doc.setTextColor(153, 153, 153);
-      doc.text(`This quote is valid until ${format(parseISO(q.valid_until), "dd MMMM yyyy")}. Valid for Melbourne Metro delivery only.`, margin, y);
+      doc.text(`This quote is valid for 1 day only — until ${format(parseISO(q.valid_until), "dd MMMM yyyy")}. Valid for Melbourne Metro delivery only.`, margin, y);
     }
 
     // Tagline & portal info
