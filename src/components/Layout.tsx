@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 const navItems = [
   { to: "/", label: "Overview" },
   { to: "/customers", label: "Customers" },
-  { to: "/transactions", label: "Transactions" },
+  { to: "/clients", label: "Clients" },
   { to: "/finance", label: "Finance" },
   { to: "/admin", label: "Admin" },
 ];

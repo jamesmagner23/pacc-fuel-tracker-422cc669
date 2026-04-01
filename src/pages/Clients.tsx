@@ -1,15 +1,17 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import PLOverview from "@/components/finance/PLOverview";
-import BuyPriceTab from "@/components/finance/BuyPriceTab";
+import Transactions from "./Transactions";
+import ClientPricingTab from "@/components/finance/ClientPricingTab";
+import PricingTab from "@/components/finance/PricingTab";
 
-export default function Finance() {
+export default function Clients() {
   return (
     <div className="flex flex-col gap-5 max-w-[1100px]">
-      <Tabs defaultValue="pnl">
+      <Tabs defaultValue="transactions">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap">
           {[
-            { value: "pnl", label: "P&L Overview" },
-            { value: "buy", label: "Buy Price" },
+            { value: "transactions", label: "Transactions" },
+            { value: "pricing", label: "Client Pricing" },
+            { value: "quotes", label: "Quote Builder" },
           ].map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -21,11 +23,14 @@ export default function Finance() {
           ))}
         </TabsList>
 
-        <TabsContent value="pnl" className="mt-5">
-          <PLOverview />
+        <TabsContent value="transactions" className="mt-5">
+          <Transactions embedded />
         </TabsContent>
-        <TabsContent value="buy" className="mt-5">
-          <BuyPriceTab />
+        <TabsContent value="pricing" className="mt-5">
+          <ClientPricingTab />
+        </TabsContent>
+        <TabsContent value="quotes" className="mt-5">
+          <PricingTab />
         </TabsContent>
       </Tabs>
     </div>

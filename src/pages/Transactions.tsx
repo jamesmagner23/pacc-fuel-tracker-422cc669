@@ -7,7 +7,7 @@ import { format, parseISO } from "date-fns";
 
 type SortKey = "fecha" | "nombre_cliente1" | "ciudad" | "cantidad" | "ppu" | "dinero_total" | "factura";
 
-export default function Transactions() {
+export default function Transactions({ embedded }: { embedded?: boolean } = {}) {
   const { range } = useDateRange();
   const { data: txns = [], isLoading } = useTransactions(range);
   const navigate = useNavigate();
