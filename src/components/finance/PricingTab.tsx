@@ -39,6 +39,7 @@ const newLineItem = (): LineItem => ({
 export default function PricingTab() {
   const queryClient = useQueryClient();
   const { data: buyPrices = [] } = useBuyPrices(30);
+  const { data: todayBuyPrice } = useTodayBuyPrice();
   const { data: tiers = [], isLoading: tiersLoading } = usePricingTiers();
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
   const { data: clients = [] } = useQuery({
