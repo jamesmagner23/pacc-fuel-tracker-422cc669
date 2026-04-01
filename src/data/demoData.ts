@@ -109,7 +109,7 @@ function generateBuyPrices(): BuyPrice[] {
       id: `bp-${day}`,
       price_date: d(day),
       price_per_litre: parseFloat(price.toFixed(4)),
-      supplier: "Pacific",
+      supplier: "Ampol",
       notes: null,
       created_at: ts(day),
     });
