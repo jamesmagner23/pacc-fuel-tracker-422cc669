@@ -1,10 +1,14 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions } from "@/hooks/useTransactions";
+import Transactions from "./Transactions";
+import ClientPricingTab from "@/components/finance/ClientPricingTab";
+import PricingTab from "@/components/finance/PricingTab";
 
-export default function Customers() {
+function CustomerList() {
   const { range } = useDateRange();
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
@@ -29,9 +33,7 @@ export default function Customers() {
   }
 
   return (
-    <div className="space-y-4 max-w-4xl">
-      <h1 className="text-xl font-bold">Customers</h1>
-
+    <div className="space-y-4">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input type="text" placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
@@ -69,6 +71,44 @@ export default function Customers() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+export default function Customers() {
+  return (
+    <div className="flex flex-col gap-5 max-w-[1100px]">
+      <Tabs defaultValue="customers">
+        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap">
+          {[
+            { value: "customers", label: "Customers" },
+            { value: "transactions", label: "Transactions" },
+            { value: "pricing", label: "Client Pricing" },
+            { value: "quotes", label: "Quote Builder" },
+          ].map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className="px-2.5 sm:px-4 py-2 text-[12px] sm:text-[13px] rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none bg-transparent whitespace-nowrap shrink-0"
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="customers" className="mt-5">
+          <CustomerList />
+        </TabsContent>
+        <TabsContent value="transactions" className="mt-5">
+          <Transactions embedded />
+        </TabsContent>
+        <TabsContent value="pricing" className="mt-5">
+          <ClientPricingTab />
+        </TabsContent>
+        <TabsContent value="quotes" className="mt-5">
+          <PricingTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
