@@ -77,9 +77,9 @@ function CustomerList() {
 
 export default function Customers() {
   return (
-    <div className="flex flex-col gap-5 max-w-[1100px]">
+    <div className="flex flex-col gap-5 max-w-[1100px] w-full">
       <Tabs defaultValue="customers">
-        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap">
+        <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
           {[
             { value: "customers", label: "Customers" },
             { value: "transactions", label: "Transactions" },

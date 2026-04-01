@@ -190,4 +190,7 @@
   .bg-raised { background: #56402E; }
   .border-subtle { border-color: #56402E; }
   .tracking-tight-xl { letter-spacing: -0.03em; }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }

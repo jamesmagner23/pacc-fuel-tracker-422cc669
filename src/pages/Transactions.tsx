@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Download, ArrowUpDown, FileText, CheckSquare, Square, Send } from "lucide-react";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useDemo } from "@/hooks/useDemo";
 import { format, parseISO } from "date-fns";
 
 type SortKey = "fecha" | "nombre_cliente1" | "ciudad" | "cantidad" | "ppu" | "dinero_total" | "factura";
@@ -11,6 +12,9 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
   const { range } = useDateRange();
   const { data: txns = [], isLoading } = useTransactions(range);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const isDemo = useDemo();
+  const demoSuffix = isDemo ? `?${params.toString()}` : "";
   const [search, setSearch] = useState("");
   const [customerFilter, setCustomerFilter] = useState("");
   const [truckFilter, setTruckFilter] = useState("");
@@ -75,7 +79,8 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
 
   const openCombinedDocket = () => {
     const ids = Array.from(selected).join(",");
-    navigate(`/docket/multi?ids=${ids}`);
+    const extra = isDemo ? `&${params.toString()}` : "";
+    navigate(`/docket/multi?ids=${ids}${extra}`);
   };
 
   const selectedLitres = useMemo(() => {
@@ -192,7 +197,7 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
                   <td className="p-3 text-right font-medium">${(t.dinero_total || 0).toLocaleString()}</td>
                   <td className="p-3 pr-2 text-right hidden md:table-cell font-mono text-xs">{t.factura}</td>
                   <td className="p-3 pr-2 text-center">
-                    <Link to={`/docket/${t.id}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="View Docket" onClick={(e) => e.stopPropagation()}>
+                    <Link to={`/docket/${t.id}${demoSuffix}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="View Docket" onClick={(e) => e.stopPropagation()}>
                       <FileText className="w-3.5 h-3.5" />
                     </Link>
                   </td>
