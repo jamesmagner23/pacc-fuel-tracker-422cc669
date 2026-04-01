@@ -3,7 +3,7 @@ import { format, parseISO, addDays } from "date-fns";
 import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil, Copy, CheckSquare, Square, X } from "lucide-react";
 import jsPDF from "jspdf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { useBuyPrices, useTodayBuyPrice } from "@/hooks/useBuyPrices";
 import {
   usePricingTiers,
   useUpsertTier,
@@ -39,6 +39,7 @@ const newLineItem = (): LineItem => ({
 export default function PricingTab() {
   const queryClient = useQueryClient();
   const { data: buyPrices = [] } = useBuyPrices(30);
+  const { data: todayBuyPrice } = useTodayBuyPrice();
   const { data: tiers = [], isLoading: tiersLoading } = usePricingTiers();
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
   const { data: clients = [] } = useQuery({
@@ -55,7 +56,8 @@ export default function PricingTab() {
   const deleteTier = useDeleteTier();
   const updateQuoteStatus = useUpdateQuoteStatus();
 
-  const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
+  const latestBuyPrice = todayBuyPrice?.price_per_litre || 0;
+  const hasTodayPrice = !!todayBuyPrice;
 
   const [showTierConfig, setShowTierConfig] = useState(false);
   const [name, setName] = useState("");
@@ -190,8 +192,12 @@ export default function PricingTab() {
   };
 
   const handleCreateQuote = async () => {
-    if (!name || !email || grandVolume <= 0 || latestBuyPrice <= 0) {
-      toast.error("Fill in customer, at least one line item with volume, and ensure a buy price is set");
+    if (!hasTodayPrice) {
+      toast.error("Today's buy price has not been entered yet — go to Buy Price tab first");
+      return;
+    }
+    if (!name || !email || grandVolume <= 0) {
+      toast.error("Fill in customer and at least one line item with volume");
       return;
     }
     // Validate all line items have margin
@@ -389,12 +395,18 @@ export default function PricingTab() {
   return (
     <div className="flex flex-col gap-4">
       {/* Buy price */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+      <div className={`bg-surface border rounded-[10px] p-4 sm:p-5 ${hasTodayPrice ? "border-surface-border" : "border-destructive/50"}`}>
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Today's Buy Price (Base)</div>
-        <div className="text-2xl sm:text-3xl font-light text-foreground tracking-tighter tabular-nums">
-          {latestBuyPrice > 0 ? `$${latestBuyPrice.toFixed(4)}` : "—"}
-          <span className="text-sm text-muted-foreground">/L</span>
-        </div>
+        {hasTodayPrice ? (
+          <div className="text-2xl sm:text-3xl font-light text-foreground tracking-tighter tabular-nums">
+            ${latestBuyPrice.toFixed(4)}
+            <span className="text-sm text-muted-foreground">/L</span>
+          </div>
+        ) : (
+          <div className="text-sm text-destructive font-medium">
+            No price entered for today — quotes cannot be created until today's buy price is set in the Buy Price tab.
+          </div>
+        )}
       </div>
 
       {/* Default tiers (collapsed) */}
