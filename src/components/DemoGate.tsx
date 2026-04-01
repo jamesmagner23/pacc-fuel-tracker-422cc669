@@ -60,7 +60,7 @@ export function DemoGate({ brand, color, onUnlock }: DemoGateProps) {
         }}
       >
         <div className="text-center space-y-2">
-          <PACCLogo size="lg" />
+          <PACCLogo size="md" />
           <h1
             className="text-xl font-bold mt-4"
             style={{ color: "#F5E6D0" }}
