@@ -241,16 +241,20 @@ export default function PricingTab() {
     const contentW = w - margin * 2;
     let y = 0;
 
-    // Header
-    doc.setFillColor(10, 10, 10);
+    // Header — brand dark brown with cream/orange
+    doc.setFillColor(61, 43, 26); // #3D2B1A
     doc.rect(0, 0, w, 42, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(245, 230, 208); // cream
     doc.text("PACC", margin, 26);
     const paccW = doc.getTextWidth("PACC");
-    doc.setTextColor(124, 58, 237); doc.setFontSize(14);
+    doc.setTextColor(232, 70, 30); doc.setFontSize(14); // accent orange
     doc.text("®", margin + paccW + 1, 22);
-    doc.setFontSize(7); doc.setTextColor(102, 102, 102);
+    doc.setFontSize(7); doc.setTextColor(196, 168, 130); // text-secondary
     doc.text("FUEL", margin, 33);
+
+    // Accent bar under header
+    doc.setFillColor(232, 70, 30);
+    doc.rect(0, 42, w, 1.5, "F");
 
     y = 58;
     doc.setTextColor(17, 17, 17); doc.setFontSize(20); doc.setFont("helvetica", "bold");
@@ -294,12 +298,10 @@ export default function PricingTab() {
       });
       y += 2;
     } else {
-      // Single line — original format
+      // Single line — clean format without duplication
       const rows = [
         ["Volume", `${Number(q.volume_litres).toLocaleString()} Litres`],
         ["Price Per Litre (Ex GST)", `$${Number(q.sell_price_per_litre).toFixed(4)}`],
-        ["Total (Ex GST)", `$${Number(q.total_ex_gst).toLocaleString(undefined, { maximumFractionDigits: 2 })}`],
-        ["GST (10%)", `$${(Number(q.total_inc_gst) - Number(q.total_ex_gst)).toLocaleString(undefined, { maximumFractionDigits: 2 })}`],
       ];
       doc.setFontSize(10);
       for (const [label, value] of rows) {
@@ -312,6 +314,8 @@ export default function PricingTab() {
 
     // Subtotal + GST + Total
     y += 2;
+    doc.setDrawColor(238, 238, 238); doc.line(margin, y, margin + contentW, y);
+    y += 4;
     doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(102, 102, 102);
     doc.text("Subtotal (Ex GST)", margin, y + 4);
     doc.setFont("helvetica", "bold"); doc.setTextColor(17, 17, 17);
@@ -325,7 +329,7 @@ export default function PricingTab() {
     y += 14;
     doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.setTextColor(17, 17, 17);
     doc.text("Total (Inc GST)", margin, y + 4);
-    doc.setTextColor(124, 58, 237); doc.setFontSize(16);
+    doc.setTextColor(232, 70, 30); doc.setFontSize(16); // accent orange
     doc.text(`$${Number(q.total_inc_gst).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, margin + contentW, y + 4, { align: "right" });
 
     if (q.notes) {
@@ -335,11 +339,26 @@ export default function PricingTab() {
       doc.text(q.notes, margin + 6, y + 4, { maxWidth: contentW - 12 });
       y += 16;
     }
+
+    // Validity & Melbourne metro
     if (q.valid_until) {
       y += 10; doc.setFontSize(8); doc.setTextColor(153, 153, 153);
-      doc.text(`This quote is valid until ${format(parseISO(q.valid_until), "dd MMMM yyyy")}.`, margin, y);
+      doc.text(`This quote is valid until ${format(parseISO(q.valid_until), "dd MMMM yyyy")}. Valid for Melbourne Metro delivery only.`, margin, y);
     }
-    y += 18; doc.setFontSize(8); doc.setTextColor(187, 187, 187);
+
+    // Tagline & portal info
+    y += 14;
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(232, 70, 30);
+    doc.text("You Ring, We Bring.", margin, y);
+    y += 7;
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(120, 120, 120);
+    const portalLines = [
+      "As a PACC Fuel customer, you'll have access to our live Customer Portal — track your",
+      "machines, plant, and tank data updated in real time. Log in at paccenergy.com/portal.",
+    ];
+    portalLines.forEach((line) => { doc.text(line, margin, y); y += 4.5; });
+
+    y += 10; doc.setFontSize(8); doc.setTextColor(187, 187, 187);
     doc.text("PACC Fuel · Melbourne, Australia", margin, y);
     doc.save(`PACC-Quote-${q.customer_name.replace(/\s+/g, "-")}-${format(parseISO(q.created_at), "yyyyMMdd")}.pdf`);
   };
