@@ -197,7 +197,7 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
                   <td className="p-3 text-right font-medium">${(t.dinero_total || 0).toLocaleString()}</td>
                   <td className="p-3 pr-2 text-right hidden md:table-cell font-mono text-xs">{t.factura}</td>
                   <td className="p-3 pr-2 text-center">
-                    <Link to={`/docket/${t.id}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="View Docket" onClick={(e) => e.stopPropagation()}>
+                    <Link to={`/docket/${t.id}${demoSuffix}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="View Docket" onClick={(e) => e.stopPropagation()}>
                       <FileText className="w-3.5 h-3.5" />
                     </Link>
                   </td>
