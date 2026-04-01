@@ -177,12 +177,12 @@ export default function Admin() {
   return (
     <div className="flex flex-col gap-5 max-w-[1100px]">
       {/* Tab Bar */}
-      <div className="flex gap-1 bg-surface border border-surface-border rounded-[10px] p-1">
+      <div className="flex gap-1 bg-surface border border-surface-border rounded-[10px] p-1 mt-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-3 sm:py-2 rounded-lg text-xs font-medium transition-all cursor-pointer min-h-[44px] sm:min-h-0"
             style={{
               background: activeTab === tab.id ? "rgba(232,70,30,0.12)" : "transparent",
               color: activeTab === tab.id ? "#E8461E" : "#C4A882",
