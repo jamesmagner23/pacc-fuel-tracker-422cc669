@@ -12,6 +12,9 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
   const { range } = useDateRange();
   const { data: txns = [], isLoading } = useTransactions(range);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const isDemo = useDemo();
+  const demoSuffix = isDemo ? `?${params.toString()}` : "";
   const [search, setSearch] = useState("");
   const [customerFilter, setCustomerFilter] = useState("");
   const [truckFilter, setTruckFilter] = useState("");
