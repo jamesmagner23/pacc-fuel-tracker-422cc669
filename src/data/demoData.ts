@@ -297,9 +297,9 @@ function generatePumpReadingsFromTxns(txns: Transaction[]) {
 
 // ── Demo Reconciliation Alerts ──
 export const DEMO_RECON_ALERTS = [
-  { id: "ra-1", alert_date: d(1), alert_type: "high_variance", values: { variance_pct: 3.2, variance_litres: 85 }, status: "new", suggested_action: "Check pump calibration", created_at: ts(1), resolved_at: null, resolved_by: null },
+  { id: "ra-1", alert_date: d(1), alert_type: "high_variance", values: { variance_pct: 1.1, variance_litres: 28 }, status: "new", suggested_action: "Check pump calibration", created_at: ts(1), resolved_at: null, resolved_by: null },
   { id: "ra-2", alert_date: d(3), alert_type: "missing_pump", values: { date: d(3) }, status: "new", suggested_action: "Request driver to submit reading", created_at: ts(3), resolved_at: null, resolved_by: null },
-  { id: "ra-3", alert_date: d(7), alert_type: "unusual_volume", values: { volume: 8500, avg: 4200 }, status: "resolved", suggested_action: null, created_at: ts(7), resolved_at: ts(6), resolved_by: "u1" },
+  { id: "ra-3", alert_date: d(7), alert_type: "unusual_volume", values: { volume: 5100, avg: 4200 }, status: "resolved", suggested_action: null, created_at: ts(7), resolved_at: ts(6), resolved_by: "u1" },
 ];
 
 // ── Demo Recon Settings ──
