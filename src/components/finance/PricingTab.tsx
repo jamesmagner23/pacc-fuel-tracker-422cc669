@@ -88,7 +88,7 @@ export default function PricingTab() {
     return lineItems.map((li) => {
       const vol = parseFloat(li.volume) || 0;
       const margin = parseFloat(li.margin);
-      const marginPct = !isNaN(margin) ? margin : (getTierForVolume(tiers, vol)?.margin_percent ?? 10);
+      const marginPct = !isNaN(margin) ? margin : 0;
       const sellPrice = latestBuyPrice > 0 ? latestBuyPrice * (1 + marginPct / 100) : 0;
       const totalEx = sellPrice * vol;
       return { vol, marginPct, sellPrice, totalEx };
