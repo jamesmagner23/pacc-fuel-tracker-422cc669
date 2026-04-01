@@ -3,7 +3,7 @@ import { format, parseISO, addDays } from "date-fns";
 import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil, Copy, CheckSquare, Square, X } from "lucide-react";
 import jsPDF from "jspdf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { useBuyPrices, useTodayBuyPrice } from "@/hooks/useBuyPrices";
 import {
   usePricingTiers,
   useUpsertTier,
