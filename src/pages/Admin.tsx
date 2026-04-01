@@ -5,6 +5,8 @@ import { format, parseISO, subDays } from "date-fns";
 import { Users, Activity, Shield, Trash2, Pencil, LogIn, Download, Eye, X, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import Reconciliation from "./Reconciliation";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_USERS, DEMO_ACTIVITY } from "@/data/demoData";
 
 interface UserRow {
   id: string;
