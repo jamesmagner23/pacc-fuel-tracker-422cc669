@@ -24,6 +24,13 @@ const CUSTOMERS = [
   "Greenfield Agriculture",
   "Harbour Freight Co",
   "Westfield Plant Hire",
+  "Oakridge Civil Engineering",
+  "Murray Valley Haulage",
+  "Pacific Drilling Services",
+  "Northshore Concrete",
+  "Ironbark Resources",
+  "Summit Crane Hire",
+  "Coastal Earthmoving",
 ];
 
 const DRIVERS = ["Jake Mitchell", "Sarah Chen", "Tom Bradley", "Liam Foster"];
