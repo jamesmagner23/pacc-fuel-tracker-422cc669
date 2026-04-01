@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { TrendingUp, TrendingDown, Trash2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Trash2, RefreshCw } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice } from "@/hooks/useBuyPrices";
-import { useQuery } from "@tanstack/react-query";
+import { useTGPrices, useTodayTGP, useFetchTGP } from "@/hooks/useTGPrices";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
