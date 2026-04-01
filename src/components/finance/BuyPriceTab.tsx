@@ -123,8 +123,8 @@ export default function BuyPriceTab() {
         </div>
       )}
 
-      {/* TGP vs Buy Price comparison — all values ex GST */}
-      {latest && (() => {
+      {/* TGP vs Buy Price comparison — only show when today's buy price has been entered */}
+      {latest && latest.price_date === format(new Date(), "yyyy-MM-dd") && (() => {
         const GST = 1.1;
         const buy = latest.price_per_litre;
         const tgpIncGst = todayTGP?.price_per_litre;
