@@ -33,8 +33,8 @@ const CUSTOMERS = [
   "Coastal Earthmoving",
 ];
 
-const DRIVERS = ["Jake Mitchell", "Sarah Chen", "Tom Bradley", "Liam Foster"];
-const TRUCKS = ["BOWSR-01", "BOWSR-02", "BOWSR-03"];
+const DRIVERS = ["Jake Mitchell", "Sarah Chen", "Tom Bradley", "Liam Foster", "Nick Russo", "Amy Patel", "Ben O'Connor"];
+const TRUCKS = ["BOWSR-01", "BOWSR-02", "BOWSR-03", "BOWSR-04", "BOWSR-05"];
 const LOCATIONS = ["Dandenong", "Laverton", "Altona", "Epping", "Campbellfield", "Moorabbin"];
 const PRODUCTS = ["Diesel"];
 
