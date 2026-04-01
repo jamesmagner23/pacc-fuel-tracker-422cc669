@@ -199,7 +199,7 @@ export default function BuyPriceTab() {
                     </ResponsiveContainer>
                     <div className="flex items-center justify-center gap-4 mt-1">
                       <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-primary rounded" /><span className="text-[10px] text-muted-foreground">Your Buy (ex GST)</span></div>
-                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 border-t border-dashed border-muted-foreground" /><span className="text-[10px] text-muted-foreground">TGP (ex GST)</span></div>
+                      <div className="flex items-center gap-1.5"><div className="w-4 h-0.5 bg-muted-foreground rounded" /><span className="text-[10px] text-muted-foreground">TGP (ex GST)</span></div>
                     </div>
                   </div>
                 )}
