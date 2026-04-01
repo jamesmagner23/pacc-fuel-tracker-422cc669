@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Menu, X, LogOut } from "lucide-react";
 import { PACCLogo } from "./PACCLogo";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemoContext } from "@/hooks/useDemo";
 
 const navItems = [
   { to: "/", label: "Overview" },
@@ -16,7 +17,7 @@ const navItems = [
 
 const BG = "#3D2B1A";
 const BORDER = "#6B5240";
-const ACCENT = "#E8461E";
+const DEFAULT_ACCENT = "#E8461E";
 const TEXT_DIM = "#C4A882";
 const TEXT_MID = "#C4A882";
 const TEXT_ACTIVE = "#F5E6D0";
@@ -24,9 +25,11 @@ const TEXT_ACTIVE = "#F5E6D0";
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isDemo, accentColor } = useDemoContext();
   const [params] = useSearchParams();
-  const isDemo = params.get("demo") === "true";
   const bannerOffset = isDemo ? 28 : 0;
+  const ACCENT = accentColor ? `hsl(${accentColor})` : DEFAULT_ACCENT;
+  const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", background: BG, color: TEXT_ACTIVE }}>
@@ -55,7 +58,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             return (
               <RouterNavLink
                 key={item.to}
-                to={isDemo ? `${item.to}?demo=true` : item.to}
+                to={`${item.to}${demoSuffix}`}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -169,7 +172,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               return (
                 <RouterNavLink
                   key={item.to}
-                  to={isDemo ? `${item.to}?demo=true` : item.to}
+                  to={`${item.to}${demoSuffix}`}
                   onClick={() => setMobileMenuOpen(false)}
                   style={{
                     display: "flex",
