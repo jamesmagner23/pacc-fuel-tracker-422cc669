@@ -6,6 +6,11 @@ import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions } from "@/hooks/useTransactions";
 import { format, parseISO } from "date-fns";
 
+function cssVar(name: string, fallback = ""): string {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
 export default function CustomerDetail() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
@@ -37,9 +42,15 @@ export default function CustomerDetail() {
   if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
   if (!customerName) return <div className="p-8 text-muted-foreground">Customer not found.</div>;
 
-  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", fontSize: 12 };
-  const tooltipLabelStyle = { color: "#F5E6D0" };
-  const tooltipItemStyle = { color: "#F5E6D0" };
+  const surface = cssVar("--surface", "#4A3525");
+  const border = cssVar("--surface-border", "#6B5240");
+  const textPrimary = cssVar("--text-primary", "#F5E6D0");
+  const textSecondary = cssVar("--text-secondary", "#C4A882");
+  const accent = cssVar("--accent", "#E8461E");
+
+  const tooltipStyle = { backgroundColor: surface, border: `1px solid ${border}`, borderRadius: "8px", fontSize: 12 };
+  const tooltipLabelStyle = { color: textPrimary };
+  const tooltipItemStyle = { color: textPrimary };
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -58,10 +69,10 @@ export default function CustomerDetail() {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={locationData.slice(0, 8)} layout="vertical">
-                <XAxis type="number" tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} width={100} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: textSecondary }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: textSecondary }} axisLine={false} tickLine={false} width={100} />
                 <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                <Bar dataKey="litres" fill="#E8461E" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="litres" fill={accent} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -72,10 +83,10 @@ export default function CustomerDetail() {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dailyData}>
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: textSecondary }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: textSecondary }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-                <Line type="monotone" dataKey="litres" stroke="#E8461E" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="litres" stroke={accent} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

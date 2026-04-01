@@ -10,6 +10,11 @@ const knownCapacities: Record<string, number> = {
   "PACC Truck 3": 4000,
 };
 
+function cssVar(name: string, fallback = ""): string {
+  if (typeof window === "undefined") return fallback;
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
 export default function Trucks() {
   const { range } = useDateRange();
   const { data: filtered = [], isLoading } = useTransactions(range);
@@ -18,11 +23,16 @@ export default function Trucks() {
   const today = format(new Date(), "yyyy-MM-dd");
   const weekAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
 
-  const tooltipStyle = { backgroundColor: "#4A3525", border: "1px solid #6B5240", borderRadius: "8px", fontSize: 12 };
-  const tooltipLabelStyle = { color: "#F5E6D0" };
-  const tooltipItemStyle = { color: "#F5E6D0" };
+  const surface = cssVar("--surface", "#4A3525");
+  const border = cssVar("--surface-border", "#6B5240");
+  const textPrimary = cssVar("--text-primary", "#F5E6D0");
+  const textSecondary = cssVar("--text-secondary", "#C4A882");
+  const accent = cssVar("--accent", "#E8461E");
 
-  // Discover trucks dynamically from data, fallback to known list
+  const tooltipStyle = { backgroundColor: surface, border: `1px solid ${border}`, borderRadius: "8px", fontSize: 12 };
+  const tooltipLabelStyle = { color: textPrimary };
+  const tooltipItemStyle = { color: textPrimary };
+
   const trucks = useMemo(() => {
     const fromData = [...new Set(allTxns.map((t) => t.estacion).filter(Boolean))] as string[];
     return fromData.map((name) => ({
@@ -50,10 +60,10 @@ export default function Trucks() {
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={comparisonData}>
-              <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#C4A882" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: textSecondary }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: textSecondary }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
               <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
-              <Bar dataKey="litres" fill="#E8461E" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="litres" fill={accent} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -108,12 +118,12 @@ export default function Trucks() {
                   <AreaChart data={dailyData}>
                     <defs>
                       <linearGradient id={`grad-${truck.plate}`} x1="0" y1="0" x2="0" y2="1">
-                         <stop offset="0%" stopColor="#E8461E" stopOpacity={0.3} />
-                         <stop offset="100%" stopColor="#E8461E" stopOpacity={0} />
+                         <stop offset="0%" stopColor={accent} stopOpacity={0.3} />
+                         <stop offset="100%" stopColor={accent} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#C4A882" }} axisLine={false} tickLine={false} />
-                    <Area type="monotone" dataKey="litres" stroke="#E8461E" fill={`url(#grad-${truck.plate})`} strokeWidth={2} />
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: textSecondary }} axisLine={false} tickLine={false} />
+                    <Area type="monotone" dataKey="litres" stroke={accent} fill={`url(#grad-${truck.plate})`} strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

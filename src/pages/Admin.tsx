@@ -184,8 +184,8 @@ export default function Admin() {
             onClick={() => setActiveTab(tab.id)}
             className="flex items-center gap-2 px-4 py-3 sm:py-2 rounded-lg text-xs font-medium transition-all cursor-pointer min-h-[44px] sm:min-h-0"
             style={{
-              background: activeTab === tab.id ? "rgba(232,70,30,0.12)" : "transparent",
-              color: activeTab === tab.id ? "#E8461E" : "#C4A882",
+              background: activeTab === tab.id ? "var(--accent-light)" : "transparent",
+              color: activeTab === tab.id ? "var(--accent)" : "var(--text-secondary)",
               border: "none",
             }}
           >
