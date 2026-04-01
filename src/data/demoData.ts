@@ -109,7 +109,7 @@ function generateBuyPrices(): BuyPrice[] {
       id: `bp-${day}`,
       price_date: d(day),
       price_per_litre: parseFloat(price.toFixed(4)),
-      supplier: "Pacific",
+      supplier: "Ampol",
       notes: null,
       created_at: ts(day),
     });
@@ -324,7 +324,7 @@ function generatePumpReadingsFromTxns(txns: Transaction[]) {
         reading_date: dateStr,
         litres,
         driver_id: `u${randomBetween(6, 8)}`,
-        notes: j === 0 && day % 3 === 0 ? "Morning fill at Pacific Dandenong" : null,
+        notes: j === 0 && day % 3 === 0 ? "Morning fill at Ampol Dandenong" : null,
         created_at: ts(day, 6 + j * 4),
       });
     }
@@ -353,8 +353,8 @@ export const DEMO_RECON_SETTINGS = {
 
 // ── Demo Fuel Intake Logs ──
 export const DEMO_FUEL_INTAKE_LOGS = [
-  { id: "fil-1", driver_user_id: "u6", litres_entered: 3200, log_date: d(0), photo_path: null, bowser_retail_price: 1.85, notes: "Pacific Dandenong", created_at: ts(0, 7) },
-  { id: "fil-2", driver_user_id: "u6", litres_entered: 2800, log_date: d(0), photo_path: null, bowser_retail_price: 1.84, notes: "Altona terminal", created_at: ts(0, 14) },
+  { id: "fil-1", driver_user_id: "u6", litres_entered: 3200, log_date: d(0), photo_path: null, bowser_retail_price: 1.85, notes: "Ampol Dandenong", created_at: ts(0, 7) },
+  { id: "fil-2", driver_user_id: "u6", litres_entered: 2800, log_date: d(0), photo_path: null, bowser_retail_price: 1.84, notes: "Ampol Altona", created_at: ts(0, 14) },
 ];
 
 // ── Export all generated data (memoize-friendly) ──

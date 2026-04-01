@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { TruckMap } from "@/components/TruckMap";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -139,8 +140,8 @@ function exportCSV(transactions: any[], filename: string) {
 }
 
 // ── Open branded docket page for single delivery ──
-function openDocket(tx: any) {
-  window.open(`/docket/${tx.id}`, "_blank");
+function openDocket(tx: any, demoSuffix = "") {
+  window.open(`/docket/${tx.id}${demoSuffix}`, "_blank");
   logActivity("export", { type: "docket", invoice: tx.factura || tx.id });
 }
 
@@ -155,6 +156,9 @@ export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [range, setRange] = useState<"week" | "month" | "all">("month");
   const [siteFilter, setSiteFilter] = useState("all");
+  const isDemo = useDemo();
+  const [params] = useSearchParams();
+  const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   const { data: profile } = useCustomerProfile();
   const speedsolNames = profile?.speedsolNames || [];
@@ -495,7 +499,7 @@ export default function CustomerPortal() {
                         {(t.cantidad || 0).toLocaleString()}L
                       </span>
                       <button
-                        onClick={() => openDocket(t)}
+                        onClick={() => openDocket(t, demoSuffix)}
                         title="Download docket"
                         style={{
                           background: "transparent",
