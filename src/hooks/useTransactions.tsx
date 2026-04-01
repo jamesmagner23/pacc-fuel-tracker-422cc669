@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { subDays, format } from "date-fns";
+import { useDemo } from "./useDemo";
+import { getDemoData, DEMO_SYNC_LOG } from "@/data/demoData";
 
 export type DateRange = "today" | "week" | "month" | "custom";
 
@@ -59,8 +61,8 @@ function getPreviousRange(range: DateRange): { start: string; end: string } {
     case "today": days = 1; break;
     case "week": {
       const day = today.getDay();
-      days = day === 0 ? 6 : day - 1; // days since Monday
-      if (days === 0) days = 7; // if today is Monday, previous period is last week
+      days = day === 0 ? 6 : day - 1;
+      if (days === 0) days = 7;
       break;
     }
     case "month": default: days = 30; break;
@@ -70,12 +72,20 @@ function getPreviousRange(range: DateRange): { start: string; end: string } {
   return { start: format(start, "yyyy-MM-dd"), end: format(end, "yyyy-MM-dd") };
 }
 
+function filterByDateRange(txns: Transaction[], start: string, end: string) {
+  return txns.filter(t => t.date && t.date >= start && t.date <= end);
+}
+
 export function useTransactions(range: DateRange) {
+  const isDemo = useDemo();
   const { start, end } = getDateRange(range);
 
   return useQuery({
-    queryKey: ["transactions", start, end],
+    queryKey: ["transactions", start, end, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return filterByDateRange(getDemoData().transactions, start, end);
+      }
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
@@ -90,11 +100,15 @@ export function useTransactions(range: DateRange) {
 }
 
 export function usePreviousTransactions(range: DateRange) {
+  const isDemo = useDemo();
   const { start, end } = getPreviousRange(range);
 
   return useQuery({
-    queryKey: ["transactions-prev", start, end],
+    queryKey: ["transactions-prev", start, end, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return filterByDateRange(getDemoData().transactions, start, end);
+      }
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
@@ -108,10 +122,11 @@ export function usePreviousTransactions(range: DateRange) {
 }
 
 export function useAllTransactions() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["transactions-all"],
+    queryKey: ["transactions-all", isDemo],
     queryFn: async () => {
-      // Fetch all — may need pagination for very large datasets
+      if (isDemo) return getDemoData().transactions;
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
@@ -124,9 +139,11 @@ export function useAllTransactions() {
 }
 
 export function useSyncLog() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["sync-log"],
+    queryKey: ["sync-log", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_SYNC_LOG;
       const { data, error } = await supabase
         .from("sync_log")
         .select("*")
@@ -137,6 +154,6 @@ export function useSyncLog() {
       if (error && error.code !== "PGRST116") throw error;
       return data;
     },
-    refetchInterval: 60000, // refresh every minute
+    refetchInterval: isDemo ? false : 60000,
   });
 }

@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays } from "date-fns";
+import { useDemo } from "./useDemo";
+import { getDemoData } from "@/data/demoData";
 
 export interface BuyPrice {
   id: string;
@@ -13,10 +15,14 @@ export interface BuyPrice {
 
 // Fetch all buy prices ordered by date desc
 export function useBuyPrices(days = 365) {
+  const isDemo = useDemo();
   const start = format(subDays(new Date(), days), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["buy-prices", days],
+    queryKey: ["buy-prices", days, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        return getDemoData().buyPrices.filter(p => p.price_date >= start);
+      }
       const { data, error } = await supabase
         .from("buy_prices")
         .select("*")
@@ -30,10 +36,15 @@ export function useBuyPrices(days = 365) {
 
 // Fetch today's buy price
 export function useTodayBuyPrice() {
+  const isDemo = useDemo();
   const today = format(new Date(), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["buy-price-today", today],
+    queryKey: ["buy-price-today", today, isDemo],
     queryFn: async () => {
+      if (isDemo) {
+        const prices = getDemoData().buyPrices;
+        return prices.find(p => p.price_date === today) || prices[0] || null;
+      }
       const { data, error } = await supabase.from("buy_prices").select("*").eq("price_date", today).single();
       if (error && error.code !== "PGRST116") throw error;
       return data as BuyPrice | null;
