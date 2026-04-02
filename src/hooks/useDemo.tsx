@@ -87,13 +87,14 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty("--input", "#3d4459");
 
     const resolvedAccent = accentColor || "217 91% 50%";
-    root.style.setProperty("--accent", `hsl(${resolvedAccent})`);
-    root.style.setProperty("--accent-hover", `hsl(${resolvedAccent})`);
+    const accentHsl = `hsl(${resolvedAccent})`;
+    root.style.setProperty("--accent", accentHsl);
+    root.style.setProperty("--accent-hover", accentHsl);
     root.style.setProperty("--accent-light", `hsla(${resolvedAccent} / 0.15)`);
-    root.style.setProperty("--accent-text", `hsl(${resolvedAccent})`);
-    root.style.setProperty("--primary", resolvedAccent);
-    root.style.setProperty("--ring", `hsl(${resolvedAccent})`);
-    root.style.setProperty("--demo-accent", `hsl(${resolvedAccent})`);
+    root.style.setProperty("--accent-text", accentHsl);
+    root.style.setProperty("--primary", accentHsl);
+    root.style.setProperty("--ring", accentHsl);
+    root.style.setProperty("--demo-accent", accentHsl);
 
     return () => {
       const props = [
