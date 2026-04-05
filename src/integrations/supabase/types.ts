@@ -258,6 +258,33 @@ export type Database = {
         }
         Relationships: []
       }
+      market_briefings: {
+        Row: {
+          briefing_date: string
+          content: string
+          created_at: string
+          id: string
+          market_data: Json | null
+          status: string
+        }
+        Insert: {
+          briefing_date?: string
+          content: string
+          created_at?: string
+          id?: string
+          market_data?: Json | null
+          status?: string
+        }
+        Update: {
+          briefing_date?: string
+          content?: string
+          created_at?: string
+          id?: string
+          market_data?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
       pricing_tiers: {
         Row: {
           created_at: string | null

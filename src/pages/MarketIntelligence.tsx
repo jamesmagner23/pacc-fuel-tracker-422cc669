@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTGPrices } from "@/hooks/useTGPrices";
+import { supabase } from "@/integrations/supabase/client";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const TODAY = new Date();
@@ -119,6 +120,25 @@ function AIBriefing({ data, trigger }: { data: typeof SEED_DATA; trigger: number
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [ts, setTs] = useState<Date | null>(null);
+  const [cachedLoaded, setCachedLoaded] = useState(false);
+
+  // Load cached briefing from DB on mount
+  useEffect(() => {
+    async function loadCached() {
+      const today = new Date().toISOString().split("T")[0];
+      const { data: briefing } = await supabase
+        .from("market_briefings")
+        .select("content, created_at")
+        .eq("briefing_date", today)
+        .maybeSingle();
+      if (briefing?.content) {
+        setText(briefing.content);
+        setTs(new Date(briefing.created_at));
+        setCachedLoaded(true);
+      }
+    }
+    loadCached();
+  }, []);
 
   const generate = useCallback(async () => {
     if (loading) return;
@@ -206,7 +226,8 @@ function AIBriefing({ data, trigger }: { data: typeof SEED_DATA; trigger: number
     setLoading(false);
   }, [data, loading]);
 
-  useEffect(() => { generate(); }, [trigger]);
+  // Only auto-generate if no cached briefing and trigger changes, or manual refresh
+  useEffect(() => { if (!cachedLoaded || trigger > 0) generate(); }, [trigger]);
 
   // Parse sections for styled rendering
   const sections = text.split(/\*\*(.*?)\*\*/g);
