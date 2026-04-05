@@ -27,22 +27,22 @@ const SEED_DATA = {
 
 const MONTHS = [
   {
-    label: "APR 2026", status: "NOW", color: "#f59e0b", signal: "CAUTION",
+    label: "APR 2026", status: "NOW", color: "var(--warning)", signal: "CAUTION",
     headline: "Excise cut active. TGP down ~32¢ but import cost still elevated. New truck timing ideal — demand surging.",
     actions: ["Update FTC claim to 26.3¢/L", "Lock in customers at current margin", "Monitor AIP TGP daily"],
   },
   {
-    label: "MAY 2026", status: "DANGER", color: "#ef4444", signal: "HIGH RISK",
+    label: "MAY 2026", status: "DANGER", color: "var(--negative)", signal: "HIGH RISK",
     headline: "Lowest inbound gasoil month. Gulf of Mexico ships arrive but at premium cost. Localised shortages likely.",
     actions: ["Expect supply allocation pressure", "Prioritise contracted customers", "Watch May budget for excise extension"],
   },
   {
-    label: "JUN 2026", status: "WATCH", color: "#f59e0b", signal: "WATCH",
+    label: "JUN 2026", status: "WATCH", color: "var(--warning)", signal: "WATCH",
     headline: "Supply stabilising if Hormuz reopens. May federal budget likely decides excise extension.",
     actions: ["Model July 1 reversion into all contracts", "Secure supply agreements pre-July", "Review fuel surcharge clauses"],
   },
   {
-    label: "JUL 2026", status: "CLIFF", color: "#ef4444", signal: "CLIFF",
+    label: "JUL 2026", status: "CLIFF", color: "var(--negative)", signal: "CLIFF",
     headline: `Excise reverts to 52.6¢/L. RUC reinstates. TGP could spike 26–32¢ overnight. ${daysToJuly} days away.`,
     actions: ["Ensure all contracts have price escalation clauses", "Rebuild FTC to 20.2¢/L", "Brief customers on price movement"],
   },
@@ -64,24 +64,24 @@ function fmtDate(d: Date) {
 
 function StatusDot({ status }: { status: string }) {
   const map: Record<string, string> = {
-    BLOCKED: "#ef4444", RESTRICTED: "#ef4444", HIGH: "#ef4444",
-    REDUCED: "#f59e0b", DIVERTED: "#f59e0b", MODERATE: "#f59e0b", WATCH: "#f59e0b",
-    SECURED: "#10b981", OPERATING: "#10b981", ACTIVE: "#10b981", MODERATE_LOW: "#10b981",
+    BLOCKED: "var(--negative)", RESTRICTED: "var(--negative)", HIGH: "var(--negative)",
+    REDUCED: "var(--warning)", DIVERTED: "var(--warning)", MODERATE: "var(--warning)", WATCH: "var(--warning)",
+    SECURED: "var(--positive)", OPERATING: "var(--positive)", ACTIVE: "var(--positive)", MODERATE_LOW: "var(--positive)",
   };
-  const c = map[status] || "#6b7280";
+  const c = map[status] || "var(--text-muted)";
   return (
-    <span style={{
-      display: "inline-block", width: 8, height: 8, borderRadius: "50%",
-      background: c, boxShadow: `0 0 6px ${c}`, animation: status === "BLOCKED" || status === "RESTRICTED" ? "pulse 1.5s infinite" : undefined,
+    <span className="inline-block w-2 h-2 rounded-full" style={{
+      background: c, boxShadow: `0 0 6px ${c}`,
+      animation: status === "BLOCKED" || status === "RESTRICTED" ? "pulse 1.5s infinite" : undefined,
     }} />
   );
 }
 
 function RiskBar({ value }: { value: number }) {
-  const c = value > 70 ? "#ef4444" : value > 40 ? "#f59e0b" : "#10b981";
+  const c = value > 70 ? "var(--negative)" : value > 40 ? "var(--warning)" : "var(--positive)";
   return (
-    <div style={{ width: 60, height: 4, background: "#1a2535", borderRadius: 2, overflow: "hidden" }}>
-      <div style={{ width: `${value}%`, height: "100%", background: c, borderRadius: 2, transition: "width 0.5s" }} />
+    <div className="w-[60px] h-1 rounded-sm overflow-hidden" style={{ background: "var(--surface-border)" }}>
+      <div className="h-full rounded-sm transition-all duration-500" style={{ width: `${value}%`, background: c }} />
     </div>
   );
 }
@@ -93,19 +93,20 @@ function Metric({ label, value, unit, change, changeUnit, highlight }: {
   const up = change !== undefined && change > 0;
   const neutral = change === 0 || change === undefined;
   const isGood = label.includes("RESERVE") || label.includes("FTC");
-  const changeColor = neutral ? "#4b6280" : (up === isGood ? "#10b981" : "#ef4444");
+  const changeColor = neutral ? "var(--text-muted)" : (up === isGood ? "var(--positive)" : "var(--negative)");
 
   return (
-    <div style={{
-      background: highlight ? "#0f1a2e" : "#080f1a", border: `1px solid ${highlight ? "#f59e0b33" : "#1a2535"}`,
-      borderRadius: 6, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 4,
+    <div className="rounded-md flex flex-col gap-1" style={{
+      background: highlight ? "var(--surface-raised)" : "var(--surface)",
+      border: `1px solid ${highlight ? "var(--accent)" : "var(--surface-border)"}`,
+      padding: "12px 14px",
     }}>
-      <span style={{ fontSize: 9, color: "#4b6280", letterSpacing: 2, fontFamily: "'Courier New',monospace" }}>{label}</span>
-      <span style={{ fontSize: 20, fontWeight: 700, color: "#e8eef5", fontFamily: "'Courier New',monospace" }}>
-        {value}<span style={{ fontSize: 11, color: "#4b6280", marginLeft: 2 }}>{unit}</span>
+      <span className="text-2xs tracking-widest font-medium" style={{ color: "var(--text-muted)" }}>{label}</span>
+      <span className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+        {value}<span className="text-xs ml-0.5" style={{ color: "var(--text-muted)" }}>{unit}</span>
       </span>
       {change !== undefined && (
-        <span style={{ fontSize: 10, color: changeColor, fontFamily: "'Courier New',monospace" }}>
+        <span className="text-2xs" style={{ color: changeColor }}>
           {up ? "▲" : "▼"} {Math.abs(change).toFixed(change % 1 === 0 ? 0 : 1)}{changeUnit} vs prev session
         </span>
       )}
@@ -122,7 +123,6 @@ function AIBriefing({ data, trigger }: { data: typeof SEED_DATA; trigger: number
   const [ts, setTs] = useState<Date | null>(null);
   const [cachedLoaded, setCachedLoaded] = useState(false);
 
-  // Load cached briefing from DB on mount
   useEffect(() => {
     async function loadCached() {
       const today = new Date().toISOString().split("T")[0];
@@ -201,7 +201,6 @@ function AIBriefing({ data, trigger }: { data: typeof SEED_DATA; trigger: number
         }
       }
 
-      // Flush remaining
       if (textBuffer.trim()) {
         for (let raw of textBuffer.split("\n")) {
           if (!raw) continue;
@@ -226,64 +225,58 @@ function AIBriefing({ data, trigger }: { data: typeof SEED_DATA; trigger: number
     setLoading(false);
   }, [data, loading]);
 
-  // Only auto-generate if no cached briefing and trigger changes, or manual refresh
   useEffect(() => { if (!cachedLoaded || trigger > 0) generate(); }, [trigger]);
 
-  // Parse sections for styled rendering
   const sections = text.split(/\*\*(.*?)\*\*/g);
 
   return (
-    <div style={{ background: "#060e1a", border: "1px solid #1a2535", borderRadius: 8, overflow: "hidden" }}>
-      <div style={{ background: "#0a1525", padding: "14px 18px", borderBottom: "1px solid #1a2535" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+    <div className="glass-card overflow-hidden">
+      <div className="p-3.5 px-4" style={{ background: "var(--surface-raised)", borderBottom: "1px solid var(--surface-border)" }}>
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 3, fontFamily: "'Courier New',monospace", fontWeight: 700 }}>
+            <div className="text-2xs font-bold tracking-[3px]" style={{ color: "var(--negative)" }}>
               CLASSIFIED · DAILY INTELLIGENCE BRIEFING
             </div>
-            <div style={{ fontSize: 11, color: "#4b6280", fontFamily: "'Courier New',monospace", marginTop: 2 }}>
+            <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
               PACC FUEL MARKET ASSESSMENT
             </div>
-            <div style={{ fontSize: 9, color: "#2a3a50", fontFamily: "'Courier New',monospace", marginTop: 4 }}>
+            <div className="text-2xs mt-1" style={{ color: "var(--text-muted)", opacity: 0.5 }}>
               {ts ? `GENERATED: ${ts.toLocaleTimeString("en-AU")} AEST · ${fmtDate(TODAY)}` : "GENERATING…"}
             </div>
           </div>
           <button
             onClick={generate}
             disabled={loading}
-            style={{
-              background: "#0f1a2e", border: "1px solid #1a2535", borderRadius: 4,
-              color: loading ? "#f59e0b" : "#4b6280", fontSize: 10, cursor: loading ? "wait" : "pointer",
-              padding: "6px 12px", fontFamily: "'Courier New',monospace", letterSpacing: 1,
-            }}
+            className="btn-ghost text-2xs tracking-wider"
+            style={{ cursor: loading ? "wait" : "pointer" }}
           >
             {loading ? "⟳ UPDATING…" : "↻ REFRESH"}
           </button>
         </div>
       </div>
 
-      <div style={{ padding: "18px", minHeight: 200 }}>
+      <div className="p-4" style={{ minHeight: 200 }}>
         {loading && !text && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="flex flex-col gap-2.5">
             {[0, 1, 2, 3, 4].map(i => (
-              <div key={i} style={{
-                height: 12, background: "#0f1a2e", borderRadius: 4, width: `${85 - i * 10}%`,
-                animation: "pulse 1.5s infinite", animationDelay: `${i * 0.2}s`,
+              <div key={i} className="skeleton" style={{
+                height: 12, width: `${85 - i * 10}%`,
+                animationDelay: `${i * 0.2}s`,
               }} />
             ))}
-            <div style={{ fontSize: 10, color: "#2a3a50", fontFamily: "'Courier New',monospace", marginTop: 8, letterSpacing: 2 }}>
+            <div className="text-2xs tracking-[2px] mt-2" style={{ color: "var(--text-muted)", opacity: 0.5 }}>
               FETCHING INTELLIGENCE...
             </div>
           </div>
         )}
 
         {text && (
-          <div style={{ fontFamily: "'Courier New',monospace", fontSize: 12, lineHeight: 1.7, color: "#8a9bb5" }}>
+          <div className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             {sections.map((seg, i) => {
               if (i % 2 === 1) {
                 return (
-                  <div key={i} style={{
-                    color: "#f59e0b", fontSize: 11, fontWeight: 700, marginTop: 18, marginBottom: 6,
-                    letterSpacing: 1, borderBottom: "1px solid #1a2535", paddingBottom: 4,
+                  <div key={i} className="text-xs font-bold tracking-wider mt-4 mb-1.5 pb-1" style={{
+                    color: "var(--accent-text)", borderBottom: "1px solid var(--surface-border)",
                   }}>
                     ▸ {seg}
                   </div>
@@ -297,7 +290,7 @@ function AIBriefing({ data, trigger }: { data: typeof SEED_DATA; trigger: number
                     return (
                       <p key={j} style={{
                         margin: "4px 0", paddingLeft: isBullet ? 12 : 0,
-                        color: isBullet ? "#ef4444" : "#8a9bb5",
+                        color: isBullet ? "var(--negative)" : "var(--text-secondary)",
                       }}>
                         {line}
                       </p>
@@ -317,7 +310,6 @@ function AIBriefing({ data, trigger }: { data: typeof SEED_DATA; trigger: number
 export default function MarketIntelligence() {
   const { data: tgpHistory } = useTGPrices("Melbourne", "Diesel", 7);
 
-  // Fetch live market metrics from DB
   const [marketMetrics, setMarketMetrics] = useState<Record<string, { value: number; previous_value: number | null }>>({});
   useEffect(() => {
     async function loadMetrics() {
@@ -339,7 +331,6 @@ export default function MarketIntelligence() {
 
   const data = useMemo(() => {
     const base = { ...SEED_DATA };
-    // Live TGP
     if (tgpHistory && tgpHistory.length > 0) {
       const latest = tgpHistory[0];
       base.melbTGP = latest.price_cpl;
@@ -349,14 +340,12 @@ export default function MarketIntelligence() {
         base.melbTGPChange = 0;
       }
     }
-    // Live AUD/USD
     if (marketMetrics.aud_usd) {
       base.audUsd = marketMetrics.aud_usd.value;
       base.audUsdChange = marketMetrics.aud_usd.previous_value
         ? +(marketMetrics.aud_usd.value - marketMetrics.aud_usd.previous_value).toFixed(4)
         : 0;
     }
-    // Live Brent crude (if manually entered)
     if (marketMetrics.brent_crude) {
       base.brent = marketMetrics.brent_crude.value;
       base.brentChange = marketMetrics.brent_crude.previous_value
@@ -372,98 +361,86 @@ export default function MarketIntelligence() {
   const tabs = ["OVERVIEW", "SUPPLY CHAIN", "MONTH BY MONTH", "PACC IMPACT"];
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", fontFamily: "'Courier New', monospace" }}>
+    <div className="max-w-[1200px] mx-auto">
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
-        @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
-        .mi-tab:hover { background:#1a2535 !important; }
-        .mi-month:hover { border-color:#f59e0b !important; cursor:pointer; }
-        .mi-chain:hover { background:#0f1a2e !important; }
       `}</style>
 
       {/* HEADER */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <span style={{ fontSize: 28 }}>⛽</span>
+      <div className="mb-4">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-2xl">⛽</span>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#e8eef5", letterSpacing: 3 }}>
-              FUEL MARKET INTELLIGENCE
-            </div>
-            <div style={{ fontSize: 9, color: "#4b6280", letterSpacing: 2 }}>
+            <h1 className="text-lg font-bold tracking-[3px]">FUEL MARKET INTELLIGENCE</h1>
+            <div className="text-2xs tracking-[2px]" style={{ color: "var(--text-muted)" }}>
               MELBOURNE · AUSTRALIA · DAILY BRIEFING SYSTEM
             </div>
           </div>
         </div>
 
         {/* LIVE TICKER */}
-        <div style={{
-          display: "flex", flexWrap: "wrap", gap: 8, padding: "8px 12px",
-          background: "#060e1a", border: "1px solid #1a2535", borderRadius: 6, alignItems: "center",
-        }}>
+        <div className="flex flex-wrap gap-2 p-2 px-3 glass-card items-center">
           {[
             { k: "BRENT", v: `$${data.brent}`, u: "USD/BBL", d: data.brentChange },
             { k: "AUD/USD", v: data.audUsd.toFixed(3), u: "", d: data.audUsdChange * 1000 },
             { k: "MEL TGP", v: `${data.melbTGP}¢`, u: "/L", d: data.melbTGPChange },
           ].map(item => (
-            <div key={item.k} style={{ display: "flex", alignItems: "center", gap: 6, marginRight: 12 }}>
-              <span style={{ fontSize: 9, color: "#4b6280", letterSpacing: 1 }}>{item.k}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#e8eef5" }}>
-                {item.v}<span style={{ fontSize: 9, color: "#4b6280" }}>{item.u}</span>
+            <div key={item.k} className="flex items-center gap-1.5 mr-3">
+              <span className="text-2xs tracking-wider" style={{ color: "var(--text-muted)" }}>{item.k}</span>
+              <span className="text-base font-bold" style={{ color: "var(--text-primary)" }}>
+                {item.v}<span className="text-2xs" style={{ color: "var(--text-muted)" }}>{item.u}</span>
               </span>
-              <span style={{ fontSize: 10, color: item.d > 0 ? "#ef4444" : "#10b981" }}>
+              <span className="text-2xs" style={{ color: item.d > 0 ? "var(--negative)" : "var(--positive)" }}>
                 {item.d > 0 ? "▲" : "▼"}{Math.abs(item.d).toFixed(1)}
               </span>
             </div>
           ))}
 
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginRight: 12 }}>
-            <span style={{ fontSize: 9, color: "#4b6280", letterSpacing: 1 }}>HORMUZ</span>
+          <div className="flex items-center gap-1 mr-3">
+            <span className="text-2xs tracking-wider" style={{ color: "var(--text-muted)" }}>HORMUZ</span>
             <StatusDot status="RESTRICTED" />
-            <span style={{ fontSize: 10, color: "#ef4444", fontWeight: 700 }}>RESTRICTED</span>
+            <span className="text-2xs font-bold" style={{ color: "var(--negative)" }}>RESTRICTED</span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto" }}>
-            <span style={{ fontSize: 9, color: "#4b6280" }}>EXCISE CLIFF</span>
-            <span style={{ fontSize: 16, fontWeight: 700, color: "#ef4444" }}>{daysToJuly}d</span>
-            <span style={{ fontSize: 8, color: "#4b6280" }}>TO JUL 1</span>
+          <div className="flex items-center gap-1 ml-auto">
+            <span className="text-2xs" style={{ color: "var(--text-muted)" }}>EXCISE CLIFF</span>
+            <span className="text-lg font-bold" style={{ color: "var(--negative)" }}>{daysToJuly}d</span>
+            <span className="text-2xs" style={{ color: "var(--text-muted)" }}>TO JUL 1</span>
           </div>
         </div>
       </div>
 
       {/* DATE BAR */}
-      <div style={{
-        display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center",
-        padding: "6px 12px", background: "#0a1525", borderRadius: 4, marginBottom: 8, gap: 8,
-      }}>
-        <span style={{ fontSize: 10, color: "#4b6280", letterSpacing: 1 }}>📅 {fmtDate(TODAY).toUpperCase()}</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+      <div className="flex flex-wrap justify-between items-center p-1.5 px-3 rounded mb-2 gap-2" style={{ background: "var(--surface-raised)" }}>
+        <span className="text-2xs tracking-wider" style={{ color: "var(--text-muted)" }}>📅 {fmtDate(TODAY).toUpperCase()}</span>
+        <div className="flex flex-wrap gap-3">
           {[
             `Hormuz Crisis Active — Day ${Math.ceil((TODAY.getTime() - new Date("2026-02-28").getTime()) / 86400000)}`,
             "Excise Cut Active: 32¢/L relief",
             "Singapore Supply Agreement: SECURED",
           ].map((t, i) => (
-            <span key={i} style={{ fontSize: 9, color: "#2a3a50", letterSpacing: 1 }}>{t}</span>
+            <span key={i} className="text-2xs tracking-wider" style={{ color: "var(--text-muted)", opacity: 0.5 }}>{t}</span>
           ))}
         </div>
       </div>
 
       {/* TABS */}
-      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid #1a2535", marginBottom: 16, overflowX: "auto" }}>
+      <div className="flex gap-0 border-b border-surface-border mb-4 overflow-x-auto">
         {tabs.map(t => (
-          <button key={t} className="mi-tab" onClick={() => setTab(t)} style={{
-            background: tab === t ? "#0f1a2e" : "transparent",
-            border: "none", borderBottom: tab === t ? "2px solid #f59e0b" : "2px solid transparent",
-            color: tab === t ? "#f59e0b" : "#4b6280",
-            padding: "10px 16px", fontSize: 10, letterSpacing: 2,
-            fontFamily: "'Courier New',monospace", cursor: "pointer", whiteSpace: "nowrap",
+          <button key={t} onClick={() => setTab(t)} className="px-4 py-2.5 text-2xs tracking-[2px] cursor-pointer border-b-2 transition-colors whitespace-nowrap" style={{
+            background: tab === t ? "var(--surface-raised)" : "transparent",
+            borderBottomColor: tab === t ? "var(--accent)" : "transparent",
+            color: tab === t ? "var(--accent-text)" : "var(--text-muted)",
+            border: "none",
+            borderBottom: tab === t ? "2px solid var(--accent)" : "2px solid transparent",
           }}>{t}</button>
         ))}
       </div>
 
       {/* ── OVERVIEW TAB ── */}
       {tab === "OVERVIEW" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-2">
             <Metric label="BRENT CRUDE" value={`$${data.brent}`} unit="USD/BBL" change={data.brentChange} changeUnit="/bbl" />
             <Metric label="AUD/USD" value={data.audUsd.toFixed(3)} unit="" change={data.audUsdChange * 100} changeUnit="¢" />
             <Metric label="MEL DIESEL TGP" value={`${data.melbTGP}`} unit="¢/L" change={data.melbTGPChange} changeUnit="¢" highlight />
@@ -475,16 +452,16 @@ export default function MarketIntelligence() {
           </div>
 
           {/* ALERT BANNERS */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div className="flex flex-col gap-1.5">
             {[
-              { color: "#ef4444", icon: "⚠", text: "HORMUZ RESTRICTED — Gasoil inflows to Australia tracking -1.47M bbl vs January. April/May critical months." },
-              { color: "#f59e0b", icon: "⏱", text: `EXCISE CLIFF IN ${daysToJuly} DAYS — Diesel TGP to spike +26–32¢/L on July 1 if not extended. All contracts must include escalation clauses.` },
-              { color: "#10b981", icon: "✓", text: "NEW TRUCK TIMING OPTIMAL — Mobile delivery demand at historic high as retail stations report shortages. Market conditions favour your expansion." },
+              { color: "var(--negative)", icon: "⚠", text: "HORMUZ RESTRICTED — Gasoil inflows to Australia tracking -1.47M bbl vs January. April/May critical months." },
+              { color: "var(--warning)", icon: "⏱", text: `EXCISE CLIFF IN ${daysToJuly} DAYS — Diesel TGP to spike +26–32¢/L on July 1 if not extended. All contracts must include escalation clauses.` },
+              { color: "var(--positive)", icon: "✓", text: "NEW TRUCK TIMING OPTIMAL — Mobile delivery demand at historic high as retail stations report shortages. Market conditions favour your expansion." },
             ].map((a, i) => (
-              <div key={i} style={{
-                display: "flex", gap: 10, padding: "10px 14px", borderRadius: 6,
-                background: `${a.color}0a`, border: `1px solid ${a.color}33`,
-                fontSize: 11, color: a.color, fontFamily: "'Courier New',monospace", alignItems: "flex-start",
+              <div key={i} className="flex gap-2.5 p-2.5 px-3.5 rounded-md text-xs items-start" style={{
+                background: `color-mix(in srgb, ${a.color} 6%, transparent)`,
+                border: `1px solid color-mix(in srgb, ${a.color} 20%, transparent)`,
+                color: a.color,
               }}>
                 <span>{a.icon}</span>
                 <span>{a.text}</span>
@@ -498,28 +475,24 @@ export default function MarketIntelligence() {
 
       {/* ── SUPPLY CHAIN TAB ── */}
       {tab === "SUPPLY CHAIN" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: 2, fontWeight: 700 }}>
+        <div className="flex flex-col gap-4">
+          <div className="text-xs tracking-[2px] font-bold" style={{ color: "var(--accent-text)" }}>
             ▸ LIVE SUPPLY CHAIN STATUS — REFINED DIESEL TO MELBOURNE
           </div>
 
           {SUPPLY_CHAIN.map((item, i) => (
-            <div key={i} className="mi-chain" style={{
-              display: "grid", gridTemplateColumns: "1fr auto auto auto", gap: 12, alignItems: "center",
-              padding: "12px 14px", background: "#080f1a", border: "1px solid #1a2535",
-              borderRadius: 6, transition: "background 0.15s",
-            }}>
+            <div key={i} className="glass-card grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center p-3 px-3.5 transition-colors hover:bg-surface-raised/50">
               <div>
-                <div style={{ fontSize: 12, color: "#e8eef5", fontWeight: 600 }}>{item.leg}</div>
-                <div style={{ fontSize: 9, color: "#4b6280" }}>{item.origin} → {item.dest}</div>
+                <div className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{item.leg}</div>
+                <div className="text-2xs" style={{ color: "var(--text-muted)" }}>{item.origin} → {item.dest}</div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div className="flex items-center gap-1.5">
                 <StatusDot status={item.status} />
-                <span style={{ fontSize: 10, color: "#8a9bb5", letterSpacing: 1 }}>{item.status}</span>
+                <span className="text-2xs tracking-wider" style={{ color: "var(--text-secondary)" }}>{item.status}</span>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 8, color: "#4b6280", letterSpacing: 1 }}>DISRUPTION RISK</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: item.risk > 70 ? "#ef4444" : item.risk > 40 ? "#f59e0b" : "#10b981" }}>
+              <div className="text-right">
+                <div className="text-2xs tracking-wider" style={{ color: "var(--text-muted)" }}>DISRUPTION RISK</div>
+                <div className="text-sm font-bold" style={{ color: item.risk > 70 ? "var(--negative)" : item.risk > 40 ? "var(--warning)" : "var(--positive)" }}>
                   {item.risk}%
                 </div>
               </div>
@@ -528,43 +501,43 @@ export default function MarketIntelligence() {
           ))}
 
           {/* SHIPPING TIMELINE */}
-          <div style={{ background: "#080f1a", border: "1px solid #1a2535", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+          <div className="glass-card p-4">
+            <div className="text-xs tracking-[2px] font-bold mb-3" style={{ color: "var(--accent-text)" }}>
               ▸ SAILING TIME COMPARISON
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2">
               {[
-                { from: "Singapore", days: "10–14 days", cost: "NORMAL", status: "SECURED", color: "#10b981" },
-                { from: "South Korea", days: "12–16 days", cost: "+15%", status: "REDUCED", color: "#f59e0b" },
-                { from: "India", days: "14–18 days", cost: "+20%", status: "REDUCED", color: "#f59e0b" },
-                { from: "Gulf of Mexico", days: "30–42 days", cost: "+60-80%", status: "ACTIVE (PREMIUM)", color: "#ef4444" },
+                { from: "Singapore", days: "10–14 days", cost: "NORMAL", status: "SECURED", color: "var(--positive)" },
+                { from: "South Korea", days: "12–16 days", cost: "+15%", status: "REDUCED", color: "var(--warning)" },
+                { from: "India", days: "14–18 days", cost: "+20%", status: "REDUCED", color: "var(--warning)" },
+                { from: "Gulf of Mexico", days: "30–42 days", cost: "+60-80%", status: "ACTIVE (PREMIUM)", color: "var(--negative)" },
               ].map((r, i) => (
-                <div key={i} style={{ background: "#0a1525", borderRadius: 6, padding: "10px 12px", borderLeft: `3px solid ${r.color}` }}>
-                  <div style={{ fontSize: 11, color: "#e8eef5", fontWeight: 600 }}>{r.from}</div>
-                  <div style={{ fontSize: 10, color: "#8a9bb5" }}>{r.days}</div>
-                  <div style={{ fontSize: 9, color: "#4b6280" }}>Cost premium: {r.cost}</div>
-                  <div style={{ fontSize: 10, color: r.color, fontWeight: 700, marginTop: 4 }}>{r.status}</div>
+                <div key={i} className="rounded-md p-2.5 px-3" style={{ background: "var(--surface-raised)", borderLeft: `3px solid ${r.color}` }}>
+                  <div className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{r.from}</div>
+                  <div className="text-2xs" style={{ color: "var(--text-secondary)" }}>{r.days}</div>
+                  <div className="text-2xs" style={{ color: "var(--text-muted)" }}>Cost premium: {r.cost}</div>
+                  <div className="text-2xs font-bold mt-1" style={{ color: r.color }}>{r.status}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* REFINERY STATUS */}
-          <div style={{ background: "#080f1a", border: "1px solid #1a2535", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+          <div className="glass-card p-4">
+            <div className="text-xs tracking-[2px] font-bold mb-3" style={{ color: "var(--accent-text)" }}>
               ▸ DOMESTIC REFINERY STATUS
             </div>
             {[
               { name: "Viva Energy — Geelong, VIC", cap: "120,000 bbl/day", status: "OPERATING", coverage: "~10% national demand", note: "Your local advantage. Closest terminal to PACC Dandenong operations." },
               { name: "Ampol Lytton — Brisbane, QLD", cap: "109,000 bbl/day", status: "OPERATING", coverage: "~10% national demand", note: "Full operation. Supplies QLD/NSW primarily." },
             ].map((r, i) => (
-              <div key={i} style={{ background: "#0a1525", borderRadius: 6, padding: "12px 14px", marginBottom: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: "#e8eef5", fontWeight: 600 }}>{r.name}</span>
-                  <span style={{ fontSize: 10, color: "#10b981", fontWeight: 700 }}>{r.status}</span>
+              <div key={i} className="rounded-md p-3 mb-2" style={{ background: "var(--surface-raised)" }}>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{r.name}</span>
+                  <span className="text-2xs font-bold" style={{ color: "var(--positive)" }}>{r.status}</span>
                 </div>
-                <div style={{ fontSize: 10, color: "#4b6280", marginTop: 4 }}>Capacity: {r.cap} · Coverage: {r.coverage}</div>
-                <div style={{ fontSize: 10, color: "#8a9bb5", marginTop: 4 }}>{r.note}</div>
+                <div className="text-2xs mt-1" style={{ color: "var(--text-muted)" }}>Capacity: {r.cap} · Coverage: {r.coverage}</div>
+                <div className="text-2xs mt-1" style={{ color: "var(--text-secondary)" }}>{r.note}</div>
               </div>
             ))}
           </div>
@@ -573,52 +546,50 @@ export default function MarketIntelligence() {
 
       {/* ── MONTH BY MONTH TAB ── */}
       {tab === "MONTH BY MONTH" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: 2, fontWeight: 700 }}>
+        <div className="flex flex-col gap-4">
+          <div className="text-xs tracking-[2px] font-bold" style={{ color: "var(--accent-text)" }}>
             ▸ 4-MONTH OUTLOOK — DIESEL MARKET CONDITIONS FOR PACC FUEL
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2">
             {MONTHS.map((m, i) => (
-              <div key={i} className="mi-month" onClick={() => setActiveMonth(i)} style={{
-                background: activeMonth === i ? `${m.color}15` : "#0a1525",
-                border: `1px solid ${activeMonth === i ? m.color : "#1a2535"}`,
+              <div key={i} onClick={() => setActiveMonth(i)} className="cursor-pointer rounded-md p-4 transition-all" style={{
+                background: activeMonth === i ? `color-mix(in srgb, ${m.color} 8%, var(--surface))` : "var(--surface-raised)",
+                border: `1px solid ${activeMonth === i ? m.color : "var(--surface-border)"}`,
                 borderTop: `4px solid ${m.color}`,
-                borderRadius: 6, padding: 16, cursor: "pointer", transition: "all 0.2s",
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, color: "#e8eef5", fontWeight: 700 }}>{m.label}</span>
-                  <span style={{
-                    fontSize: 9, padding: "2px 8px", borderRadius: 3,
-                    background: `${m.color}22`, color: m.color, fontWeight: 700, letterSpacing: 1,
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>{m.label}</span>
+                  <span className="text-2xs px-2 py-0.5 rounded font-bold tracking-wider" style={{
+                    background: `color-mix(in srgb, ${m.color} 12%, transparent)`, color: m.color,
                   }}>{m.signal}</span>
                 </div>
-                <div style={{ fontSize: 10, color: "#8a9bb5", lineHeight: 1.5 }}>{m.headline}</div>
+                <div className="text-2xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>{m.headline}</div>
               </div>
             ))}
           </div>
 
-          <div style={{ background: "#0a1525", border: "1px solid #1a2535", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+          <div className="glass-card p-4" style={{ background: "var(--surface-raised)" }}>
+            <div className="text-xs tracking-[2px] font-bold mb-3" style={{ color: "var(--accent-text)" }}>
               {MONTHS[activeMonth].label} — ACTION ITEMS FOR PACC FUEL
             </div>
             {MONTHS[activeMonth].actions.map((a, i) => (
-              <div key={i} style={{ display: "flex", gap: 8, padding: "6px 0", fontSize: 11, color: "#8a9bb5" }}>
-                <span style={{ color: "#f59e0b" }}>→</span>
+              <div key={i} className="flex gap-2 py-1.5 text-xs" style={{ color: "var(--text-secondary)" }}>
+                <span style={{ color: "var(--accent-text)" }}>→</span>
                 <span>{a}</span>
               </div>
             ))}
           </div>
 
           {/* SCENARIO TABLE */}
-          <div style={{ background: "#080f1a", border: "1px solid #1a2535", borderRadius: 8, padding: 16, overflowX: "auto" }}>
-            <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+          <div className="glass-card p-4 overflow-x-auto">
+            <div className="text-xs tracking-[2px] font-bold mb-3" style={{ color: "var(--accent-text)" }}>
               ▸ SCENARIO PRICE TABLE — MELBOURNE DIESEL TGP (AUD ¢/L)
             </div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+            <table className="w-full text-xs" style={{ borderCollapse: "collapse" }}>
               <thead>
                 <tr>
                   {["Scenario", "Brent (USD/bbl)", "AUD/USD", "Import Cost", "Pre-July TGP", "Post-July TGP"].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid #1a2535", color: "#4b6280", fontSize: 9, letterSpacing: 1 }}>{h}</th>
+                    <th key={h} className="text-left p-1.5 px-2 text-2xs tracking-wider" style={{ borderBottom: "1px solid var(--surface-border)", color: "var(--text-muted)" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -629,18 +600,18 @@ export default function MarketIntelligence() {
                   { scenario: "🔴 Stress Case", brent: 120, aud: 0.60, import_cost: 125, pre: 215, post: 241 },
                   { scenario: "⚫ Crisis Case", brent: 150, aud: 0.58, import_cost: 162, pre: 252, post: 278 },
                 ].map((r, i) => (
-                  <tr key={i} style={{ borderBottom: "1px solid #0f1a2e" }}>
-                    <td style={{ padding: "6px 8px", color: "#e8eef5", fontWeight: 600 }}>{r.scenario}</td>
-                    <td style={{ padding: "6px 8px", color: "#8a9bb5" }}>${r.brent}</td>
-                    <td style={{ padding: "6px 8px", color: "#8a9bb5" }}>{r.aud}</td>
-                    <td style={{ padding: "6px 8px", color: "#8a9bb5" }}>~{r.import_cost}¢</td>
-                    <td style={{ padding: "6px 8px", color: "#8a9bb5" }}>{r.pre}¢</td>
-                    <td style={{ padding: "6px 8px", color: "#8a9bb5" }}>{r.post}¢</td>
+                  <tr key={i} style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                    <td className="p-1.5 px-2 font-semibold" style={{ color: "var(--text-primary)" }}>{r.scenario}</td>
+                    <td className="p-1.5 px-2" style={{ color: "var(--text-secondary)" }}>${r.brent}</td>
+                    <td className="p-1.5 px-2" style={{ color: "var(--text-secondary)" }}>{r.aud}</td>
+                    <td className="p-1.5 px-2" style={{ color: "var(--text-secondary)" }}>~{r.import_cost}¢</td>
+                    <td className="p-1.5 px-2" style={{ color: "var(--text-secondary)" }}>{r.pre}¢</td>
+                    <td className="p-1.5 px-2" style={{ color: "var(--text-secondary)" }}>{r.post}¢</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div style={{ fontSize: 9, color: "#2a3a50", marginTop: 8 }}>
+            <div className="text-2xs mt-2" style={{ color: "var(--text-muted)", opacity: 0.5 }}>
               † Pre-July TGP assumes 32¢ excise relief active. Post-July assumes full excise 52.6¢ + GST restored.
             </div>
           </div>
@@ -649,15 +620,15 @@ export default function MarketIntelligence() {
 
       {/* ── PACC IMPACT TAB ── */}
       {tab === "PACC IMPACT" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: 2, fontWeight: 700 }}>
+        <div className="flex flex-col gap-4">
+          <div className="text-xs tracking-[2px] font-bold" style={{ color: "var(--accent-text)" }}>
             ▸ DIRECT BUSINESS IMPACT ANALYSIS — PACC FUEL MELBOURNE
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 12 }}>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3">
             {[
               {
-                title: "FUEL TAX CREDIT — UPDATE REQUIRED", color: "#10b981",
+                title: "FUEL TAX CREDIT — UPDATE REQUIRED", color: "var(--positive)",
                 items: [
                   { label: "FTC Rate (was)", value: "20.2¢/L", note: "on-road heavy vehicles" },
                   { label: "FTC Rate (NOW)", value: "26.3¢/L", note: "effective 1 Apr – 30 Jun 2026", highlight: true },
@@ -667,7 +638,7 @@ export default function MarketIntelligence() {
                 ],
               },
               {
-                title: "NEW TRUCK — MARKET TIMING", color: "#f59e0b",
+                title: "NEW TRUCK — MARKET TIMING", color: "var(--warning)",
                 items: [
                   { label: "Retail station shortages (VIC)", value: "~10%", note: "of outlets reporting outages" },
                   { label: "Demand spike vs normal", value: "+40-50%", note: "March peak, stabilising now" },
@@ -677,18 +648,17 @@ export default function MarketIntelligence() {
                 ],
               },
             ].map((panel, i) => (
-              <div key={i} style={{ background: "#080f1a", border: "1px solid #1a2535", borderRadius: 8, padding: 16 }}>
-                <div style={{ fontSize: 11, color: panel.color, letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>▸ {panel.title}</div>
+              <div key={i} className="glass-card p-4">
+                <div className="text-xs tracking-[2px] font-bold mb-3" style={{ color: panel.color }}>▸ {panel.title}</div>
                 {panel.items.map((item, j) => (
-                  <div key={j} style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    padding: "8px 0", borderBottom: "1px solid #0f1a2e",
-                    background: item.highlight ? `${panel.color}08` : undefined,
+                  <div key={j} className="flex justify-between items-center py-2" style={{
+                    borderBottom: "1px solid var(--border-subtle)",
+                    background: item.highlight ? `color-mix(in srgb, ${panel.color} 4%, transparent)` : undefined,
                   }}>
-                    <span style={{ fontSize: 10, color: "#4b6280" }}>{item.label}</span>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 12, color: item.highlight ? panel.color : "#e8eef5", fontWeight: 700 }}>{item.value}</div>
-                      <div style={{ fontSize: 9, color: "#2a3a50" }}>{item.note}</div>
+                    <span className="text-2xs" style={{ color: "var(--text-muted)" }}>{item.label}</span>
+                    <div className="text-right">
+                      <div className="text-sm font-bold" style={{ color: item.highlight ? panel.color : "var(--text-primary)" }}>{item.value}</div>
+                      <div className="text-2xs" style={{ color: "var(--text-muted)", opacity: 0.5 }}>{item.note}</div>
                     </div>
                   </div>
                 ))}
@@ -697,8 +667,8 @@ export default function MarketIntelligence() {
           </div>
 
           {/* CHECKLIST */}
-          <div style={{ background: "#080f1a", border: "1px solid #1a2535", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>
+          <div className="glass-card p-4">
+            <div className="text-xs tracking-[2px] font-bold mb-3" style={{ color: "var(--accent-text)" }}>
               ▸ CONTRACT PROTECTION CHECKLIST — BEFORE JULY 1
             </div>
             {[
@@ -710,22 +680,22 @@ export default function MarketIntelligence() {
               { done: false, item: "Secure forward supply agreements with Viva Geelong or Ampol before June 30" },
               { done: false, item: "Build cash buffer for July 1 working capital spike (higher upfront TGP costs)" },
             ].map((c, i) => (
-              <div key={i} style={{
-                display: "flex", gap: 10, padding: "8px 0", borderBottom: "1px solid #0f1a2e",
-                fontSize: 11, color: c.done ? "#10b981" : "#8a9bb5", alignItems: "flex-start",
+              <div key={i} className="flex gap-2.5 py-2 text-xs items-start" style={{
+                borderBottom: "1px solid var(--border-subtle)",
+                color: c.done ? "var(--positive)" : "var(--text-secondary)",
               }}>
-                <span style={{ fontWeight: 700, width: 16, flexShrink: 0 }}>{c.done ? "✓" : "○"}</span>
+                <span className="font-bold w-4 shrink-0">{c.done ? "✓" : "○"}</span>
                 <span style={{ textDecoration: c.done ? "line-through" : undefined, opacity: c.done ? 0.6 : 1 }}>{c.item}</span>
               </div>
             ))}
           </div>
 
           {/* SOCIAL PROCUREMENT */}
-          <div style={{ background: "#080f1a", border: "1px solid #1a2535", borderRadius: 8, padding: 16 }}>
-            <div style={{ fontSize: 11, color: "#f59e0b", letterSpacing: 2, fontWeight: 700, marginBottom: 8 }}>
+          <div className="glass-card p-4">
+            <div className="text-xs tracking-[2px] font-bold mb-2" style={{ color: "var(--accent-text)" }}>
               ▸ SOCIAL PROCUREMENT ANGLE — KELLER & CIVIL SECTOR
             </div>
-            <p style={{ fontSize: 11, color: "#8a9bb5", lineHeight: 1.7 }}>
+            <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
               Fuel shortages are hitting construction sites directly. Civil contractors (your Keller-type clients) are being charged 8–10% fuel surcharges by suppliers and are actively seeking guaranteed, on-site diesel delivery partners. Your mobile delivery model + social procurement certification = a compelling pitch during a shortage. Diesel-dependent plant — excavators, compactors, generators — cannot stop. You provide certainty when the servo down the road is dry.
             </p>
           </div>
@@ -733,11 +703,11 @@ export default function MarketIntelligence() {
       )}
 
       {/* FOOTER */}
-      <div style={{ marginTop: 24, padding: "12px 0", borderTop: "1px solid #1a2535", textAlign: "center" }}>
-        <div style={{ fontSize: 8, color: "#2a3a50", letterSpacing: 1 }}>
+      <div className="mt-6 pt-3 border-t border-surface-border text-center">
+        <div className="text-2xs tracking-wider" style={{ color: "var(--text-muted)", opacity: 0.5 }}>
           Data: AIP TGP · EIA STEO · Argus Media · Vortexa · PM&C · DCCEEW · ACCC
         </div>
-        <div style={{ fontSize: 8, color: "#1a2535", letterSpacing: 1, marginTop: 4 }}>
+        <div className="text-2xs tracking-wider mt-1" style={{ color: "var(--text-muted)", opacity: 0.3 }}>
           PACC FUEL INTELLIGENCE SYSTEM · {TODAY.getFullYear()} · AI BRIEFINGS VIA LOVABLE AI
         </div>
       </div>
