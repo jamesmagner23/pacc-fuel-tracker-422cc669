@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useTGPrices } from "@/hooks/useTGPrices";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const TODAY = new Date();
@@ -293,7 +294,21 @@ function AIBriefing({ data, trigger }: { data: typeof SEED_DATA; trigger: number
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function MarketIntelligence() {
-  const [data] = useState(SEED_DATA);
+  const { data: tgpHistory } = useTGPrices("Melbourne", "Diesel", 7);
+
+  const data = useMemo(() => {
+    const base = { ...SEED_DATA };
+    if (tgpHistory && tgpHistory.length > 0) {
+      const latest = tgpHistory[0]; // most recent, ordered desc
+      base.melbTGP = latest.price_cpl;
+      if (tgpHistory.length > 1) {
+        base.melbTGPChange = +(latest.price_cpl - tgpHistory[1].price_cpl).toFixed(1);
+      } else {
+        base.melbTGPChange = 0;
+      }
+    }
+    return base;
+  }, [tgpHistory]);
   const [briefingTrigger, setBriefingTrigger] = useState(0);
   const [activeMonth, setActiveMonth] = useState(0);
   const [tab, setTab] = useState("OVERVIEW");
