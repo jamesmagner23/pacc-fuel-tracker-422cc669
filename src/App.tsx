@@ -19,6 +19,7 @@ import CustomerPortal from "./pages/CustomerPortal";
 import DriverPortal from "./pages/DriverPortal";
 import Admin from "./pages/Admin";
 import Reconciliation from "./pages/Reconciliation";
+import MarketIntelligence from "./pages/MarketIntelligence";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import LandingPage from "./pages/LandingPage";
@@ -52,6 +53,7 @@ function DemoAwareRoutes() {
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/market" element={<MarketIntelligence />} />
                 <Route path="/portal" element={<CustomerPortal />} />
                 <Route path="/driver" element={<DriverPortal />} />
                 <Route path="*" element={<NotFound />} />
@@ -74,7 +76,8 @@ function DemoAwareRoutes() {
                   <Route path="/performance" element={<Performance />} />
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/finance" element={<Finance />} />
-                  <Route path="/admin" element={<Admin />} />
+                   <Route path="/admin" element={<Admin />} />
+                   <Route path="/market" element={<MarketIntelligence />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
