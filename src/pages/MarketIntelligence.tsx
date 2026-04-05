@@ -317,10 +317,31 @@ function AIBriefing({ data, trigger }: { data: typeof SEED_DATA; trigger: number
 export default function MarketIntelligence() {
   const { data: tgpHistory } = useTGPrices("Melbourne", "Diesel", 7);
 
+  // Fetch live market metrics from DB
+  const [marketMetrics, setMarketMetrics] = useState<Record<string, { value: number; previous_value: number | null }>>({});
+  useEffect(() => {
+    async function loadMetrics() {
+      const today = new Date().toISOString().split("T")[0];
+      const { data: rows } = await supabase
+        .from("market_metrics")
+        .select("metric_name, value, previous_value")
+        .eq("metric_date", today);
+      if (rows) {
+        const map: Record<string, { value: number; previous_value: number | null }> = {};
+        for (const r of rows) {
+          map[r.metric_name] = { value: Number(r.value), previous_value: r.previous_value ? Number(r.previous_value) : null };
+        }
+        setMarketMetrics(map);
+      }
+    }
+    loadMetrics();
+  }, []);
+
   const data = useMemo(() => {
     const base = { ...SEED_DATA };
+    // Live TGP
     if (tgpHistory && tgpHistory.length > 0) {
-      const latest = tgpHistory[0]; // most recent, ordered desc
+      const latest = tgpHistory[0];
       base.melbTGP = latest.price_cpl;
       if (tgpHistory.length > 1) {
         base.melbTGPChange = +(latest.price_cpl - tgpHistory[1].price_cpl).toFixed(1);
@@ -328,8 +349,22 @@ export default function MarketIntelligence() {
         base.melbTGPChange = 0;
       }
     }
+    // Live AUD/USD
+    if (marketMetrics.aud_usd) {
+      base.audUsd = marketMetrics.aud_usd.value;
+      base.audUsdChange = marketMetrics.aud_usd.previous_value
+        ? +(marketMetrics.aud_usd.value - marketMetrics.aud_usd.previous_value).toFixed(4)
+        : 0;
+    }
+    // Live Brent crude (if manually entered)
+    if (marketMetrics.brent_crude) {
+      base.brent = marketMetrics.brent_crude.value;
+      base.brentChange = marketMetrics.brent_crude.previous_value
+        ? +(marketMetrics.brent_crude.value - marketMetrics.brent_crude.previous_value).toFixed(1)
+        : 0;
+    }
     return base;
-  }, [tgpHistory]);
+  }, [tgpHistory, marketMetrics]);
   const [briefingTrigger, setBriefingTrigger] = useState(0);
   const [activeMonth, setActiveMonth] = useState(0);
   const [tab, setTab] = useState("OVERVIEW");

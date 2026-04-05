@@ -285,6 +285,39 @@ export type Database = {
         }
         Relationships: []
       }
+      market_metrics: {
+        Row: {
+          created_at: string
+          id: string
+          metric_date: string
+          metric_name: string
+          previous_value: number | null
+          source: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric_date?: string
+          metric_name: string
+          previous_value?: number | null
+          source?: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric_date?: string
+          metric_name?: string
+          previous_value?: number | null
+          source?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
       pricing_tiers: {
         Row: {
           created_at: string | null
