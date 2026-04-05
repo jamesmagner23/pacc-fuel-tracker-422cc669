@@ -39,20 +39,41 @@ async function fetchAudUsd(): Promise<number | null> {
   return null;
 }
 
-// Free oil price from a public JSON endpoint
-const OIL_URL = "https://cdn.jsdelivr.net/npm/@nicfv/oilprice/data.json";
+// Try to fetch Brent crude from EIA free JSON (no key for summary data)
+const EIA_STEO_URL = "https://www.eia.gov/outlooks/steo/data/browser/data/breprice_m.json";
 
 async function fetchBrentCrude(): Promise<number | null> {
+  // Try EIA STEO monthly data (publicly accessible, no key)
   try {
-    const resp = await fetch(OIL_URL);
+    const resp = await fetch(EIA_STEO_URL, {
+      headers: { "User-Agent": "PACC-Fuel-Intelligence/1.0" }
+    });
     if (resp.ok) {
       const data = await resp.json();
-      // This package provides Brent price in USD/bbl
-      if (data?.brent) return +Number(data.brent).toFixed(2);
+      // Get most recent value from the series
+      if (Array.isArray(data) && data.length > 0) {
+        const latest = data[data.length - 1];
+        const val = latest?.value ?? latest?.price ?? latest;
+        if (typeof val === "number") return +val.toFixed(2);
+      }
     }
   } catch (e) {
-    console.error("Oil price fetch failed:", e);
+    console.error("EIA STEO fetch failed:", e);
   }
+
+  // Fallback: try floatrates commodity proxy
+  try {
+    const resp = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=XAU,XAG", {
+      headers: { "User-Agent": "PACC-Fuel-Intelligence/1.0" }
+    });
+    if (resp.ok) {
+      const body = await resp.text();
+      console.log("exchangerate.host response:", body.slice(0, 200));
+    }
+  } catch (e) {
+    console.error("Commodity fallback failed:", e);
+  }
+
   return null;
 }
 
