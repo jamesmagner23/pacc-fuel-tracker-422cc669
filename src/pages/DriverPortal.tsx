@@ -482,6 +482,33 @@ export default function DriverPortal() {
           {format(new Date(), "EEEE dd MMMM yyyy")}
         </div>
 
+        {/* Tab switcher */}
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: "var(--surface, #1e1008)", border: "1px solid var(--surface-border)" }}>
+          {[
+            { key: "dashboard" as const, label: "Dashboard" },
+            { key: "myday" as const, label: "My Day" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="flex-1 text-xs font-medium py-2.5 rounded-md transition-colors"
+              style={{
+                background: activeTab === tab.key ? "var(--accent, #f04a1a)" : "transparent",
+                color: activeTab === tab.key ? "#fff" : "var(--text-secondary, #C4A882)",
+                border: "none",
+                cursor: "pointer",
+                minHeight: 44,
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "myday" ? (
+          <MyDayTab />
+        ) : (
+        <>
         <TruckMap height={200} compact={true} />
 
         <div className="card p-7 text-center">
