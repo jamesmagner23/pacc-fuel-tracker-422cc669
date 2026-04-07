@@ -3,7 +3,7 @@ import { TruckMap } from "@/components/TruckMap";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, subWeeks } from "date-fns";
-import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, ChevronUp, ChevronDown, ClipboardList, CheckCircle2 } from "lucide-react";
+import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, GripVertical, ClipboardList, CheckCircle2 } from "lucide-react";
 import { DriverSOPSection } from "@/components/DriverSOPSection";
 import { PumpReadingForm } from "@/components/reconciliation/PumpReadingForm";
 import { PACCLogo } from "@/components/PACCLogo";
@@ -12,6 +12,7 @@ import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_FUEL_INTAKE_LOGS } from "@/data/demoData";
 import { useSchedule, useReorderStops, useMarkComplete } from "@/hooks/useDispatch";
+import { useDragReorder } from "@/hooks/useDragReorder";
 
 function IntakeLogRow({ log }: { log: any }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
