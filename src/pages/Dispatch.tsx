@@ -164,7 +164,7 @@ export default function Dispatch() {
   const { getDragProps, getItemStyle } = useDragReorder({
     items: stops,
     onReorder: handleReorder,
-    canDrag: (item) => item.status !== "completed",
+    canDrag: (item: any) => item.status !== "completed",
   });
 
   const handleDelete = (orderNo: string) => {
