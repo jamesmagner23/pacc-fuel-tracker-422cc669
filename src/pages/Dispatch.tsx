@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, Zap, GripVertical, Trash2, X, Package, CheckCircle2, Clock } from "lucide-react";
+import { CalendarIcon, Plus, Zap, GripVertical, Trash2, X, Package, CheckCircle2, Clock, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,25 @@ function useClientAccounts() {
   });
 }
 
+function useCreateClient() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (client: { company_name: string; contact_email?: string }) => {
+      const { data, error } = await supabase
+        .from("client_accounts")
+        .insert({
+          company_name: client.company_name,
+          contact_email: client.contact_email || `${client.company_name.toLowerCase().replace(/[^a-z0-9]/g, '')}@pending.com`,
+        })
+        .select("id, company_name")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["client-accounts-dispatch"] }),
+  });
+}
+
 function cssVar(name: string, fallback = ""): string {
   if (typeof window === "undefined") return fallback;
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
@@ -47,6 +66,104 @@ function useThemeColors() {
   const accent = cssVar("--accent", "#E8461E");
   const surfaceHover = cssVar("--surface-hover", "#5A4535");
   return { surface, border, textPrimary, textSecondary, textMuted, accent, surfaceHover };
+}
+
+function ClientCombobox({
+  clients,
+  value,
+  clientName,
+  onChange,
+  onNewClient,
+  colors,
+}: {
+  clients: { id: number; company_name: string }[];
+  value: string;
+  clientName: string;
+  onChange: (clientId: string, clientName: string) => void;
+  onNewClient: (name: string) => void;
+  colors: ReturnType<typeof useThemeColors>;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filtered = clients.filter((c) =>
+    c.company_name.toLowerCase().includes(search.toLowerCase())
+  );
+  const exactMatch = clients.some(
+    (c) => c.company_name.toLowerCase() === search.toLowerCase()
+  );
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <Input
+        className="h-9 bg-transparent border-surface-border text-xs"
+        style={{ color: colors.textPrimary }}
+        value={open ? search : clientName || ""}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setOpen(true);
+          if (!e.target.value) onChange("", "");
+        }}
+        onFocus={() => {
+          setOpen(true);
+          setSearch(clientName || "");
+        }}
+        placeholder="Search or type new client name…"
+      />
+      {open && (search.length > 0 || filtered.length > 0) && (
+        <div
+          className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-lg max-h-48 overflow-y-auto"
+          style={{ background: colors.surface, border: `1px solid ${colors.border}` }}
+        >
+          {filtered.map((c) => (
+            <button
+              key={c.id}
+              className="w-full text-left px-3 py-2 text-xs hover:opacity-80 transition-opacity"
+              style={{ color: colors.textPrimary, background: "none", border: "none", cursor: "pointer" }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(String(c.id), c.company_name);
+                setSearch(c.company_name);
+                setOpen(false);
+              }}
+            >
+              {c.company_name}
+            </button>
+          ))}
+          {search.length >= 2 && !exactMatch && (
+            <button
+              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:opacity-80 transition-opacity"
+              style={{ color: colors.accent, background: "none", border: "none", cursor: "pointer", borderTop: `1px solid ${colors.border}` }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onNewClient(search);
+                setOpen(false);
+              }}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              Create new client "{search}"
+            </button>
+          )}
+          {filtered.length === 0 && search.length < 2 && (
+            <div className="px-3 py-2 text-xs" style={{ color: colors.textMuted }}>
+              Type at least 2 characters…
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 type StopStatus = "scheduled" | "on_route" | "completed" | "failed";
@@ -81,15 +198,19 @@ export default function Dispatch() {
   const optimise = useOptimise();
   const reorderStops = useReorderStops();
   const deleteOrder = useDeleteOrder();
+  const createClient = useCreateClient();
 
   // Form state
   const [formClient, setFormClient] = useState("");
+  const [formClientName, setFormClientName] = useState("");
   const [formSite, setFormSite] = useState("");
   const [formLitres, setFormLitres] = useState("");
   const [formPriority, setFormPriority] = useState("medium");
   const [formTimeFrom, setFormTimeFrom] = useState("");
   const [formTimeTo, setFormTimeTo] = useState("");
   const [formNotes, setFormNotes] = useState("");
+  const [formContactEmail, setFormContactEmail] = useState("");
+  const [isNewClient, setIsNewClient] = useState(false);
 
   const stops = useMemo(() => {
     if (!schedule?.routes?.length) return [];
@@ -108,18 +229,27 @@ export default function Dispatch() {
   const completedStops = stops.filter((s: any) => s.status === "completed").length;
   const remainingStops = totalStops - completedStops;
 
-  const handleCreateOrder = () => {
-    if (!formClient || !formSite) {
-      toast.error("Client and site address are required");
-      return;
-    }
-    const client = clients.find((c) => String(c.id) === formClient);
+  const resetForm = () => {
+    setShowForm(false);
+    setFormClient("");
+    setFormClientName("");
+    setFormSite("");
+    setFormLitres("");
+    setFormPriority("medium");
+    setFormTimeFrom("");
+    setFormTimeTo("");
+    setFormNotes("");
+    setFormContactEmail("");
+    setIsNewClient(false);
+  };
+
+  const submitOrder = (clientName: string) => {
     createOrder.mutate(
       {
         orderNo: `PACC-${Date.now()}`,
         date: dateStr,
         location: {
-          name: client?.company_name || formClient,
+          name: clientName,
           address: formSite,
         },
         duration: formLitres ? parseInt(formLitres) : 30,
@@ -130,18 +260,47 @@ export default function Dispatch() {
       {
         onSuccess: () => {
           toast.success("Order added to schedule");
-          setShowForm(false);
-          setFormClient("");
-          setFormSite("");
-          setFormLitres("");
-          setFormPriority("medium");
-          setFormTimeFrom("");
-          setFormTimeTo("");
-          setFormNotes("");
+          resetForm();
         },
         onError: (err) => toast.error(err.message),
       }
     );
+  };
+
+  const handleCreateOrder = () => {
+    if (!formClientName || !formSite) {
+      toast.error("Client and site address are required");
+      return;
+    }
+
+    if (isNewClient) {
+      // Create client first, then create the OptimoRoute order
+      createClient.mutate(
+        { company_name: formClientName, contact_email: formContactEmail || undefined },
+        {
+          onSuccess: (newClient) => {
+            toast.success(`New client "${newClient.company_name}" created`);
+            submitOrder(newClient.company_name);
+          },
+          onError: (err) => toast.error(`Failed to create client: ${err.message}`),
+        }
+      );
+    } else {
+      submitOrder(formClientName);
+    }
+  };
+
+  const handleNewClient = (name: string) => {
+    setFormClientName(name);
+    setFormClient("");
+    setIsNewClient(true);
+  };
+
+  const handleSelectClient = (clientId: string, clientName: string) => {
+    setFormClient(clientId);
+    setFormClientName(clientName);
+    setIsNewClient(false);
+    setFormContactEmail("");
   };
 
   const handleOptimise = () => {
@@ -263,27 +422,46 @@ export default function Dispatch() {
           style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12 }}
         >
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium" style={{ color: tc.textPrimary }}>New Delivery Order</span>
-            <button onClick={() => setShowForm(false)} style={{ color: tc.textMuted, background: "none", border: "none", cursor: "pointer" }}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium" style={{ color: tc.textPrimary }}>New Delivery Order</span>
+              {isNewClient && (
+                <span
+                  className="text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wider"
+                  style={{ background: `${tc.accent}22`, color: tc.accent }}
+                >
+                  New Client
+                </span>
+              )}
+            </div>
+            <button onClick={resetForm} style={{ color: tc.textMuted, background: "none", border: "none", cursor: "pointer" }}>
               <X className="w-4 h-4" />
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
               <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: tc.textSecondary }}>Client</label>
-              <Select value={formClient} onValueChange={setFormClient}>
-                <SelectTrigger className="h-9 bg-transparent border-surface-border text-xs" style={{ color: tc.textPrimary }}>
-                  <SelectValue placeholder="Select client" />
-                </SelectTrigger>
-                <SelectContent className="bg-surface border-surface-border">
-                  {clients.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)} className="text-xs">
-                      {c.company_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ClientCombobox
+                clients={clients}
+                value={formClient}
+                clientName={formClientName}
+                onChange={handleSelectClient}
+                onNewClient={handleNewClient}
+                colors={tc}
+              />
             </div>
+            {isNewClient && (
+              <div>
+                <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: tc.textSecondary }}>Contact Email (optional)</label>
+                <Input
+                  type="email"
+                  className="h-9 bg-transparent border-surface-border text-xs"
+                  style={{ color: tc.textPrimary }}
+                  value={formContactEmail}
+                  onChange={(e) => setFormContactEmail(e.target.value)}
+                  placeholder="client@company.com"
+                />
+              </div>
+            )}
             <div>
               <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: tc.textSecondary }}>Site Address</label>
               <Input
@@ -354,15 +532,15 @@ export default function Dispatch() {
               className="h-8 text-xs"
               style={{ background: tc.accent, color: "#fff" }}
               onClick={handleCreateOrder}
-              disabled={createOrder.isPending}
+              disabled={createOrder.isPending || createClient.isPending}
             >
-              {createOrder.isPending ? "Adding…" : "Add to Schedule"}
+              {createClient.isPending ? "Creating client…" : createOrder.isPending ? "Adding…" : isNewClient ? "Create Client & Add Order" : "Add to Schedule"}
             </Button>
             <Button
               variant="outline"
               className="h-8 text-xs"
               style={{ color: tc.textSecondary, borderColor: tc.border }}
-              onClick={() => setShowForm(false)}
+              onClick={resetForm}
             >
               Cancel
             </Button>
