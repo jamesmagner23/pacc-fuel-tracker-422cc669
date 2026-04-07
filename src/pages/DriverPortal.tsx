@@ -3,15 +3,15 @@ import { TruckMap } from "@/components/TruckMap";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, subWeeks } from "date-fns";
-import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, GripVertical, ClipboardList, CheckCircle2 } from "lucide-react";
+import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, GripVertical, ClipboardList, CheckCircle2, Plus } from "lucide-react";
 import { DriverSOPSection } from "@/components/DriverSOPSection";
 import { PumpReadingForm } from "@/components/reconciliation/PumpReadingForm";
 import { PACCLogo } from "@/components/PACCLogo";
 import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
-import { getDemoData, DEMO_FUEL_INTAKE_LOGS } from "@/data/demoData";
-import { useSchedule, useReorderStops, useMarkComplete } from "@/hooks/useDispatch";
+import { getDemoData, DEMO_FUEL_INTAKE_LOGS, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
+import { useSchedule, useCreateOrder, useReorderStops, useMarkComplete } from "@/hooks/useDispatch";
 import { useDragReorder } from "@/hooks/useDragReorder";
 
 function IntakeLogRow({ log }: { log: any }) {
@@ -305,11 +305,182 @@ function StopStatusChip({ status }: { status: StopStatus }) {
   );
 }
 
+function useClientAccountsForDriver() {
+  const isDemo = useDemo();
+  return useQuery({
+    queryKey: ["client-accounts-driver", isDemo],
+    queryFn: async () => {
+      if (isDemo) return DEMO_CLIENT_ACCOUNTS.map((c) => ({ id: c.id, company_name: c.company_name }));
+      const { data, error } = await supabase
+        .from("client_accounts")
+        .select("id, company_name")
+        .eq("is_active", true)
+        .order("company_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+function DriverAddOrderForm({ dateStr, onClose }: { dateStr: string; onClose: () => void }) {
+  const { data: clients = [] } = useClientAccountsForDriver();
+  const createOrder = useCreateOrder();
+
+  const [clientSearch, setClientSearch] = useState("");
+  const [selectedClient, setSelectedClient] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [site, setSite] = useState("");
+  const [litres, setLitres] = useState("");
+  const [notes, setNotes] = useState("");
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filtered = clients.filter((c) =>
+    c.company_name.toLowerCase().includes(clientSearch.toLowerCase())
+  );
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSubmit = () => {
+    const name = selectedClient || clientSearch;
+    if (!name || !site) {
+      toast.error("Client and site address are required");
+      return;
+    }
+    createOrder.mutate(
+      {
+        orderNo: `DRV-${Date.now()}`,
+        date: dateStr,
+        location: { name, address: site },
+        duration: litres ? parseInt(litres) : 30,
+        priority: "medium",
+        notes: notes || undefined,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Order added to your route");
+          onClose();
+        },
+        onError: (err) => toast.error(err.message),
+      }
+    );
+  };
+
+  return (
+    <div className="card p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-foreground">Add Delivery Stop</span>
+        <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Client search */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Client</label>
+        <div ref={wrapperRef} className="relative">
+          <input
+            type="text"
+            value={showDropdown ? clientSearch : selectedClient || clientSearch}
+            onChange={(e) => {
+              setClientSearch(e.target.value);
+              setSelectedClient("");
+              setShowDropdown(true);
+            }}
+            onFocus={() => {
+              setShowDropdown(true);
+              if (selectedClient) setClientSearch(selectedClient);
+            }}
+            placeholder="Search client…"
+            className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+          />
+          {showDropdown && clientSearch.length >= 1 && filtered.length > 0 && (
+            <div
+              className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-lg max-h-36 overflow-y-auto"
+              style={{ background: "var(--surface)", border: "1px solid var(--surface-border)" }}
+            >
+              {filtered.map((c) => (
+                <button
+                  key={c.id}
+                  className="w-full text-left px-3 py-2.5 text-sm hover:opacity-80 transition-opacity"
+                  style={{ color: "var(--foreground)", background: "none", border: "none", cursor: "pointer" }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setSelectedClient(c.company_name);
+                    setClientSearch(c.company_name);
+                    setShowDropdown(false);
+                  }}
+                >
+                  {c.company_name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Site address */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Site Address</label>
+        <input
+          type="text"
+          value={site}
+          onChange={(e) => setSite(e.target.value)}
+          placeholder="123 Example Rd, Melbourne"
+          className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+        />
+      </div>
+
+      {/* Litres */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Estimated Litres</label>
+        <input
+          type="number"
+          value={litres}
+          onChange={(e) => setLitres(e.target.value)}
+          placeholder="3000"
+          className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+        />
+      </div>
+
+      {/* Notes */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Notes (optional)</label>
+        <input
+          type="text"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Access via rear gate…"
+          className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+        />
+      </div>
+
+      <button
+        onClick={handleSubmit}
+        disabled={createOrder.isPending}
+        className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        style={{ minHeight: 48 }}
+      >
+        <Plus className="w-4 h-4" />
+        {createOrder.isPending ? "Adding…" : "Add to Route"}
+      </button>
+    </div>
+  );
+}
+
 function MyDayTab() {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data: schedule, isLoading } = useSchedule(today);
   const reorderStops = useReorderStops();
   const markComplete = useMarkComplete();
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const stops = useMemo(() => {
     if (!schedule?.routes?.length) return [];
@@ -343,112 +514,135 @@ function MyDayTab() {
     return <div className="text-center py-10"><p className="text-sm text-muted-foreground">Loading schedule…</p></div>;
   }
 
-  if (stops.length === 0) {
-    return (
-      <div className="text-center py-10">
-        <ClipboardList className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-        <p className="text-md text-muted-foreground m-0">No stops scheduled today</p>
-        <p className="text-xs text-muted-foreground mt-1.5">Check back once dispatch assigns your route</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-3">
-      {/* Summary */}
+      {/* Summary + Add button */}
       <div className="card p-4 flex items-center justify-between">
         <div>
           <p className="kpi-label mb-0.5">Today's Route</p>
           <p className="text-lg font-bold text-foreground">{stops.length} stops</p>
         </div>
-        <div className="text-right">
-          <p className="kpi-label mb-0.5">Completed</p>
-          <p className="text-lg font-bold" style={{ color: "var(--positive, #10B981)" }}>{completedCount} / {stops.length}</p>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="kpi-label mb-0.5">Completed</p>
+            <p className="text-lg font-bold" style={{ color: "var(--positive, #10B981)" }}>{completedCount} / {stops.length}</p>
+          </div>
+          <button
+            onClick={() => setShowAddForm((v) => !v)}
+            className="flex items-center gap-1.5 rounded-lg transition-colors shrink-0"
+            style={{
+              background: "var(--accent, #f04a1a)",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+              padding: "10px 14px",
+              minHeight: 48,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            <Plus className="w-4 h-4" />
+            Add
+          </button>
         </div>
       </div>
 
-      {/* Stop list */}
-      <div className="card" style={{ padding: 0 }}>
-        <div className="px-5 py-3.5 border-b border-surface-border">
-          <span className="text-sm font-semibold text-foreground">Delivery Stops</span>
-        </div>
-        <div className="flex flex-col">
-          {stops.map((stop: any, idx: number) => {
-            const isCompleted = stop.status === "completed";
-            const dragProps = getDragProps(idx);
-            const itemStyle = getItemStyle(idx);
-            return (
-              <div
-                key={stop.orderNo || idx}
-                {...dragProps}
-                className="flex items-center gap-3 px-4 border-b border-surface-border last:border-0"
-                style={{
-                  minHeight: 56,
-                  opacity: isCompleted ? 0.4 : itemStyle.opacity,
-                  borderTop: itemStyle.borderTop,
-                  borderBottom: itemStyle.borderBottom,
-                  cursor: isCompleted ? "default" : itemStyle.cursor,
-                }}
-              >
-                {/* Drag handle */}
-                {!isCompleted && (
-                  <div className="shrink-0 touch-none" style={{ color: "var(--text-muted)", cursor: "grab" }}>
-                    <GripVertical className="w-4 h-4" />
-                  </div>
-                )}
+      {/* Add order form */}
+      {showAddForm && (
+        <DriverAddOrderForm dateStr={today} onClose={() => setShowAddForm(false)} />
+      )}
 
-                {/* Sequence circle */}
+      {/* Stop list or empty state */}
+      {stops.length === 0 ? (
+        <div className="text-center py-10">
+          <ClipboardList className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+          <p className="text-md text-muted-foreground m-0">No stops scheduled today</p>
+          <p className="text-xs text-muted-foreground mt-1.5">Tap "Add" to create a delivery stop</p>
+        </div>
+      ) : (
+        <div className="card" style={{ padding: 0 }}>
+          <div className="px-5 py-3.5 border-b border-surface-border">
+            <span className="text-sm font-semibold text-foreground">Delivery Stops</span>
+            <span className="text-xs text-muted-foreground ml-2">Drag to reorder</span>
+          </div>
+          <div className="flex flex-col">
+            {stops.map((stop: any, idx: number) => {
+              const isCompleted = stop.status === "completed";
+              const dragProps = getDragProps(idx);
+              const itemStyle = getItemStyle(idx);
+              return (
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                  key={stop.orderNo || idx}
+                  {...dragProps}
+                  className="flex items-center gap-3 px-4 border-b border-surface-border last:border-0"
                   style={{
-                    background: isCompleted ? "rgba(16,185,129,0.15)" : "rgba(240,74,26,0.15)",
-                    color: isCompleted ? "#10B981" : "var(--accent, #f04a1a)",
+                    minHeight: 56,
+                    opacity: isCompleted ? 0.4 : itemStyle.opacity,
+                    borderTop: itemStyle.borderTop,
+                    borderBottom: itemStyle.borderBottom,
+                    cursor: isCompleted ? "default" : itemStyle.cursor,
                   }}
                 >
-                  {stop.seq}
-                </div>
+                  {/* Drag handle */}
+                  {!isCompleted && (
+                    <div className="shrink-0 touch-none" style={{ color: "var(--text-muted)", cursor: "grab" }}>
+                      <GripVertical className="w-4 h-4" />
+                    </div>
+                  )}
 
-                {/* Info */}
-                <div className="flex-1 min-w-0 py-2">
-                  <div className="text-sm font-medium text-foreground truncate">{stop.clientName}</div>
-                  {stop.address && <div className="text-xs text-muted-foreground truncate">{stop.address}</div>}
-                  {stop.litres > 0 && <div className="text-[11px] text-muted-foreground mt-0.5">{stop.litres.toLocaleString()}L est.</div>}
-                </div>
-
-                {/* Status */}
-                <StopStatusChip status={stop.status} />
-
-                {/* Done button */}
-                {!isCompleted && (
-                  <button
-                    onClick={() => {
-                      markComplete.mutate(stop.orderNo, {
-                        onSuccess: () => toast.success(`${stop.clientName} marked complete`),
-                        onError: (err) => toast.error(err.message),
-                      });
-                    }}
-                    disabled={markComplete.isPending}
-                    className="flex items-center gap-1.5 rounded-lg transition-colors shrink-0"
+                  {/* Sequence circle */}
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                     style={{
-                      background: "rgba(16,185,129,0.15)",
-                      color: "#10B981",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "10px 14px",
-                      minHeight: 48,
-                      fontSize: 12,
-                      fontWeight: 600,
+                      background: isCompleted ? "rgba(16,185,129,0.15)" : "rgba(240,74,26,0.15)",
+                      color: isCompleted ? "#10B981" : "var(--accent, #f04a1a)",
                     }}
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    Done
-                  </button>
-                )}
-              </div>
-            );
-          })}
+                    {stop.seq}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0 py-2">
+                    <div className="text-sm font-medium text-foreground truncate">{stop.clientName}</div>
+                    {stop.address && <div className="text-xs text-muted-foreground truncate">{stop.address}</div>}
+                    {stop.litres > 0 && <div className="text-[11px] text-muted-foreground mt-0.5">{stop.litres.toLocaleString()}L est.</div>}
+                  </div>
+
+                  {/* Status */}
+                  <StopStatusChip status={stop.status} />
+
+                  {/* Done button */}
+                  {!isCompleted && (
+                    <button
+                      onClick={() => {
+                        markComplete.mutate(stop.orderNo, {
+                          onSuccess: () => toast.success(`${stop.clientName} marked complete`),
+                          onError: (err) => toast.error(err.message),
+                        });
+                      }}
+                      disabled={markComplete.isPending}
+                      className="flex items-center gap-1.5 rounded-lg transition-colors shrink-0"
+                      style={{
+                        background: "rgba(16,185,129,0.15)",
+                        color: "#10B981",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "10px 14px",
+                        minHeight: 48,
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Done
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
