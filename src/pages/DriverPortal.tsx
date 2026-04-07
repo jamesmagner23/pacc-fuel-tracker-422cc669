@@ -535,6 +535,8 @@ export default function DriverPortal() {
 
         {activeTab === "myday" ? (
           <MyDayTab />
+        ) : activeTab === "sops" ? (
+          <DriverSOPSection />
         ) : (
         <>
         <TruckMap height={200} compact={true} />
