@@ -131,6 +131,20 @@ serve(async (req) => {
         return ok(data);
       }
 
+      // ── Mark an order as complete ──
+      case "mark_complete": {
+        if (!payload?.orderNo) return fail("Missing payload.orderNo", 400);
+        const data = await orFetch("/complete_order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderNo: payload.orderNo,
+            completionStatus: "success",
+          }),
+        });
+        return ok(data);
+      }
+
       default:
         return fail(`Unknown action: ${action}`, 400);
     }

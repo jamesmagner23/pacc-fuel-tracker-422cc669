@@ -3,7 +3,7 @@ import { TruckMap } from "@/components/TruckMap";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, subWeeks } from "date-fns";
-import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, ChevronUp, ChevronDown, ClipboardList } from "lucide-react";
+import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, ChevronUp, ChevronDown, ClipboardList, CheckCircle2 } from "lucide-react";
 import { PumpReadingForm } from "@/components/reconciliation/PumpReadingForm";
 import { PACCLogo } from "@/components/PACCLogo";
 import { toast } from "sonner";

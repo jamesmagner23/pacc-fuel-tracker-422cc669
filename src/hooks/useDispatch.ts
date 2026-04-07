@@ -61,3 +61,12 @@ export function useDeleteOrder() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
   });
 }
+
+export function useMarkComplete() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (orderNo: string) =>
+      dispatch("mark_complete", { orderNo }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
+  });
+}
