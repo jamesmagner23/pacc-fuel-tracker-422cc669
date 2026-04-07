@@ -628,6 +628,8 @@ export default function DriverPortal() {
             <p className="text-sm text-muted-foreground">Loading…</p>
           </div>
         )}
+        </>
+        )}
       </div>
     </div>
   );
