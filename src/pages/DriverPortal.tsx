@@ -375,12 +375,28 @@ function MyDayTab() {
         <div className="flex flex-col">
           {stops.map((stop: any, idx: number) => {
             const isCompleted = stop.status === "completed";
+            const dragProps = getDragProps(idx);
+            const itemStyle = getItemStyle(idx);
             return (
               <div
                 key={stop.orderNo || idx}
+                {...dragProps}
                 className="flex items-center gap-3 px-4 border-b border-surface-border last:border-0"
-                style={{ minHeight: 56, opacity: isCompleted ? 0.4 : 1 }}
+                style={{
+                  minHeight: 56,
+                  opacity: isCompleted ? 0.4 : itemStyle.opacity,
+                  borderTop: itemStyle.borderTop,
+                  borderBottom: itemStyle.borderBottom,
+                  cursor: isCompleted ? "default" : itemStyle.cursor,
+                }}
               >
+                {/* Drag handle */}
+                {!isCompleted && (
+                  <div className="shrink-0 touch-none" style={{ color: "var(--text-muted)", cursor: "grab" }}>
+                    <GripVertical className="w-4 h-4" />
+                  </div>
+                )}
+
                 {/* Sequence circle */}
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
@@ -402,51 +418,31 @@ function MyDayTab() {
                 {/* Status */}
                 <StopStatusChip status={stop.status} />
 
-                {/* Actions for non-completed stops */}
+                {/* Done button */}
                 {!isCompleted && (
-                  <div className="flex items-center gap-1 shrink-0">
-                    <div className="flex flex-col">
-                      <button
-                        onClick={() => handleMove(idx, "up")}
-                        disabled={idx === 0}
-                        className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
-                        style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
-                      >
-                        <ChevronUp className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleMove(idx, "down")}
-                        disabled={idx === stops.length - 1}
-                        className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
-                        style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => {
-                        markComplete.mutate(stop.orderNo, {
-                          onSuccess: () => toast.success(`${stop.clientName} marked complete`),
-                          onError: (err) => toast.error(err.message),
-                        });
-                      }}
-                      disabled={markComplete.isPending}
-                      className="flex items-center gap-1.5 rounded-lg transition-colors"
-                      style={{
-                        background: "rgba(16,185,129,0.15)",
-                        color: "#10B981",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "10px 14px",
-                        minHeight: 48,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      Done
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      markComplete.mutate(stop.orderNo, {
+                        onSuccess: () => toast.success(`${stop.clientName} marked complete`),
+                        onError: (err) => toast.error(err.message),
+                      });
+                    }}
+                    disabled={markComplete.isPending}
+                    className="flex items-center gap-1.5 rounded-lg transition-colors shrink-0"
+                    style={{
+                      background: "rgba(16,185,129,0.15)",
+                      color: "#10B981",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "10px 14px",
+                      minHeight: 48,
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Done
+                  </button>
                 )}
               </div>
             );
