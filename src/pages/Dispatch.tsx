@@ -16,7 +16,7 @@ import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { toast } from "sonner";
 
 function useClientAccounts() {
-  const { isDemo } = useDemo();
+  const isDemo = useDemo();
   return useQuery({
     queryKey: ["client-accounts-dispatch", isDemo],
     queryFn: async () => {
