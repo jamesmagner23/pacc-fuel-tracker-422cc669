@@ -324,16 +324,18 @@ function MyDayTab() {
     }));
   }, [schedule]);
 
-  const handleMove = (index: number, direction: "up" | "down") => {
-    const newStops = [...stops];
-    const swapIdx = direction === "up" ? index - 1 : index + 1;
-    if (swapIdx < 0 || swapIdx >= newStops.length) return;
-    [newStops[index], newStops[swapIdx]] = [newStops[swapIdx], newStops[index]];
-    const orders = newStops.map((s, i) => ({ orderNo: s.orderNo, sequence: i + 1 }));
+  const handleReorder = (reordered: typeof stops) => {
+    const orders = reordered.map((s, i) => ({ orderNo: s.orderNo, sequence: i + 1 }));
     reorderStops.mutate(orders, {
       onError: (err) => toast.error(err.message),
     });
   };
+
+  const { getDragProps, getItemStyle } = useDragReorder({
+    items: stops,
+    onReorder: handleReorder,
+    canDrag: (item: any) => item.status !== "completed",
+  });
 
   const completedCount = stops.filter((s: any) => s.status === "completed").length;
 
