@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, Zap, ChevronUp, ChevronDown, Trash2, X, Package, CheckCircle2, Clock } from "lucide-react";
+import { CalendarIcon, Plus, Zap, GripVertical, Trash2, X, Package, CheckCircle2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TruckMap } from "@/components/TruckMap";
 import { useSchedule, useCreateOrder, useOptimise, useReorderStops, useDeleteOrder } from "@/hooks/useDispatch";
+import { useDragReorder } from "@/hooks/useDragReorder";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { toast } from "sonner";
@@ -150,12 +151,8 @@ export default function Dispatch() {
     });
   };
 
-  const handleMoveStop = (index: number, direction: "up" | "down") => {
-    const newStops = [...stops];
-    const swapIdx = direction === "up" ? index - 1 : index + 1;
-    if (swapIdx < 0 || swapIdx >= newStops.length) return;
-    [newStops[index], newStops[swapIdx]] = [newStops[swapIdx], newStops[index]];
-    const orders = newStops.map((s, i) => ({
+  const handleReorder = (reordered: typeof stops) => {
+    const orders = reordered.map((s, i) => ({
       orderNo: s.orderNo,
       sequence: i + 1,
     }));
@@ -163,6 +160,12 @@ export default function Dispatch() {
       onError: (err) => toast.error(err.message),
     });
   };
+
+  const { getDragProps, getItemStyle } = useDragReorder({
+    items: stops,
+    onReorder: handleReorder,
+    canDrag: (item: any) => item.status !== "completed",
+  });
 
   const handleDelete = (orderNo: string) => {
     deleteOrder.mutate([orderNo], {
@@ -389,17 +392,30 @@ export default function Dispatch() {
             <div className="flex flex-col gap-1 max-h-[460px] overflow-y-auto pr-1">
               {stops.map((stop: any, idx: number) => {
                 const isCompleted = stop.status === "completed";
+                const dragProps = getDragProps(idx);
+                const itemStyle = getItemStyle(idx);
                 return (
                   <div
                     key={stop.orderNo || idx}
+                    {...dragProps}
                     className="flex items-center gap-3 p-3 rounded-lg transition-colors"
                     style={{
                       border: `1px solid ${tc.border}`,
-                      opacity: isCompleted ? 0.5 : 1,
+                      opacity: isCompleted ? 0.5 : itemStyle.opacity,
+                      borderTop: itemStyle.borderTop,
+                      borderBottom: itemStyle.borderBottom,
+                      cursor: isCompleted ? "default" : itemStyle.cursor,
                     }}
                     onMouseEnter={(e) => { if (!isCompleted) e.currentTarget.style.background = tc.surfaceHover; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                   >
+                    {/* Drag handle */}
+                    {!isCompleted && (
+                      <div className="shrink-0 touch-none" style={{ color: tc.textMuted, cursor: "grab" }}>
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+                    )}
+
                     {/* Sequence */}
                     <div
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
@@ -423,27 +439,7 @@ export default function Dispatch() {
                     {/* Status */}
                     <StatusChip status={stop.status} />
 
-                    {/* Actions */}
-                    {!isCompleted && (
-                      <div className="flex flex-col gap-0.5 shrink-0">
-                        <button
-                          onClick={() => handleMoveStop(idx, "up")}
-                          disabled={idx === 0}
-                          className="p-0.5 rounded hover:bg-white/5 disabled:opacity-20"
-                          style={{ color: tc.textMuted, background: "none", border: "none", cursor: "pointer" }}
-                        >
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleMoveStop(idx, "down")}
-                          disabled={idx === stops.length - 1}
-                          className="p-0.5 rounded hover:bg-white/5 disabled:opacity-20"
-                          style={{ color: tc.textMuted, background: "none", border: "none", cursor: "pointer" }}
-                        >
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
+                    {/* Delete */}
                     {!isCompleted && (
                       <button
                         onClick={() => handleDelete(stop.orderNo)}
