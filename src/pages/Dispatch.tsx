@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, Zap, ChevronUp, ChevronDown, Trash2, X, Package, CheckCircle2, Clock } from "lucide-react";
+import { CalendarIcon, Plus, Zap, GripVertical, Trash2, X, Package, CheckCircle2, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TruckMap } from "@/components/TruckMap";
 import { useSchedule, useCreateOrder, useOptimise, useReorderStops, useDeleteOrder } from "@/hooks/useDispatch";
+import { useDragReorder } from "@/hooks/useDragReorder";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { toast } from "sonner";
@@ -150,12 +151,8 @@ export default function Dispatch() {
     });
   };
 
-  const handleMoveStop = (index: number, direction: "up" | "down") => {
-    const newStops = [...stops];
-    const swapIdx = direction === "up" ? index - 1 : index + 1;
-    if (swapIdx < 0 || swapIdx >= newStops.length) return;
-    [newStops[index], newStops[swapIdx]] = [newStops[swapIdx], newStops[index]];
-    const orders = newStops.map((s, i) => ({
+  const handleReorder = (reordered: typeof stops) => {
+    const orders = reordered.map((s, i) => ({
       orderNo: s.orderNo,
       sequence: i + 1,
     }));
@@ -163,6 +160,12 @@ export default function Dispatch() {
       onError: (err) => toast.error(err.message),
     });
   };
+
+  const { getDragProps, getItemStyle } = useDragReorder({
+    items: stops,
+    onReorder: handleReorder,
+    canDrag: (item) => item.status !== "completed",
+  });
 
   const handleDelete = (orderNo: string) => {
     deleteOrder.mutate([orderNo], {
