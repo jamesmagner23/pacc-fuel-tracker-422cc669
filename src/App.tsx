@@ -20,6 +20,7 @@ import DriverPortal from "./pages/DriverPortal";
 import Admin from "./pages/Admin";
 import Reconciliation from "./pages/Reconciliation";
 import MarketIntelligence from "./pages/MarketIntelligence";
+import Dispatch from "./pages/Dispatch";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import LandingPage from "./pages/LandingPage";
