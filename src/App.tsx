@@ -55,6 +55,7 @@ function DemoAwareRoutes() {
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/market" element={<MarketIntelligence />} />
+                <Route path="/dispatch" element={<Dispatch />} />
                 <Route path="/portal" element={<CustomerPortal />} />
                 <Route path="/driver" element={<DriverPortal />} />
                 <Route path="*" element={<NotFound />} />
@@ -79,6 +80,7 @@ function DemoAwareRoutes() {
                   <Route path="/finance" element={<Finance />} />
                    <Route path="/admin" element={<Admin />} />
                    <Route path="/market" element={<MarketIntelligence />} />
+                   <Route path="/dispatch" element={<Dispatch />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
