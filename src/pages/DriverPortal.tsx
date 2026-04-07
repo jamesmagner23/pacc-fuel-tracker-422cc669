@@ -398,24 +398,49 @@ function MyDayTab() {
                 {/* Status */}
                 <StopStatusChip status={stop.status} />
 
-                {/* Reorder buttons */}
+                {/* Actions for non-completed stops */}
                 {!isCompleted && (
-                  <div className="flex flex-col shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex flex-col">
+                      <button
+                        onClick={() => handleMove(idx, "up")}
+                        disabled={idx === 0}
+                        className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
+                        style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleMove(idx, "down")}
+                        disabled={idx === stops.length - 1}
+                        className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
+                        style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
                     <button
-                      onClick={() => handleMove(idx, "up")}
-                      disabled={idx === 0}
-                      className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
-                      style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
+                      onClick={() => {
+                        markComplete.mutate(stop.orderNo, {
+                          onSuccess: () => toast.success(`${stop.clientName} marked complete`),
+                          onError: (err) => toast.error(err.message),
+                        });
+                      }}
+                      disabled={markComplete.isPending}
+                      className="flex items-center gap-1.5 rounded-lg transition-colors"
+                      style={{
+                        background: "rgba(16,185,129,0.15)",
+                        color: "#10B981",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "10px 14px",
+                        minHeight: 48,
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
                     >
-                      <ChevronUp className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleMove(idx, "down")}
-                      disabled={idx === stops.length - 1}
-                      className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
-                      style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
-                    >
-                      <ChevronDown className="w-4 h-4" />
+                      <CheckCircle2 className="w-4 h-4" />
+                      Done
                     </button>
                   </div>
                 )}
