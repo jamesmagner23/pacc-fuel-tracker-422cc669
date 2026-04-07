@@ -36,12 +36,13 @@ function useClientAccounts() {
 function useCreateClient() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (client: { company_name: string; contact_email?: string }) => {
+    mutationFn: async (client: { company_name: string; contact_email?: string; contact_phone?: string }) => {
       const { data, error } = await supabase
         .from("client_accounts")
         .insert({
           company_name: client.company_name,
           contact_email: client.contact_email || `${client.company_name.toLowerCase().replace(/[^a-z0-9]/g, '')}@pending.com`,
+          contact_phone: client.contact_phone || null,
         })
         .select("id, company_name")
         .single();
@@ -210,6 +211,7 @@ export default function Dispatch() {
   const [formTimeTo, setFormTimeTo] = useState("");
   const [formNotes, setFormNotes] = useState("");
   const [formContactEmail, setFormContactEmail] = useState("");
+  const [formContactPhone, setFormContactPhone] = useState("");
   const [isNewClient, setIsNewClient] = useState(false);
 
   const stops = useMemo(() => {
@@ -240,6 +242,7 @@ export default function Dispatch() {
     setFormTimeTo("");
     setFormNotes("");
     setFormContactEmail("");
+    setFormContactPhone("");
     setIsNewClient(false);
   };
 
@@ -276,7 +279,7 @@ export default function Dispatch() {
     if (isNewClient) {
       // Create client first, then create the OptimoRoute order
       createClient.mutate(
-        { company_name: formClientName, contact_email: formContactEmail || undefined },
+        { company_name: formClientName, contact_email: formContactEmail || undefined, contact_phone: formContactPhone || undefined },
         {
           onSuccess: (newClient) => {
             toast.success(`New client "${newClient.company_name}" created`);
@@ -450,17 +453,30 @@ export default function Dispatch() {
               />
             </div>
             {isNewClient && (
-              <div>
-                <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: tc.textSecondary }}>Contact Email (optional)</label>
-                <Input
-                  type="email"
-                  className="h-9 bg-transparent border-surface-border text-xs"
-                  style={{ color: tc.textPrimary }}
-                  value={formContactEmail}
-                  onChange={(e) => setFormContactEmail(e.target.value)}
-                  placeholder="client@company.com"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: tc.textSecondary }}>Contact Email (optional)</label>
+                  <Input
+                    type="email"
+                    className="h-9 bg-transparent border-surface-border text-xs"
+                    style={{ color: tc.textPrimary }}
+                    value={formContactEmail}
+                    onChange={(e) => setFormContactEmail(e.target.value)}
+                    placeholder="client@company.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: tc.textSecondary }}>Contact Phone (optional)</label>
+                  <Input
+                    type="tel"
+                    className="h-9 bg-transparent border-surface-border text-xs"
+                    style={{ color: tc.textPrimary }}
+                    value={formContactPhone}
+                    onChange={(e) => setFormContactPhone(e.target.value)}
+                    placeholder="04XX XXX XXX"
+                  />
+                </div>
+              </>
             )}
             <div>
               <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: tc.textSecondary }}>Site Address</label>
