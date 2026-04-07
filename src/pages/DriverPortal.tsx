@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_FUEL_INTAKE_LOGS } from "@/data/demoData";
-import { useSchedule, useReorderStops } from "@/hooks/useDispatch";
+import { useSchedule, useReorderStops, useMarkComplete } from "@/hooks/useDispatch";
 
 function IntakeLogRow({ log }: { log: any }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
