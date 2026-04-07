@@ -1,8 +1,66 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { ChevronDown, ChevronRight, BookOpen, MapPin, Phone, Calendar, Search } from "lucide-react";
+import { useDemo } from "@/hooks/useDemo";
 import { SOP_SECTIONS, CLIENT_SITES, type SOPSection, type ClientSite } from "@/data/sopData";
 
-function SectionCard({ section }: { section: SOPSection }) {
+interface DBSection {
+  id: string;
+  title: string;
+  display_order: number;
+  subsections: { title: string; content: string[] }[];
+}
+
+interface DBSite {
+  id: string;
+  client: string;
+  site: string;
+  address: string;
+  contact: string;
+  phone: string;
+  preferred_days: string;
+  codes: { code: string; description: string }[];
+  notes: string[];
+}
+
+function useSopData() {
+  const isDemo = useDemo();
+
+  const sections = useQuery({
+    queryKey: ["driver-sop-sections", isDemo],
+    queryFn: async () => {
+      if (isDemo) {
+        return SOP_SECTIONS.map((s, i) => ({ ...s, display_order: i } as unknown as DBSection));
+      }
+      const { data, error } = await supabase
+        .from("sop_sections")
+        .select("*")
+        .order("display_order");
+      if (error) throw error;
+      return (data || []) as unknown as DBSection[];
+    },
+  });
+
+  const sites = useQuery({
+    queryKey: ["driver-sop-sites", isDemo],
+    queryFn: async () => {
+      if (isDemo) {
+        return CLIENT_SITES.map((s, i) => ({ ...s, id: `demo-${i}`, preferred_days: s.preferredDays } as unknown as DBSite));
+      }
+      const { data, error } = await supabase
+        .from("sop_client_sites")
+        .select("*")
+        .order("client");
+      if (error) throw error;
+      return (data || []) as unknown as DBSite[];
+    },
+  });
+
+  return { sections, sites };
+}
+
+function SectionCard({ section }: { section: DBSection }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -35,7 +93,7 @@ function SectionCard({ section }: { section: SOPSection }) {
   );
 }
 
-function ClientSiteCard({ site }: { site: ClientSite }) {
+function ClientSiteCard({ site }: { site: DBSite }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -64,7 +122,7 @@ function ClientSiteCard({ site }: { site: ClientSite }) {
             </div>
             <div className="flex items-start gap-2">
               <Calendar className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "var(--accent)" }} />
-              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{site.preferredDays}</span>
+              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>{site.preferred_days}</span>
             </div>
           </div>
 
@@ -100,9 +158,13 @@ function ClientSiteCard({ site }: { site: ClientSite }) {
 export function DriverSOPSection() {
   const [activeView, setActiveView] = useState<"procedures" | "sites">("procedures");
   const [search, setSearch] = useState("");
+  const { sections, sites } = useSopData();
+
+  const allSections = sections.data || [];
+  const allSites = sites.data || [];
 
   const filteredSections = search
-    ? SOP_SECTIONS.filter(
+    ? allSections.filter(
         (s) =>
           s.title.toLowerCase().includes(search.toLowerCase()) ||
           s.subsections.some(
@@ -111,16 +173,16 @@ export function DriverSOPSection() {
               sub.content.some((c) => c.toLowerCase().includes(search.toLowerCase()))
           )
       )
-    : SOP_SECTIONS;
+    : allSections;
 
   const filteredSites = search
-    ? CLIENT_SITES.filter(
+    ? allSites.filter(
         (s) =>
           s.client.toLowerCase().includes(search.toLowerCase()) ||
           s.site.toLowerCase().includes(search.toLowerCase()) ||
           s.codes.some((c) => c.code.toLowerCase().includes(search.toLowerCase()))
       )
-    : CLIENT_SITES;
+    : allSites;
 
   return (
     <div className="flex flex-col gap-3">
@@ -165,10 +227,15 @@ export function DriverSOPSection() {
         ))}
       </div>
 
+      {/* Loading */}
+      {(sections.isLoading || sites.isLoading) && (
+        <p className="text-xs text-muted-foreground text-center py-6">Loading…</p>
+      )}
+
       {/* Content */}
       {activeView === "procedures" ? (
         <div className="flex flex-col gap-1">
-          {filteredSections.length === 0 ? (
+          {filteredSections.length === 0 && !sections.isLoading ? (
             <p className="text-xs text-muted-foreground text-center py-6">No matching procedures found.</p>
           ) : (
             filteredSections.map((section) => <SectionCard key={section.id} section={section} />)
@@ -176,10 +243,10 @@ export function DriverSOPSection() {
         </div>
       ) : (
         <div className="flex flex-col gap-1">
-          {filteredSites.length === 0 ? (
+          {filteredSites.length === 0 && !sites.isLoading ? (
             <p className="text-xs text-muted-foreground text-center py-6">No matching sites found.</p>
           ) : (
-            filteredSites.map((site, i) => <ClientSiteCard key={`${site.client}-${site.site}-${i}`} site={site} />)
+            filteredSites.map((site) => <ClientSiteCard key={site.id} site={site} />)
           )}
         </div>
       )}

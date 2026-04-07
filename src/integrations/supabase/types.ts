@@ -539,6 +539,75 @@ export type Database = {
           },
         ]
       }
+      sop_client_sites: {
+        Row: {
+          address: string
+          client: string
+          codes: Json
+          contact: string
+          created_at: string
+          id: string
+          notes: Json
+          phone: string
+          preferred_days: string
+          site: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          client: string
+          codes?: Json
+          contact?: string
+          created_at?: string
+          id?: string
+          notes?: Json
+          phone?: string
+          preferred_days?: string
+          site: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          client?: string
+          codes?: Json
+          contact?: string
+          created_at?: string
+          id?: string
+          notes?: Json
+          phone?: string
+          preferred_days?: string
+          site?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sop_sections: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          subsections: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          subsections?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          subsections?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sync_log: {
         Row: {
           error_message: string | null

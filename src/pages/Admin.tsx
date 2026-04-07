@@ -5,6 +5,7 @@ import { format, parseISO, subDays } from "date-fns";
 import { Users, Activity, Shield, Trash2, Pencil, LogIn, Download, Eye, X, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import Reconciliation from "./Reconciliation";
+import SOPManager from "@/components/admin/SOPManager";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_USERS, DEMO_ACTIVITY } from "@/data/demoData";
 
@@ -128,7 +129,7 @@ export default function Admin() {
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
-  const [activeTab, setActiveTab] = useState<"users" | "reconciliation">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "reconciliation" | "sops">("users");
   const qc = useQueryClient();
 
   const admins = users.filter(u => u.role === "admin");
@@ -172,6 +173,7 @@ export default function Admin() {
   const tabs = [
     { id: "users" as const, label: "Users & Activity", icon: <Users className="w-3.5 h-3.5" /> },
     { id: "reconciliation" as const, label: "Reconciliation", icon: <Gauge className="w-3.5 h-3.5" /> },
+    { id: "sops" as const, label: "SOPs", icon: <Shield className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -197,6 +199,8 @@ export default function Admin() {
 
       {activeTab === "reconciliation" ? (
         <Reconciliation />
+      ) : activeTab === "sops" ? (
+        <SOPManager />
       ) : (
         <>
       {/* KPI row */}
