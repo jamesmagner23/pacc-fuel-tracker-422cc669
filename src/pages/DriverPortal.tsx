@@ -307,6 +307,7 @@ function MyDayTab() {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data: schedule, isLoading } = useSchedule(today);
   const reorderStops = useReorderStops();
+  const markComplete = useMarkComplete();
 
   const stops = useMemo(() => {
     if (!schedule?.routes?.length) return [];
