@@ -283,8 +283,153 @@ function FuelIntakeForm() {
   );
 }
 
+type StopStatus = "scheduled" | "on_route" | "completed" | "failed";
+
+function StopStatusChip({ status }: { status: StopStatus }) {
+  const styles: Record<StopStatus, { bg: string; text: string; label: string }> = {
+    scheduled: { bg: "rgba(139,115,85,0.2)", text: "var(--text-secondary, #C4A882)", label: "Scheduled" },
+    on_route: { bg: "rgba(59,130,246,0.15)", text: "#60A5FA", label: "On Route" },
+    completed: { bg: "rgba(16,185,129,0.15)", text: "#10B981", label: "Completed" },
+    failed: { bg: "rgba(239,68,68,0.15)", text: "#EF4444", label: "Failed" },
+  };
+  const c = styles[status] || styles.scheduled;
+  return (
+    <span
+      className="text-[10px] font-medium px-2.5 py-1 rounded-full uppercase tracking-wider whitespace-nowrap"
+      style={{ background: c.bg, color: c.text }}
+    >
+      {c.label}
+    </span>
+  );
+}
+
+function MyDayTab() {
+  const today = format(new Date(), "yyyy-MM-dd");
+  const { data: schedule, isLoading } = useSchedule(today);
+  const reorderStops = useReorderStops();
+
+  const stops = useMemo(() => {
+    if (!schedule?.routes?.length) return [];
+    const route = schedule.routes[0];
+    return (route.stops || []).map((s: any, i: number) => ({
+      seq: i + 1,
+      orderNo: s.orderNo,
+      clientName: s.location?.name || s.orderNo || `Stop ${i + 1}`,
+      address: s.location?.address || "",
+      litres: s.duration || 0,
+      status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
+    }));
+  }, [schedule]);
+
+  const handleMove = (index: number, direction: "up" | "down") => {
+    const newStops = [...stops];
+    const swapIdx = direction === "up" ? index - 1 : index + 1;
+    if (swapIdx < 0 || swapIdx >= newStops.length) return;
+    [newStops[index], newStops[swapIdx]] = [newStops[swapIdx], newStops[index]];
+    const orders = newStops.map((s, i) => ({ orderNo: s.orderNo, sequence: i + 1 }));
+    reorderStops.mutate(orders, {
+      onError: (err) => toast.error(err.message),
+    });
+  };
+
+  const completedCount = stops.filter((s: any) => s.status === "completed").length;
+
+  if (isLoading) {
+    return <div className="text-center py-10"><p className="text-sm text-muted-foreground">Loading schedule…</p></div>;
+  }
+
+  if (stops.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <ClipboardList className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+        <p className="text-md text-muted-foreground m-0">No stops scheduled today</p>
+        <p className="text-xs text-muted-foreground mt-1.5">Check back once dispatch assigns your route</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Summary */}
+      <div className="card p-4 flex items-center justify-between">
+        <div>
+          <p className="kpi-label mb-0.5">Today's Route</p>
+          <p className="text-lg font-bold text-foreground">{stops.length} stops</p>
+        </div>
+        <div className="text-right">
+          <p className="kpi-label mb-0.5">Completed</p>
+          <p className="text-lg font-bold" style={{ color: "var(--positive, #10B981)" }}>{completedCount} / {stops.length}</p>
+        </div>
+      </div>
+
+      {/* Stop list */}
+      <div className="card" style={{ padding: 0 }}>
+        <div className="px-5 py-3.5 border-b border-surface-border">
+          <span className="text-sm font-semibold text-foreground">Delivery Stops</span>
+        </div>
+        <div className="flex flex-col">
+          {stops.map((stop: any, idx: number) => {
+            const isCompleted = stop.status === "completed";
+            return (
+              <div
+                key={stop.orderNo || idx}
+                className="flex items-center gap-3 px-4 border-b border-surface-border last:border-0"
+                style={{ minHeight: 56, opacity: isCompleted ? 0.4 : 1 }}
+              >
+                {/* Sequence circle */}
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                  style={{
+                    background: isCompleted ? "rgba(16,185,129,0.15)" : "rgba(240,74,26,0.15)",
+                    color: isCompleted ? "#10B981" : "var(--accent, #f04a1a)",
+                  }}
+                >
+                  {stop.seq}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0 py-2">
+                  <div className="text-sm font-medium text-foreground truncate">{stop.clientName}</div>
+                  {stop.address && <div className="text-xs text-muted-foreground truncate">{stop.address}</div>}
+                  {stop.litres > 0 && <div className="text-[11px] text-muted-foreground mt-0.5">{stop.litres.toLocaleString()}L est.</div>}
+                </div>
+
+                {/* Status */}
+                <StopStatusChip status={stop.status} />
+
+                {/* Reorder buttons */}
+                {!isCompleted && (
+                  <div className="flex flex-col shrink-0">
+                    <button
+                      onClick={() => handleMove(idx, "up")}
+                      disabled={idx === 0}
+                      className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
+                      style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleMove(idx, "down")}
+                      disabled={idx === stops.length - 1}
+                      className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
+                      style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DriverPortal() {
   const isDemo = useDemo();
+  const [activeTab, setActiveTab] = useState<"dashboard" | "myday">("dashboard");
   const { todayQuery, weekQuery, lastWeekQuery } = useDriverTransactions();
 
   useEffect(() => {
