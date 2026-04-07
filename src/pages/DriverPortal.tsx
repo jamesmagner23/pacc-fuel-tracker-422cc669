@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, subWeeks } from "date-fns";
 import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, ChevronUp, ChevronDown, ClipboardList, CheckCircle2 } from "lucide-react";
+import { DriverSOPSection } from "@/components/DriverSOPSection";
 import { PumpReadingForm } from "@/components/reconciliation/PumpReadingForm";
 import { PACCLogo } from "@/components/PACCLogo";
 import { toast } from "sonner";
@@ -455,7 +456,7 @@ function MyDayTab() {
 
 export default function DriverPortal() {
   const isDemo = useDemo();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "myday">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "myday" | "sops">("dashboard");
   const { todayQuery, weekQuery, lastWeekQuery } = useDriverTransactions();
 
   useEffect(() => {
@@ -513,6 +514,7 @@ export default function DriverPortal() {
           {[
             { key: "dashboard" as const, label: "Dashboard" },
             { key: "myday" as const, label: "My Day" },
+            { key: "sops" as const, label: "SOPs" },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -533,6 +535,8 @@ export default function DriverPortal() {
 
         {activeTab === "myday" ? (
           <MyDayTab />
+        ) : activeTab === "sops" ? (
+          <DriverSOPSection />
         ) : (
         <>
         <TruckMap height={200} compact={true} />
