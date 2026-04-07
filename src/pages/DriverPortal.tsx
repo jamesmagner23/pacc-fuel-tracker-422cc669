@@ -3,14 +3,14 @@ import { TruckMap } from "@/components/TruckMap";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, subWeeks } from "date-fns";
-import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, ChevronUp, ChevronDown, ClipboardList } from "lucide-react";
+import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, ChevronUp, ChevronDown, ClipboardList, CheckCircle2 } from "lucide-react";
 import { PumpReadingForm } from "@/components/reconciliation/PumpReadingForm";
 import { PACCLogo } from "@/components/PACCLogo";
 import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_FUEL_INTAKE_LOGS } from "@/data/demoData";
-import { useSchedule, useReorderStops } from "@/hooks/useDispatch";
+import { useSchedule, useReorderStops, useMarkComplete } from "@/hooks/useDispatch";
 
 function IntakeLogRow({ log }: { log: any }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -307,6 +307,7 @@ function MyDayTab() {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data: schedule, isLoading } = useSchedule(today);
   const reorderStops = useReorderStops();
+  const markComplete = useMarkComplete();
 
   const stops = useMemo(() => {
     if (!schedule?.routes?.length) return [];
@@ -397,24 +398,49 @@ function MyDayTab() {
                 {/* Status */}
                 <StopStatusChip status={stop.status} />
 
-                {/* Reorder buttons */}
+                {/* Actions for non-completed stops */}
                 {!isCompleted && (
-                  <div className="flex flex-col shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex flex-col">
+                      <button
+                        onClick={() => handleMove(idx, "up")}
+                        disabled={idx === 0}
+                        className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
+                        style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleMove(idx, "down")}
+                        disabled={idx === stops.length - 1}
+                        className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
+                        style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
                     <button
-                      onClick={() => handleMove(idx, "up")}
-                      disabled={idx === 0}
-                      className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
-                      style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
+                      onClick={() => {
+                        markComplete.mutate(stop.orderNo, {
+                          onSuccess: () => toast.success(`${stop.clientName} marked complete`),
+                          onError: (err) => toast.error(err.message),
+                        });
+                      }}
+                      disabled={markComplete.isPending}
+                      className="flex items-center gap-1.5 rounded-lg transition-colors"
+                      style={{
+                        background: "rgba(16,185,129,0.15)",
+                        color: "#10B981",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "10px 14px",
+                        minHeight: 48,
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
                     >
-                      <ChevronUp className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleMove(idx, "down")}
-                      disabled={idx === stops.length - 1}
-                      className="p-2 rounded hover:bg-surface-hover disabled:opacity-20 transition-colors"
-                      style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", minHeight: 24 }}
-                    >
-                      <ChevronDown className="w-4 h-4" />
+                      <CheckCircle2 className="w-4 h-4" />
+                      Done
                     </button>
                   </div>
                 )}
