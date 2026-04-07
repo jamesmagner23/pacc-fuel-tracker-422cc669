@@ -392,17 +392,30 @@ export default function Dispatch() {
             <div className="flex flex-col gap-1 max-h-[460px] overflow-y-auto pr-1">
               {stops.map((stop: any, idx: number) => {
                 const isCompleted = stop.status === "completed";
+                const dragProps = getDragProps(idx);
+                const itemStyle = getItemStyle(idx);
                 return (
                   <div
                     key={stop.orderNo || idx}
+                    {...dragProps}
                     className="flex items-center gap-3 p-3 rounded-lg transition-colors"
                     style={{
                       border: `1px solid ${tc.border}`,
-                      opacity: isCompleted ? 0.5 : 1,
+                      opacity: isCompleted ? 0.5 : itemStyle.opacity,
+                      borderTop: itemStyle.borderTop,
+                      borderBottom: itemStyle.borderBottom,
+                      cursor: isCompleted ? "default" : itemStyle.cursor,
                     }}
                     onMouseEnter={(e) => { if (!isCompleted) e.currentTarget.style.background = tc.surfaceHover; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                   >
+                    {/* Drag handle */}
+                    {!isCompleted && (
+                      <div className="shrink-0 touch-none" style={{ color: tc.textMuted, cursor: "grab" }}>
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+                    )}
+
                     {/* Sequence */}
                     <div
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
@@ -426,27 +439,7 @@ export default function Dispatch() {
                     {/* Status */}
                     <StatusChip status={stop.status} />
 
-                    {/* Actions */}
-                    {!isCompleted && (
-                      <div className="flex flex-col gap-0.5 shrink-0">
-                        <button
-                          onClick={() => handleMoveStop(idx, "up")}
-                          disabled={idx === 0}
-                          className="p-0.5 rounded hover:bg-white/5 disabled:opacity-20"
-                          style={{ color: tc.textMuted, background: "none", border: "none", cursor: "pointer" }}
-                        >
-                          <ChevronUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleMoveStop(idx, "down")}
-                          disabled={idx === stops.length - 1}
-                          className="p-0.5 rounded hover:bg-white/5 disabled:opacity-20"
-                          style={{ color: tc.textMuted, background: "none", border: "none", cursor: "pointer" }}
-                        >
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
+                    {/* Delete */}
                     {!isCompleted && (
                       <button
                         onClick={() => handleDelete(stop.orderNo)}
