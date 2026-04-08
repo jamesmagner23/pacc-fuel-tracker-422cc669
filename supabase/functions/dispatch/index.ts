@@ -146,7 +146,7 @@ serve(async (req) => {
         return ok(data);
       }
 
-      // ── Reorder stops on a route (lock scheduledAt times, then re-plan) ──
+      // ── Reorder stops on a route (use time windows to force sequence, then re-plan) ──
       case "reorder_stops": {
         if (!payload?.orders || !Array.isArray(payload.orders)) {
           return fail("Missing payload.orders array", 400);
@@ -154,19 +154,21 @@ serve(async (req) => {
         const reorderDate = payload.date ?? new Date().toISOString().split("T")[0];
         const results = [];
 
-        // Assign staggered scheduledAt times to force desired sequence
-        // Start at 06:00, 30-minute intervals
+        // Assign staggered time windows to force desired sequence
+        // Each stop gets a 30-min window starting at 06:00
         for (let i = 0; i < payload.orders.length; i++) {
           const order = payload.orders[i];
-          const hour = 6 + Math.floor((i * 30) / 60);
-          const minute = (i * 30) % 60;
-          const scheduledAt = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+          const startMinutes = 360 + i * 30; // 06:00 + 30min per stop
+          const endMinutes = startMinutes + 30;
+          const twFrom = `${String(Math.floor(startMinutes / 60)).padStart(2, "0")}:${String(startMinutes % 60).padStart(2, "0")}`;
+          const twTo = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
 
           const body: Record<string, unknown> = {
             operation: "UPDATE",
             orderNo: order.orderNo,
             date: order.date || reorderDate,
-            scheduledAt,
+            twFrom,
+            twTo,
           };
 
           const data = await orFetch("/create_order", {
@@ -177,12 +179,12 @@ serve(async (req) => {
           results.push(data);
         }
 
-        // Re-plan with TIME_LOCK to preserve the scheduledAt times
+        // Re-plan to apply the new time windows
         let planning: unknown = null;
         try {
-          planning = await startPlanning(reorderDate, "CURRENT", "TIME_LOCK");
+          planning = await startPlanning(reorderDate, "CURRENT", "NONE");
         } catch (e) {
-          // Planning may fail if already running; still return update results
+          // Planning may fail if already running
         }
 
         return ok({ updates: results, planning });
