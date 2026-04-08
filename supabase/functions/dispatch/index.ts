@@ -105,6 +105,23 @@ serve(async (req) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
+
+        // Auto-plan so the order appears in get_routes immediately
+        if (data.success) {
+          try {
+            await orFetch("/start_planning", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                date: o.date || new Date().toISOString().split("T")[0],
+                startWith: "CURRENT",
+                lockType: "NONE",
+              }),
+            });
+          } catch (_) {
+            // Planning failure shouldn't block order creation
+          }
+        }
         return ok(data);
       }
 
