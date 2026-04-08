@@ -455,9 +455,14 @@ export default function Dispatch() {
   });
 
   const handleDelete = (orderNo: string) => {
+    toast.loading("Removing stop…", { id: `delete-${orderNo}` });
     deleteOrder.mutate([orderNo], {
-      onSuccess: () => toast.success("Stop removed"),
-      onError: (err) => toast.error(err.message),
+      onSuccess: () => {
+        toast.success("Stop removed", { id: `delete-${orderNo}` });
+      },
+      onError: (err) => {
+        toast.error(err.message, { id: `delete-${orderNo}` });
+      },
     });
   };
 

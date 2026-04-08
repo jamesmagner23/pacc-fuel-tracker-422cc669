@@ -202,7 +202,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const isPublicAuthPath = PUBLIC_PATHS.includes(location.pathname);
 
   if (role === "admin" && isPublicAuthPath) {
-    return <Navigate to={`/?demo=true`} replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (!isDemo) {
