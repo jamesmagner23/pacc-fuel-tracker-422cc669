@@ -71,7 +71,10 @@ serve(async (req) => {
 
         // Location object – use locationName (not name)
         if (o.location) {
-          const loc: Record<string, unknown> = {};
+          const loc: Record<string, unknown> = {
+            acceptPartialMatch: true,
+            acceptMultipleResults: true,
+          };
           if (o.location.address) loc.address = o.location.address;
           if (o.location.locationName || o.location.name) {
             loc.locationName = o.location.locationName || o.location.name;
