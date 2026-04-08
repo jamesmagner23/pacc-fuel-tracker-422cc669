@@ -171,28 +171,21 @@ serve(async (req) => {
         if (!payload?.orderNos || !Array.isArray(payload.orderNos)) {
           return fail("Missing payload.orderNos array", 400);
         }
-        const ids: string[] = payload.ids ?? [];
         const results = [];
         const errors: string[] = [];
-        for (let i = 0; i < payload.orderNos.length; i++) {
-          const no = payload.orderNos[i];
-          const body: Record<string, string> = { orderNo: no };
-          // If an OptimoRoute stop id is provided, include it to disambiguate duplicates
-          if (ids[i]) body.id = ids[i];
+        for (const no of payload.orderNos) {
           const data = await orFetch("/delete_order", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
+            body: JSON.stringify({ orderNo: no }),
           });
           results.push(data);
           if (data?.success === false) {
             errors.push(`${no}: ${data.message || "failed"}`);
           }
         }
-        if (errors.length > 0 && errors.length === payload.orderNos.length) {
-          return fail(errors.join("; "), 400);
-        }
-        return ok(results);
+        // Return success with partial results even if some failed
+        return ok({ results, errors });
       }
 
       // ── Get planning status ──
