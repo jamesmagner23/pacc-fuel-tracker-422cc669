@@ -24,17 +24,29 @@ import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 
 const GST_RATE = 0.1;
 
+const PRODUCT_TYPES = ["Diesel", "AdBlue", "Grease", "Tank", "Pump", "Equipment", "Other"] as const;
+type ProductType = typeof PRODUCT_TYPES[number];
+const FUEL_TYPES: ProductType[] = ["Diesel"];
+
 interface LineItem {
   key: string;
+  productType: ProductType;
   volume: string;
   margin: string;
+  unitPrice: string;
+  quantity: string;
   description: string;
 }
 
+const isFuelType = (t: ProductType) => FUEL_TYPES.includes(t);
+
 const newLineItem = (): LineItem => ({
   key: crypto.randomUUID(),
+  productType: "Diesel",
   volume: "",
   margin: "",
+  unitPrice: "",
+  quantity: "1",
   description: "",
 });
 
