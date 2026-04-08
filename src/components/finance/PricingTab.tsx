@@ -112,14 +112,22 @@ export default function PricingTab() {
   // Calculate per-line and totals
   const lineCalcs = useMemo(() => {
     return lineItems.map((li) => {
-      const vol = parseFloat(li.volume) || 0;
-      const margin = parseFloat(li.margin);
-      const marginPct = !isNaN(margin) ? margin : 0;
-      const sellPrice = latestBuyPrice > 0 ? latestBuyPrice * (1 + marginPct / 100) : 0;
-      const totalEx = sellPrice * vol;
-      return { vol, marginPct, sellPrice, totalEx };
+      const fuel = isFuelType(li.productType);
+      if (fuel) {
+        const vol = parseFloat(li.volume) || 0;
+        const margin = parseFloat(li.margin);
+        const marginPct = !isNaN(margin) ? margin : 0;
+        const sellPrice = latestBuyPrice > 0 ? latestBuyPrice * (1 + marginPct / 100) : 0;
+        const totalEx = sellPrice * vol;
+        return { vol, marginPct, sellPrice, totalEx, fuel };
+      } else {
+        const qty = parseFloat(li.quantity) || 0;
+        const unitPrice = parseFloat(li.unitPrice) || 0;
+        const totalEx = unitPrice * qty;
+        return { vol: qty, marginPct: 0, sellPrice: unitPrice, totalEx, fuel };
+      }
     });
-  }, [lineItems, latestBuyPrice, tiers]);
+  }, [lineItems, latestBuyPrice]);
 
   const grandTotalEx = lineCalcs.reduce((s, c) => s + c.totalEx, 0);
   const grandTotalInc = grandTotalEx * (1 + GST_RATE);
