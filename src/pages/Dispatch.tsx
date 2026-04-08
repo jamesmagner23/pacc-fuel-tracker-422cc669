@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, Zap, GripVertical, Trash2, X, Package, CheckCircle2, Clock, UserPlus } from "lucide-react";
+import { CalendarIcon, Plus, Zap, GripVertical, Trash2, X, Package, CheckCircle2, Clock, UserPlus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TruckMap } from "@/components/TruckMap";
-import { useSchedule, useCreateOrder, useOptimise, useReorderStops, useDeleteOrder, useLocations } from "@/hooks/useDispatch";
+import { useSchedule, useCreateOrder, useOptimise, useReorderStops, useDeleteOrder, useLocations, usePlanningStatus } from "@/hooks/useDispatch";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
@@ -298,6 +298,7 @@ export default function Dispatch() {
   const reorderStops = useReorderStops();
   const deleteOrder = useDeleteOrder();
   const createClient = useCreateClient();
+  const { isPlanning, planningProgress, startPolling } = usePlanningStatus();
 
   // Form state
   const [formClient, setFormClient] = useState("");
@@ -366,9 +367,14 @@ export default function Dispatch() {
         notes: formNotes || undefined,
       },
       {
-        onSuccess: () => {
-          toast.success("Order added to PACC and sent to OptimoRoute");
+        onSuccess: (data) => {
+          toast.success("Order added — optimising route…");
           resetForm();
+          // Start polling if we got a planningId back
+          const planningId = data?.planning?.planningId;
+          if (planningId) {
+            startPolling(planningId);
+          }
         },
         onError: (err) => toast.error(err.message),
       }
@@ -413,7 +419,13 @@ export default function Dispatch() {
 
   const handleOptimise = () => {
     optimise.mutate(dateStr, {
-      onSuccess: () => toast.success("Route optimisation triggered"),
+      onSuccess: (data) => {
+        toast.success("Route optimisation triggered");
+        const planningId = data?.planningId;
+        if (planningId) {
+          startPolling(planningId);
+        }
+      },
       onError: (err) => toast.error(err.message),
     });
   };
@@ -482,10 +494,14 @@ export default function Dispatch() {
             className="h-8 text-xs gap-1.5"
             style={{ color: tc.accent, borderColor: tc.accent }}
             onClick={handleOptimise}
-            disabled={optimise.isPending}
+            disabled={optimise.isPending || isPlanning}
           >
-            <Zap className="w-3.5 h-3.5" />
-            {optimise.isPending ? "Optimising…" : "Optimise Route"}
+            {isPlanning ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Zap className="w-3.5 h-3.5" />
+            )}
+            {optimise.isPending ? "Optimising…" : isPlanning ? `Planning ${planningProgress}%` : "Optimise Route"}
           </Button>
           <Button
             className="h-8 text-xs gap-1.5"
