@@ -553,7 +553,10 @@ export default function Dispatch() {
         ))}
       </div>
 
-      {/* Planning indicator */}
+      {/* Route Analytics */}
+      <DispatchAnalytics selectedDate={date} />
+
+
       {isPlanning && (
         <div
           className="flex items-center gap-3 p-3 sm:p-4"
