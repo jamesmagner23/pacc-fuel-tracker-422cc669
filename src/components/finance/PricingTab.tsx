@@ -24,17 +24,29 @@ import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 
 const GST_RATE = 0.1;
 
+const PRODUCT_TYPES = ["Diesel", "AdBlue", "Grease", "Tank", "Pump", "Equipment", "Other"] as const;
+type ProductType = typeof PRODUCT_TYPES[number];
+const FUEL_TYPES: ProductType[] = ["Diesel"];
+
 interface LineItem {
   key: string;
+  productType: ProductType;
   volume: string;
   margin: string;
+  unitPrice: string;
+  quantity: string;
   description: string;
 }
 
+const isFuelType = (t: ProductType) => FUEL_TYPES.includes(t);
+
 const newLineItem = (): LineItem => ({
   key: crypto.randomUUID(),
+  productType: "Diesel",
   volume: "",
   margin: "",
+  unitPrice: "",
+  quantity: "1",
   description: "",
 });
 
@@ -100,18 +112,27 @@ export default function PricingTab() {
   // Calculate per-line and totals
   const lineCalcs = useMemo(() => {
     return lineItems.map((li) => {
-      const vol = parseFloat(li.volume) || 0;
-      const margin = parseFloat(li.margin);
-      const marginPct = !isNaN(margin) ? margin : 0;
-      const sellPrice = latestBuyPrice > 0 ? latestBuyPrice * (1 + marginPct / 100) : 0;
-      const totalEx = sellPrice * vol;
-      return { vol, marginPct, sellPrice, totalEx };
+      const fuel = isFuelType(li.productType);
+      if (fuel) {
+        const vol = parseFloat(li.volume) || 0;
+        const margin = parseFloat(li.margin);
+        const marginPct = !isNaN(margin) ? margin : 0;
+        const sellPrice = latestBuyPrice > 0 ? latestBuyPrice * (1 + marginPct / 100) : 0;
+        const totalEx = sellPrice * vol;
+        return { vol, marginPct, sellPrice, totalEx, fuel };
+      } else {
+        const qty = parseFloat(li.quantity) || 0;
+        const unitPrice = parseFloat(li.unitPrice) || 0;
+        const totalEx = unitPrice * qty;
+        return { vol: qty, marginPct: 0, sellPrice: unitPrice, totalEx, fuel };
+      }
     });
-  }, [lineItems, latestBuyPrice, tiers]);
+  }, [lineItems, latestBuyPrice]);
 
   const grandTotalEx = lineCalcs.reduce((s, c) => s + c.totalEx, 0);
   const grandTotalInc = grandTotalEx * (1 + GST_RATE);
   const grandVolume = lineCalcs.reduce((s, c) => s + c.vol, 0);
+  const hasFuelItems = lineItems.some(li => isFuelType(li.productType));
   const weightedMargin = grandTotalEx > 0
     ? lineCalcs.reduce((s, c) => s + c.marginPct * c.totalEx, 0) / grandTotalEx
     : 0;
@@ -204,28 +225,39 @@ export default function PricingTab() {
   };
 
   const handleCreateQuote = async () => {
-    if (!hasTodayPrice) {
+    if (hasFuelItems && !hasTodayPrice) {
       toast.error("Today's buy price has not been entered yet — go to Buy Price tab first");
       return;
     }
-    if (!name || !email || grandVolume <= 0) {
-      toast.error("Fill in customer and at least one line item with volume");
+    if (!name || !email || grandTotalEx <= 0) {
+      toast.error("Fill in customer and at least one line item");
       return;
     }
-    // Validate all line items have margin
+    // Validate all line items
     for (let i = 0; i < lineItems.length; i++) {
-      const vol = parseFloat(lineItems[i].volume);
-      const margin = parseFloat(lineItems[i].margin);
-      if (!vol || vol <= 0) { toast.error(`Line ${i + 1}: enter a volume`); return; }
-      if (isNaN(margin)) { toast.error(`Line ${i + 1}: enter a margin %`); return; }
+      const li = lineItems[i];
+      const fuel = isFuelType(li.productType);
+      if (fuel) {
+        const vol = parseFloat(li.volume);
+        const margin = parseFloat(li.margin);
+        if (!vol || vol <= 0) { toast.error(`Line ${i + 1}: enter a volume`); return; }
+        if (isNaN(margin)) { toast.error(`Line ${i + 1}: enter a margin %`); return; }
+      } else {
+        const qty = parseFloat(li.quantity);
+        const price = parseFloat(li.unitPrice);
+        if (!qty || qty <= 0) { toast.error(`Line ${i + 1}: enter a quantity`); return; }
+        if (!price || price <= 0) { toast.error(`Line ${i + 1}: enter a unit price`); return; }
+      }
     }
 
     const lineItemsData = lineItems.map((li, i) => ({
-      volume: parseFloat(li.volume) || 0,
+      product_type: li.productType,
+      volume: lineCalcs[i].vol,
       margin_percent: lineCalcs[i].marginPct,
       sell_price: lineCalcs[i].sellPrice,
       total_ex: lineCalcs[i].totalEx,
-      description: li.description || null,
+      description: li.description || li.productType,
+      is_fuel: lineCalcs[i].fuel,
     }));
 
     // Use weighted average for the quote record
@@ -276,7 +308,7 @@ export default function PricingTab() {
 
     y = 58;
     doc.setTextColor(17, 17, 17); doc.setFontSize(20); doc.setFont("helvetica", "bold");
-    doc.text("Fuel Quote", margin, y);
+    doc.text("Quote", margin, y);
     y += 10;
     doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.setTextColor(102, 102, 102);
     doc.text("Prepared for ", margin, y);
@@ -295,8 +327,8 @@ export default function PricingTab() {
       // Multi-line quote
       doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(102, 102, 102);
       doc.text("Item", margin, y + 4);
-      doc.text("Volume", margin + 60, y + 4);
-      doc.text("Price/L", margin + 95, y + 4);
+      doc.text("Qty / Vol", margin + 60, y + 4);
+      doc.text("Unit Price", margin + 95, y + 4);
       doc.text("Total (Ex GST)", margin + contentW, y + 4, { align: "right" });
       y += 8;
       doc.setDrawColor(238, 238, 238); doc.line(margin, y, margin + contentW, y);
@@ -304,10 +336,11 @@ export default function PricingTab() {
 
       doc.setFont("helvetica", "normal"); doc.setFontSize(10);
       items.forEach((item: any, i: number) => {
+        const isFuel = item.is_fuel !== false && !item.product_type || item.product_type === "Diesel";
         doc.setTextColor(17, 17, 17);
-        doc.text(item.description || `Line ${i + 1}`, margin, y + 4);
-        doc.text(`${Number(item.volume).toLocaleString()}L`, margin + 60, y + 4);
-        doc.text(`$${Number(item.sell_price).toFixed(4)}`, margin + 95, y + 4);
+        doc.text(item.description || item.product_type || `Line ${i + 1}`, margin, y + 4);
+        doc.text(isFuel ? `${Number(item.volume).toLocaleString()}L` : `× ${Number(item.volume).toLocaleString()}`, margin + 60, y + 4);
+        doc.text(`$${Number(item.sell_price).toFixed(isFuel ? 4 : 2)}`, margin + 95, y + 4);
         doc.setFont("helvetica", "bold");
         doc.text(`$${Number(item.total_ex).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, margin + contentW, y + 4, { align: "right" });
         doc.setFont("helvetica", "normal");
@@ -385,9 +418,17 @@ export default function PricingTab() {
     setName(q.customer_name); setEmail(q.customer_email); setPhone(q.customer_phone || ""); setNotes(q.notes || "");
     const items: any[] = (q as any).line_items || [];
     if (items.length > 0) {
-      setLineItems(items.map((li: any) => ({ key: crypto.randomUUID(), volume: String(li.volume), margin: String(li.margin_percent), description: li.description || "" })));
+      setLineItems(items.map((li: any) => ({
+        key: crypto.randomUUID(),
+        productType: (li.product_type || "Diesel") as ProductType,
+        volume: String(li.volume),
+        margin: String(li.margin_percent),
+        unitPrice: li.is_fuel ? "" : String(li.sell_price || ""),
+        quantity: li.is_fuel ? "1" : String(li.volume || 1),
+        description: li.description || "",
+      })));
     } else {
-      setLineItems([{ key: crypto.randomUUID(), volume: String(q.volume_litres), margin: String(q.margin_percent), description: "" }]);
+      setLineItems([{ key: crypto.randomUUID(), productType: "Diesel" as ProductType, volume: String(q.volume_litres), margin: String(q.margin_percent), unitPrice: "", quantity: "1", description: "" }]);
     }
     toast.info("Quote duplicated — edit and create a new one");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -514,44 +555,63 @@ export default function PricingTab() {
         {/* Line items table */}
         <div className="mt-4">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Line Items</div>
-          <div className="bg-[hsl(var(--muted))] rounded-lg overflow-hidden">
-            <table className="w-full text-[11px]">
+          <div className="bg-[hsl(var(--muted))] rounded-lg overflow-x-auto">
+            <table className="w-full text-[11px] min-w-[600px]">
               <thead>
                 <tr className="text-muted-foreground text-left">
                   <th className="px-2 py-2 font-medium w-8">#</th>
+                  <th className="px-2 py-2 font-medium w-28">Product</th>
                   <th className="px-2 py-2 font-medium">Description</th>
-                  <th className="px-2 py-2 font-medium">Volume (L)</th>
-                  <th className="px-2 py-2 font-medium">Margin %</th>
-                  {latestBuyPrice > 0 && <th className="px-2 py-2 font-medium">Sell $/L</th>}
-                  {latestBuyPrice > 0 && <th className="px-2 py-2 font-medium">Total Ex GST</th>}
+                  <th className="px-2 py-2 font-medium">Qty / Vol</th>
+                  <th className="px-2 py-2 font-medium">Margin % / Unit $</th>
+                  <th className="px-2 py-2 font-medium">Price</th>
+                  <th className="px-2 py-2 font-medium">Total Ex GST</th>
                   <th className="px-2 py-2 font-medium w-8"></th>
                 </tr>
               </thead>
               <tbody>
                 {lineItems.map((li, i) => {
                   const calc = lineCalcs[i];
+                  const fuel = isFuelType(li.productType);
                   return (
                     <tr key={li.key} className="border-t border-border/50">
                       <td className="px-2 py-2 text-muted-foreground">{i + 1}</td>
                       <td className="px-2 py-2">
-                        <input value={li.description} onChange={(e) => updateLine(li.key, "description", e.target.value)} placeholder="e.g. Diesel" className={smInput} />
+                        <select
+                          value={li.productType}
+                          onChange={(e) => {
+                            updateLine(li.key, "productType", e.target.value);
+                            // Auto-fill description if empty
+                            if (!li.description) updateLine(li.key, "description", e.target.value);
+                          }}
+                          className={smInput}
+                        >
+                          {PRODUCT_TYPES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
+                        </select>
                       </td>
                       <td className="px-2 py-2">
-                        <input type="number" value={li.volume} onChange={(e) => updateLine(li.key, "volume", e.target.value)} placeholder="Litres" className={smInput} />
+                        <input value={li.description} onChange={(e) => updateLine(li.key, "description", e.target.value)} placeholder={li.productType} className={smInput} />
                       </td>
                       <td className="px-2 py-2">
-                        <input type="number" step="0.5" value={li.margin} onChange={(e) => updateLine(li.key, "margin", e.target.value)} placeholder="e.g. 8" className={smInput} />
+                        {fuel ? (
+                          <input type="number" value={li.volume} onChange={(e) => updateLine(li.key, "volume", e.target.value)} placeholder="Litres" className={smInput} />
+                        ) : (
+                          <input type="number" value={li.quantity} onChange={(e) => updateLine(li.key, "quantity", e.target.value)} placeholder="Qty" className={smInput} />
+                        )}
                       </td>
-                      {latestBuyPrice > 0 && (
-                        <td className="px-2 py-2 text-foreground tabular-nums whitespace-nowrap">
-                          {calc.sellPrice > 0 ? `$${calc.sellPrice.toFixed(4)}` : "—"}
-                        </td>
-                      )}
-                      {latestBuyPrice > 0 && (
-                        <td className="px-2 py-2 text-foreground tabular-nums font-medium whitespace-nowrap">
-                          {calc.totalEx > 0 ? `$${calc.totalEx.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "—"}
-                        </td>
-                      )}
+                      <td className="px-2 py-2">
+                        {fuel ? (
+                          <input type="number" step="0.5" value={li.margin} onChange={(e) => updateLine(li.key, "margin", e.target.value)} placeholder="e.g. 8" className={smInput} />
+                        ) : (
+                          <input type="number" step="0.01" value={li.unitPrice} onChange={(e) => updateLine(li.key, "unitPrice", e.target.value)} placeholder="$ each" className={smInput} />
+                        )}
+                      </td>
+                      <td className="px-2 py-2 text-foreground tabular-nums whitespace-nowrap">
+                        {calc.sellPrice > 0 ? `$${calc.sellPrice.toFixed(fuel ? 4 : 2)}` : "—"}
+                      </td>
+                      <td className="px-2 py-2 text-foreground tabular-nums font-medium whitespace-nowrap">
+                        {calc.totalEx > 0 ? `$${calc.totalEx.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "—"}
+                      </td>
                       <td className="px-2 py-2">
                         {lineItems.length > 1 && (
                           <button onClick={() => removeLine(li.key)} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-destructive p-0.5">
