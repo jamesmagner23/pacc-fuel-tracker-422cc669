@@ -327,8 +327,8 @@ export default function PricingTab() {
       // Multi-line quote
       doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(102, 102, 102);
       doc.text("Item", margin, y + 4);
-      doc.text("Volume", margin + 60, y + 4);
-      doc.text("Price/L", margin + 95, y + 4);
+      doc.text("Qty / Vol", margin + 60, y + 4);
+      doc.text("Unit Price", margin + 95, y + 4);
       doc.text("Total (Ex GST)", margin + contentW, y + 4, { align: "right" });
       y += 8;
       doc.setDrawColor(238, 238, 238); doc.line(margin, y, margin + contentW, y);
@@ -336,10 +336,11 @@ export default function PricingTab() {
 
       doc.setFont("helvetica", "normal"); doc.setFontSize(10);
       items.forEach((item: any, i: number) => {
+        const isFuel = item.is_fuel !== false && !item.product_type || item.product_type === "Diesel";
         doc.setTextColor(17, 17, 17);
-        doc.text(item.description || `Line ${i + 1}`, margin, y + 4);
-        doc.text(`${Number(item.volume).toLocaleString()}L`, margin + 60, y + 4);
-        doc.text(`$${Number(item.sell_price).toFixed(4)}`, margin + 95, y + 4);
+        doc.text(item.description || item.product_type || `Line ${i + 1}`, margin, y + 4);
+        doc.text(isFuel ? `${Number(item.volume).toLocaleString()}L` : `× ${Number(item.volume).toLocaleString()}`, margin + 60, y + 4);
+        doc.text(`$${Number(item.sell_price).toFixed(isFuel ? 4 : 2)}`, margin + 95, y + 4);
         doc.setFont("helvetica", "bold");
         doc.text(`$${Number(item.total_ex).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, margin + contentW, y + 4, { align: "right" });
         doc.setFont("helvetica", "normal");
