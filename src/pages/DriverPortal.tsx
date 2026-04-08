@@ -610,32 +610,8 @@ function MyDayTab() {
                   {/* Status */}
                   <StopStatusChip status={stop.status} />
 
-                  {/* Done button */}
-                  {!isCompleted && (
-                    <button
-                      onClick={() => {
-                        markComplete.mutate(stop.orderNo, {
-                          onSuccess: () => toast.success(`${stop.clientName} marked complete`),
-                          onError: (err) => toast.error(err.message),
-                        });
-                      }}
-                      disabled={markComplete.isPending}
-                      className="flex items-center gap-1.5 rounded-lg transition-colors shrink-0"
-                      style={{
-                        background: "rgba(16,185,129,0.15)",
-                        color: "#10B981",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "10px 14px",
-                        minHeight: 48,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      Done
-                    </button>
-                  )}
+                  {/* Status */}
+                  <StopStatusChip status={stop.status} />
                 </div>
               );
             })}
