@@ -321,6 +321,7 @@ export default function Dispatch() {
       .flatMap((route: any) =>
         (route.stops || []).map((s: any) => ({
           orderNo: s.orderNo,
+          stopId: s.id || "",
           clientName: s.locationName || s.orderNo || "Stop",
           address: s.address || "",
           litres: s.duration || 0,
