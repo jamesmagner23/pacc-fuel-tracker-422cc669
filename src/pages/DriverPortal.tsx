@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_FUEL_INTAKE_LOGS, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
-import { useSchedule, useCreateOrder, useReorderStops, useMarkComplete } from "@/hooks/useDispatch";
+import { useSchedule, useCreateOrder, useReorderStops, useLocations } from "@/hooks/useDispatch";
 import { useDragReorder } from "@/hooks/useDragReorder";
 
 function IntakeLogRow({ log }: { log: any }) {
@@ -322,8 +322,100 @@ function useClientAccountsForDriver() {
   });
 }
 
+function DriverSiteCombobox({
+  locations,
+  value,
+  onChange,
+}: {
+  locations: { locationName: string; address: string }[];
+  value: string;
+  onChange: (address: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filtered = locations.filter((l) => {
+    const q = search.toLowerCase();
+    return l.address.toLowerCase().includes(q) || l.locationName.toLowerCase().includes(q);
+  });
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <input
+        type="text"
+        value={open ? search : value || ""}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setOpen(true);
+          onChange(e.target.value);
+        }}
+        onFocus={() => {
+          setOpen(true);
+          setSearch(value || "");
+        }}
+        placeholder="Search existing or type new address…"
+        className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+      />
+      {open && (search.length > 0 || locations.length > 0) && (
+        <div
+          className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-lg max-h-36 overflow-y-auto"
+          style={{ background: "var(--surface)", border: "1px solid var(--surface-border)" }}
+        >
+          {filtered.map((l, i) => (
+            <button
+              key={`${l.address}-${i}`}
+              className="w-full text-left px-3 py-2.5 text-sm hover:opacity-80 transition-opacity"
+              style={{ color: "var(--foreground)", background: "none", border: "none", cursor: "pointer" }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(l.address);
+                setSearch(l.address);
+                setOpen(false);
+              }}
+            >
+              <span className="font-medium">{l.locationName}</span>
+              {l.address && <span className="ml-1.5 opacity-60 text-xs">— {l.address}</span>}
+            </button>
+          ))}
+          {search.length >= 3 && !filtered.some((l) => l.address.toLowerCase() === search.toLowerCase()) && (
+            <button
+              className="w-full text-left px-3 py-2.5 text-sm flex items-center gap-2 hover:opacity-80 transition-opacity"
+              style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", borderTop: "1px solid var(--surface-border)" }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(search);
+                setOpen(false);
+              }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Use new address "{search}"
+            </button>
+          )}
+          {filtered.length === 0 && search.length < 3 && (
+            <div className="px-3 py-2 text-xs" style={{ color: "var(--text-muted)" }}>
+              Type to search locations…
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DriverAddOrderForm({ dateStr, onClose }: { dateStr: string; onClose: () => void }) {
   const { data: clients = [] } = useClientAccountsForDriver();
+  const { data: knownLocations = [] } = useLocations(dateStr);
   const createOrder = useCreateOrder();
 
   const [clientSearch, setClientSearch] = useState("");
@@ -426,15 +518,13 @@ function DriverAddOrderForm({ dateStr, onClose }: { dateStr: string; onClose: ()
         </div>
       </div>
 
-      {/* Site address */}
+      {/* Site address dropdown */}
       <div>
         <label className="text-xs text-muted-foreground mb-1 block">Site Address</label>
-        <input
-          type="text"
+        <DriverSiteCombobox
+          locations={knownLocations}
           value={site}
-          onChange={(e) => setSite(e.target.value)}
-          placeholder="123 Example Rd, Melbourne"
-          className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+          onChange={setSite}
         />
       </div>
 
@@ -479,7 +569,6 @@ function MyDayTab() {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data: schedule, isLoading } = useSchedule(today);
   const reorderStops = useReorderStops();
-  const markComplete = useMarkComplete();
   const [showAddForm, setShowAddForm] = useState(false);
 
   const stops = useMemo(() => {
@@ -488,8 +577,8 @@ function MyDayTab() {
     return (route.stops || []).map((s: any, i: number) => ({
       seq: i + 1,
       orderNo: s.orderNo,
-      clientName: s.location?.name || s.orderNo || `Stop ${i + 1}`,
-      address: s.location?.address || "",
+      clientName: s.locationName || s.orderNo || `Stop ${i + 1}`,
+      address: s.address || "",
       litres: s.duration || 0,
       status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
     }));
@@ -611,32 +700,8 @@ function MyDayTab() {
                   {/* Status */}
                   <StopStatusChip status={stop.status} />
 
-                  {/* Done button */}
-                  {!isCompleted && (
-                    <button
-                      onClick={() => {
-                        markComplete.mutate(stop.orderNo, {
-                          onSuccess: () => toast.success(`${stop.clientName} marked complete`),
-                          onError: (err) => toast.error(err.message),
-                        });
-                      }}
-                      disabled={markComplete.isPending}
-                      className="flex items-center gap-1.5 rounded-lg transition-colors shrink-0"
-                      style={{
-                        background: "rgba(16,185,129,0.15)",
-                        color: "#10B981",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "10px 14px",
-                        minHeight: 48,
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      Done
-                    </button>
-                  )}
+                  {/* Status */}
+                  <StopStatusChip status={stop.status} />
                 </div>
               );
             })}

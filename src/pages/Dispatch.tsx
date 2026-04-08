@@ -10,7 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TruckMap } from "@/components/TruckMap";
-import { useSchedule, useCreateOrder, useOptimise, useReorderStops, useDeleteOrder } from "@/hooks/useDispatch";
+import { useSchedule, useCreateOrder, useOptimise, useReorderStops, useDeleteOrder, useLocations } from "@/hooks/useDispatch";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
@@ -167,6 +167,103 @@ function ClientCombobox({
   );
 }
 
+function SiteAddressCombobox({
+  locations,
+  value,
+  onChange,
+  colors,
+}: {
+  locations: { locationName: string; address: string; locationNo?: string }[];
+  value: string;
+  onChange: (address: string) => void;
+  colors: ReturnType<typeof useThemeColors>;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const [isNew, setIsNew] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filtered = locations.filter((l) => {
+    const q = search.toLowerCase();
+    return l.address.toLowerCase().includes(q) || l.locationName.toLowerCase().includes(q);
+  });
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <Input
+        className="h-9 bg-transparent border-surface-border text-xs"
+        style={{ color: colors.textPrimary }}
+        value={open ? search : value || ""}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setOpen(true);
+          setIsNew(true);
+          onChange(e.target.value);
+        }}
+        onFocus={() => {
+          setOpen(true);
+          setSearch(value || "");
+        }}
+        placeholder="Search existing or type new address…"
+      />
+      {open && (search.length > 0 || locations.length > 0) && (
+        <div
+          className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-lg max-h-48 overflow-y-auto"
+          style={{ background: colors.surface, border: `1px solid ${colors.border}` }}
+        >
+          {filtered.map((l, i) => (
+            <button
+              key={`${l.address}-${i}`}
+              className="w-full text-left px-3 py-2 text-xs hover:opacity-80 transition-opacity"
+              style={{ color: colors.textPrimary, background: "none", border: "none", cursor: "pointer" }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(l.address);
+                setSearch(l.address);
+                setIsNew(false);
+                setOpen(false);
+              }}
+            >
+              <span className="font-medium">{l.locationName}</span>
+              {l.address && <span className="ml-1.5 opacity-60">— {l.address}</span>}
+            </button>
+          ))}
+          {search.length >= 3 && !filtered.some((l) => l.address.toLowerCase() === search.toLowerCase()) && (
+            <button
+              className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:opacity-80 transition-opacity"
+              style={{ color: colors.accent, background: "none", border: "none", cursor: "pointer", borderTop: `1px solid ${colors.border}` }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(search);
+                setIsNew(true);
+                setOpen(false);
+              }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Use new address "{search}"
+            </button>
+          )}
+          {filtered.length === 0 && search.length < 3 && (
+            <div className="px-3 py-2 text-xs" style={{ color: colors.textMuted }}>
+              Type to search locations…
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 type StopStatus = "scheduled" | "on_route" | "completed" | "failed";
 
 function StatusChip({ status }: { status: StopStatus }) {
@@ -195,6 +292,7 @@ export default function Dispatch() {
 
   const { data: schedule, isLoading } = useSchedule(dateStr);
   const { data: clients = [] } = useClientAccounts();
+  const { data: knownLocations = [] } = useLocations(dateStr);
   const createOrder = useCreateOrder();
   const optimise = useOptimise();
   const reorderStops = useReorderStops();
@@ -220,8 +318,8 @@ export default function Dispatch() {
     return (route.stops || []).map((s: any, i: number) => ({
       seq: i + 1,
       orderNo: s.orderNo,
-      clientName: s.location?.name || s.orderNo || `Stop ${i + 1}`,
-      address: s.location?.address || "",
+      clientName: s.locationName || s.orderNo || `Stop ${i + 1}`,
+      address: s.address || "",
       litres: s.duration || 0,
       status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
     }));
@@ -480,12 +578,11 @@ export default function Dispatch() {
             )}
             <div>
               <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: tc.textSecondary }}>Site Address</label>
-              <Input
-                className="h-9 bg-transparent border-surface-border text-xs"
-                style={{ color: tc.textPrimary }}
+              <SiteAddressCombobox
+                locations={knownLocations}
                 value={formSite}
-                onChange={(e) => setFormSite(e.target.value)}
-                placeholder="123 Example Rd, Melbourne"
+                onChange={setFormSite}
+                colors={tc}
               />
             </div>
             <div>
