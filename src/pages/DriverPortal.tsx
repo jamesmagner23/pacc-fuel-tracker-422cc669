@@ -699,9 +699,6 @@ function MyDayTab() {
 
                   {/* Status */}
                   <StopStatusChip status={stop.status} />
-
-                  {/* Status */}
-                  <StopStatusChip status={stop.status} />
                 </div>
               );
             })}

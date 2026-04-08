@@ -32,7 +32,15 @@ export function useCreateOrder() {
   return useMutation({
     mutationFn: (order: Record<string, unknown>) =>
       dispatch("create_order", { order }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
+        qc.invalidateQueries({ queryKey: ["dispatch-locations"] }),
+      ]);
+      setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ["dispatch-schedule"] });
+      }, 2500);
+    },
   });
 }
 

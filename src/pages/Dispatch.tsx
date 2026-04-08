@@ -355,12 +355,13 @@ export default function Dispatch() {
         },
         duration: formLitres ? parseInt(formLitres) : 30,
         priority: formPriority,
-        timeWindow: formTimeFrom && formTimeTo ? { tw1: { timeFrom: formTimeFrom, timeTo: formTimeTo } } : undefined,
+        twFrom: formTimeFrom || undefined,
+        twTo: formTimeTo || undefined,
         notes: formNotes || undefined,
       },
       {
         onSuccess: () => {
-          toast.success("Order added to schedule");
+          toast.success("Order added to PACC and sent to OptimoRoute");
           resetForm();
         },
         onError: (err) => toast.error(err.message),
