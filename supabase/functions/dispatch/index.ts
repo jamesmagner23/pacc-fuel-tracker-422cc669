@@ -226,7 +226,56 @@ serve(async (req) => {
         return ok(locations);
       }
 
-      default:
+      // ── Analytics: aggregate route data across date range ──
+      case "get_analytics": {
+        const dates: string[] = payload?.dates ?? [];
+        if (!dates.length) return fail("Missing payload.dates array", 400);
+
+        const results = await Promise.all(
+          dates.map(async (d: string) => {
+            try {
+              const data = await orFetch(`/get_routes?date=${d}`);
+              const routes = data?.routes ?? [];
+              let stops = 0;
+              let completedStops = 0;
+              let totalDistanceKm = 0;
+              let totalDurationMin = 0;
+              let totalLoad = 0;
+              const drivers = new Set<string>();
+
+              for (const route of routes) {
+                const routeStops = route.stops?.length ?? 0;
+                stops += routeStops;
+                totalDistanceKm += (route.distance ?? 0) / 1000;
+                totalDurationMin += (route.duration ?? 0) / 60;
+                if (route.driverName) drivers.add(route.driverName);
+                for (const s of route.stops ?? []) {
+                  if (s.status?.toLowerCase() === "completed") completedStops++;
+                  totalLoad += s.load1 ?? 0;
+                }
+              }
+
+              return {
+                date: d,
+                routes: routes.length,
+                stops,
+                completedStops,
+                distanceKm: Math.round(totalDistanceKm * 10) / 10,
+                durationMin: Math.round(totalDurationMin),
+                drivers: drivers.size,
+                driverNames: Array.from(drivers),
+                totalLoad: Math.round(totalLoad),
+              };
+            } catch {
+              return { date: d, routes: 0, stops: 0, completedStops: 0, distanceKm: 0, durationMin: 0, drivers: 0, driverNames: [], totalLoad: 0 };
+            }
+          })
+        );
+
+        return ok(results);
+      }
+
+
         return fail(`Unknown action: ${action}`, 400);
     }
   } catch (err) {
