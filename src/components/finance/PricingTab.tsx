@@ -323,45 +323,40 @@ export default function PricingTab() {
     const items: any[] = (q as any).line_items || [];
     y += 14;
 
-    if (items.length > 1) {
-      // Multi-line quote
-      doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(102, 102, 102);
-      doc.text("Item", margin, y + 4);
-      doc.text("Qty / Vol", margin + 60, y + 4);
-      doc.text("Unit Price", margin + 95, y + 4);
-      doc.text("Total (Ex GST)", margin + contentW, y + 4, { align: "right" });
-      y += 8;
-      doc.setDrawColor(238, 238, 238); doc.line(margin, y, margin + contentW, y);
-      y += 4;
+    // Always use table format — works for both fuel and non-fuel items
+    const hasMultipleItems = items.length > 1;
+    const displayItems = items.length > 0 ? items : [{
+      description: "Diesel",
+      product_type: "Diesel",
+      is_fuel: true,
+      volume: q.volume_litres,
+      sell_price: q.sell_price_per_litre,
+      total_ex: q.total_ex_gst,
+    }];
 
-      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-      items.forEach((item: any, i: number) => {
-        const isFuel = item.is_fuel !== false && !item.product_type || item.product_type === "Diesel";
-        doc.setTextColor(17, 17, 17);
-        doc.text(item.description || item.product_type || `Line ${i + 1}`, margin, y + 4);
-        doc.text(isFuel ? `${Number(item.volume).toLocaleString()}L` : `× ${Number(item.volume).toLocaleString()}`, margin + 60, y + 4);
-        doc.text(`$${Number(item.sell_price).toFixed(isFuel ? 4 : 2)}`, margin + 95, y + 4);
-        doc.setFont("helvetica", "bold");
-        doc.text(`$${Number(item.total_ex).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, margin + contentW, y + 4, { align: "right" });
-        doc.setFont("helvetica", "normal");
-        y += 10;
-        doc.setDrawColor(238, 238, 238); doc.line(margin, y - 2, margin + contentW, y - 2);
-      });
-      y += 2;
-    } else {
-      // Single line — clean format without duplication
-      const rows = [
-        ["Volume", `${Number(q.volume_litres).toLocaleString()} Litres`],
-        ["Price Per Litre (Ex GST)", `$${Number(q.sell_price_per_litre).toFixed(4)}`],
-      ];
-      doc.setFontSize(10);
-      for (const [label, value] of rows) {
-        doc.setDrawColor(238, 238, 238); doc.line(margin, y + 7, margin + contentW, y + 7);
-        doc.setFont("helvetica", "normal"); doc.setTextColor(102, 102, 102); doc.text(label, margin, y + 4);
-        doc.setFont("helvetica", "bold"); doc.setTextColor(17, 17, 17); doc.text(value, margin + contentW, y + 4, { align: "right" });
-        y += 12;
-      }
-    }
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(102, 102, 102);
+    doc.text("Item", margin, y + 4);
+    doc.text("Qty / Vol", margin + 60, y + 4);
+    doc.text("Unit Price", margin + 95, y + 4);
+    doc.text("Total (Ex GST)", margin + contentW, y + 4, { align: "right" });
+    y += 8;
+    doc.setDrawColor(238, 238, 238); doc.line(margin, y, margin + contentW, y);
+    y += 4;
+
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    displayItems.forEach((item: any, i: number) => {
+      const isFuel = item.is_fuel === true || (!item.product_type || item.product_type === "Diesel");
+      doc.setTextColor(17, 17, 17);
+      doc.text(item.description || item.product_type || `Line ${i + 1}`, margin, y + 4);
+      doc.text(isFuel ? `${Number(item.volume).toLocaleString()}L` : `× ${Number(item.volume).toLocaleString()}`, margin + 60, y + 4);
+      doc.text(`$${Number(item.sell_price).toFixed(isFuel ? 4 : 2)}`, margin + 95, y + 4);
+      doc.setFont("helvetica", "bold");
+      doc.text(`$${Number(item.total_ex).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, margin + contentW, y + 4, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      y += 10;
+      doc.setDrawColor(238, 238, 238); doc.line(margin, y - 2, margin + contentW, y - 2);
+    });
+    y += 2;
 
     // Subtotal + GST + Total
     y += 2;
