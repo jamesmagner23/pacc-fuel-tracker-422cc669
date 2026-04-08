@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_FUEL_INTAKE_LOGS, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
-import { useSchedule, useCreateOrder, useReorderStops, useMarkComplete } from "@/hooks/useDispatch";
+import { useSchedule, useCreateOrder, useReorderStops, useLocations } from "@/hooks/useDispatch";
 import { useDragReorder } from "@/hooks/useDragReorder";
 
 function IntakeLogRow({ log }: { log: any }) {
