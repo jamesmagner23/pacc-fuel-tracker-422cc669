@@ -352,6 +352,8 @@ export default function Dispatch() {
   };
 
   const submitOrder = (clientName: string) => {
+    const estimatedLitres = formLitres ? parseInt(formLitres, 10) : undefined;
+
     createOrder.mutate(
       {
         orderNo: `PACC-${Date.now()}`,
@@ -360,7 +362,8 @@ export default function Dispatch() {
           name: clientName,
           address: formSite,
         },
-        duration: formLitres ? parseInt(formLitres) : 30,
+        duration: 30,
+        load1: estimatedLitres,
         priority: formPriority,
         twFrom: formTimeFrom || undefined,
         twTo: formTimeTo || undefined,
@@ -370,7 +373,6 @@ export default function Dispatch() {
         onSuccess: (data) => {
           toast.success("Order added — optimising route…");
           resetForm();
-          // Start polling if we got a planningId back
           const planningId = data?.planning?.planningId;
           if (planningId) {
             startPolling(planningId);

@@ -73,13 +73,16 @@ serve(async (req) => {
         const o = payload.order;
         const date = o.date ?? new Date().toISOString().split("T")[0];
         const derivedTimeWindow = o.timeWindow?.tw1;
+        const parsedDuration = Number(o.duration);
+        const parsedLoad1 = o.load1 != null ? Number(o.load1) : null;
+        const duration = Number.isFinite(parsedDuration) && parsedDuration > 0 && parsedDuration <= 480 ? parsedDuration : 30;
 
         const body: Record<string, unknown> = {
           operation: o.operation || "CREATE",
           orderNo: o.orderNo,
           type: o.type || "D",
           date,
-          duration: o.duration ?? 5,
+          duration,
         };
 
         if (o.location) {
@@ -106,7 +109,11 @@ serve(async (req) => {
           body.priority = pMap[o.priority.toLowerCase()] || o.priority;
         }
         if (o.notes) body.notes = o.notes;
-        if (o.load1 != null) body.load1 = o.load1;
+        if (parsedLoad1 != null && Number.isFinite(parsedLoad1) && parsedLoad1 > 0) {
+          body.load1 = parsedLoad1;
+        } else if (Number.isFinite(parsedDuration) && parsedDuration > 480) {
+          body.load1 = parsedDuration;
+        }
         if (o.assignedTo) body.assignedTo = o.assignedTo;
         if (o.acceptDuplicateOrderNo != null) body.acceptDuplicateOrderNo = o.acceptDuplicateOrderNo;
 
