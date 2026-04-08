@@ -313,16 +313,22 @@ export default function Dispatch() {
   const [isNewClient, setIsNewClient] = useState(false);
 
   const stops = useMemo(() => {
-    if (!schedule?.routes?.length) return [];
-    const route = schedule.routes[0];
-    return (route.stops || []).map((s: any, i: number) => ({
-      seq: i + 1,
-      orderNo: s.orderNo,
-      clientName: s.locationName || s.orderNo || `Stop ${i + 1}`,
-      address: s.address || "",
-      litres: s.duration || 0,
-      status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
-    }));
+    const routes = schedule?.routes ?? [];
+
+    return routes
+      .flatMap((route: any) =>
+        (route.stops || []).map((s: any) => ({
+          orderNo: s.orderNo,
+          clientName: s.locationName || s.orderNo || "Stop",
+          address: s.address || "",
+          litres: s.duration || 0,
+          status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
+        }))
+      )
+      .map((stop, index) => ({
+        ...stop,
+        seq: index + 1,
+      }));
   }, [schedule]);
 
   const totalStops = stops.length;

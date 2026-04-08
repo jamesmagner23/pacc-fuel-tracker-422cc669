@@ -37,9 +37,12 @@ export function useCreateOrder() {
         qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
         qc.invalidateQueries({ queryKey: ["dispatch-locations"] }),
       ]);
-      setTimeout(() => {
-        qc.invalidateQueries({ queryKey: ["dispatch-schedule"] });
-      }, 2500);
+
+      [1500, 4000, 8000].forEach((delay) => {
+        setTimeout(() => {
+          qc.invalidateQueries({ queryKey: ["dispatch-schedule"] });
+        }, delay);
+      });
     },
   });
 }
