@@ -322,8 +322,100 @@ function useClientAccountsForDriver() {
   });
 }
 
+function DriverSiteCombobox({
+  locations,
+  value,
+  onChange,
+}: {
+  locations: { locationName: string; address: string }[];
+  value: string;
+  onChange: (address: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filtered = locations.filter((l) => {
+    const q = search.toLowerCase();
+    return l.address.toLowerCase().includes(q) || l.locationName.toLowerCase().includes(q);
+  });
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <input
+        type="text"
+        value={open ? search : value || ""}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setOpen(true);
+          onChange(e.target.value);
+        }}
+        onFocus={() => {
+          setOpen(true);
+          setSearch(value || "");
+        }}
+        placeholder="Search existing or type new address…"
+        className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+      />
+      {open && (search.length > 0 || locations.length > 0) && (
+        <div
+          className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-lg max-h-36 overflow-y-auto"
+          style={{ background: "var(--surface)", border: "1px solid var(--surface-border)" }}
+        >
+          {filtered.map((l, i) => (
+            <button
+              key={`${l.address}-${i}`}
+              className="w-full text-left px-3 py-2.5 text-sm hover:opacity-80 transition-opacity"
+              style={{ color: "var(--foreground)", background: "none", border: "none", cursor: "pointer" }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(l.address);
+                setSearch(l.address);
+                setOpen(false);
+              }}
+            >
+              <span className="font-medium">{l.locationName}</span>
+              {l.address && <span className="ml-1.5 opacity-60 text-xs">— {l.address}</span>}
+            </button>
+          ))}
+          {search.length >= 3 && !filtered.some((l) => l.address.toLowerCase() === search.toLowerCase()) && (
+            <button
+              className="w-full text-left px-3 py-2.5 text-sm flex items-center gap-2 hover:opacity-80 transition-opacity"
+              style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer", borderTop: "1px solid var(--surface-border)" }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                onChange(search);
+                setOpen(false);
+              }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Use new address "{search}"
+            </button>
+          )}
+          {filtered.length === 0 && search.length < 3 && (
+            <div className="px-3 py-2 text-xs" style={{ color: "var(--text-muted)" }}>
+              Type to search locations…
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DriverAddOrderForm({ dateStr, onClose }: { dateStr: string; onClose: () => void }) {
   const { data: clients = [] } = useClientAccountsForDriver();
+  const { data: knownLocations = [] } = useLocations(dateStr);
   const createOrder = useCreateOrder();
 
   const [clientSearch, setClientSearch] = useState("");
@@ -426,15 +518,13 @@ function DriverAddOrderForm({ dateStr, onClose }: { dateStr: string; onClose: ()
         </div>
       </div>
 
-      {/* Site address */}
+      {/* Site address dropdown */}
       <div>
         <label className="text-xs text-muted-foreground mb-1 block">Site Address</label>
-        <input
-          type="text"
+        <DriverSiteCombobox
+          locations={knownLocations}
           value={site}
-          onChange={(e) => setSite(e.target.value)}
-          placeholder="123 Example Rd, Melbourne"
-          className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+          onChange={setSite}
         />
       </div>
 
