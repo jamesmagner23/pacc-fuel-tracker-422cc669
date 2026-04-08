@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, Plus, Zap, GripVertical, Trash2, X, Package, CheckCircle2, Clock, UserPlus, Loader2 } from "lucide-react";
+import { DispatchAnalytics } from "@/components/dispatch/DispatchAnalytics";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
