@@ -539,6 +539,30 @@ export default function Dispatch() {
         ))}
       </div>
 
+      {/* Planning indicator */}
+      {isPlanning && (
+        <div
+          className="flex items-center gap-3 p-3 sm:p-4"
+          style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12 }}
+        >
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" style={{ color: tc.accent }} />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-medium mb-1.5" style={{ color: tc.textPrimary }}>
+              OptimoRoute is calculating the optimal route…
+            </div>
+            <div className="w-full rounded-full overflow-hidden h-1.5" style={{ background: `${tc.border}` }}>
+              <div
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${planningProgress}%`, background: tc.accent }}
+              />
+            </div>
+          </div>
+          <span className="text-xs font-bold shrink-0" style={{ color: tc.accent }}>
+            {planningProgress}%
+          </span>
+        </div>
+      )}
+
       {/* New Order form */}
       {showForm && (
         <div
