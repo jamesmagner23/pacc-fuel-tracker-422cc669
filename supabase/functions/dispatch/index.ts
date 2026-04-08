@@ -247,7 +247,7 @@ serve(async (req) => {
                 const routeStops = route.stops?.length ?? 0;
                 stops += routeStops;
                 totalDistanceKm += route.distance ?? 0;
-                totalDurationMin += (route.duration ?? 0) / 60;
+                totalDurationMin += route.duration ?? 0;
                 if (route.driverName) drivers.add(route.driverName);
                 for (const s of route.stops ?? []) {
                   if (s.status?.toLowerCase() === "completed") completedStops++;
