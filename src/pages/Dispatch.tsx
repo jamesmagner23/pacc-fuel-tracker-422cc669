@@ -456,9 +456,9 @@ export default function Dispatch() {
     canDrag: (item: any) => item.status !== "completed",
   });
 
-  const handleDelete = (orderNo: string) => {
+  const handleDelete = (orderNo: string, stopId?: string) => {
     toast.loading("Removing stop…", { id: `delete-${orderNo}` });
-    deleteOrder.mutate([orderNo], {
+    deleteOrder.mutate({ orderNos: [orderNo], ids: stopId ? [stopId] : undefined }, {
       onSuccess: () => {
         toast.success("Stop removed", { id: `delete-${orderNo}` });
       },
