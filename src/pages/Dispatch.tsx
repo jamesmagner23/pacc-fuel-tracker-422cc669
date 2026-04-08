@@ -10,7 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TruckMap } from "@/components/TruckMap";
-import { useSchedule, useCreateOrder, useOptimise, useReorderStops, useDeleteOrder } from "@/hooks/useDispatch";
+import { useSchedule, useCreateOrder, useOptimise, useReorderStops, useDeleteOrder, useLocations } from "@/hooks/useDispatch";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
@@ -220,8 +220,8 @@ export default function Dispatch() {
     return (route.stops || []).map((s: any, i: number) => ({
       seq: i + 1,
       orderNo: s.orderNo,
-      clientName: s.location?.name || s.orderNo || `Stop ${i + 1}`,
-      address: s.location?.address || "",
+      clientName: s.locationName || s.orderNo || `Stop ${i + 1}`,
+      address: s.address || "",
       litres: s.duration || 0,
       status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
     }));
