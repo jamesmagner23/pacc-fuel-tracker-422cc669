@@ -146,40 +146,16 @@ serve(async (req) => {
         return ok(data);
       }
 
-      // ── Reorder stops on a route (use time windows to force sequence, then re-plan) ──
+      // ── Reorder stops (optimistic UI + re-plan) ──
+      // OptimoRoute doesn't support manual stop sequencing via API.
+      // The planner determines the optimal order. We just trigger re-planning.
       case "reorder_stops": {
         if (!payload?.orders || !Array.isArray(payload.orders)) {
           return fail("Missing payload.orders array", 400);
         }
         const reorderDate = payload.date ?? new Date().toISOString().split("T")[0];
-        const results = [];
 
-        // Assign staggered time windows to force desired sequence
-        // Each stop gets a 30-min window starting at 06:00
-        for (let i = 0; i < payload.orders.length; i++) {
-          const order = payload.orders[i];
-          const startMinutes = 360 + i * 30; // 06:00 + 30min per stop
-          const endMinutes = startMinutes + 30;
-          const twFrom = `${String(Math.floor(startMinutes / 60)).padStart(2, "0")}:${String(startMinutes % 60).padStart(2, "0")}`;
-          const twTo = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
-
-          const body: Record<string, unknown> = {
-            operation: "UPDATE",
-            orderNo: order.orderNo,
-            date: order.date || reorderDate,
-            twFrom,
-            twTo,
-          };
-
-          const data = await orFetch("/create_order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          results.push(data);
-        }
-
-        // Re-plan to apply the new time windows
+        // Trigger re-planning to optimise the route
         let planning: unknown = null;
         try {
           planning = await startPlanning(reorderDate, "CURRENT", "NONE");
@@ -187,7 +163,7 @@ serve(async (req) => {
           // Planning may fail if already running
         }
 
-        return ok({ updates: results, planning });
+        return ok({ planning });
       }
 
       // ── Delete orders (one at a time per API spec) ──
