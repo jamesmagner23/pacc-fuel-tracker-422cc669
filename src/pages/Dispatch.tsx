@@ -195,6 +195,7 @@ export default function Dispatch() {
 
   const { data: schedule, isLoading } = useSchedule(dateStr);
   const { data: clients = [] } = useClientAccounts();
+  const { data: knownLocations = [] } = useLocations(dateStr);
   const createOrder = useCreateOrder();
   const optimise = useOptimise();
   const reorderStops = useReorderStops();
