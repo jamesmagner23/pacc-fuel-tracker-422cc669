@@ -308,7 +308,7 @@ export default function PricingTab() {
 
     y = 58;
     doc.setTextColor(17, 17, 17); doc.setFontSize(20); doc.setFont("helvetica", "bold");
-    doc.text("Fuel Quote", margin, y);
+    doc.text("Quote", margin, y);
     y += 10;
     doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.setTextColor(102, 102, 102);
     doc.text("Prepared for ", margin, y);
