@@ -798,7 +798,7 @@ export default function Dispatch() {
                     {/* Delete */}
                     {!isCompleted && (
                       <button
-                        onClick={() => handleDelete(stop.orderNo)}
+                        onClick={() => handleDelete(stop.orderNo, stop.stopId)}
                         className="p-1 rounded transition-colors hover:bg-accent/10"
                         style={{ color: tc.accent, background: "none", border: "none", cursor: "pointer" }}
                       >
