@@ -455,11 +455,11 @@ function DriverAddOrderForm({ dateStr, onClose }: { dateStr: string; onClose: ()
         priority: "medium",
         notes: notes || undefined,
       },
-      {
-        onSuccess: () => {
-          toast.success("Order added to your route");
-          onClose();
-        },
+        {
+          onSuccess: () => {
+            toast.success("Order added to PACC and sent to OptimoRoute");
+            onClose();
+          },
         onError: (err) => toast.error(err.message),
       }
     );

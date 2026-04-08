@@ -735,8 +735,8 @@ export default function Dispatch() {
                     {!isCompleted && (
                       <button
                         onClick={() => handleDelete(stop.orderNo)}
-                        className="p-1 rounded hover:bg-red-500/10"
-                        style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer" }}
+                        className="p-1 rounded transition-colors hover:bg-accent/10"
+                        style={{ color: tc.accent, background: "none", border: "none", cursor: "pointer" }}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
