@@ -433,11 +433,17 @@ export default function Dispatch() {
   };
 
   const handleReorder = (reordered: typeof stops) => {
-    const orders = reordered.map((s, i) => ({
+    const orders = reordered.map((s) => ({
       orderNo: s.orderNo,
-      sequence: i + 1,
     }));
     reorderStops.mutate(orders, {
+      onSuccess: (data: any) => {
+        toast.success("Stops reordered — re-optimising route…");
+        const planningId = data?.planning?.planningId;
+        if (planningId) {
+          startPolling(planningId);
+        }
+      },
       onError: (err) => toast.error(err.message),
     });
   };

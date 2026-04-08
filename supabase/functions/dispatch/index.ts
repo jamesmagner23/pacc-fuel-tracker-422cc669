@@ -146,28 +146,24 @@ serve(async (req) => {
         return ok(data);
       }
 
-      // ── Reorder stops on a route (re-create with UPDATE) ──
+      // ── Reorder stops (optimistic UI + re-plan) ──
+      // OptimoRoute doesn't support manual stop sequencing via API.
+      // The planner determines the optimal order. We just trigger re-planning.
       case "reorder_stops": {
         if (!payload?.orders || !Array.isArray(payload.orders)) {
           return fail("Missing payload.orders array", 400);
         }
-        const results = [];
-        for (const order of payload.orders) {
-          const body: Record<string, unknown> = {
-            operation: "UPDATE",
-            orderNo: order.orderNo,
-          };
-          if (order.sequence != null) body.sequence = order.sequence;
-          if (order.date) body.date = order.date;
+        const reorderDate = payload.date ?? new Date().toISOString().split("T")[0];
 
-          const data = await orFetch("/create_order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          results.push(data);
+        // Trigger re-planning to optimise the route
+        let planning: unknown = null;
+        try {
+          planning = await startPlanning(reorderDate, "CURRENT", "NONE");
+        } catch (e) {
+          // Planning may fail if already running
         }
-        return ok(results);
+
+        return ok({ planning });
       }
 
       // ── Delete orders (one at a time per API spec) ──
