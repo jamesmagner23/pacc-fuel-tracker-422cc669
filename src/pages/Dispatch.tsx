@@ -321,6 +321,7 @@ export default function Dispatch() {
       .flatMap((route: any) =>
         (route.stops || []).map((s: any) => ({
           orderNo: s.orderNo,
+          stopId: s.id || "",
           clientName: s.locationName || s.orderNo || "Stop",
           address: s.address || "",
           litres: s.duration || 0,
@@ -457,7 +458,7 @@ export default function Dispatch() {
 
   const handleDelete = (orderNo: string) => {
     toast.loading("Removing stop…", { id: `delete-${orderNo}` });
-    deleteOrder.mutate([orderNo], {
+    deleteOrder.mutate({ orderNos: [orderNo] }, {
       onSuccess: () => {
         toast.success("Stop removed", { id: `delete-${orderNo}` });
       },

@@ -184,10 +184,8 @@ serve(async (req) => {
             errors.push(`${no}: ${data.message || "failed"}`);
           }
         }
-        if (errors.length > 0 && errors.length === payload.orderNos.length) {
-          return fail(errors.join("; "), 400);
-        }
-        return ok(results);
+        // Return success with partial results even if some failed
+        return ok({ results, errors });
       }
 
       // ── Get planning status ──

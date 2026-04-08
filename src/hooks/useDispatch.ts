@@ -139,7 +139,7 @@ export function useReorderStops() {
 export function useDeleteOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (orderNos: string[]) =>
+    mutationFn: ({ orderNos }: { orderNos: string[] }) =>
       dispatch("delete_order", { orderNos }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
   });
