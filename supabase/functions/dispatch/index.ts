@@ -146,19 +146,28 @@ serve(async (req) => {
         return ok(data);
       }
 
-      // ── Reorder stops on a route (re-create with UPDATE) ──
+      // ── Reorder stops on a route (lock scheduledAt times, then re-plan) ──
       case "reorder_stops": {
         if (!payload?.orders || !Array.isArray(payload.orders)) {
           return fail("Missing payload.orders array", 400);
         }
+        const reorderDate = payload.date ?? new Date().toISOString().split("T")[0];
         const results = [];
-        for (const order of payload.orders) {
+
+        // Assign staggered scheduledAt times to force desired sequence
+        // Start at 06:00, 30-minute intervals
+        for (let i = 0; i < payload.orders.length; i++) {
+          const order = payload.orders[i];
+          const hour = 6 + Math.floor((i * 30) / 60);
+          const minute = (i * 30) % 60;
+          const scheduledAt = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+
           const body: Record<string, unknown> = {
             operation: "UPDATE",
             orderNo: order.orderNo,
+            date: order.date || reorderDate,
+            scheduledAt,
           };
-          if (order.sequence != null) body.sequence = order.sequence;
-          if (order.date) body.date = order.date;
 
           const data = await orFetch("/create_order", {
             method: "POST",
@@ -167,7 +176,16 @@ serve(async (req) => {
           });
           results.push(data);
         }
-        return ok(results);
+
+        // Re-plan with TIME_LOCK to preserve the scheduledAt times
+        let planning: unknown = null;
+        try {
+          planning = await startPlanning(reorderDate, "CURRENT", "TIME_LOCK");
+        } catch (e) {
+          // Planning may fail if already running; still return update results
+        }
+
+        return ok({ updates: results, planning });
       }
 
       // ── Delete orders (one at a time per API spec) ──
