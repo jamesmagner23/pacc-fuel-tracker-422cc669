@@ -313,16 +313,22 @@ export default function Dispatch() {
   const [isNewClient, setIsNewClient] = useState(false);
 
   const stops = useMemo(() => {
-    if (!schedule?.routes?.length) return [];
-    const route = schedule.routes[0];
-    return (route.stops || []).map((s: any, i: number) => ({
-      seq: i + 1,
-      orderNo: s.orderNo,
-      clientName: s.locationName || s.orderNo || `Stop ${i + 1}`,
-      address: s.address || "",
-      litres: s.duration || 0,
-      status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
-    }));
+    const routes = schedule?.routes ?? [];
+
+    return routes
+      .flatMap((route: any) =>
+        (route.stops || []).map((s: any) => ({
+          orderNo: s.orderNo,
+          clientName: s.locationName || s.orderNo || "Stop",
+          address: s.address || "",
+          litres: s.duration || 0,
+          status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
+        }))
+      )
+      .map((stop, index) => ({
+        ...stop,
+        seq: index + 1,
+      }));
   }, [schedule]);
 
   const totalStops = stops.length;
@@ -355,12 +361,13 @@ export default function Dispatch() {
         },
         duration: formLitres ? parseInt(formLitres) : 30,
         priority: formPriority,
-        timeWindow: formTimeFrom && formTimeTo ? { tw1: { timeFrom: formTimeFrom, timeTo: formTimeTo } } : undefined,
+        twFrom: formTimeFrom || undefined,
+        twTo: formTimeTo || undefined,
         notes: formNotes || undefined,
       },
       {
         onSuccess: () => {
-          toast.success("Order added to schedule");
+          toast.success("Order added to PACC and sent to OptimoRoute");
           resetForm();
         },
         onError: (err) => toast.error(err.message),
@@ -734,8 +741,8 @@ export default function Dispatch() {
                     {!isCompleted && (
                       <button
                         onClick={() => handleDelete(stop.orderNo)}
-                        className="p-1 rounded hover:bg-red-500/10"
-                        style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer" }}
+                        className="p-1 rounded transition-colors hover:bg-accent/10"
+                        style={{ color: tc.accent, background: "none", border: "none", cursor: "pointer" }}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

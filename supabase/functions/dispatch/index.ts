@@ -23,6 +23,10 @@ function fail(message: string, status = 500) {
 }
 
 async function orFetch(path: string, init?: RequestInit) {
+  if (!OPTIMOROUTE_KEY) {
+    throw new Error("OPTIMOROUTE_API_KEY is not configured");
+  }
+
   const sep = path.includes("?") ? "&" : "?";
   const url = `${BASE}${path}${sep}key=${OPTIMOROUTE_KEY}`;
   const res = await fetch(url, init);
@@ -31,6 +35,14 @@ async function orFetch(path: string, init?: RequestInit) {
     throw new Error(`OptimoRoute ${path} ${res.status}: ${body}`);
   }
   return res.json();
+}
+
+async function startPlanning(date: string, startWith = "CURRENT", lockType = "NONE") {
+  return await orFetch("/start_planning", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date, startWith, lockType }),
+  });
 }
 
 serve(async (req) => {
@@ -59,17 +71,17 @@ serve(async (req) => {
       case "create_order": {
         if (!payload?.order) return fail("Missing payload.order", 400);
         const o = payload.order;
+        const date = o.date ?? new Date().toISOString().split("T")[0];
+        const derivedTimeWindow = o.timeWindow?.tw1;
 
-        // Build OptimoRoute-compliant payload
         const body: Record<string, unknown> = {
           operation: o.operation || "CREATE",
           orderNo: o.orderNo,
           type: o.type || "D",
-          date: o.date,
+          date,
           duration: o.duration ?? 5,
         };
 
-        // Location object – use locationName (not name)
         if (o.location) {
           const loc: Record<string, unknown> = {
             acceptPartialMatch: true,
@@ -87,11 +99,9 @@ serve(async (req) => {
           body.location = loc;
         }
 
-        // Optional fields
-        if (o.twFrom) body.twFrom = o.twFrom;
-        if (o.twTo) body.twTo = o.twTo;
+        if (o.twFrom || derivedTimeWindow?.timeFrom) body.twFrom = o.twFrom || derivedTimeWindow.timeFrom;
+        if (o.twTo || derivedTimeWindow?.timeTo) body.twTo = o.twTo || derivedTimeWindow.timeTo;
         if (o.priority) {
-          // Map long names to OptimoRoute codes
           const pMap: Record<string, string> = { low: "L", medium: "M", high: "H", critical: "C" };
           body.priority = pMap[o.priority.toLowerCase()] || o.priority;
         }
@@ -100,43 +110,32 @@ serve(async (req) => {
         if (o.assignedTo) body.assignedTo = o.assignedTo;
         if (o.acceptDuplicateOrderNo != null) body.acceptDuplicateOrderNo = o.acceptDuplicateOrderNo;
 
-        const data = await orFetch("/create_order", {
+        const order = await orFetch("/create_order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
 
-        // Auto-plan so the order appears in get_routes immediately
-        if (data.success) {
-          try {
-            await orFetch("/start_planning", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                date: o.date || new Date().toISOString().split("T")[0],
-                startWith: "CURRENT",
-                lockType: "NONE",
-              }),
-            });
-          } catch (_) {
-            // Planning failure shouldn't block order creation
-          }
+        let planning: unknown = null;
+        let planningError: string | null = null;
+
+        try {
+          planning = await startPlanning(date);
+        } catch (error) {
+          planningError = error instanceof Error ? error.message : "Unknown planning error";
         }
-        return ok(data);
+
+        return ok({ order, planning, planningError });
       }
 
       // ── Optimise / plan all routes ──
       case "optimise": {
         const date = payload?.date ?? new Date().toISOString().split("T")[0];
-        const data = await orFetch("/start_planning", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            date,
-            startWith: payload?.startWith || "CURRENT",
-            lockType: payload?.lockType || "NONE",
-          }),
-        });
+        const data = await startPlanning(
+          date,
+          payload?.startWith || "CURRENT",
+          payload?.lockType || "NONE",
+        );
         return ok(data);
       }
 

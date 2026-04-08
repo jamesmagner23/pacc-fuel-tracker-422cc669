@@ -455,11 +455,11 @@ function DriverAddOrderForm({ dateStr, onClose }: { dateStr: string; onClose: ()
         priority: "medium",
         notes: notes || undefined,
       },
-      {
-        onSuccess: () => {
-          toast.success("Order added to your route");
-          onClose();
-        },
+        {
+          onSuccess: () => {
+            toast.success("Order added to PACC and sent to OptimoRoute");
+            onClose();
+          },
         onError: (err) => toast.error(err.message),
       }
     );
@@ -696,9 +696,6 @@ function MyDayTab() {
                     {stop.address && <div className="text-xs text-muted-foreground truncate">{stop.address}</div>}
                     {stop.litres > 0 && <div className="text-[11px] text-muted-foreground mt-0.5">{stop.litres.toLocaleString()}L est.</div>}
                   </div>
-
-                  {/* Status */}
-                  <StopStatusChip status={stop.status} />
 
                   {/* Status */}
                   <StopStatusChip status={stop.status} />
