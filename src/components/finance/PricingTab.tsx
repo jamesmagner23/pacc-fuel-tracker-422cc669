@@ -132,6 +132,7 @@ export default function PricingTab() {
   const grandTotalEx = lineCalcs.reduce((s, c) => s + c.totalEx, 0);
   const grandTotalInc = grandTotalEx * (1 + GST_RATE);
   const grandVolume = lineCalcs.reduce((s, c) => s + c.vol, 0);
+  const hasFuelItems = lineItems.some(li => isFuelType(li.productType));
   const weightedMargin = grandTotalEx > 0
     ? lineCalcs.reduce((s, c) => s + c.marginPct * c.totalEx, 0) / grandTotalEx
     : 0;
@@ -224,12 +225,12 @@ export default function PricingTab() {
   };
 
   const handleCreateQuote = async () => {
-    if (!hasTodayPrice) {
+    if (hasFuelItems && !hasTodayPrice) {
       toast.error("Today's buy price has not been entered yet — go to Buy Price tab first");
       return;
     }
-    if (!name || !email || grandVolume <= 0) {
-      toast.error("Fill in customer and at least one line item with volume");
+    if (!name || !email || grandTotalEx <= 0) {
+      toast.error("Fill in customer and at least one line item");
       return;
     }
     // Validate all line items
