@@ -479,7 +479,6 @@ function MyDayTab() {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data: schedule, isLoading } = useSchedule(today);
   const reorderStops = useReorderStops();
-  const markComplete = useMarkComplete();
   const [showAddForm, setShowAddForm] = useState(false);
 
   const stops = useMemo(() => {
@@ -488,8 +487,8 @@ function MyDayTab() {
     return (route.stops || []).map((s: any, i: number) => ({
       seq: i + 1,
       orderNo: s.orderNo,
-      clientName: s.location?.name || s.orderNo || `Stop ${i + 1}`,
-      address: s.location?.address || "",
+      clientName: s.locationName || s.orderNo || `Stop ${i + 1}`,
+      address: s.address || "",
       litres: s.duration || 0,
       status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
     }));
