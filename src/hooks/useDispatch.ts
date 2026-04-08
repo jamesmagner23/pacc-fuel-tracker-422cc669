@@ -130,7 +130,9 @@ export function useReorderStops() {
   return useMutation({
     mutationFn: (orders: Record<string, unknown>[]) =>
       dispatch("reorder_stops", { orders }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dispatch-schedule"] });
+    },
   });
 }
 
