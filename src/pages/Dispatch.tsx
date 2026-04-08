@@ -287,6 +287,7 @@ function StatusChip({ status }: { status: StopStatus }) {
 
 export default function Dispatch() {
   const [date, setDate] = useState<Date>(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const dateStr = format(date, "yyyy-MM-dd");
   const tc = useThemeColors();
@@ -458,9 +459,14 @@ export default function Dispatch() {
 
   const handleDelete = (orderNo: string) => {
     toast.loading("Removing stop…", { id: `delete-${orderNo}` });
-    deleteOrder.mutate({ orderNos: [orderNo] }, {
-      onSuccess: () => {
-        toast.success("Stop removed", { id: `delete-${orderNo}` });
+    deleteOrder.mutate({ orderNos: [orderNo], date: dateStr }, {
+      onSuccess: (data) => {
+        const planningId = data?.planning?.planningId;
+        toast.success(planningId ? "Stop removed — re-optimising route…" : "Stop removed", { id: `delete-${orderNo}` });
+
+        if (planningId) {
+          startPolling(planningId);
+        }
       },
       onError: (err) => {
         toast.error(err.message, { id: `delete-${orderNo}` });
@@ -480,7 +486,7 @@ export default function Dispatch() {
           <p className="text-[11px]" style={{ color: tc.textSecondary }}>Manage today's delivery schedule</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Popover>
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -498,7 +504,11 @@ export default function Dispatch() {
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={(d) => d && setDate(d)}
+                onSelect={(d) => {
+                  if (!d) return;
+                  setDate(d);
+                  setIsCalendarOpen(false);
+                }}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
               />

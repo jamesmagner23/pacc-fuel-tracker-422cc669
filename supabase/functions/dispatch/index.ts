@@ -173,19 +173,53 @@ serve(async (req) => {
         }
         const results = [];
         const errors: string[] = [];
+        let deletedCount = 0;
         for (const no of payload.orderNos) {
-          const data = await orFetch("/delete_order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderNo: no }),
-          });
-          results.push(data);
-          if (data?.success === false) {
-            errors.push(`${no}: ${data.message || "failed"}`);
+          try {
+            const data = await orFetch("/delete_order", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ orderNo: no }),
+            });
+
+            results.push({ orderNo: no, ...data });
+
+            if (data?.success === false) {
+              errors.push(`${no}: ${data.message || "failed"}`);
+            } else {
+              deletedCount += 1;
+            }
+          } catch (error) {
+            const rawMessage = error instanceof Error ? error.message : "Delete failed";
+            const detail = rawMessage.split(": ").slice(1).join(": ") || rawMessage;
+
+            let parsedMessage = detail;
+            try {
+              const parsed = JSON.parse(detail);
+              parsedMessage = parsed?.message || parsed?.error || parsed?.code || detail;
+            } catch {
+              parsedMessage = detail;
+            }
+
+            errors.push(`${no}: ${parsedMessage}`);
+            results.push({ orderNo: no, success: false, message: parsedMessage });
           }
         }
-        // Return success with partial results even if some failed
-        return ok({ results, errors });
+
+        const deleteDate = payload?.date ?? new Date().toISOString().split("T")[0];
+        let planning: unknown = null;
+        let planningError: string | null = null;
+
+        if (deletedCount > 0) {
+          try {
+            planning = await startPlanning(deleteDate, "CURRENT", "NONE");
+          } catch (error) {
+            planningError = error instanceof Error ? error.message : "Unknown planning error";
+          }
+        }
+
+        // Return success with detailed per-order outcomes so the UI can show the real message.
+        return ok({ results, errors, deletedCount, planning, planningError });
       }
 
       // ── Get planning status ──
