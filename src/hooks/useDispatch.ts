@@ -19,11 +19,11 @@ export function useSchedule(date?: string) {
   });
 }
 
-export function useCompletions(date?: string) {
+export function useLocations(date?: string) {
   return useQuery({
-    queryKey: ["dispatch-completions", date],
-    queryFn: () => dispatch("get_completions", { date }),
-    staleTime: 55000,
+    queryKey: ["dispatch-locations", date],
+    queryFn: () => dispatch("get_locations", { date }),
+    staleTime: 300000, // cache 5 min
   });
 }
 
@@ -58,15 +58,6 @@ export function useDeleteOrder() {
   return useMutation({
     mutationFn: (orderNos: string[]) =>
       dispatch("delete_order", { orderNos }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
-  });
-}
-
-export function useMarkComplete() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (orderNo: string) =>
-      dispatch("mark_complete", { orderNo }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
   });
 }
