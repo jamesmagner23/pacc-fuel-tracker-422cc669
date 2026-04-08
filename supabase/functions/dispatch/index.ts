@@ -172,6 +172,7 @@ serve(async (req) => {
           return fail("Missing payload.orderNos array", 400);
         }
         const results = [];
+        const errors: string[] = [];
         for (const no of payload.orderNos) {
           const data = await orFetch("/delete_order", {
             method: "POST",
@@ -179,6 +180,12 @@ serve(async (req) => {
             body: JSON.stringify({ orderNo: no }),
           });
           results.push(data);
+          if (data?.success === false) {
+            errors.push(`${no}: ${data.message || "failed"}`);
+          }
+        }
+        if (errors.length > 0 && errors.length === payload.orderNos.length) {
+          return fail(errors.join("; "), 400);
         }
         return ok(results);
       }
