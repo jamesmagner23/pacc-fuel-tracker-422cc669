@@ -232,20 +232,31 @@ export default function PricingTab() {
       toast.error("Fill in customer and at least one line item with volume");
       return;
     }
-    // Validate all line items have margin
+    // Validate all line items
     for (let i = 0; i < lineItems.length; i++) {
-      const vol = parseFloat(lineItems[i].volume);
-      const margin = parseFloat(lineItems[i].margin);
-      if (!vol || vol <= 0) { toast.error(`Line ${i + 1}: enter a volume`); return; }
-      if (isNaN(margin)) { toast.error(`Line ${i + 1}: enter a margin %`); return; }
+      const li = lineItems[i];
+      const fuel = isFuelType(li.productType);
+      if (fuel) {
+        const vol = parseFloat(li.volume);
+        const margin = parseFloat(li.margin);
+        if (!vol || vol <= 0) { toast.error(`Line ${i + 1}: enter a volume`); return; }
+        if (isNaN(margin)) { toast.error(`Line ${i + 1}: enter a margin %`); return; }
+      } else {
+        const qty = parseFloat(li.quantity);
+        const price = parseFloat(li.unitPrice);
+        if (!qty || qty <= 0) { toast.error(`Line ${i + 1}: enter a quantity`); return; }
+        if (!price || price <= 0) { toast.error(`Line ${i + 1}: enter a unit price`); return; }
+      }
     }
 
     const lineItemsData = lineItems.map((li, i) => ({
-      volume: parseFloat(li.volume) || 0,
+      product_type: li.productType,
+      volume: lineCalcs[i].vol,
       margin_percent: lineCalcs[i].marginPct,
       sell_price: lineCalcs[i].sellPrice,
       total_ex: lineCalcs[i].totalEx,
-      description: li.description || null,
+      description: li.description || li.productType,
+      is_fuel: lineCalcs[i].fuel,
     }));
 
     // Use weighted average for the quote record
@@ -405,9 +416,17 @@ export default function PricingTab() {
     setName(q.customer_name); setEmail(q.customer_email); setPhone(q.customer_phone || ""); setNotes(q.notes || "");
     const items: any[] = (q as any).line_items || [];
     if (items.length > 0) {
-      setLineItems(items.map((li: any) => ({ key: crypto.randomUUID(), volume: String(li.volume), margin: String(li.margin_percent), description: li.description || "" })));
+      setLineItems(items.map((li: any) => ({
+        key: crypto.randomUUID(),
+        productType: (li.product_type || "Diesel") as ProductType,
+        volume: String(li.volume),
+        margin: String(li.margin_percent),
+        unitPrice: li.is_fuel ? "" : String(li.sell_price || ""),
+        quantity: li.is_fuel ? "1" : String(li.volume || 1),
+        description: li.description || "",
+      })));
     } else {
-      setLineItems([{ key: crypto.randomUUID(), volume: String(q.volume_litres), margin: String(q.margin_percent), description: "" }]);
+      setLineItems([{ key: crypto.randomUUID(), productType: "Diesel" as ProductType, volume: String(q.volume_litres), margin: String(q.margin_percent), unitPrice: "", quantity: "1", description: "" }]);
     }
     toast.info("Quote duplicated — edit and create a new one");
     window.scrollTo({ top: 0, behavior: "smooth" });
