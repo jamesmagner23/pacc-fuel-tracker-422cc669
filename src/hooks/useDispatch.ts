@@ -139,8 +139,24 @@ export function useReorderStops() {
 export function useDeleteOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderNos }: { orderNos: string[] }) =>
-      dispatch("delete_order", { orderNos }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
+    mutationFn: async ({ orderNos, date }: { orderNos: string[]; date?: string }) => {
+      const result = await dispatch("delete_order", { orderNos, date });
+      const hasSuccessfulDeletion = Array.isArray(result?.results)
+        ? result.results.some((entry: { success?: boolean }) => entry?.success !== false)
+        : false;
+      const firstError = Array.isArray(result?.errors) ? result.errors[0] : null;
+
+      if (!hasSuccessfulDeletion && firstError) {
+        throw new Error(firstError);
+      }
+
+      return result;
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
+        qc.invalidateQueries({ queryKey: ["dispatch-locations"] }),
+      ]);
+    },
   });
 }
