@@ -481,12 +481,11 @@ export default function Dispatch() {
             )}
             <div>
               <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: tc.textSecondary }}>Site Address</label>
-              <Input
-                className="h-9 bg-transparent border-surface-border text-xs"
-                style={{ color: tc.textPrimary }}
+              <SiteAddressCombobox
+                locations={knownLocations}
                 value={formSite}
-                onChange={(e) => setFormSite(e.target.value)}
-                placeholder="123 Example Rd, Melbourne"
+                onChange={setFormSite}
+                colors={tc}
               />
             </div>
             <div>
