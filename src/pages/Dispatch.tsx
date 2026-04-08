@@ -438,7 +438,7 @@ export default function Dispatch() {
     }));
     reorderStops.mutate(orders, {
       onSuccess: (data: any) => {
-        toast.success("Stops reordered");
+        toast.success("Stops reordered — re-optimising route…");
         const planningId = data?.planning?.planningId;
         if (planningId) {
           startPolling(planningId);
