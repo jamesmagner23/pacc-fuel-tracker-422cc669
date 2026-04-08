@@ -246,7 +246,7 @@ serve(async (req) => {
               for (const route of routes) {
                 const routeStops = route.stops?.length ?? 0;
                 stops += routeStops;
-                totalDistanceKm += (route.distance ?? 0) / 1000;
+                totalDistanceKm += route.distance ?? 0;
                 totalDurationMin += (route.duration ?? 0) / 60;
                 if (route.driverName) drivers.add(route.driverName);
                 for (const s of route.stops ?? []) {
