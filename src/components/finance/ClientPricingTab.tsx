@@ -749,10 +749,41 @@ export default function ClientPricingTab() {
                     </div>
                   )}
 
-                  {/* SpeedSol mapping */}
+                  {/* SpeedSol mapping with fuzzy suggestions */}
                   {isMapping && (
                     <div className="ml-5.5 mb-3 p-3 bg-[hsl(var(--muted))] rounded-lg">
                       <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Map SpeedSol Names → {client?.company_name}</div>
+                      {/* Auto-suggested matches */}
+                      {(() => {
+                        const companyName = client?.company_name || "";
+                        const autoSuggestions = unmappedTxnNames
+                          .map((n) => ({ name: n, score: fuzzyScore(companyName, n) }))
+                          .filter((s) => s.score > 10)
+                          .sort((a, b) => b.score - a.score)
+                          .slice(0, 5);
+                        if (autoSuggestions.length === 0) return null;
+                        return (
+                          <div className="mb-2 pb-2 border-b border-border/50">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <Sparkles className="w-3 h-3 text-primary" />
+                              <span className="text-[10px] text-muted-foreground">Suggested matches</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {autoSuggestions.map((s) => (
+                                <button
+                                  key={s.name}
+                                  onClick={() => addSpeedsolName(clientId, s.name)}
+                                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-primary/30 hover:border-primary/60 bg-primary/5 text-foreground cursor-pointer transition-colors"
+                                >
+                                  <Plus className="w-3 h-3 text-primary" />
+                                  {s.name}
+                                  {s.score >= 90 && <span className="text-[9px] text-primary">✓</span>}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       <input type="text" placeholder="Search SpeedSol names…" value={mappingSearch} onChange={(e) => setMappingSearch(e.target.value)} className="bg-card border border-border rounded-lg text-foreground px-3 py-1.5 text-[11px] outline-none w-full mb-2" />
                       <div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
                         {unmappedTxnNames
