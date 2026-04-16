@@ -117,6 +117,17 @@ export default function ClientPricingTab() {
   const pricedClientIds = useMemo(() => new Set(pricing.map((p) => p.client_account_id)), [pricing]);
   const unassignedClients = useMemo(() => clients.filter((c) => !pricedClientIds.has(c.id)), [clients, pricedClientIds]);
 
+  // Transaction customer names that have NO client account at all
+  const orphanedTxnNames = useMemo(() => {
+    const clientNames = new Set(clients.map((c) => c.company_name?.toLowerCase()));
+    const mappedNames = new Set<string>();
+    clients.forEach((c: any) => (c.speedsol_names || []).forEach((n: string) => mappedNames.add(n.toLowerCase())));
+    return txnCustomers.filter((n) => {
+      const lower = n.toLowerCase();
+      return !clientNames.has(lower) && !mappedNames.has(lower);
+    });
+  }, [txnCustomers, clients]);
+
   const filteredGroups = useMemo(() => {
     const groups = Array.from(clientGroups.entries());
     if (!search) return groups;
