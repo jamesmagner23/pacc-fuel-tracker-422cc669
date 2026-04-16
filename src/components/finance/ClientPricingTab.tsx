@@ -331,6 +331,43 @@ export default function ClientPricingTab() {
 
       <ImportSpeedsolClients existingSpeedsolNames={clients.map((c) => (c as any).speedsol_name).filter(Boolean)} />
 
+      {/* Orphaned transaction customers — no client account exists */}
+      {orphanedTxnNames.length > 0 && (
+        <div className="bg-surface border border-amber-500/30 rounded-[10px] p-4 sm:p-5">
+          <div className="flex items-start gap-2.5 mb-3">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <div className="text-[12px] sm:text-[13px] font-medium text-foreground">
+                {orphanedTxnNames.length} transaction customer{orphanedTxnNames.length !== 1 ? "s" : ""} without a client account
+              </div>
+              <div className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5">
+                These names appear in deliveries but can't be priced. Create an account or map them to an existing client.
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {orphanedTxnNames.slice(0, 12).map((name) => (
+              <button
+                key={name}
+                onClick={() => {
+                  setCreatingNew(true);
+                  setNewCompanyName(name);
+                  setShowForm(true);
+                  setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-medium border border-border hover:border-primary/40 transition-colors bg-transparent text-foreground cursor-pointer"
+              >
+                <UserPlus className="w-3 h-3 text-primary" />
+                {name}
+              </button>
+            ))}
+            {orphanedTxnNames.length > 12 && (
+              <span className="text-[11px] text-muted-foreground self-center">+{orphanedTxnNames.length - 12} more</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Add client pricing — multi-tier form */}
       <div ref={formRef} className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
