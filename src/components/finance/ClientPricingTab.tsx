@@ -424,9 +424,38 @@ export default function ClientPricingTab() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="flex flex-col gap-1.5 sm:col-span-2">
                 <label className="text-[11px] text-muted-foreground">Client *</label>
-                {creatingNew ? (
+              {creatingNew ? (
                   <div className="flex flex-col gap-2">
                     <input type="text" placeholder="Company name" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} className={inputClass} />
+                    {/* Fuzzy SpeedSol name suggestions */}
+                    {newCompanyName.trim().length >= 2 && (() => {
+                      const suggestions = txnCustomers
+                        .map((n) => ({ name: n, score: fuzzyScore(newCompanyName, n) }))
+                        .filter((s) => s.score > 0)
+                        .sort((a, b) => b.score - a.score)
+                        .slice(0, 5);
+                      if (suggestions.length === 0) return null;
+                      return (
+                        <div className="bg-[hsl(var(--muted))] rounded-lg p-2 flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Sparkles className="w-3 h-3 text-primary" />
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Matching SpeedSol names</span>
+                          </div>
+                          {suggestions.map((s) => (
+                            <button
+                              key={s.name}
+                              type="button"
+                              onClick={() => setNewCompanyName(s.name)}
+                              className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-card text-left bg-transparent border-none cursor-pointer w-full transition-colors"
+                            >
+                              <Plus className="w-3 h-3 text-primary flex-shrink-0" />
+                              <span className="text-[11px] text-foreground">{s.name}</span>
+                              {s.score >= 90 && <span className="text-[9px] text-primary ml-auto">strong match</span>}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <input type="email" placeholder="Contact email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className={inputClass} />
                     <input type="tel" placeholder="Phone (optional)" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} className={inputClass} />
                     <button onClick={() => { setCreatingNew(false); setNewCompanyName(""); setNewEmail(""); }} className="text-[11px] text-muted-foreground hover:text-foreground self-start bg-transparent border-none cursor-pointer">← Back to select</button>
