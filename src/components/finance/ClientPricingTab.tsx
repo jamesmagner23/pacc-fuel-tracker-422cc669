@@ -1,6 +1,34 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import ImportSpeedsolClients from "./ImportSpeedsolClients";
-import { Pencil, Trash2, Plus, Search, Link2, X, ChevronDown, ChevronUp, AlertTriangle, UserPlus } from "lucide-react";
+import { Pencil, Trash2, Plus, Search, Link2, X, ChevronDown, ChevronUp, AlertTriangle, UserPlus, Sparkles } from "lucide-react";
+
+/** Simple fuzzy score: how well `query` matches `target`. Higher = better. 0 = no match. */
+function fuzzyScore(query: string, target: string): number {
+  const q = query.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const t = target.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!q || !t) return 0;
+  // Exact substring match gets highest score
+  if (t.includes(q)) return 100 + q.length;
+  if (q.includes(t)) return 90 + t.length;
+  // Word-level matching
+  const qWords = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const tWords = target.toLowerCase().split(/\s+/).filter(Boolean);
+  let wordScore = 0;
+  for (const qw of qWords) {
+    for (const tw of tWords) {
+      if (tw.startsWith(qw) || qw.startsWith(tw)) wordScore += 30 + Math.min(qw.length, tw.length);
+      else if (tw.includes(qw) || qw.includes(tw)) wordScore += 15;
+    }
+  }
+  if (wordScore > 0) return wordScore;
+  // Character sequence matching
+  let qi = 0;
+  let matched = 0;
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) { matched++; qi++; }
+  }
+  return matched >= q.length * 0.6 ? matched * 2 : 0;
+}
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import {
