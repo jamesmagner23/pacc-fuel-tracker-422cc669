@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import ImportSpeedsolClients from "./ImportSpeedsolClients";
-import { Pencil, Trash2, Plus, Search, Link2, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Pencil, Trash2, Plus, Search, Link2, X, ChevronDown, ChevronUp, AlertTriangle, UserPlus } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import {
