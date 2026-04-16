@@ -1,6 +1,34 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import ImportSpeedsolClients from "./ImportSpeedsolClients";
-import { Pencil, Trash2, Plus, Search, Link2, X, ChevronDown, ChevronUp, AlertTriangle, UserPlus } from "lucide-react";
+import { Pencil, Trash2, Plus, Search, Link2, X, ChevronDown, ChevronUp, AlertTriangle, UserPlus, Sparkles } from "lucide-react";
+
+/** Simple fuzzy score: how well `query` matches `target`. Higher = better. 0 = no match. */
+function fuzzyScore(query: string, target: string): number {
+  const q = query.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const t = target.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!q || !t) return 0;
+  // Exact substring match gets highest score
+  if (t.includes(q)) return 100 + q.length;
+  if (q.includes(t)) return 90 + t.length;
+  // Word-level matching
+  const qWords = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const tWords = target.toLowerCase().split(/\s+/).filter(Boolean);
+  let wordScore = 0;
+  for (const qw of qWords) {
+    for (const tw of tWords) {
+      if (tw.startsWith(qw) || qw.startsWith(tw)) wordScore += 30 + Math.min(qw.length, tw.length);
+      else if (tw.includes(qw) || qw.includes(tw)) wordScore += 15;
+    }
+  }
+  if (wordScore > 0) return wordScore;
+  // Character sequence matching
+  let qi = 0;
+  let matched = 0;
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) { matched++; qi++; }
+  }
+  return matched >= q.length * 0.6 ? matched * 2 : 0;
+}
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import {
@@ -396,9 +424,38 @@ export default function ClientPricingTab() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="flex flex-col gap-1.5 sm:col-span-2">
                 <label className="text-[11px] text-muted-foreground">Client *</label>
-                {creatingNew ? (
+              {creatingNew ? (
                   <div className="flex flex-col gap-2">
                     <input type="text" placeholder="Company name" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} className={inputClass} />
+                    {/* Fuzzy SpeedSol name suggestions */}
+                    {newCompanyName.trim().length >= 2 && (() => {
+                      const suggestions = txnCustomers
+                        .map((n) => ({ name: n, score: fuzzyScore(newCompanyName, n) }))
+                        .filter((s) => s.score > 0)
+                        .sort((a, b) => b.score - a.score)
+                        .slice(0, 5);
+                      if (suggestions.length === 0) return null;
+                      return (
+                        <div className="bg-[hsl(var(--muted))] rounded-lg p-2 flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Sparkles className="w-3 h-3 text-primary" />
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Matching SpeedSol names</span>
+                          </div>
+                          {suggestions.map((s) => (
+                            <button
+                              key={s.name}
+                              type="button"
+                              onClick={() => setNewCompanyName(s.name)}
+                              className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-card text-left bg-transparent border-none cursor-pointer w-full transition-colors"
+                            >
+                              <Plus className="w-3 h-3 text-primary flex-shrink-0" />
+                              <span className="text-[11px] text-foreground">{s.name}</span>
+                              {s.score >= 90 && <span className="text-[9px] text-primary ml-auto">strong match</span>}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <input type="email" placeholder="Contact email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className={inputClass} />
                     <input type="tel" placeholder="Phone (optional)" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} className={inputClass} />
                     <button onClick={() => { setCreatingNew(false); setNewCompanyName(""); setNewEmail(""); }} className="text-[11px] text-muted-foreground hover:text-foreground self-start bg-transparent border-none cursor-pointer">← Back to select</button>
@@ -692,10 +749,41 @@ export default function ClientPricingTab() {
                     </div>
                   )}
 
-                  {/* SpeedSol mapping */}
+                  {/* SpeedSol mapping with fuzzy suggestions */}
                   {isMapping && (
                     <div className="ml-5.5 mb-3 p-3 bg-[hsl(var(--muted))] rounded-lg">
                       <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Map SpeedSol Names → {client?.company_name}</div>
+                      {/* Auto-suggested matches */}
+                      {(() => {
+                        const companyName = client?.company_name || "";
+                        const autoSuggestions = unmappedTxnNames
+                          .map((n) => ({ name: n, score: fuzzyScore(companyName, n) }))
+                          .filter((s) => s.score > 10)
+                          .sort((a, b) => b.score - a.score)
+                          .slice(0, 5);
+                        if (autoSuggestions.length === 0) return null;
+                        return (
+                          <div className="mb-2 pb-2 border-b border-border/50">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <Sparkles className="w-3 h-3 text-primary" />
+                              <span className="text-[10px] text-muted-foreground">Suggested matches</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {autoSuggestions.map((s) => (
+                                <button
+                                  key={s.name}
+                                  onClick={() => addSpeedsolName(clientId, s.name)}
+                                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-primary/30 hover:border-primary/60 bg-primary/5 text-foreground cursor-pointer transition-colors"
+                                >
+                                  <Plus className="w-3 h-3 text-primary" />
+                                  {s.name}
+                                  {s.score >= 90 && <span className="text-[9px] text-primary">✓</span>}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       <input type="text" placeholder="Search SpeedSol names…" value={mappingSearch} onChange={(e) => setMappingSearch(e.target.value)} className="bg-card border border-border rounded-lg text-foreground px-3 py-1.5 text-[11px] outline-none w-full mb-2" />
                       <div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
                         {unmappedTxnNames
