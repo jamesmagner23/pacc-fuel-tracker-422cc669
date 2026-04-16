@@ -110,31 +110,31 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
       style={{ background: surface, border: `1px solid ${border}`, borderRadius: 12 }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-4 h-4" style={{ color: accent }} />
-          <span className="text-sm font-semibold" style={{ color: textPrimary }}>
-            Route Analytics
-          </span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" style={{ color: accent }} />
+            <span className="text-sm font-semibold" style={{ color: textPrimary }}>
+              Route Analytics
+            </span>
+          </div>
+          <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: `${border}` }}>
+            {(["week", "month"] as Period[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className="px-3 py-1.5 sm:py-1 rounded-md text-[10px] font-medium uppercase tracking-wider transition-colors"
+                style={{
+                  background: period === p ? accent : "transparent",
+                  color: period === p ? "#fff" : textSecondary,
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {p === "week" ? "This Week" : "This Month"}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-1 p-0.5 rounded-lg" style={{ background: `${border}` }}>
-          {(["week", "month"] as Period[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className="px-3 py-1 rounded-md text-[10px] font-medium uppercase tracking-wider transition-colors"
-              style={{
-                background: period === p ? accent : "transparent",
-                color: period === p ? "#fff" : textSecondary,
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              {p === "week" ? "This Week" : "This Month"}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {isLoading ? (
         <div className="text-xs py-6 text-center" style={{ color: textSecondary }}>
@@ -143,7 +143,7 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
       ) : (
         <>
           {/* KPI grid */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
             {kpis.map((kpi) => (
               <div
                 key={kpi.label}

@@ -153,7 +153,7 @@ export default function Overview() {
   }
 
   return (
-    <div className="flex flex-col gap-1 max-w-[1200px]">
+    <div className="flex flex-col gap-1 max-w-[1200px] w-full">
       {/* HERO SECTION */}
       <div
         className="px-4 pt-5 pb-0 sm:px-8 sm:pt-7"
@@ -162,7 +162,7 @@ export default function Overview() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-4">
           <div>
             <div className="text-[11px] uppercase tracking-wider mb-1.5" style={{ color: tc.textSecondary }}>Total Litres Delivered</div>
-            <div className="text-4xl sm:text-[56px] font-light tracking-tighter leading-none tabular-nums" style={{ color: tc.textPrimary }}>
+            <div className="text-3xl sm:text-[56px] font-light tracking-tighter leading-none tabular-nums" style={{ color: tc.textPrimary }}>
               {totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`}
             </div>
             <div className="flex items-center gap-1.5 mt-2.5">
@@ -174,15 +174,15 @@ export default function Overview() {
             </div>
           </div>
 
-          <div className="flex gap-4 sm:gap-8 pt-1">
+          <div className="grid grid-cols-3 gap-3 sm:gap-8 sm:flex pt-1">
             {[
               { label: "Revenue", value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }), p: revPct },
               { label: "Deliveries", value: numDeliveries.toString(), p: delPct },
               { label: "Avg Size", value: Math.round(avgSize) + "L", p: avgPct },
             ].map((k) => (
-              <div key={k.label} className="text-right">
+              <div key={k.label} className="text-left sm:text-right">
                 <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tc.textSecondary }}>{k.label}</div>
-                <div className="text-xl font-medium tracking-tight tabular-nums" style={{ color: tc.textPrimary }}>{k.value}</div>
+                <div className="text-lg sm:text-xl font-medium tracking-tight tabular-nums" style={{ color: tc.textPrimary }}>{k.value}</div>
                 <div className={`text-[11px] mt-0.5 ${k.p >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                   {k.p >= 0 ? "+" : ""}{k.p.toFixed(1)}%
                 </div>
