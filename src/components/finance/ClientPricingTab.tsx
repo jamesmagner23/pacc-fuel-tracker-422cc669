@@ -56,14 +56,25 @@ export default function ClientPricingTab() {
       if (isDemo) {
         return [...new Set(getDemoData().transactions.map(t => t.nombre_cliente1).filter(Boolean))].sort() as string[];
       }
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("nombre_cliente1")
-        .not("nombre_cliente1", "is", null);
-      if (error) throw error;
-      const unique = [...new Set((data || []).map((r) => r.nombre_cliente1!))].sort();
-      return unique;
+      // Fetch ALL distinct customer names — paginate to avoid 1000-row limit
+      const allNames = new Set<string>();
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("transactions")
+          .select("nombre_cliente1")
+          .not("nombre_cliente1", "is", null)
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        data.forEach((r) => { if (r.nombre_cliente1) allNames.add(r.nombre_cliente1); });
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      return [...allNames].sort();
     },
+    staleTime: 300000,
   });
 
   const updatePricing = useUpdateCustomerPricing();
