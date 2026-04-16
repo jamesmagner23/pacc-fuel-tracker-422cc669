@@ -475,7 +475,7 @@ export default function Dispatch() {
   };
 
   return (
-    <div className="flex flex-col gap-1 max-w-[1200px]">
+    <div className="flex flex-col gap-1 max-w-[1200px] w-full">
       {/* Header */}
       <div
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 sm:px-6"
@@ -485,7 +485,7 @@ export default function Dispatch() {
           <h1 className="text-lg font-semibold" style={{ color: tc.textPrimary }}>Dispatch</h1>
           <p className="text-[11px]" style={{ color: tc.textSecondary }}>Manage today's delivery schedule</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -540,7 +540,7 @@ export default function Dispatch() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-3 gap-[1px]">
+      <div className="grid grid-cols-3 gap-1">
         {[
           { label: "Total Stops", value: totalStops, icon: <Package className="w-4 h-4" /> },
           { label: "Completed", value: completedStops, icon: <CheckCircle2 className="w-4 h-4" style={{ color: "#10B981" }} /> },
@@ -548,7 +548,7 @@ export default function Dispatch() {
         ].map((kpi) => (
           <div
             key={kpi.label}
-            className="p-4 sm:p-5"
+            className="p-3 sm:p-5"
             style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12 }}
           >
             <div className="flex items-center justify-between mb-2">
@@ -557,7 +557,7 @@ export default function Dispatch() {
               </span>
               <span style={{ color: tc.textMuted }}>{kpi.icon}</span>
             </div>
-            <div className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: tc.textPrimary }}>
+            <div className="text-xl sm:text-3xl font-bold tracking-tight" style={{ color: tc.textPrimary }}>
               {kpi.value}
             </div>
           </div>
@@ -737,7 +737,7 @@ export default function Dispatch() {
       )}
 
       {/* Two-column: Stop list + Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-[1px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1">
         {/* Stop list */}
         <div
           className="p-4 sm:p-5"
@@ -755,7 +755,7 @@ export default function Dispatch() {
               No stops scheduled. Add orders or sync with OptimoRoute.
             </div>
           ) : (
-            <div className="flex flex-col gap-1 max-h-[460px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-1 max-h-[360px] sm:max-h-[460px] overflow-y-auto pr-1">
               {stops.map((stop: any, idx: number) => {
                 const isCompleted = stop.status === "completed";
                 const dragProps = getDragProps(idx);
@@ -764,7 +764,7 @@ export default function Dispatch() {
                   <div
                     key={stop.orderNo || idx}
                     {...dragProps}
-                    className="flex items-center gap-3 p-3 rounded-lg transition-colors"
+                    className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg transition-colors"
                     style={{
                       border: `1px solid ${tc.border}`,
                       opacity: isCompleted ? 0.5 : itemStyle.opacity,
@@ -823,8 +823,8 @@ export default function Dispatch() {
         </div>
 
         {/* Map */}
-        <div>
-          <TruckMap height={500} showStops={true} />
+        <div className="min-h-[300px]">
+          <TruckMap height={400} showStops={true} />
         </div>
       </div>
     </div>
