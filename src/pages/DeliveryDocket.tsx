@@ -199,8 +199,11 @@ export default function DeliveryDocket() {
           <button onClick={handleThermalPrint} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
             <Printer className="w-3.5 h-3.5" /> Receipt
           </button>
-          <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">
+          <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
             <Printer className="w-3.5 h-3.5" /> Print
+          </button>
+          <button onClick={handleDownloadPDF} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">
+            <Download className="w-3.5 h-3.5" /> Download PDF
           </button>
         </div>
       </div>
