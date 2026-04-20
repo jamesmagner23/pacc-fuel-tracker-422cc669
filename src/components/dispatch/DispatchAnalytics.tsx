@@ -195,7 +195,7 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
                     labelStyle={{ color: textSecondary, fontSize: 10 }}
                   />
                   <Bar dataKey="stops" name="Stops" fill={accent} radius={[4, 4, 0, 0]} maxBarSize={24} />
-                  <Bar dataKey="km" name="KMs" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                  <Bar dataKey="km" name="KMs" fill="#E8461E" radius={[4, 4, 0, 0]} maxBarSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
