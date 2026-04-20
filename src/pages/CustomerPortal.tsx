@@ -658,61 +658,89 @@ function SitesTab({ transactions, companyName }: { transactions: any[]; companyN
 type FtcRow = { id: string; equipmentType: string; litres: number };
 type Period = "monthly" | "quarterly" | "annual";
 
-function FtcTab() {
+function FtcTab({ transactions }: { transactions: any[] }) {
   const { data: rates = [], isLoading } = useFtcRates();
   const [period, setPeriod] = useState<Period>("monthly");
-  const [rows, setRows] = useState<FtcRow[]>([
-    { id: crypto.randomUUID(), equipmentType: "", litres: 0 },
-  ]);
+  const [rows, setRows] = useState<FtcRow[]>([]);
+  const [didSeed, setDidSeed] = useState(false);
 
-  // Once rates load, default first row's equipmentType
+  // Compute average monthly delivered litres from the last 3 full months of delivery history
+  const avgMonthlyLitres = useMemo(() => {
+    const today = new Date();
+    const startWindow = startOfMonth(subMonths(today, 3));
+    const endWindow = endOfMonth(subMonths(today, 1));
+    const startStr = format(startWindow, "yyyy-MM-dd");
+    const endStr = format(endWindow, "yyyy-MM-dd");
+    const inWindow = transactions.filter((t) => {
+      const d = t.date || "";
+      return d >= startStr && d <= endStr;
+    });
+    const total = inWindow.reduce((s, t) => s + (t.cantidad || 0), 0);
+    return total / 3;
+  }, [transactions]);
+
+  // Seed first row with the off-road equipment type and the average monthly delivered litres
   useEffect(() => {
-    if (rates.length > 0) {
-      setRows((prev) =>
-        prev.map((r) => (r.equipmentType ? r : { ...r, equipmentType: rates[0].equipment_type }))
-      );
-    }
-  }, [rates]);
+    if (didSeed || rates.length === 0) return;
+    const offRoad = rates.find((r: any) => /off-road|machinery|plant/i.test(r.equipment_type)) || rates[0];
+    setRows([
+      {
+        id: crypto.randomUUID(),
+        equipmentType: offRoad.equipment_type,
+        litres: Math.round(avgMonthlyLitres),
+      },
+    ]);
+    setDidSeed(true);
+  }, [rates, avgMonthlyLitres, didSeed]);
 
   const periodMultiplier = period === "monthly" ? 1 : period === "quarterly" ? 3 : 12;
 
   const calc = useMemo(() => {
     let monthlyTotal = 0;
+    let monthlyLitres = 0;
     rows.forEach((r) => {
       const rate = rates.find((rt: any) => rt.equipment_type === r.equipmentType);
+      monthlyLitres += r.litres || 0;
       if (rate) monthlyTotal += (r.litres || 0) * Number(rate.rate_per_litre);
     });
     const periodTotal = monthlyTotal * periodMultiplier;
     const annualTotal = monthlyTotal * 12;
-    return { periodTotal, annualTotal };
+    return { periodTotal, annualTotal, monthlyLitres };
   }, [rows, rates, periodMultiplier]);
 
-  const addRow = () => setRows([...rows, { id: crypto.randomUUID(), equipmentType: rates[0]?.equipment_type || "", litres: 0 }]);
+  const addRow = () =>
+    setRows([
+      ...rows,
+      { id: crypto.randomUUID(), equipmentType: rates[0]?.equipment_type || "", litres: 0 },
+    ]);
   const removeRow = (id: string) => setRows(rows.length > 1 ? rows.filter((r) => r.id !== id) : rows);
   const updateRow = (id: string, patch: Partial<FtcRow>) =>
     setRows(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
   if (isLoading) return <p style={muted(13)}>Loading...</p>;
 
+  const hasHistory = avgMonthlyLitres > 0;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <h2 style={sectionTitle}>Fuel Tax Credits</h2>
-        <div style={{ display: "flex", gap: 0, border: `1px solid ${T.border}`, borderRadius: 4 }}>
+        <div style={{ display: "flex", gap: 0, border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
           {(["monthly", "quarterly", "annual"] as Period[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               style={{
                 padding: "8px 14px",
-                fontSize: 10,
-                fontFamily: T.sansHead,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: period === p ? T.text : T.muted,
+                fontSize: 11,
+                fontFamily: T.sansBody,
+                fontWeight: 500,
+                letterSpacing: "0.02em",
+                color: period === p ? "#ffffff" : T.textSecondary,
                 background: period === p ? T.accent : "transparent",
                 border: "none",
                 cursor: "pointer",
+                textTransform: "capitalize",
               }}
             >
               {p}
@@ -721,20 +749,43 @@ function FtcTab() {
         </div>
       </div>
 
+      {/* Hint about source data */}
+      {hasHistory ? (
+        <div style={{ ...card, borderLeft: `3px solid ${T.accent}`, padding: "12px 16px" }}>
+          <div style={{ fontSize: 12, color: T.textSecondary, fontFamily: T.sansBody }}>
+            Pre-filled from your delivery history — average{" "}
+            <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+              {fmtL(avgMonthlyLitres)}
+            </span>{" "}
+            per month over the last 3 months. Adjust the litres per equipment type to match your actual usage mix.
+          </div>
+        </div>
+      ) : (
+        <div style={{ ...card, borderLeft: `3px solid ${T.border}`, padding: "12px 16px" }}>
+          <div style={{ fontSize: 12, color: T.textSecondary, fontFamily: T.sansBody }}>
+            No delivery history yet — enter your monthly litres manually to estimate your fuel tax credit savings.
+          </div>
+        </div>
+      )}
+
       {/* Result block */}
       <div style={card}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
-            <div style={labelStyle}>{period === "annual" ? "Annual" : period === "quarterly" ? "Quarterly" : "Monthly"} Claim</div>
-            <div style={{ fontSize: 36, fontFamily: T.sansHead, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>
+            <div style={labelStyle}>{period === "annual" ? "Annual" : period === "quarterly" ? "Quarterly" : "Monthly"} Estimated Saving</div>
+            <div style={{ fontSize: 32, fontFamily: T.sansHead, fontWeight: 600, color: T.accent, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
               ${fmtNum(calc.periodTotal, 2)}
+            </div>
+            <div style={{ ...muted(11), marginTop: 6 }}>
+              Based on {fmtL(calc.monthlyLitres)} / month
             </div>
           </div>
           <div>
             <div style={labelStyle}>Annual Equivalent</div>
-            <div style={{ fontSize: 36, fontFamily: T.sansHead, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>
+            <div style={{ fontSize: 32, fontFamily: T.sansHead, fontWeight: 600, color: T.text, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
               ${fmtNum(calc.annualTotal, 2)}
             </div>
+            <div style={{ ...muted(11), marginTop: 6 }}>Projected 12-month saving</div>
           </div>
         </div>
       </div>
@@ -779,13 +830,12 @@ function FtcTab() {
                   style={{
                     background: "transparent",
                     border: `1px solid ${T.border}`,
-                    color: T.muted,
+                    color: T.textSecondary,
                     padding: "10px 14px",
-                    fontSize: 10,
-                    fontFamily: T.sansHead,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    borderRadius: 4,
+                    fontSize: 11,
+                    fontFamily: T.sansBody,
+                    fontWeight: 500,
+                    borderRadius: 6,
                     cursor: rows.length === 1 ? "not-allowed" : "pointer",
                     opacity: rows.length === 1 ? 0.4 : 1,
                   }}
@@ -793,8 +843,11 @@ function FtcTab() {
                   Remove
                 </button>
               </div>
-              <div style={{ marginTop: 10, fontSize: 11, color: T.muted, fontFamily: T.sansBody }}>
-                Monthly credit: <span style={{ color: T.text, fontVariantNumeric: "tabular-nums" }}>${fmtNum(monthlyCredit, 2)}</span>
+              <div style={{ marginTop: 10, fontSize: 12, color: T.textSecondary, fontFamily: T.sansBody }}>
+                Estimated monthly saving:{" "}
+                <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                  ${fmtNum(monthlyCredit, 2)}
+                </span>
               </div>
             </div>
           );
@@ -806,7 +859,7 @@ function FtcTab() {
       </div>
 
       <p style={{ ...muted(11), lineHeight: 1.5, marginTop: 8 }}>
-        Rates effective Feb 2025. Claim on BAS label 7C. Indexed by ATO every February and August.
+        Rates effective Feb 2025. Claim on BAS label 7C. Indexed by the ATO every February and August.
       </p>
     </div>
   );
