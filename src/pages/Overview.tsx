@@ -33,8 +33,8 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
   const total = topCustomers.reduce((s, x) => s + x.litres, 0);
   const tc = useThemeColors();
 
-  // Distinct colors for pie slices — avoids low-opacity values that look black on dark backgrounds
-  const PIE_COLORS = ["#3B82F6", "#60A5FA", "#93C5FD", "#6366F1", "#A78BFA", "#38BDF8"];
+  // Brand-aligned palette: orange spectrum + cream tones for the dark warm-brown theme
+  const PIE_COLORS = ["#E8461E", "#FF6B42", "#F5E6D0", "#C4A882", "#D88B5C", "#8B7355"];
 
   return (
     <div style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12, padding: "20px 24px" }}>
