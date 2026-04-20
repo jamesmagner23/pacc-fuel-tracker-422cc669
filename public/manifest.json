@@ -1,0 +1,31 @@
+{
+  "name": "PACC Energy — Fuel Delivery Portal",
+  "short_name": "PACC Energy",
+  "description": "Real-time fuel delivery tracking, account management and insights for PACC Energy.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#3D2B1A",
+  "theme_color": "#3D2B1A",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

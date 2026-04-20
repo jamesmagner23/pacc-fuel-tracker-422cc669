@@ -73,6 +73,14 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "cv11", "ss01", "ss03";
+    /* iPhone notch / home-indicator safe-area when running as installed PWA */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    /* Disable iOS tap highlight + pull-to-refresh in standalone */
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
   }
 
   h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.025em; color: var(--text-primary); }
