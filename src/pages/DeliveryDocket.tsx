@@ -93,6 +93,51 @@ export default function DeliveryDocket() {
     }, 100);
   };
 
+  const handleDownloadPDF = async () => {
+    const el = document.getElementById("docket");
+    if (!el) return;
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      logging: false,
+    });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const imgW = pageW - margin * 2;
+    const imgH = (canvas.height * imgW) / canvas.width;
+
+    if (imgH <= pageH - margin * 2) {
+      pdf.addImage(imgData, "PNG", margin, margin, imgW, imgH);
+    } else {
+      // Multi-page: slice the canvas
+      const pageHeightPx = ((pageH - margin * 2) * canvas.width) / imgW;
+      let renderedHeight = 0;
+      while (renderedHeight < canvas.height) {
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = Math.min(pageHeightPx, canvas.height - renderedHeight);
+        const ctx = sliceCanvas.getContext("2d");
+        if (!ctx) break;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        ctx.drawImage(canvas, 0, renderedHeight, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+        const sliceData = sliceCanvas.toDataURL("image/png");
+        const sliceH = (sliceCanvas.height * imgW) / canvas.width;
+        if (renderedHeight > 0) pdf.addPage();
+        pdf.addImage(sliceData, "PNG", margin, margin, imgW, sliceH);
+        renderedHeight += sliceCanvas.height;
+      }
+    }
+
+    const dateStr = items[0] ? format(parseISO(items[0].fecha), "yyyy-MM-dd") : "docket";
+    const client = (items[0]?.nombre_cliente1 || "PACC").replace(/[^a-z0-9]+/gi, "-");
+    pdf.save(`docket-${client}-${dateStr}.pdf`);
+  };
+
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(window.location.href);
     setCopied(true);
@@ -109,6 +154,18 @@ export default function DeliveryDocket() {
       handleCopyLink();
     }
   };
+
+  // Auto-download PDF on first load (once items have rendered)
+  const [autoDownloaded, setAutoDownloaded] = useState(false);
+  useEffect(() => {
+    if (!loading && items.length > 0 && !autoDownloaded) {
+      const t = setTimeout(() => {
+        handleDownloadPDF();
+        setAutoDownloaded(true);
+      }, 600); // wait for fonts/QR to render
+      return () => clearTimeout(t);
+    }
+  }, [loading, items, autoDownloaded]);
 
   if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
   if (items.length === 0) return <div className="p-8 text-muted-foreground">Transaction not found.</div>;
