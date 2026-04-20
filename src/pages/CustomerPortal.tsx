@@ -1,17 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
 import jsPDF from "jspdf";
-import { format, parseISO, subDays, startOfMonth, startOfQuarter, addWeeks, addDays } from "date-fns";
+import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, addDays } from "date-fns";
 
 import { supabase } from "@/integrations/supabase/client";
 import { PACCLogo } from "@/components/PACCLogo";
@@ -19,19 +10,23 @@ import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 
-// ─── Theme tokens (per spec) ─────────────────────────────────────────
+// ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
-  bg: "#110B06",
-  accent: "#FF4D1C",
-  text: "#F2EDE6",
-  muted: "#9a8f87",
-  surface: "#1a0f08",
-  border: "#2a1f18",
-  sansHead: "'Barlow Condensed', sans-serif",
-  sansBody: "'Inter', sans-serif",
-  badgePending: "#9a8f87",
-  badgeConfirmed: "#FF4D1C",
-  badgeCompleted: "#2a5c2a",
+  bg: "#3D2B1A",
+  surface: "#4A3525",
+  surfaceRaised: "#56402E",
+  border: "#6B5240",
+  borderSubtle: "#56402E",
+  accent: "#E8461E",
+  accentHover: "#D13A14",
+  text: "#F5E6D0",
+  textSecondary: "#C4A882",
+  muted: "#8B7355",
+  sansHead: "'Inter', system-ui, sans-serif",
+  sansBody: "'Inter', system-ui, sans-serif",
+  badgePending: "#8B7355",
+  badgeConfirmed: "#E8461E",
+  badgeCompleted: "#10B981",
 };
 
 const tabs = [
@@ -40,8 +35,7 @@ const tabs = [
   "03 Sites",
   "04 FTC",
   "05 Emissions",
-  "06 Forecast",
-  "07 Schedule",
+  "06 Schedule",
 ] as const;
 type Tab = (typeof tabs)[number];
 
