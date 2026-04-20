@@ -2,11 +2,13 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Printer, Share2, Copy, Check } from "lucide-react";
+import { ArrowLeft, Printer, Share2, Copy, Check, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { Transaction } from "@/hooks/useTransactions";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData } from "@/data/demoData";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 export default function DeliveryDocket() {
   const { id } = useParams<{ id: string }>();
