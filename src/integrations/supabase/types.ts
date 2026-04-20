@@ -192,6 +192,45 @@ export type Database = {
           },
         ]
       }
+      delivery_requests: {
+        Row: {
+          client_account_id: number
+          created_at: string
+          created_by: string | null
+          estimated_litres: number | null
+          id: string
+          notes: string | null
+          preferred_date: string
+          site_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_account_id: number
+          created_at?: string
+          created_by?: string | null
+          estimated_litres?: number | null
+          id?: string
+          notes?: string | null
+          preferred_date: string
+          site_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_account_id?: number
+          created_at?: string
+          created_by?: string | null
+          estimated_litres?: number | null
+          id?: string
+          notes?: string | null
+          preferred_date?: string
+          site_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       demo_leads: {
         Row: {
           brand_param: string | null
@@ -222,6 +261,39 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+        }
+        Relationships: []
+      }
+      ftc_rates: {
+        Row: {
+          created_at: string
+          display_order: number
+          effective_from: string
+          equipment_type: string
+          id: string
+          notes: string | null
+          rate_per_litre: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          effective_from?: string
+          equipment_type: string
+          id?: string
+          notes?: string | null
+          rate_per_litre: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          effective_from?: string
+          equipment_type?: string
+          id?: string
+          notes?: string | null
+          rate_per_litre?: number
+          updated_at?: string
         }
         Relationships: []
       }
