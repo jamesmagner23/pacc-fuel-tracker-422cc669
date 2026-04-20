@@ -1,17 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from "recharts";
 import jsPDF from "jspdf";
-import { format, parseISO, subDays, startOfMonth, startOfQuarter, addWeeks, addDays } from "date-fns";
+import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, addDays } from "date-fns";
 
 import { supabase } from "@/integrations/supabase/client";
 import { PACCLogo } from "@/components/PACCLogo";
@@ -19,19 +10,23 @@ import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 
-// ─── Theme tokens (per spec) ─────────────────────────────────────────
+// ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
-  bg: "#110B06",
-  accent: "#FF4D1C",
-  text: "#F2EDE6",
-  muted: "#9a8f87",
-  surface: "#1a0f08",
-  border: "#2a1f18",
-  sansHead: "'Barlow Condensed', sans-serif",
-  sansBody: "'Inter', sans-serif",
-  badgePending: "#9a8f87",
-  badgeConfirmed: "#FF4D1C",
-  badgeCompleted: "#2a5c2a",
+  bg: "#3D2B1A",
+  surface: "#4A3525",
+  surfaceRaised: "#56402E",
+  border: "#6B5240",
+  borderSubtle: "#56402E",
+  accent: "#E8461E",
+  accentHover: "#D13A14",
+  text: "#F5E6D0",
+  textSecondary: "#C4A882",
+  muted: "#8B7355",
+  sansHead: "'Inter', system-ui, sans-serif",
+  sansBody: "'Inter', system-ui, sans-serif",
+  badgePending: "#8B7355",
+  badgeConfirmed: "#E8461E",
+  badgeCompleted: "#10B981",
 };
 
 const tabs = [
@@ -40,8 +35,7 @@ const tabs = [
   "03 Sites",
   "04 FTC",
   "05 Emissions",
-  "06 Forecast",
-  "07 Schedule",
+  "06 Schedule",
 ] as const;
 type Tab = (typeof tabs)[number];
 
@@ -366,17 +360,16 @@ export default function CustomerPortal() {
           })}
         </div>
 
-        {isLoading && activeTab !== "07 Schedule" && activeTab !== "04 FTC" ? (
+        {isLoading && activeTab !== "06 Schedule" && activeTab !== "04 FTC" ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
             {activeTab === "01 Overview" && <OverviewTab transactions={transactions} demoSuffix={demoSuffix} />}
             {activeTab === "02 Deliveries" && <DeliveriesTab transactions={transactions} demoSuffix={demoSuffix} />}
             {activeTab === "03 Sites" && <SitesTab transactions={transactions} companyName={companyName} />}
-            {activeTab === "04 FTC" && <FtcTab />}
+            {activeTab === "04 FTC" && <FtcTab transactions={transactions} />}
             {activeTab === "05 Emissions" && <EmissionsTab transactions={transactions} companyName={companyName} />}
-            {activeTab === "06 Forecast" && <ForecastTab transactions={transactions} />}
-            {activeTab === "07 Schedule" && <ScheduleTab transactions={transactions} clientAccountId={clientAccountId} />}
+            {activeTab === "06 Schedule" && <ScheduleTab transactions={transactions} clientAccountId={clientAccountId} />}
           </>
         )}
       </div>
@@ -665,61 +658,89 @@ function SitesTab({ transactions, companyName }: { transactions: any[]; companyN
 type FtcRow = { id: string; equipmentType: string; litres: number };
 type Period = "monthly" | "quarterly" | "annual";
 
-function FtcTab() {
+function FtcTab({ transactions }: { transactions: any[] }) {
   const { data: rates = [], isLoading } = useFtcRates();
   const [period, setPeriod] = useState<Period>("monthly");
-  const [rows, setRows] = useState<FtcRow[]>([
-    { id: crypto.randomUUID(), equipmentType: "", litres: 0 },
-  ]);
+  const [rows, setRows] = useState<FtcRow[]>([]);
+  const [didSeed, setDidSeed] = useState(false);
 
-  // Once rates load, default first row's equipmentType
+  // Compute average monthly delivered litres from the last 3 full months of delivery history
+  const avgMonthlyLitres = useMemo(() => {
+    const today = new Date();
+    const startWindow = startOfMonth(subMonths(today, 3));
+    const endWindow = endOfMonth(subMonths(today, 1));
+    const startStr = format(startWindow, "yyyy-MM-dd");
+    const endStr = format(endWindow, "yyyy-MM-dd");
+    const inWindow = transactions.filter((t) => {
+      const d = t.date || "";
+      return d >= startStr && d <= endStr;
+    });
+    const total = inWindow.reduce((s, t) => s + (t.cantidad || 0), 0);
+    return total / 3;
+  }, [transactions]);
+
+  // Seed first row with the off-road equipment type and the average monthly delivered litres
   useEffect(() => {
-    if (rates.length > 0) {
-      setRows((prev) =>
-        prev.map((r) => (r.equipmentType ? r : { ...r, equipmentType: rates[0].equipment_type }))
-      );
-    }
-  }, [rates]);
+    if (didSeed || rates.length === 0) return;
+    const offRoad = rates.find((r: any) => /off-road|machinery|plant/i.test(r.equipment_type)) || rates[0];
+    setRows([
+      {
+        id: crypto.randomUUID(),
+        equipmentType: offRoad.equipment_type,
+        litres: Math.round(avgMonthlyLitres),
+      },
+    ]);
+    setDidSeed(true);
+  }, [rates, avgMonthlyLitres, didSeed]);
 
   const periodMultiplier = period === "monthly" ? 1 : period === "quarterly" ? 3 : 12;
 
   const calc = useMemo(() => {
     let monthlyTotal = 0;
+    let monthlyLitres = 0;
     rows.forEach((r) => {
       const rate = rates.find((rt: any) => rt.equipment_type === r.equipmentType);
+      monthlyLitres += r.litres || 0;
       if (rate) monthlyTotal += (r.litres || 0) * Number(rate.rate_per_litre);
     });
     const periodTotal = monthlyTotal * periodMultiplier;
     const annualTotal = monthlyTotal * 12;
-    return { periodTotal, annualTotal };
+    return { periodTotal, annualTotal, monthlyLitres };
   }, [rows, rates, periodMultiplier]);
 
-  const addRow = () => setRows([...rows, { id: crypto.randomUUID(), equipmentType: rates[0]?.equipment_type || "", litres: 0 }]);
+  const addRow = () =>
+    setRows([
+      ...rows,
+      { id: crypto.randomUUID(), equipmentType: rates[0]?.equipment_type || "", litres: 0 },
+    ]);
   const removeRow = (id: string) => setRows(rows.length > 1 ? rows.filter((r) => r.id !== id) : rows);
   const updateRow = (id: string, patch: Partial<FtcRow>) =>
     setRows(rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
   if (isLoading) return <p style={muted(13)}>Loading...</p>;
 
+  const hasHistory = avgMonthlyLitres > 0;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <h2 style={sectionTitle}>Fuel Tax Credits</h2>
-        <div style={{ display: "flex", gap: 0, border: `1px solid ${T.border}`, borderRadius: 4 }}>
+        <div style={{ display: "flex", gap: 0, border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
           {(["monthly", "quarterly", "annual"] as Period[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
               style={{
                 padding: "8px 14px",
-                fontSize: 10,
-                fontFamily: T.sansHead,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: period === p ? T.text : T.muted,
+                fontSize: 11,
+                fontFamily: T.sansBody,
+                fontWeight: 500,
+                letterSpacing: "0.02em",
+                color: period === p ? "#ffffff" : T.textSecondary,
                 background: period === p ? T.accent : "transparent",
                 border: "none",
                 cursor: "pointer",
+                textTransform: "capitalize",
               }}
             >
               {p}
@@ -728,20 +749,43 @@ function FtcTab() {
         </div>
       </div>
 
+      {/* Hint about source data */}
+      {hasHistory ? (
+        <div style={{ ...card, borderLeft: `3px solid ${T.accent}`, padding: "12px 16px" }}>
+          <div style={{ fontSize: 12, color: T.textSecondary, fontFamily: T.sansBody }}>
+            Pre-filled from your delivery history — average{" "}
+            <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+              {fmtL(avgMonthlyLitres)}
+            </span>{" "}
+            per month over the last 3 months. Adjust the litres per equipment type to match your actual usage mix.
+          </div>
+        </div>
+      ) : (
+        <div style={{ ...card, borderLeft: `3px solid ${T.border}`, padding: "12px 16px" }}>
+          <div style={{ fontSize: 12, color: T.textSecondary, fontFamily: T.sansBody }}>
+            No delivery history yet — enter your monthly litres manually to estimate your fuel tax credit savings.
+          </div>
+        </div>
+      )}
+
       {/* Result block */}
       <div style={card}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
-            <div style={labelStyle}>{period === "annual" ? "Annual" : period === "quarterly" ? "Quarterly" : "Monthly"} Claim</div>
-            <div style={{ fontSize: 36, fontFamily: T.sansHead, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>
+            <div style={labelStyle}>{period === "annual" ? "Annual" : period === "quarterly" ? "Quarterly" : "Monthly"} Estimated Saving</div>
+            <div style={{ fontSize: 32, fontFamily: T.sansHead, fontWeight: 600, color: T.accent, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
               ${fmtNum(calc.periodTotal, 2)}
+            </div>
+            <div style={{ ...muted(11), marginTop: 6 }}>
+              Based on {fmtL(calc.monthlyLitres)} / month
             </div>
           </div>
           <div>
             <div style={labelStyle}>Annual Equivalent</div>
-            <div style={{ fontSize: 36, fontFamily: T.sansHead, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>
+            <div style={{ fontSize: 32, fontFamily: T.sansHead, fontWeight: 600, color: T.text, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
               ${fmtNum(calc.annualTotal, 2)}
             </div>
+            <div style={{ ...muted(11), marginTop: 6 }}>Projected 12-month saving</div>
           </div>
         </div>
       </div>
@@ -786,13 +830,12 @@ function FtcTab() {
                   style={{
                     background: "transparent",
                     border: `1px solid ${T.border}`,
-                    color: T.muted,
+                    color: T.textSecondary,
                     padding: "10px 14px",
-                    fontSize: 10,
-                    fontFamily: T.sansHead,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    borderRadius: 4,
+                    fontSize: 11,
+                    fontFamily: T.sansBody,
+                    fontWeight: 500,
+                    borderRadius: 6,
                     cursor: rows.length === 1 ? "not-allowed" : "pointer",
                     opacity: rows.length === 1 ? 0.4 : 1,
                   }}
@@ -800,8 +843,11 @@ function FtcTab() {
                   Remove
                 </button>
               </div>
-              <div style={{ marginTop: 10, fontSize: 11, color: T.muted, fontFamily: T.sansBody }}>
-                Monthly credit: <span style={{ color: T.text, fontVariantNumeric: "tabular-nums" }}>${fmtNum(monthlyCredit, 2)}</span>
+              <div style={{ marginTop: 10, fontSize: 12, color: T.textSecondary, fontFamily: T.sansBody }}>
+                Estimated monthly saving:{" "}
+                <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                  ${fmtNum(monthlyCredit, 2)}
+                </span>
               </div>
             </div>
           );
@@ -813,7 +859,7 @@ function FtcTab() {
       </div>
 
       <p style={{ ...muted(11), lineHeight: 1.5, marginTop: 8 }}>
-        Rates effective Feb 2025. Claim on BAS label 7C. Indexed by ATO every February and August.
+        Rates effective Feb 2025. Claim on BAS label 7C. Indexed by the ATO every February and August.
       </p>
     </div>
   );
@@ -1149,136 +1195,6 @@ function generateEmissionsPDF(args: {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 06 FORECAST — 8-week trailing avg + projection
-// ═══════════════════════════════════════════════════════════════════════
-function ForecastTab({ transactions }: { transactions: any[] }) {
-  const today = new Date();
-
-  // Build 8 weeks back of weekly buckets
-  const { weeklyData, weeklyAvg, perSite } = useMemo(() => {
-    const weeks: { weekStart: Date; label: string; litres: number }[] = [];
-    for (let i = 7; i >= 0; i--) {
-      const wEnd = subDays(today, i * 7);
-      const wStart = subDays(wEnd, 6);
-      weeks.push({ weekStart: wStart, label: format(wStart, "dd MMM"), litres: 0 });
-    }
-    transactions.forEach((t) => {
-      if (!t.date) return;
-      const td = parseISO(t.date);
-      weeks.forEach((w) => {
-        if (td >= w.weekStart && td <= addDays(w.weekStart, 6)) {
-          w.litres += t.cantidad || 0;
-        }
-      });
-    });
-    const avg = weeks.reduce((s, w) => s + w.litres, 0) / weeks.length;
-
-    // Per-site weekly avg
-    const siteMap: Record<string, number> = {};
-    const cutoff = subDays(today, 56);
-    transactions.forEach((t) => {
-      if (!t.date) return;
-      if (parseISO(t.date) < cutoff) return;
-      const site = t.nombre_cliente1 || "Unknown";
-      siteMap[site] = (siteMap[site] || 0) + (t.cantidad || 0);
-    });
-    const sitesArr = Object.entries(siteMap)
-      .map(([site, total]) => ({ site, weeklyAvg: total / 8 }))
-      .sort((a, b) => b.weeklyAvg - a.weeklyAvg);
-
-    return { weeklyData: weeks, weeklyAvg: avg, perSite: sitesArr };
-  }, [transactions, today]);
-
-  // Build chart data: actual + 4 weeks projected
-  const chartData = useMemo(() => {
-    const actual = weeklyData.map((w) => ({ label: w.label, actual: Math.round(w.litres), projected: null as number | null }));
-    // Last actual point also seeds projection (so the dashed line connects)
-    if (actual.length > 0) actual[actual.length - 1].projected = actual[actual.length - 1].actual;
-    const proj: any[] = [];
-    for (let i = 1; i <= 4; i++) {
-      const d = addWeeks(today, i);
-      proj.push({ label: format(d, "dd MMM"), actual: null, projected: Math.round(weeklyAvg) });
-    }
-    return [...actual, ...proj];
-  }, [weeklyData, weeklyAvg, today]);
-
-  const proj2w = weeklyAvg * 2;
-  const proj4w = weeklyAvg * 4;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <h2 style={sectionTitle}>Consumption Forecast</h2>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
-        {[
-          { l: "8-Week Average", v: fmtL(weeklyAvg), sub: "per week" },
-          { l: "Next 2 Weeks", v: fmtL(proj2w), sub: `by ${format(addWeeks(today, 2), "dd MMM")}` },
-          { l: "Next 4 Weeks", v: fmtL(proj4w), sub: `by ${format(addWeeks(today, 4), "dd MMM")}` },
-        ].map((k) => (
-          <div key={k.l} style={card}>
-            <div style={labelStyle}>{k.l}</div>
-            <div style={{ fontSize: 24, fontFamily: T.sansHead, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{k.v}</div>
-            <div style={{ ...muted(11), marginTop: 4 }}>{k.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={card}>
-        <div style={{ ...labelStyle, marginBottom: 12 }}>Weekly Volume — Actual & Projected</div>
-        {weeklyAvg === 0 ? (
-          <p style={muted(13)}>Not enough delivery history to forecast.</p>
-        ) : (
-          <div style={{ width: "100%", height: 240 }}>
-            <ResponsiveContainer>
-              <LineChart data={chartData} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke={T.border} strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 10, fontFamily: T.sansBody }} stroke={T.border} />
-                <YAxis tick={{ fill: T.muted, fontSize: 10, fontFamily: T.sansBody }} stroke={T.border} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip
-                  contentStyle={{ background: T.surface, border: `1px solid ${T.border}`, color: T.text, fontSize: 12 }}
-                  labelStyle={{ color: T.muted }}
-                  formatter={(v: any) => (v === null ? "—" : `${Number(v).toLocaleString()}L`)}
-                />
-                <Line type="monotone" dataKey="actual" stroke={T.accent} strokeWidth={2} dot={{ fill: T.accent, r: 3 }} connectNulls={false} />
-                <Line type="monotone" dataKey="projected" stroke={T.accent} strokeWidth={2} strokeDasharray="5 4" dot={false} connectNulls={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
-
-      <div style={card}>
-        <div style={{ ...labelStyle, marginBottom: 10 }}>Per-Site Forecast</div>
-        {perSite.length === 0 ? (
-          <p style={muted(13)}>No deliveries recorded for this period.</p>
-        ) : (
-          perSite.map((s, i) => (
-            <div
-              key={s.site}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "10px 0",
-                borderTop: i > 0 ? `1px solid ${T.border}` : "none",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 13, color: T.text }}>{s.site}</div>
-                <div style={muted(11)}>est. by {format(addWeeks(today, 4), "dd MMM yyyy")}</div>
-              </div>
-              <div style={{ fontSize: 14, fontFamily: T.sansHead, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                {fmtL(s.weeklyAvg * 4)}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      <p style={muted(11)}>Projection method: trailing 8-week average. Indicative only.</p>
-    </div>
-  );
-}
 
 // ═══════════════════════════════════════════════════════════════════════
 // 07 SCHEDULE — request a delivery + history
