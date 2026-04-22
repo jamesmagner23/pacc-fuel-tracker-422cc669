@@ -1254,6 +1254,8 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <h2 style={sectionTitle}>Schedule a Delivery</h2>
 
+      <TruckMap height={260} showStops={true} />
+
       <div style={card}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div style={{ gridColumn: "1 / -1" }}>
