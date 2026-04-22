@@ -4,7 +4,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapboxToken } from "@/hooks/useMapboxToken";
-import { MapPin, Truck, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
+import { MapPin, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 
 const MELB = { lng: 144.9631, lat: -37.8136 };
 
@@ -183,12 +183,9 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
             borderBottom: `1px solid ${mapBorder}`,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Truck style={{ width: 14, height: 14, color: accent }} />
-            <span style={{ fontSize: 11, fontWeight: 500, color: textPrimary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-              Live Truck Location
-            </span>
-          </div>
+          <span style={{ fontSize: 11, fontWeight: 500, color: textPrimary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+            Live Truck Location
+          </span>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {lastUpdated && <span style={{ fontSize: 10, color: textMuted }}>Updated {lastUpdated}</span>}
             <button
@@ -199,7 +196,12 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
               {expanded ? <Minimize2 style={{ width: 12, height: 12 }} /> : <Maximize2 style={{ width: 12, height: 12 }} />}
             </button>
             <button
-              onClick={() => refetch()}
+              onClick={async () => {
+                await refetch();
+                if (mapRef.current) {
+                  try { mapRef.current.resize(); } catch { /* noop */ }
+                }
+              }}
               disabled={isLoading}
               title="Refresh truck location"
               style={{
