@@ -134,6 +134,8 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   useEffect(() => {
     if (!mapReady || !hasLocation || !mapRef.current || !driver) return;
 
+    const target = { lng: driver.lng as number, lat: driver.lat as number };
+
     if (!markerRef.current) {
       const el = document.createElement("div");
       el.style.cssText = `
@@ -145,18 +147,46 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
       `;
 
       markerRef.current = new mapboxgl.Marker({ element: el, anchor: "center" })
-        .setLngLat([driver.lng, driver.lat])
+        .setLngLat([target.lng, target.lat])
         .addTo(mapRef.current);
+      lastCoordsRef.current = target;
+      mapRef.current.flyTo({ center: [target.lng, target.lat], zoom: 13, duration: 1200 });
+      return;
     } else {
-      markerRef.current.setLngLat([driver.lng, driver.lat]);
+      const start = lastCoordsRef.current ?? target;
+      if (start.lng === target.lng && start.lat === target.lat) {
+        markerRef.current.setLngLat([target.lng, target.lat]);
+      } else {
+        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+        const duration = 1200;
+        const startTime = performance.now();
+        const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+        const tick = (now: number) => {
+          const t = Math.min(1, (now - startTime) / duration);
+          const k = ease(t);
+          const lng = start.lng + (target.lng - start.lng) * k;
+          const lat = start.lat + (target.lat - start.lat) * k;
+          markerRef.current?.setLngLat([lng, lat]);
+          if (t < 1) {
+            animFrameRef.current = requestAnimationFrame(tick);
+          } else {
+            animFrameRef.current = null;
+            lastCoordsRef.current = target;
+          }
+        };
+        animFrameRef.current = requestAnimationFrame(tick);
+      }
+      lastCoordsRef.current = target;
+      mapRef.current.flyTo({ center: [target.lng, target.lat], zoom: 13, duration: 1200 });
+      return;
     }
-
-    mapRef.current.flyTo({
-      center: [driver.lng, driver.lat],
-      zoom: 13,
-      duration: 1200,
-    });
   }, [mapReady, hasLocation, driver?.lat, driver?.lng, accent]);
+
+  useEffect(() => {
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, []);
 
   const lastUpdated = dataUpdatedAt
     ? new Date(dataUpdatedAt).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })
@@ -198,13 +228,12 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
               {expanded ? <Minimize2 style={{ width: 12, height: 12 }} /> : <Maximize2 style={{ width: 12, height: 12 }} />}
             </button>
             <button
-              onClick={async () => {
-                await refetch();
+              onClick={() => {
+                refetch({ cancelRefetch: true });
                 if (mapRef.current) {
                   try { mapRef.current.resize(); } catch { /* noop */ }
                 }
               }}
-              disabled={isLoading}
               title="Refresh truck location"
               style={{
                 display: "flex",
@@ -213,7 +242,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
                 background: "transparent",
                 border: `1px solid ${mapBorder}`,
                 borderRadius: 999,
-                cursor: isLoading ? "wait" : "pointer",
+                cursor: isFetching ? "wait" : "pointer",
                 color: textSecondary,
                 padding: "4px 10px",
                 fontSize: 11,
@@ -222,8 +251,8 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
                 minHeight: 28,
               }}
             >
-              <RefreshCw style={{ width: 12, height: 12 }} className={isLoading ? "animate-spin" : ""} />
-              <span>{isLoading ? "Refreshing…" : "Refresh location"}</span>
+              <RefreshCw style={{ width: 12, height: 12 }} className={isFetching ? "animate-spin" : ""} />
+              <span>{isFetching ? "Refreshing…" : "Refresh location"}</span>
             </button>
           </div>
         </div>
