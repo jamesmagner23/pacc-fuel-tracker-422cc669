@@ -188,8 +188,24 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
     };
   }, []);
 
-  const lastUpdated = dataUpdatedAt
-    ? new Date(dataUpdatedAt).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" })
+  const locationTimestamp = driver?.lastUpdate ? new Date(driver.lastUpdate) : null;
+  const todayKey = new Date().toLocaleDateString("en-AU", { timeZone: "Australia/Melbourne" });
+  const tsKey = locationTimestamp?.toLocaleDateString("en-AU", { timeZone: "Australia/Melbourne" });
+  const isToday = locationTimestamp && tsKey === todayKey;
+  const lastUpdatedLabel = locationTimestamp
+    ? isToday
+      ? locationTimestamp.toLocaleTimeString("en-AU", {
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "Australia/Melbourne",
+        })
+      : locationTimestamp.toLocaleString("en-AU", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "Australia/Melbourne",
+        })
     : null;
 
   const mapHeight = expanded ? 520 : height;
@@ -219,7 +235,14 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
             Live Truck Location
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {lastUpdated && <span style={{ fontSize: 10, color: textMuted }}>Updated {lastUpdated}</span>}
+            {lastUpdatedLabel && (
+              <span
+                style={{ fontSize: 10, color: textMuted }}
+                title={locationTimestamp?.toLocaleString("en-AU", { timeZone: "Australia/Melbourne" })}
+              >
+                Updated {lastUpdatedLabel}
+              </span>
+            )}
             <button
               onClick={() => setExpanded((v) => !v)}
               style={{ background: "transparent", border: "none", cursor: "pointer", color: textMuted }}
