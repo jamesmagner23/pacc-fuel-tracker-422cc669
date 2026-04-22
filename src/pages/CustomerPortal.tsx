@@ -381,17 +381,41 @@ export default function CustomerPortal() {
 // 01 OVERVIEW (preserved — no pricing, simplified to spec rules)
 // ═══════════════════════════════════════════════════════════════════════
 function OverviewTab({ transactions, demoSuffix }: { transactions: any[]; demoSuffix: string }) {
+  const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
   const totalLitres = transactions.reduce((s, t) => s + (t.cantidad || 0), 0);
   const sites = new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean));
+
+  // FTC savings — apply off-road / plant rate to total litres as a conservative estimate
+  const ftcRate = useMemo(() => {
+    const off = rates.find((r: any) => /off-road|machinery|plant/i.test(r.equipment_type));
+    return Number((off || rates[0])?.rate_per_litre || 0);
+  }, [rates]);
+  const ftcSavings = totalLitres * ftcRate;
+
+  // Plant breakdown — group by placa (plate / plant identifier)
+  const plantBreakdown = useMemo(() => {
+    const map = new Map<string, number>();
+    transactions.forEach((t) => {
+      const key = (t.placa || t.identificador_cliente1 || "Unassigned").toString().trim() || "Unassigned";
+      map.set(key, (map.get(key) || 0) + (t.cantidad || 0));
+    });
+    return Array.from(map.entries())
+      .map(([name, litres]) => ({ name, litres }))
+      .sort((a, b) => b.litres - a.litres);
+  }, [transactions]);
+  const topPlants = plantBreakdown.slice(0, 6);
+  const topPlant = plantBreakdown[0];
+
+  const PIE_COLORS = ["#E8461E", "#FF6B42", "#F5E6D0", "#C4A882", "#D88B5C", "#8B7355"];
 
   const kpis = [
     { label: "Total Litres", value: fmtL(totalLitres) },
     { label: "Deliveries", value: transactions.length.toLocaleString() },
     { label: "Sites", value: sites.size.toString() },
     {
-      label: "Avg Per Delivery",
-      value: transactions.length > 0 ? fmtL(totalLitres / transactions.length) : "—",
+      label: "Est. FTC Savings",
+      value: ftcSavings > 0 ? `$${Math.round(ftcSavings).toLocaleString()}` : "—",
     },
   ];
 
@@ -406,6 +430,85 @@ function OverviewTab({ transactions, demoSuffix }: { transactions: any[]; demoSu
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Live truck location */}
+      <TruckMap height={260} showStops={true} />
+
+      {/* Plant analytics — donut + top plant */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+        <div style={card}>
+          <div style={{ ...labelStyle, marginBottom: 4 }}>Plant Fuel Usage</div>
+          <div style={{ ...muted(11), marginBottom: 12 }}>Volume share by plate / plant</div>
+          {topPlants.length === 0 ? (
+            <p style={muted(13)}>No plant data yet.</p>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ width: 160, height: 160, flexShrink: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={topPlants}
+                      dataKey="litres"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={70}
+                      innerRadius={38}
+                      strokeWidth={0}
+                    >
+                      {topPlants.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, fontSize: 12 }}
+                      formatter={(v: any) => fmtL(Number(v))}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ flex: 1, minWidth: 140, display: "flex", flexDirection: "column", gap: 6 }}>
+                {topPlants.map((p, i) => (
+                  <div key={p.name} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
+                    <span style={{ color: T.textSecondary, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{fmtL(p.litres)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={card}>
+          <div style={{ ...labelStyle, marginBottom: 4 }}>Highest Plant User</div>
+          <div style={{ ...muted(11), marginBottom: 16 }}>Top fuel consumer this period</div>
+          {topPlant ? (
+            <>
+              <div style={{ fontSize: 18, fontWeight: 700, color: T.text, fontFamily: T.sansHead, marginBottom: 4 }}>
+                {topPlant.name}
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 700, color: T.accent, fontFamily: T.sansHead, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em" }}>
+                {fmtL(topPlant.litres)}
+              </div>
+              <div style={{ ...muted(11), marginTop: 4 }}>
+                {totalLitres > 0 ? `${((topPlant.litres / totalLitres) * 100).toFixed(1)}% of total volume` : ""}
+              </div>
+              {plantBreakdown.length > 1 && (
+                <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
+                  <div style={{ ...labelStyle, marginBottom: 8 }}>Runner-up</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ color: T.textSecondary }}>{plantBreakdown[1].name}</span>
+                    <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{fmtL(plantBreakdown[1].litres)}</span>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <p style={muted(13)}>No plant data yet.</p>
+          )}
+        </div>
       </div>
 
       <div style={card}>
