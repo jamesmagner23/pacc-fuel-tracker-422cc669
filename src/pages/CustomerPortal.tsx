@@ -6,6 +6,7 @@ import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, 
 
 import { supabase } from "@/integrations/supabase/client";
 import { PACCLogo } from "@/components/PACCLogo";
+import { TruckMap } from "@/components/TruckMap";
 import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
