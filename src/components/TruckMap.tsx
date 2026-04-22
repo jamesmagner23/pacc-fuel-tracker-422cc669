@@ -192,6 +192,8 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const todayKey = new Date().toLocaleDateString("en-AU", { timeZone: "Australia/Melbourne" });
   const tsKey = locationTimestamp?.toLocaleDateString("en-AU", { timeZone: "Australia/Melbourne" });
   const isToday = locationTimestamp && tsKey === todayKey;
+  const locationAgeMs = locationTimestamp ? Date.now() - locationTimestamp.getTime() : null;
+  const isStaleLocation = !locationTimestamp || locationAgeMs === null || locationAgeMs > 1000 * 60 * 60;
   const lastUpdatedLabel = locationTimestamp
     ? isToday
       ? locationTimestamp.toLocaleTimeString("en-AU", {
@@ -232,7 +234,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
           }}
         >
           <span style={{ fontSize: 11, fontWeight: 500, color: textPrimary, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-            Live Truck Location
+            {isStaleLocation ? "Last Known Truck Location" : "Live Truck Location"}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {lastUpdatedLabel && (
@@ -352,10 +354,21 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
             display: "flex", alignItems: "center", gap: 5,
           }}
         >
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981", display: "inline-block", boxShadow: "0 0 6px #10B981" }} />
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: isStaleLocation ? accent : "#10B981",
+              display: "inline-block",
+              boxShadow: isStaleLocation ? `0 0 6px ${accent}` : "0 0 6px #10B981",
+            }}
+          />
           <span style={{ fontSize: 10, color: textSecondary, fontWeight: 500 }}>
             {driver?.lastUpdate
-              ? `Last seen ${new Date(driver.lastUpdate).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Melbourne" })}`
+              ? isStaleLocation
+                ? `Last known ${new Date(driver.lastUpdate).toLocaleString("en-AU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Australia/Melbourne" })}`
+                : `Live ${new Date(driver.lastUpdate).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", timeZone: "Australia/Melbourne" })}`
               : "LAST KNOWN"}
           </span>
         </div>
