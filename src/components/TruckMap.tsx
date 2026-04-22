@@ -106,6 +106,10 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
         if (!cancelled) {
           setMapReady(true);
           setMapError(false);
+          // Ensure correct sizing once container is laid out
+          requestAnimationFrame(() => {
+            try { map.resize(); } catch { /* noop */ }
+          });
         }
       });
 

@@ -6,6 +6,7 @@ import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, 
 
 import { supabase } from "@/integrations/supabase/client";
 import { PACCLogo } from "@/components/PACCLogo";
+import { TruckMap } from "@/components/TruckMap";
 import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
@@ -1252,6 +1253,8 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <h2 style={sectionTitle}>Schedule a Delivery</h2>
+
+      <TruckMap height={260} showStops={true} />
 
       <div style={card}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
