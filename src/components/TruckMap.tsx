@@ -4,7 +4,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapboxToken } from "@/hooks/useMapboxToken";
-import { MapPin, Truck, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
+import { MapPin, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 
 const MELB = { lng: 144.9631, lat: -37.8136 };
 
