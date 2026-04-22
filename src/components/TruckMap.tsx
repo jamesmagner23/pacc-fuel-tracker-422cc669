@@ -41,12 +41,14 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const lastCoordsRef = useRef<{ lng: number; lat: number } | null>(null);
+  const animFrameRef = useRef<number | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState(false);
   const [mapAttempt, setMapAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
-  const { data, isLoading, dataUpdatedAt, refetch } = useTruckLocation();
+  const { data, isFetching, dataUpdatedAt, refetch } = useTruckLocation();
   const { data: mapToken, isLoading: isMapTokenLoading } = useMapboxToken();
   const driver = data?.driver;
   const route = data?.route;
