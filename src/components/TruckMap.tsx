@@ -200,9 +200,26 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
             </button>
             <button
               onClick={() => refetch()}
-              style={{ background: "transparent", border: "none", cursor: "pointer", color: textMuted }}
+              disabled={isLoading}
+              title="Refresh truck location"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "transparent",
+                border: `1px solid ${mapBorder}`,
+                borderRadius: 999,
+                cursor: isLoading ? "wait" : "pointer",
+                color: textSecondary,
+                padding: "4px 10px",
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: "0.02em",
+                minHeight: 28,
+              }}
             >
               <RefreshCw style={{ width: 12, height: 12 }} className={isLoading ? "animate-spin" : ""} />
+              <span>{isLoading ? "Refreshing…" : "Refresh location"}</span>
             </button>
           </div>
         </div>
