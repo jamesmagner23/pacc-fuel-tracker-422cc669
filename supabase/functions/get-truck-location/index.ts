@@ -159,28 +159,29 @@ serve(async (req) => {
       };
     }
 
+    // Fall back to most recent event with a position (any day) so the marker
+    // still shows the last known location instead of disappearing entirely.
     if (!driverLocation && eventsData?.events?.length > 0) {
-      for (let i = eventsData.events.length - 1; i >= 0; i--) {
-        const evt = eventsData.events[i];
+      let latestEventMs = 0;
+      for (const evt of eventsData.events) {
         const timestamp = evt.position?.timestamp ?? evt.timestamp;
-        const matchesTodayOrder = evt.orderNo && todayOrderNos.has(evt.orderNo);
+        const ms = toTimestampMs(timestamp);
         const matchesDriver = !evt.driverName || evt.driverName === driverName;
-
         if (
           evt.position?.latitude &&
           evt.position?.longitude &&
-          matchesTodayOrder &&
           matchesDriver &&
-          isSameMelbourneDay(timestamp, routeDate)
+          ms &&
+          ms > latestEventMs
         ) {
+          latestEventMs = ms;
           driverLocation = {
             lat: evt.position.latitude,
             lng: evt.position.longitude,
             timestamp,
-            event: evt.event,
+            event: evt.event ?? "last_known",
           };
           if (evt.driverName) driverName = evt.driverName;
-          break;
         }
       }
     }
