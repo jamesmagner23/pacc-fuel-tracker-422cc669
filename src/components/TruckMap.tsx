@@ -260,7 +260,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
 
       <div ref={mapContainer} style={{ height: mapHeight, width: "100%", transition: "height 0.3s ease" }} />
 
-      {!hasLocation && !isLoading && mapReady && (
+      {!hasLocation && !isFetching && mapReady && (
         <div
           style={{
             position: "absolute",
