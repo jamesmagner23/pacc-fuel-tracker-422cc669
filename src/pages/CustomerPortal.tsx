@@ -1057,8 +1057,13 @@ function DeliveriesTab({
         ) : (
           filtered.map((t, i) => {
             const placa = (t.placa || "").toString().trim();
-            const plant = placa ? placaToPlant[placa] : undefined;
-            const project = placa ? projectById[placaToProject[placa] || ""] : undefined;
+            const ov = overrides[Number(t.id)];
+            const plant =
+              (ov?.plant_item_id ? plantById[ov.plant_item_id] : undefined) ||
+              (placa ? placaToPlant[placa] : undefined);
+            const project =
+              (ov?.project_id ? projectById[ov.project_id] : undefined) ||
+              (placa ? projectById[placaToProject[placa] || ""] : undefined);
             const swatch = plant?.colour || T.border;
             return (
               <div
