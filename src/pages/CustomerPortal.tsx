@@ -577,10 +577,12 @@ export default function CustomerPortal() {
               filters={portalFilters.filters}
               onTypes={portalFilters.setTypes}
               onProjects={portalFilters.setProjects}
+              onTags={portalFilters.setTags}
               onUnmappedOnly={portalFilters.setUnmappedOnly}
               onReset={portalFilters.reset}
               availableTypes={availableTypes}
               availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
+              availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
               unmappedCount={unmappedCount}
             />
           </div>
