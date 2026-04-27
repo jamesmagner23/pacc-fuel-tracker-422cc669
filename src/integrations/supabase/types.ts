@@ -396,6 +396,7 @@ export type Database = {
           created_at: string
           description: string | null
           equipment_type: string | null
+          ftc_rate_id: string | null
           id: string
           is_active: boolean
           name: string
@@ -410,6 +411,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           equipment_type?: string | null
+          ftc_rate_id?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -424,6 +426,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           equipment_type?: string | null
+          ftc_rate_id?: string | null
           id?: string
           is_active?: boolean
           name?: string
@@ -439,6 +442,13 @@ export type Database = {
             columns: ["client_account_id"]
             isOneToOne: false
             referencedRelation: "client_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plant_items_ftc_rate_id_fkey"
+            columns: ["ftc_rate_id"]
+            isOneToOne: false
+            referencedRelation: "ftc_rates"
             referencedColumns: ["id"]
           },
         ]

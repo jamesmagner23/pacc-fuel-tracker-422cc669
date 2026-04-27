@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { usePlantItems, useDeletePlantItem, type PlantItem } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments, useDeleteProject, type Project } from "@/hooks/useProjects";
+import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,7 @@ export default function CustomerHub() {
   const { data: plantItems = [] } = usePlantItems(clientAccountId);
   const { data: projects = [] } = useProjects(clientAccountId);
   const { data: assignments = [] } = useProjectAssignments(clientAccountId);
+  const { data: ftcRates = [] } = useFtcRates();
 
   const customerTxns = useMemo(
     () => allTxns.filter((t) => t.nombre_cliente1 === customerName),
@@ -137,10 +139,10 @@ export default function CustomerHub() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-5">
-          <OverviewTab txns={customerTxns} equipment={equipmentList} projects={projects} />
+          <OverviewTab txns={customerTxns} equipment={equipmentList} projects={projects} ftcRates={ftcRates} />
         </TabsContent>
         <TabsContent value="equipment" className="mt-5">
-          <EquipmentTab equipment={equipmentList} clientAccountId={clientAccountId} txns={customerTxns} />
+          <EquipmentTab equipment={equipmentList} clientAccountId={clientAccountId} txns={customerTxns} ftcRates={ftcRates} />
         </TabsContent>
         <TabsContent value="projects" className="mt-5">
           <ProjectsTab projects={projects} assignments={assignments} equipment={equipmentList} txns={customerTxns} clientAccountId={clientAccountId} />
@@ -157,7 +159,7 @@ export default function CustomerHub() {
 }
 
 /* ---------------- OVERVIEW ---------------- */
-function OverviewTab({ txns, equipment, projects }: { txns: any[]; equipment: any[]; projects: Project[] }) {
+function OverviewTab({ txns, equipment, projects, ftcRates }: { txns: any[]; equipment: any[]; projects: Project[]; ftcRates: FtcRate[] }) {
   const totalLitres = txns.reduce((s, t) => s + (t.cantidad || 0), 0);
   const totalRevenue = txns.reduce((s, t) => s + (t.dinero_total || 0), 0);
   const activeProjects = projects.filter((p) => p.status === "active").length;
@@ -172,6 +174,32 @@ function OverviewTab({ txns, equipment, projects }: { txns: any[]; equipment: an
 
   const topEquipment = equipment.slice(0, 5);
 
+  // FTC rollup: per-category claimable based on plant_items.ftc_rate_id and matching txn litres by placa
+  const ftcRollup = useMemo(() => {
+    const rateById: Record<string, FtcRate> = {};
+    ftcRates.forEach((r) => { rateById[r.id] = r; });
+    const byCategory: Record<string, { name: string; rate: number; litres: number; claim: number; items: number }> = {};
+    let unclassifiedLitres = 0;
+    let unclassifiedItems = 0;
+    equipment.forEach((e: any) => {
+      const rateId = e.enriched?.ftc_rate_id;
+      const rate = rateId ? rateById[rateId] : null;
+      if (!rate) {
+        if (e.litres > 0) { unclassifiedLitres += e.litres; unclassifiedItems += 1; }
+        return;
+      }
+      if (!byCategory[rate.id]) {
+        byCategory[rate.id] = { name: rate.equipment_type, rate: Number(rate.rate_per_litre), litres: 0, claim: 0, items: 0 };
+      }
+      byCategory[rate.id].litres += e.litres;
+      byCategory[rate.id].claim += e.litres * Number(rate.rate_per_litre);
+      byCategory[rate.id].items += 1;
+    });
+    const rows = Object.values(byCategory).sort((a, b) => b.claim - a.claim);
+    const totalClaim = rows.reduce((s, r) => s + r.claim, 0);
+    return { rows, totalClaim, unclassifiedLitres, unclassifiedItems };
+  }, [equipment, ftcRates]);
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -181,6 +209,54 @@ function OverviewTab({ txns, equipment, projects }: { txns: any[]; equipment: an
             <div className="text-lg sm:text-xl font-bold mt-1">{k.value}</div>
           </div>
         ))}
+      </div>
+
+      <div className="glass-card p-5">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div>
+            <h2 className="text-sm font-semibold">Fuel Tax Credit Estimate</h2>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Based on delivered litres × ATO rate per FTC category. Indicative only.</p>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Claimable</div>
+            <div className="text-xl font-bold text-primary">${ftcRollup.totalClaim.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+          </div>
+        </div>
+        {ftcRollup.rows.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-4">
+            No equipment has an FTC category assigned yet. Open a plant item under <strong>Plant &amp; Equipment</strong> and pick a Fuel Tax Credit Category.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-muted-foreground border-b border-border">
+                  <th className="pb-2 pr-3">Category</th>
+                  <th className="pb-2 pr-3 text-right">Items</th>
+                  <th className="pb-2 pr-3 text-right">Litres</th>
+                  <th className="pb-2 pr-3 text-right">Rate (c/L)</th>
+                  <th className="pb-2 text-right">Claim</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ftcRollup.rows.map((r) => (
+                  <tr key={r.name} className="border-b border-border/50">
+                    <td className="py-2 pr-3">{r.name}</td>
+                    <td className="py-2 pr-3 text-right">{r.items}</td>
+                    <td className="py-2 pr-3 text-right">{r.litres.toLocaleString()}</td>
+                    <td className="py-2 pr-3 text-right">{(r.rate * 100).toFixed(1)}</td>
+                    <td className="py-2 text-right font-semibold">${r.claim.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {ftcRollup.unclassifiedLitres > 0 && (
+          <p className="text-[11px] text-muted-foreground mt-3">
+            {ftcRollup.unclassifiedItems} item{ftcRollup.unclassifiedItems !== 1 ? "s" : ""} with {ftcRollup.unclassifiedLitres.toLocaleString()}L delivered have no FTC category assigned and are excluded.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -231,10 +307,12 @@ function EquipmentTab({
   equipment,
   clientAccountId,
   txns,
+  ftcRates,
 }: {
   equipment: any[];
   clientAccountId: number | null;
   txns: any[];
+  ftcRates: FtcRate[];
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<PlantItem> | null>(null);
@@ -246,6 +324,11 @@ function EquipmentTab({
     () => (selected ? txns.filter((t) => t.placa === selected) : []),
     [txns, selected]
   );
+  const selectedRate = useMemo(() => {
+    const id = selectedItem?.enriched?.ftc_rate_id;
+    return id ? ftcRates.find((r) => r.id === id) : null;
+  }, [selectedItem, ftcRates]);
+  const selectedClaim = selectedRate ? (selectedItem?.litres || 0) * Number(selectedRate.rate_per_litre) : 0;
 
   const handleEdit = (item: any) => {
     setEditing(item.enriched || { placa: item.placa, name: item.placa });
@@ -343,6 +426,21 @@ function EquipmentTab({
           {selectedItem.enriched?.service_notes && (
             <div className="text-xs bg-secondary/40 p-3 rounded-lg whitespace-pre-wrap">{selectedItem.enriched.service_notes}</div>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-lg border border-border bg-secondary/30">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">FTC Category</div>
+              <div className="text-sm font-medium mt-0.5">{selectedRate?.equipment_type || "— Not set —"}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Rate</div>
+              <div className="text-sm font-medium mt-0.5">{selectedRate ? `${(Number(selectedRate.rate_per_litre) * 100).toFixed(1)}c/L` : "—"}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Claimable (all-time)</div>
+              <div className="text-sm font-bold text-primary mt-0.5">${selectedClaim.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+            </div>
+          </div>
 
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recent Fills ({selectedTxns.length})</h3>

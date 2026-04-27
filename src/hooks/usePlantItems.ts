@@ -13,6 +13,7 @@ export interface PlantItem {
   photo_url: string | null;
   service_notes: string | null;
   is_active: boolean;
+  ftc_rate_id: string | null;
   created_at: string;
   updated_at: string;
 }
