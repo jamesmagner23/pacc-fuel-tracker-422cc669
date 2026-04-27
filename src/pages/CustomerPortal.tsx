@@ -25,6 +25,8 @@ import {
 } from "@/hooks/usePortalFilters";
 import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
+import { BulkMapModal } from "@/components/customer/BulkMapModal";
+import { PlantItemModal } from "@/components/customer/PlantItemModal";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
