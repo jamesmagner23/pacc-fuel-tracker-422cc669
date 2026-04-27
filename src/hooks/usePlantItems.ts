@@ -14,6 +14,11 @@ export interface PlantItem {
   service_notes: string | null;
   is_active: boolean;
   ftc_rate_id: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  size: string | null;
+  tank_size_litres: number | null;
+  colour: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -68,4 +73,30 @@ export function useDeletePlantItem() {
     },
     onError: (e: any) => toast({ title: "Delete failed", description: e.message, variant: "destructive" }),
   });
+}
+
+/**
+ * Upload a plant photo to the private `plant-photos` bucket and return its
+ * signed URL (valid for ~1 year). Folder convention: <client_account_id>/<filename>
+ */
+export async function uploadPlantPhoto(
+  clientAccountId: number,
+  file: File
+): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const safeExt = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
+  const path = `${clientAccountId}/${crypto.randomUUID()}.${safeExt}`;
+  const { error: upErr } = await supabase.storage
+    .from("plant-photos")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type || `image/${safeExt}`,
+    });
+  if (upErr) throw upErr;
+  const { data, error: urlErr } = await supabase.storage
+    .from("plant-photos")
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
+  if (urlErr) throw urlErr;
+  return data.signedUrl;
 }
