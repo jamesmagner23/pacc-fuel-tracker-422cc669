@@ -25,6 +25,8 @@ import {
 } from "@/hooks/usePortalFilters";
 import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
+import { BulkMapModal } from "@/components/customer/BulkMapModal";
+import { PlantItemModal } from "@/components/customer/PlantItemModal";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
@@ -845,6 +847,11 @@ function DeliveriesTab({
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  // Mapping UI state
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [plantModalOpen, setPlantModalOpen] = useState(false);
+  const [prefillPlaca, setPrefillPlaca] = useState<string>("");
+
   const sites = useMemo(
     () => Array.from(new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean))) as string[],
     [transactions]
@@ -916,6 +923,30 @@ function DeliveriesTab({
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
 
+  // Unique unmapped placas (across ALL transactions, not just current filter)
+  // so the bulk tool always shows the full backlog.
+  const unmappedPlacaList = useMemo(() => {
+    const map = new Map<string, { count: number; litres: number }>();
+    transactions.forEach((t) => {
+      const placa = (t.placa || "").toString().trim();
+      if (!placa) return;
+      if (unmappedPlacaSet[placa]) return; // already mapped
+      const cur = map.get(placa) || { count: 0, litres: 0 };
+      cur.count += 1;
+      cur.litres += t.cantidad || 0;
+      map.set(placa, cur);
+    });
+    return Array.from(map.entries())
+      .map(([placa, v]) => ({ placa, ...v }))
+      .sort((a, b) => b.litres - a.litres);
+  }, [transactions, unmappedPlacaSet]);
+
+  const openMapPlaca = (placa: string) => {
+    setPrefillPlaca(placa);
+    setBulkOpen(false);
+    setPlantModalOpen(true);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {/* Unmapped warning banner — shown when there are unmapped placas
@@ -933,6 +964,7 @@ function DeliveriesTab({
             borderRadius: 8,
             color: "#F5E6D0",
             fontSize: 12,
+            flexWrap: "wrap",
           }}
         >
           <span style={{ fontSize: 16, lineHeight: 1 }}>⚠️</span>
@@ -943,6 +975,27 @@ function DeliveriesTab({
             item — add the placa under <em>Plant</em> to enable project tagging,
             colour coding and notes.
           </div>
+          {clientAccountId != null && unmappedPlacaList.length > 0 && (
+            <button
+              onClick={() => setBulkOpen(true)}
+              style={{
+                background: "transparent",
+                color: "#F59E0B",
+                border: "1px solid #F59E0B",
+                padding: "6px 10px",
+                borderRadius: 4,
+                fontSize: 11,
+                fontFamily: T.sansHead,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              Bulk Map ({unmappedPlacaList.length})
+            </button>
+          )}
           <button
             onClick={() => portalFilters.setUnmappedOnly(true)}
             style={{
@@ -1056,6 +1109,27 @@ function DeliveriesTab({
                           ⚠ Unmapped
                         </span>
                       )}
+                      {placa && !unmappedPlacaSet[placa] && clientAccountId != null && (
+                        <button
+                          onClick={() => openMapPlaca(placa)}
+                          title={`Map ${placa} to a plant item`}
+                          style={{
+                            background: "transparent",
+                            color: "#F59E0B",
+                            border: "1px solid rgba(245, 158, 11, 0.55)",
+                            borderRadius: 3,
+                            padding: "1px 6px",
+                            fontSize: 9,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            fontFamily: T.sansHead,
+                          }}
+                        >
+                          Map →
+                        </button>
+                      )}
                       {!placa && (
                         <span
                           title="No placa recorded on this delivery."
@@ -1113,6 +1187,28 @@ function DeliveriesTab({
           })
         )}
       </div>
+
+      {clientAccountId != null && (
+        <>
+          <BulkMapModal
+            open={bulkOpen}
+            onOpenChange={setBulkOpen}
+            unmappedPlacas={unmappedPlacaList}
+            plantItems={plantItems}
+            clientAccountId={clientAccountId}
+            onCreateNew={(p) => openMapPlaca(p)}
+          />
+          <PlantItemModal
+            open={plantModalOpen}
+            onOpenChange={(v) => {
+              setPlantModalOpen(v);
+              if (!v) setPrefillPlaca("");
+            }}
+            clientAccountId={clientAccountId}
+            initial={prefillPlaca ? ({ placa: prefillPlaca, name: "" } as any) : null}
+          />
+        </>
+      )}
     </div>
   );
 }
