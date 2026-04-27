@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { usePlantItems, useDeletePlantItem, type PlantItem } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments, useDeleteProject, type Project } from "@/hooks/useProjects";
+import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,7 @@ export default function CustomerHub() {
   const { data: plantItems = [] } = usePlantItems(clientAccountId);
   const { data: projects = [] } = useProjects(clientAccountId);
   const { data: assignments = [] } = useProjectAssignments(clientAccountId);
+  const { data: ftcRates = [] } = useFtcRates();
 
   const customerTxns = useMemo(
     () => allTxns.filter((t) => t.nombre_cliente1 === customerName),
@@ -137,10 +139,10 @@ export default function CustomerHub() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-5">
-          <OverviewTab txns={customerTxns} equipment={equipmentList} projects={projects} />
+          <OverviewTab txns={customerTxns} equipment={equipmentList} projects={projects} ftcRates={ftcRates} />
         </TabsContent>
         <TabsContent value="equipment" className="mt-5">
-          <EquipmentTab equipment={equipmentList} clientAccountId={clientAccountId} txns={customerTxns} />
+          <EquipmentTab equipment={equipmentList} clientAccountId={clientAccountId} txns={customerTxns} ftcRates={ftcRates} />
         </TabsContent>
         <TabsContent value="projects" className="mt-5">
           <ProjectsTab projects={projects} assignments={assignments} equipment={equipmentList} txns={customerTxns} clientAccountId={clientAccountId} />
