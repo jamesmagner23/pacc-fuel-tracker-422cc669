@@ -155,8 +155,9 @@ export default function EBITDATab() {
   }, [txns, sortedBuy, opex, periodStart]);
 
   const handleOpex = (key: string, val: string) => {
-    const next = { ...opex, [key]: Number(val) || 0 };
-    setOpex(next);
+    const nextPeriodOpex = { ...opex, [key]: Number(val) || 0 };
+    const next = { ...opexByPeriod, [period]: nextPeriodOpex };
+    setOpexByPeriod(next);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
   };
 
@@ -245,7 +246,9 @@ export default function EBITDATab() {
             <DollarSign className="w-4 h-4 text-muted-foreground" />
             <h3 className="text-sm font-semibold">Operating Expenses</h3>
           </div>
-          <p className="text-[11px] text-muted-foreground">Total for selected period. Saved locally.</p>
+          <p className="text-[11px] text-muted-foreground">
+            Total for <span className="text-foreground font-medium">{PERIOD_LABELS[period]}</span>. Each period stores its own values. Saved locally.
+          </p>
           {[
             { key: "wages", label: "Wages & Salaries" },
             { key: "fleet", label: "Fleet & Maintenance" },
