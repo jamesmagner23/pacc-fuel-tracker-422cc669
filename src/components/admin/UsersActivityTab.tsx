@@ -293,11 +293,11 @@ export default function UsersActivityTab() {
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] text-muted-foreground">Full Name</label>
-                <input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+                <input value={editName} onChange={(e) => setEditName(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] text-muted-foreground">Email</label>
-                <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+                <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] text-muted-foreground">Role</label>

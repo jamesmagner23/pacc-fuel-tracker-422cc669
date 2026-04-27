@@ -184,7 +184,7 @@ export default function EBITDATab() {
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="revenue" name="Revenue" fill={accent} radius={[3, 3, 0, 0]} />
                 <Bar dataKey="cogs" name="COGS" fill="var(--text-secondary)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="ebitda" name="EBITDA" fill="hsl(var(--positive))" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="ebitda" name="EBITDA" fill="#10B981" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -213,7 +213,7 @@ export default function EBITDATab() {
                   type="number"
                   value={opex[row.key as keyof typeof opex] || ""}
                   onChange={(e) => handleOpex(row.key, e.target.value)}
-                  className="w-full bg-[hsl(var(--muted))] border border-surface-border rounded-md pl-5 pr-2 py-1.5 text-xs text-foreground tabular-nums text-right outline-none focus:ring-1 focus:ring-primary/50"
+                  className="w-full bg-raised border border-surface-border rounded-md pl-5 pr-2 py-1.5 text-xs text-foreground tabular-nums text-right outline-none focus:ring-1 focus:ring-primary/50"
                   placeholder="0"
                 />
               </div>
