@@ -11,6 +11,9 @@ import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PlantBoard } from "@/components/customer/PlantBoard";
+import { usePlantItems } from "@/hooks/usePlantItems";
+import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
@@ -35,8 +38,9 @@ const tabs = [
   "01 Overview",
   "02 Dockets",
   "03 Sites",
-  "04 FTC",
-  "05 Schedule",
+  "04 Plant",
+  "05 FTC",
+  "06 Schedule",
 ] as const;
 type Tab = (typeof tabs)[number];
 
@@ -361,15 +365,16 @@ export default function CustomerPortal() {
           })}
         </div>
 
-        {isLoading && activeTab !== "05 Schedule" && activeTab !== "04 FTC" ? (
+        {isLoading && activeTab !== "06 Schedule" && activeTab !== "05 FTC" && activeTab !== "04 Plant" ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
             {activeTab === "01 Overview" && <OverviewTab transactions={transactions} demoSuffix={demoSuffix} />}
             {activeTab === "02 Dockets" && <DeliveriesTab transactions={transactions} demoSuffix={demoSuffix} />}
             {activeTab === "03 Sites" && <SitesTab transactions={transactions} companyName={companyName} />}
-            {activeTab === "04 FTC" && <FtcTab transactions={transactions} />}
-            {activeTab === "05 Schedule" && <ScheduleTab transactions={transactions} clientAccountId={clientAccountId} />}
+            {activeTab === "04 Plant" && <PlantTab clientAccountId={clientAccountId} transactions={transactions} />}
+            {activeTab === "05 FTC" && <FtcTab transactions={transactions} />}
+            {activeTab === "06 Schedule" && <ScheduleTab transactions={transactions} clientAccountId={clientAccountId} />}
           </>
         )}
       </div>
@@ -1455,6 +1460,69 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 04 PLANT — drag-and-drop board for assigning plant to projects
+// ═══════════════════════════════════════════════════════════════════════
+function PlantTab({
+  clientAccountId,
+  transactions,
+}: {
+  clientAccountId: number | null;
+  transactions: any[];
+}) {
+  const { data: plantItems = [], isLoading: pLoading } = usePlantItems(clientAccountId);
+  const { data: projects = [], isLoading: prLoading } = useProjects(clientAccountId);
+  const { data: assignments = [] } = useProjectAssignments(clientAccountId);
+
+  // Build equipment list from plant items + transaction stats keyed on placa
+  const equipment = useMemo(() => {
+    const stats: Record<string, { litres: number; deliveries: number }> = {};
+    transactions.forEach((t) => {
+      const p = (t.placa || "").toString().trim();
+      if (!p) return;
+      if (!stats[p]) stats[p] = { litres: 0, deliveries: 0 };
+      stats[p].litres += t.cantidad || 0;
+      stats[p].deliveries += 1;
+    });
+    return plantItems.map((pi) => ({
+      placa: pi.placa,
+      litres: pi.placa ? stats[pi.placa]?.litres || 0 : 0,
+      deliveries: pi.placa ? stats[pi.placa]?.deliveries || 0 : 0,
+      enriched: {
+        id: pi.id,
+        name: pi.name,
+        equipment_type: pi.equipment_type,
+        photo_url: pi.photo_url,
+      },
+    }));
+  }, [plantItems, transactions]);
+
+  if (!clientAccountId) {
+    return <p style={muted(13)}>No account linked.</p>;
+  }
+  if (pLoading || prLoading) {
+    return <p style={muted(13)}>Loading...</p>;
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div>
+        <h2 style={sectionTitle}>Plant &amp; Projects</h2>
+        <p style={{ ...muted(12), margin: "4px 0 0" }}>
+          Drag a plant card into a project column to reassign. Each plant belongs to one project at a time.
+        </p>
+      </div>
+
+      <PlantBoard
+        projects={projects}
+        equipment={equipment}
+        assignments={assignments}
+        clientAccountId={clientAccountId}
+      />
     </div>
   );
 }

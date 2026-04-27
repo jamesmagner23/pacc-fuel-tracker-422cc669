@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { usePlantItems, useDeletePlantItem, type PlantItem } from "@/hooks/usePlantItems";
-import { useProjects, useProjectAssignments, useDeleteProject, useToggleAssignment, type Project } from "@/hooks/useProjects";
+import { useProjects, useProjectAssignments, useDeleteProject, type Project } from "@/hooks/useProjects";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { PlantItemModal } from "@/components/customer/PlantItemModal";
 import { ProjectModal } from "@/components/customer/ProjectModal";
+import { PlantBoard } from "@/components/customer/PlantBoard";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { format, parseISO } from "date-fns";
 import { toast } from "@/hooks/use-toast";
@@ -392,7 +393,6 @@ function ProjectsTab({
   const [editing, setEditing] = useState<Partial<Project> | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const del = useDeleteProject();
-  const toggle = useToggleAssignment();
 
   if (!clientAccountId) {
     return <div className="glass-card p-6 text-sm text-muted-foreground">Link a client account first to manage projects.</div>;
@@ -465,6 +465,18 @@ function ProjectsTab({
 
       <ProjectModal open={modalOpen} onOpenChange={setModalOpen} clientAccountId={clientAccountId} initial={editing} />
 
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+          Plant Assignment Board
+        </h3>
+        <PlantBoard
+          projects={projects}
+          equipment={equipment}
+          assignments={assignments}
+          clientAccountId={clientAccountId}
+        />
+      </div>
+
       {selected && selectedProject && (
         <div className="glass-card p-5 space-y-4">
           <div className="flex items-start justify-between gap-3">
@@ -493,38 +505,6 @@ function ProjectsTab({
           </div>
 
           {selectedProject.notes && <p className="text-sm text-muted-foreground">{selectedProject.notes}</p>}
-
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Assigned Equipment</h3>
-            {equipment.filter((e) => e.enriched).length === 0 ? (
-              <p className="text-xs text-muted-foreground">Add & enrich equipment first to assign it.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {equipment.filter((e) => e.enriched).map((e) => {
-                  const isAssigned = assignments.some((a) => a.project_id === selectedProject.id && a.plant_item_id === e.enriched.id);
-                  return (
-                    <label key={e.enriched.id} className="flex items-center gap-2 p-2 rounded-lg border border-border/60 hover:border-primary/30 cursor-pointer">
-                      <Checkbox
-                        checked={isAssigned}
-                        onCheckedChange={(checked) =>
-                          toggle.mutate({
-                            project_id: selectedProject.id,
-                            plant_item_id: e.enriched.id,
-                            assign: !!checked,
-                            client_account_id: clientAccountId,
-                          })
-                        }
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium truncate">{e.enriched.name}</div>
-                        <div className="text-[10px] text-muted-foreground truncate">{e.placa} · {e.litres.toLocaleString()}L total</div>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         </div>
       )}
     </div>
