@@ -544,7 +544,17 @@ export default function CustomerPortal() {
 // ═══════════════════════════════════════════════════════════════════════
 // 01 OVERVIEW (preserved — no pricing, simplified to spec rules)
 // ═══════════════════════════════════════════════════════════════════════
-function OverviewTab({ transactions, demoSuffix }: { transactions: any[]; demoSuffix: string }) {
+function OverviewTab({
+  transactions,
+  demoSuffix,
+  speedsolNames,
+  isDemo,
+}: {
+  transactions: any[];
+  demoSuffix: string;
+  speedsolNames: string[];
+  isDemo: boolean;
+}) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
   const totalLitres = transactions.reduce((s, t) => s + (t.cantidad || 0), 0);
