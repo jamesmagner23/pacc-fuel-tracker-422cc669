@@ -257,6 +257,18 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
             <Textarea rows={2} value={form.service_notes} onChange={(e) => setForm({ ...form, service_notes: e.target.value })} />
           </div>
           <div>
+            <Label>Tags</Label>
+            <TagInput
+              value={tags}
+              onChange={setTags}
+              suggestions={allTags.map((t) => t.name)}
+              placeholder="e.g. excavator, night-shift, site-42"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Free-form labels for grouping and filtering. Press Enter or comma to add. Existing tags appear as suggestions.
+            </p>
+          </div>
+          <div>
             <Label>Fuel Tax Credit Category</Label>
             <Select
               value={form.ftc_rate_id || "none"}
