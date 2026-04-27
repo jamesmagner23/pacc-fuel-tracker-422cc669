@@ -545,33 +545,100 @@ function OverviewTab({ transactions, demoSuffix }: { transactions: any[]; demoSu
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 02 DELIVERIES (preserved — no pricing)
+// 02 DELIVERIES — site + project + date range filter, CSV export, dockets
 // ═══════════════════════════════════════════════════════════════════════
-function DeliveriesTab({ transactions, demoSuffix }: { transactions: any[]; demoSuffix: string }) {
+function DeliveriesTab({
+  transactions,
+  demoSuffix,
+  clientAccountId,
+}: {
+  transactions: any[];
+  demoSuffix: string;
+  clientAccountId: number | null;
+}) {
+  const { data: projects = [] } = useProjects(clientAccountId);
+  const { data: assignments = [] } = useProjectAssignments(clientAccountId);
+  const { data: plantItems = [] } = usePlantItems(clientAccountId);
+
   const [siteFilter, setSiteFilter] = useState("all");
+  const [projectFilter, setProjectFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
   const sites = useMemo(
     () => Array.from(new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean))) as string[],
     [transactions]
   );
-  const filtered = siteFilter === "all" ? transactions : transactions.filter((t) => t.nombre_cliente1 === siteFilter);
+
+  // Build placa → projectId map from assignments + plant items
+  const placaToProject = useMemo(() => {
+    const itemToProject: Record<string, string> = {};
+    assignments.forEach((a) => {
+      if (!a.removed_at) itemToProject[a.plant_item_id] = a.project_id;
+    });
+    const map: Record<string, string> = {};
+    plantItems.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (placa && itemToProject[pi.id]) map[placa] = itemToProject[pi.id];
+    });
+    return map;
+  }, [assignments, plantItems]);
+
+  const filtered = useMemo(() => {
+    return transactions.filter((t) => {
+      if (siteFilter !== "all" && t.nombre_cliente1 !== siteFilter) return false;
+      if (projectFilter !== "all") {
+        const placa = (t.placa || "").toString().trim();
+        if (placaToProject[placa] !== projectFilter) return false;
+      }
+      const d = t.date || "";
+      if (fromDate && d < fromDate) return false;
+      if (toDate && d > toDate) return false;
+      return true;
+    });
+  }, [transactions, siteFilter, projectFilter, placaToProject, fromDate, toDate]);
 
   const exportDeliveries = () => {
-    const rows: (string | number)[][] = [["Date", "Site", "Litres", "Invoice"]];
-    filtered.forEach((t) =>
-      rows.push([t.date || "", t.nombre_cliente1 || "", (t.cantidad || 0).toFixed(2), t.factura || ""])
-    );
+    const rows: (string | number)[][] = [
+      ["Date", "Site", "Plant/Placa", "Project", "Litres", "Invoice"],
+    ];
+    const projectName = (id: string) => projects.find((p) => p.id === id)?.name || "";
+    filtered.forEach((t) => {
+      const placa = (t.placa || "").toString().trim();
+      rows.push([
+        t.date || "",
+        t.nombre_cliente1 || "",
+        placa,
+        projectName(placaToProject[placa] || ""),
+        (t.cantidad || 0).toFixed(2),
+        t.factura || "",
+      ]);
+    });
     downloadCSV(rows, `deliveries-${format(new Date(), "yyyy-MM-dd")}.csv`);
     logActivity("export", { type: "deliveries-csv", rows: filtered.length });
   };
 
+  const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <select value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 180 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8 }}>
+        <select value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)} style={inputStyle}>
           <option value="all">All Sites</option>
           {sites.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
-        <GhostButton onClick={exportDeliveries}>Export CSV</GhostButton>
+        <select value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} style={inputStyle}>
+          <option value="all">All Projects</option>
+          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={inputStyle} placeholder="From" />
+        <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={inputStyle} placeholder="To" />
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div style={muted(12)}>
+          {filtered.length.toLocaleString()} deliveries · {fmtL(totalLitres)}
+        </div>
+        <GhostButton onClick={exportDeliveries} disabled={filtered.length === 0}>Export CSV</GhostButton>
       </div>
 
       <div style={card}>
