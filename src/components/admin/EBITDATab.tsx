@@ -5,7 +5,7 @@ import { subDays, parseISO, format, startOfMonth, endOfMonth, differenceInCalend
 import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine } from "recharts";
 import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 
-const STORAGE_KEY = "admin_ebitda_opex_v1";
+const STORAGE_KEY = "admin_ebitda_opex_v2";
 type OpexState = {
   wages: number;
   fleet: number;
@@ -24,16 +24,41 @@ const DEFAULT_OPEX: OpexState = {
   other: 0,
 };
 
+type Period = "30d" | "90d" | "ytd" | "12m";
+type OpexByPeriod = Record<Period, OpexState>;
+
+const DEFAULT_OPEX_BY_PERIOD: OpexByPeriod = {
+  "30d": { ...DEFAULT_OPEX },
+  "90d": { ...DEFAULT_OPEX },
+  ytd: { ...DEFAULT_OPEX },
+  "12m": { ...DEFAULT_OPEX },
+};
+
+const PERIOD_LABELS: Record<Period, string> = {
+  "30d": "Last 30 days",
+  "90d": "Last 90 days",
+  ytd: "Year to date",
+  "12m": "Last 12 months",
+};
+
 export default function EBITDATab() {
-  const [period, setPeriod] = useState<"30d" | "90d" | "ytd" | "12m">("30d");
-  const [opex, setOpex] = useState<OpexState>(() => {
+  const [period, setPeriod] = useState<Period>("30d");
+  const [opexByPeriod, setOpexByPeriod] = useState<OpexByPeriod>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? { ...DEFAULT_OPEX, ...JSON.parse(saved) } : DEFAULT_OPEX;
+      if (!saved) return DEFAULT_OPEX_BY_PERIOD;
+      const parsed = JSON.parse(saved);
+      return {
+        "30d": { ...DEFAULT_OPEX, ...(parsed["30d"] || {}) },
+        "90d": { ...DEFAULT_OPEX, ...(parsed["90d"] || {}) },
+        ytd: { ...DEFAULT_OPEX, ...(parsed.ytd || {}) },
+        "12m": { ...DEFAULT_OPEX, ...(parsed["12m"] || {}) },
+      };
     } catch {
-      return DEFAULT_OPEX;
+      return DEFAULT_OPEX_BY_PERIOD;
     }
   });
+  const opex = opexByPeriod[period];
 
   const { data: txns = [], isLoading } = useAllTransactions();
   const { data: buyPrices = [] } = useBuyPrices(730);
