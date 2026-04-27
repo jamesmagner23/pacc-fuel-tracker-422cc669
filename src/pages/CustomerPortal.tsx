@@ -351,16 +351,25 @@ export default function CustomerPortal() {
           })}
         </div>
 
-        {isLoading && activeTab !== "06 Schedule" && activeTab !== "05 FTC" && activeTab !== "04 Plant" ? (
+        {isLoading && activeTab !== "04 Plant" ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
             {activeTab === "01 Overview" && <OverviewTab transactions={transactions} demoSuffix={demoSuffix} />}
-            {activeTab === "02 Dockets" && <DeliveriesTab transactions={transactions} demoSuffix={demoSuffix} />}
-            {activeTab === "03 Sites" && <SitesTab transactions={transactions} companyName={companyName} />}
+            {activeTab === "02 Deliveries" && (
+              <DeliveriesTab
+                transactions={transactions}
+                demoSuffix={demoSuffix}
+                clientAccountId={clientAccountId}
+              />
+            )}
+            {activeTab === "03 Projects" && (
+              <ProjectsTab transactions={transactions} clientAccountId={clientAccountId} />
+            )}
             {activeTab === "04 Plant" && <PlantTab clientAccountId={clientAccountId} transactions={transactions} />}
-            {activeTab === "05 FTC" && <FtcTab transactions={transactions} />}
-            {activeTab === "06 Schedule" && <ScheduleTab transactions={transactions} clientAccountId={clientAccountId} />}
+            {activeTab === "05 Emissions" && (
+              <EmissionsTab transactions={transactions} companyName={companyName} />
+            )}
           </>
         )}
       </div>
