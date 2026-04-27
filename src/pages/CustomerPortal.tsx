@@ -37,11 +37,10 @@ const T = {
 
 const tabs = [
   "01 Overview",
-  "02 Dockets",
-  "03 Sites",
+  "02 Deliveries",
+  "03 Projects",
   "04 Plant",
-  "05 FTC",
-  "06 Schedule",
+  "05 Emissions",
 ] as const;
 type Tab = (typeof tabs)[number];
 
