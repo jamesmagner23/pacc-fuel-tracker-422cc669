@@ -5,7 +5,7 @@ import { useOperatingExpenses, dailyRateFor } from "@/hooks/useOperatingExpenses
 import RecurringExpensesPanel from "./RecurringExpensesPanel";
 import { subDays, parseISO, format, startOfMonth, endOfMonth, differenceInCalendarDays, eachDayOfInterval } from "date-fns";
 import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine, AreaChart, Area } from "recharts";
-import { Wallet } from "lucide-react";
+import { Wallet, CalendarClock } from "lucide-react";
 
 type Period = "30d" | "90d" | "ytd" | "12m";
 
@@ -137,6 +137,45 @@ export default function EBITDATab() {
       rolling: Math.round(dailyRepayments),
     }));
   }, [dailyRepayments, periodStart]);
+
+  // Scheduled (smoothed daily rate) vs Actual (lumpy on next_due_date) cumulative projection
+  const projectionSeries = useMemo(() => {
+    const today = new Date();
+    const days = eachDayOfInterval({ start: periodStart, end: today });
+    if (days.length === 0) return [];
+
+    const activeExp = expenses.filter((e) => e.is_active);
+    const dailyTotal = activeExp.reduce((s, e) => s + dailyRateFor(e), 0);
+
+    // Map of yyyy-MM-dd → actual hits within the period (one-off + recurring whose next_due_date is inside window)
+    const hitsByDay: Record<string, number> = {};
+    activeExp.forEach((e) => {
+      if (!e.next_due_date) return;
+      const due = parseISO(e.next_due_date);
+      if (due < periodStart || due > today) return;
+      const k = format(due, "yyyy-MM-dd");
+      hitsByDay[k] = (hitsByDay[k] || 0) + (Number(e.amount) || 0);
+    });
+
+    let cumScheduled = 0;
+    let cumActual = 0;
+    return days.map((d) => {
+      cumScheduled += dailyTotal;
+      cumActual += hitsByDay[format(d, "yyyy-MM-dd")] || 0;
+      return {
+        date: format(d, "MMM d"),
+        scheduled: Math.round(cumScheduled),
+        actual: Math.round(cumActual),
+      };
+    });
+  }, [expenses, periodStart]);
+
+  const projectionTotals = useMemo(() => {
+    const last = projectionSeries[projectionSeries.length - 1];
+    const scheduled = last?.scheduled ?? 0;
+    const actual = last?.actual ?? 0;
+    return { scheduled, actual, variance: actual - scheduled };
+  }, [projectionSeries]);
 
   const handleRecurringTotal = useCallback((total: number) => setRecurringPeriodTotal(total), []);
 
