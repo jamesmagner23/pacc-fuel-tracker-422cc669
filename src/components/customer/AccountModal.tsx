@@ -24,7 +24,7 @@ const label: React.CSSProperties = {
   fontFamily: T.sansHead,
   letterSpacing: "0.08em",
   textTransform: "uppercase",
-  color: T.muted,
+  color: T.subtle,
   display: "block",
   marginBottom: 4,
 };
