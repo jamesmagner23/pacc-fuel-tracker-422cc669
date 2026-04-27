@@ -6,7 +6,16 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } fro
 import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 
 const STORAGE_KEY = "admin_ebitda_opex_v1";
-const DEFAULT_OPEX = {
+type OpexState = {
+  wages: number;
+  fleet: number;
+  rent: number;
+  insurance: number;
+  fuel: number;
+  other: number;
+};
+
+const DEFAULT_OPEX: OpexState = {
   wages: 0,
   fleet: 0,
   rent: 0,
@@ -17,7 +26,7 @@ const DEFAULT_OPEX = {
 
 export default function EBITDATab() {
   const [period, setPeriod] = useState<"30d" | "90d" | "ytd" | "12m">("30d");
-  const [opex, setOpex] = useState(() => {
+  const [opex, setOpex] = useState<OpexState>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? { ...DEFAULT_OPEX, ...JSON.parse(saved) } : DEFAULT_OPEX;
