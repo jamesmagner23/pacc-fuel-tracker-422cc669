@@ -10,7 +10,7 @@ import { Layout } from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import Overview from "./pages/Overview";
 import Customers from "./pages/Customers";
-import CustomerDetail from "./pages/CustomerDetail";
+import CustomerHub from "./pages/CustomerHub";
 import Performance from "./pages/Performance";
 import Transactions from "./pages/Transactions";
 import Finance from "./pages/Finance";
@@ -49,7 +49,7 @@ function DemoAwareRoutes() {
               <Routes>
                 <Route path="/" element={<Overview />} />
                 <Route path="/customers" element={<Customers />} />
-                <Route path="/customers/:name" element={<CustomerDetail />} />
+                <Route path="/customers/:name" element={<CustomerHub />} />
                 <Route path="/performance" element={<Performance />} />
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/finance" element={<Finance />} />
@@ -73,7 +73,7 @@ function DemoAwareRoutes() {
                 <Routes>
                   <Route path="/" element={<Overview />} />
                   <Route path="/customers" element={<Customers />} />
-                  <Route path="/customers/:name" element={<CustomerDetail />} />
+                  <Route path="/customers/:name" element={<CustomerHub />} />
                   <Route path="/performance" element={<Performance />} />
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/finance" element={<Finance />} />
