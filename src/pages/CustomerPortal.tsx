@@ -847,6 +847,11 @@ function DeliveriesTab({
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  // Mapping UI state
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [plantModalOpen, setPlantModalOpen] = useState(false);
+  const [prefillPlaca, setPrefillPlaca] = useState<string>("");
+
   const sites = useMemo(
     () => Array.from(new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean))) as string[],
     [transactions]
