@@ -230,10 +230,10 @@ export default function EBITDATab() {
                 />
                 <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
                 <ReferenceLine y={0} stroke="var(--surface-border)" />
-                {/* Stack costs so revenue clearly sits above the cost stack */}
-                <Bar dataKey="cogs" name="COGS (Fuel)" stackId="cost" fill="#8B5E3C" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="opex" name="OpEx" stackId="cost" fill="var(--text-muted)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="revenue" name="Revenue" fill={accent} radius={[3, 3, 0, 0]} />
+                {/* Revenue alongside stacked costs for easy comparison */}
+                <Bar dataKey="revenue" name="Revenue" fill={accent} radius={[3, 3, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="cogs" name="COGS (Fuel)" stackId="cost" fill="#6b4423" radius={[0, 0, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="opex" name="OpEx" stackId="cost" fill="#3d2817" stroke="#6b4423" strokeWidth={1} radius={[3, 3, 0, 0]} maxBarSize={28} />
                 <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke="#10B981" strokeWidth={2.5} dot={{ r: 3, fill: "#10B981" }} />
               </ComposedChart>
             </ResponsiveContainer>
