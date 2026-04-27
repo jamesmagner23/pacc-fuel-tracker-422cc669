@@ -69,9 +69,15 @@ export function useUpsertProject() {
       if (p.id) {
         const { error } = await supabase.from("projects").update(p).eq("id", p.id);
         if (error) throw error;
+        return { id: p.id };
       } else {
-        const { error } = await supabase.from("projects").insert(p);
+        const { data, error } = await supabase
+          .from("projects")
+          .insert(p)
+          .select("id")
+          .single();
         if (error) throw error;
+        return { id: (data as any)?.id as string };
       }
     },
     onSuccess: (_d, vars) => {

@@ -27,6 +27,7 @@ import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 import { BulkMapModal } from "@/components/customer/BulkMapModal";
 import { PlantItemModal } from "@/components/customer/PlantItemModal";
+import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
@@ -842,6 +843,19 @@ function DeliveriesTab({
   const { data: assignments = [] } = useProjectAssignments(clientAccountId);
   const { data: plantItems = [] } = usePlantItems(clientAccountId);
 
+  // Per-transaction overrides set by drivers/admins
+  const txnIds = useMemo(
+    () => transactions.map((t: any) => Number(t.id)).filter((n) => Number.isFinite(n)),
+    [transactions]
+  );
+  const { data: overrides = {} } = useTransactionOverrides(txnIds);
+
+  const plantById = useMemo(() => {
+    const m: Record<string, typeof plantItems[number]> = {};
+    plantItems.forEach((pi) => { m[pi.id] = pi; });
+    return m;
+  }, [plantItems]);
+
   const [siteFilter, setSiteFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
@@ -1043,8 +1057,13 @@ function DeliveriesTab({
         ) : (
           filtered.map((t, i) => {
             const placa = (t.placa || "").toString().trim();
-            const plant = placa ? placaToPlant[placa] : undefined;
-            const project = placa ? projectById[placaToProject[placa] || ""] : undefined;
+            const ov = overrides[Number(t.id)];
+            const plant =
+              (ov?.plant_item_id ? plantById[ov.plant_item_id] : undefined) ||
+              (placa ? placaToPlant[placa] : undefined);
+            const project =
+              (ov?.project_id ? projectById[ov.project_id] : undefined) ||
+              (placa ? projectById[placaToProject[placa] || ""] : undefined);
             const swatch = plant?.colour || T.border;
             return (
               <div
