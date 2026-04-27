@@ -13,6 +13,7 @@ import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_FUEL_INTAKE_LOGS, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { useSchedule, useCreateOrder, useReorderStops, useLocations } from "@/hooks/useDispatch";
 import { useDragReorder } from "@/hooks/useDragReorder";
+import { TagDeliveriesTab } from "@/components/driver/TagDeliveriesTab";
 
 function IntakeLogRow({ log }: { log: any }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -711,7 +712,9 @@ function MyDayTab() {
 
 export default function DriverPortal() {
   const isDemo = useDemo();
-  const [activeTab, setActiveTab] = useState<"dashboard" | "myday" | "sops">("dashboard");
+  const [activeTab, setActiveTab] = useState<
+    "dashboard" | "myday" | "tag" | "sops"
+  >("dashboard");
   const { todayQuery, weekQuery, lastWeekQuery } = useDriverTransactions();
 
   useEffect(() => {
@@ -769,6 +772,7 @@ export default function DriverPortal() {
           {[
             { key: "dashboard" as const, label: "Dashboard" },
             { key: "myday" as const, label: "My Day" },
+            { key: "tag" as const, label: "Tag" },
             { key: "sops" as const, label: "SOPs" },
           ].map((tab) => (
             <button
@@ -790,6 +794,8 @@ export default function DriverPortal() {
 
         {activeTab === "myday" ? (
           <MyDayTab />
+        ) : activeTab === "tag" ? (
+          <TagDeliveriesTab />
         ) : activeTab === "sops" ? (
           <DriverSOPSection />
         ) : (
