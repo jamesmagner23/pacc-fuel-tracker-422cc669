@@ -144,8 +144,8 @@ export const SOP_SECTIONS: SOPSection[] = [
         title: "5.2 Preparing to Deliver",
         content: [
           "Identify the correct OptimoRoute job item codes.",
-          "Open SpeedSol (fuel delivery app).",
-          "Ensure the truck's Bluetooth is connected to SpeedSol.",
+          "Open Fuel System (fuel delivery app).",
+          "Ensure the truck's Bluetooth is connected to Fuel System.",
         ],
       },
       {
@@ -224,7 +224,7 @@ export const SOP_SECTIONS: SOPSection[] = [
           "Check and top up: engine oil, coolant, water, windscreen washer fluid, power steering fluid.",
           "Verify toolboxes are clean, organised, stocked, and locked.",
           "Inspect fuel hoses, nozzles, and reel for wear.",
-          "Check Bluetooth connection module for SpeedSol.",
+          "Check Bluetooth connection module for Fuel System.",
           "Verify spill kit is present.",
         ],
       },
@@ -344,7 +344,7 @@ export const SOP_SECTIONS: SOPSection[] = [
         content: [
           "Tap Navigate → choose Google Maps → follow GPS → return to OptimoRoute on site.",
           "Every stop includes a clear note: Code, Machine, UHF, Contact.",
-          "Use the exact code in SpeedSol — no searching required.",
+          "Use the exact code in Fuel System — no searching required.",
         ],
       },
       {
