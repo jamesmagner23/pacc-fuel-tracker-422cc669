@@ -903,6 +903,53 @@ function DeliveriesTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Unmapped warning banner — shown when there are unmapped placas
+          and the global "Unmapped only" filter isn't already on. */}
+      {unmappedCount > 0 && !portalFilters.filters.unmappedOnly && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 12px",
+            background: "rgba(245, 158, 11, 0.12)",
+            border: "1px solid rgba(245, 158, 11, 0.45)",
+            borderRadius: 8,
+            color: "#F5E6D0",
+            fontSize: 12,
+          }}
+        >
+          <span style={{ fontSize: 16, lineHeight: 1 }}>⚠️</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <strong style={{ color: "#F59E0B" }}>{unmappedCount}</strong>{" "}
+            {unmappedCount === 1 ? "delivery" : "deliveries"} from{" "}
+            {allTransactionsCount.toLocaleString()} can't be matched to a plant
+            item — add the placa under <em>Plant</em> to enable project tagging,
+            colour coding and notes.
+          </div>
+          <button
+            onClick={() => portalFilters.setUnmappedOnly(true)}
+            style={{
+              background: "#F59E0B",
+              color: "#3D2B1A",
+              border: "none",
+              padding: "6px 10px",
+              borderRadius: 4,
+              fontSize: 11,
+              fontFamily: T.sansHead,
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            View Unmapped
+          </button>
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8 }}>
         <select value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)} style={inputStyle}>
           <option value="all">All Sites</option>
