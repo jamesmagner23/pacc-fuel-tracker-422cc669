@@ -77,7 +77,7 @@ serve(async (req) => {
     );
 
     let routeSummary = null;
-    let driverName = selectedRoute?.driverName || "Stephan";
+    let driverName = selectedRoute?.driverName || null;
 
     if (selectedRoute) {
       const completedOrders = new Set<string>();
@@ -120,7 +120,8 @@ serve(async (req) => {
           let latestTime = 0;
 
           for (const order of completionData?.orders ?? []) {
-            const pos = order.completionDetails?.endPosition || order.completionDetails?.startPosition;
+            const details = order.data ?? order.completionDetails ?? {};
+            const pos = details.endPosition || details.startPosition;
             const ms = toTimestampMs(pos?.timestamp);
             if (
               pos?.latitude &&
@@ -164,9 +165,9 @@ serve(async (req) => {
     if (!driverLocation && eventsData?.events?.length > 0) {
       let latestEventMs = 0;
       for (const evt of eventsData.events) {
-        const timestamp = evt.position?.timestamp ?? evt.timestamp;
+        const timestamp = evt.position?.timestamp ?? evt.unixTimestamp ?? evt.utcTime ?? evt.localTime ?? evt.timestamp;
         const ms = toTimestampMs(timestamp);
-        const matchesDriver = !evt.driverName || evt.driverName === driverName;
+        const matchesDriver = !driverName || !evt.driverName || evt.driverName === driverName;
         if (
           evt.position?.latitude &&
           evt.position?.longitude &&
@@ -191,7 +192,7 @@ serve(async (req) => {
         success: true,
         driver: driverLocation
           ? {
-              name: driverName,
+              name: driverName || "Driver",
               lat: driverLocation.lat,
               lng: driverLocation.lng,
               speed: 0,
@@ -199,7 +200,7 @@ serve(async (req) => {
               isActive: true,
             }
           : {
-              name: driverName,
+              name: driverName || "Driver",
               lat: null,
               lng: null,
               speed: 0,
