@@ -62,8 +62,8 @@ export default function AdminOverview() {
     { label: "Client Accounts", value: clientCount, icon: <Database className="w-4 h-4" /> },
   ];
 
-  const accent = "hsl(var(--primary))";
-  const muted = "hsl(var(--muted-foreground))";
+  const accent = "var(--accent)";
+  const muted = "var(--text-secondary)";
 
   return (
     <div className="space-y-5">
@@ -87,7 +87,7 @@ export default function AdminOverview() {
               <LineChart data={dailyChart}>
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
+                <Tooltip contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)" }} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
                 <Line type="monotone" dataKey="litres" stroke={accent} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>

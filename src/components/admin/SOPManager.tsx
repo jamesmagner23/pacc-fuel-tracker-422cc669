@@ -119,12 +119,12 @@ function SectionEditor({ section, onClose }: { section: SOPRow | null; onClose: 
             <div className="flex-1 flex flex-col gap-1.5">
               <label className="text-[11px] text-muted-foreground">Title</label>
               <input value={title} onChange={(e) => setTitle(e.target.value)}
-                className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+                className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
             </div>
             <div className="w-20 flex flex-col gap-1.5">
               <label className="text-[11px] text-muted-foreground">Order</label>
               <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))}
-                className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+                className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
             </div>
           </div>
 
@@ -136,7 +136,7 @@ function SectionEditor({ section, onClose }: { section: SOPRow | null; onClose: 
                   value={sub.title}
                   onChange={(e) => updateSub(i, "title", e.target.value)}
                   placeholder="Subsection title"
-                  className="flex-1 bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-1.5 text-[12px] outline-none"
+                  className="flex-1 bg-raised border border-surface-border rounded-lg text-foreground px-3 py-1.5 text-[12px] outline-none"
                 />
                 <button onClick={() => removeSubsection(i)} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-destructive p-1">
                   <Trash2 className="w-3.5 h-3.5" />
@@ -147,7 +147,7 @@ function SectionEditor({ section, onClose }: { section: SOPRow | null; onClose: 
                 onChange={(e) => updateSub(i, "content", e.target.value.split("\n"))}
                 placeholder="Content (one line per bullet)"
                 rows={4}
-                className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none resize-y"
+                className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none resize-y"
               />
             </div>
           ))}
@@ -227,7 +227,7 @@ function SiteEditor({ site, onClose }: { site: SiteRow | null; onClose: () => vo
               <div key={label} className="flex flex-col gap-1.5">
                 <label className="text-[11px] text-muted-foreground">{label}</label>
                 <input value={value} onChange={(e) => set(e.target.value)}
-                  className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+                  className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
               </div>
             ))}
           </div>
@@ -236,9 +236,9 @@ function SiteEditor({ site, onClose }: { site: SiteRow | null; onClose: () => vo
           {codes.map((c, i) => (
             <div key={i} className="flex gap-2">
               <input value={c.code} onChange={(e) => { const u = [...codes]; u[i] = { ...u[i], code: e.target.value }; setCodes(u); }}
-                placeholder="Code" className="flex-1 bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-1.5 text-[12px] outline-none" />
+                placeholder="Code" className="flex-1 bg-raised border border-surface-border rounded-lg text-foreground px-3 py-1.5 text-[12px] outline-none" />
               <input value={c.description} onChange={(e) => { const u = [...codes]; u[i] = { ...u[i], description: e.target.value }; setCodes(u); }}
-                placeholder="Description" className="flex-1 bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-1.5 text-[12px] outline-none" />
+                placeholder="Description" className="flex-1 bg-raised border border-surface-border rounded-lg text-foreground px-3 py-1.5 text-[12px] outline-none" />
               <button onClick={() => setCodes(codes.filter((_, j) => j !== i))}
                 className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-destructive p-1"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
@@ -254,7 +254,7 @@ function SiteEditor({ site, onClose }: { site: SiteRow | null; onClose: () => vo
             onChange={(e) => setNotes(e.target.value.split("\n"))}
             placeholder="One note per line"
             rows={3}
-            className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none resize-y"
+            className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none resize-y"
           />
 
           <button onClick={() => mutation.mutate()} disabled={!client || !siteName || mutation.isPending}

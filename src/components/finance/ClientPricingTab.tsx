@@ -331,9 +331,9 @@ export default function ClientPricingTab() {
     return latestBuyPrice * (1 + marginPct / 100);
   };
 
-  const inputClass = "bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none w-full";
-  const selectClass = "bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none w-full appearance-none";
-  const smInput = "bg-[hsl(var(--muted))] border border-surface-border rounded-md text-foreground px-2 py-1.5 text-[11px] outline-none w-full tabular-nums";
+  const inputClass = "bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none w-full";
+  const selectClass = "bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[12px] outline-none w-full appearance-none";
+  const smInput = "bg-raised border border-surface-border rounded-md text-foreground px-2 py-1.5 text-[11px] outline-none w-full tabular-nums";
 
   const uniqueClients = new Set(pricing.map((p) => p.client_account_id));
   const avgMargin = pricing.length > 0 ? pricing.reduce((s, p) => s + p.margin_percent, 0) / pricing.length : 0;
@@ -436,7 +436,7 @@ export default function ClientPricingTab() {
                         .slice(0, 5);
                       if (suggestions.length === 0) return null;
                       return (
-                        <div className="bg-[hsl(var(--muted))] rounded-lg p-2 flex flex-col gap-0.5">
+                        <div className="bg-raised rounded-lg p-2 flex flex-col gap-0.5">
                           <div className="flex items-center gap-1.5 mb-1">
                             <Sparkles className="w-3 h-3 text-primary" />
                             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Matching SpeedSol names</span>
@@ -485,7 +485,7 @@ export default function ClientPricingTab() {
             {/* Volume tiers — inline editable rows */}
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Volume Tiers (weekly litres)</div>
-              <div className="bg-[hsl(var(--muted))] rounded-lg overflow-hidden">
+              <div className="bg-raised rounded-lg overflow-hidden">
                 <table className="w-full text-[11px]">
                   <thead>
                     <tr className="text-muted-foreground text-left">
@@ -573,11 +573,11 @@ export default function ClientPricingTab() {
                 }).sort((a, b) => b.margin - a.margin)}
                 margin={{ top: 4, right: 8, bottom: 4, left: 0 }}
               >
-                <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} unit="%" width={36} />
+                <XAxis dataKey="name" tick={{ fill: "var(--text-secondary)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "var(--text-secondary)", fontSize: 10 }} axisLine={false} tickLine={false} unit="%" width={36} />
                 <Tooltip
-                  cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
-                  contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                  cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                  contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }}
                   formatter={(value: number) => [`${value}%`, "Avg Margin"]}
                   labelFormatter={(_l, payload) => {
                     const item = payload?.[0]?.payload;
@@ -600,7 +600,7 @@ export default function ClientPricingTab() {
           </div>
           <div className="relative">
             <Search className="w-3 h-3 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search client…" className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground pl-7 pr-3 py-1.5 text-[11px] outline-none w-40" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search client…" className="bg-raised border border-surface-border rounded-lg text-foreground pl-7 pr-3 py-1.5 text-[11px] outline-none w-40" />
           </div>
         </div>
 
@@ -623,7 +623,7 @@ export default function ClientPricingTab() {
               const worstMargin = Math.max(...margins);
 
               return (
-                <div key={clientId} style={{ borderBottom: gi < filteredGroups.length - 1 ? "1px solid hsl(var(--border))" : "none" }}>
+                <div key={clientId} style={{ borderBottom: gi < filteredGroups.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
                   {/* Client header */}
                   <div className="py-3 flex items-center justify-between cursor-pointer" onClick={() => setExpandedClient(isExpanded ? null : clientId)}>
                     <div className="min-w-0 flex-1">
@@ -667,7 +667,7 @@ export default function ClientPricingTab() {
                   {/* Expanded tier table */}
                   {isExpanded && (
                     <div className="ml-5.5 pb-3">
-                      <div className="bg-[hsl(var(--muted))] rounded-lg overflow-hidden">
+                      <div className="bg-raised rounded-lg overflow-hidden">
                         <table className="w-full text-[11px]">
                           <thead>
                             <tr className="text-muted-foreground text-left">
@@ -751,7 +751,7 @@ export default function ClientPricingTab() {
 
                   {/* SpeedSol mapping with fuzzy suggestions */}
                   {isMapping && (
-                    <div className="ml-5.5 mb-3 p-3 bg-[hsl(var(--muted))] rounded-lg">
+                    <div className="ml-5.5 mb-3 p-3 bg-raised rounded-lg">
                       <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Map SpeedSol Names → {client?.company_name}</div>
                       {/* Auto-suggested matches */}
                       {(() => {
