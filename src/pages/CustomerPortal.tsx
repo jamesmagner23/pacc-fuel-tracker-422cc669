@@ -1036,12 +1036,177 @@ function FtcTab({ transactions }: { transactions: any[] }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 05 EMISSIONS — CO2e calc + jsPDF report
+// 03 PROJECTS — per-project fuel usage analytics
+// ═══════════════════════════════════════════════════════════════════════
+function ProjectsTab({
+  transactions,
+  clientAccountId,
+}: {
+  transactions: any[];
+  clientAccountId: number | null;
+}) {
+  const { data: projects = [], isLoading: prLoading } = useProjects(clientAccountId);
+  const { data: assignments = [] } = useProjectAssignments(clientAccountId);
+  const { data: plantItems = [] } = usePlantItems(clientAccountId);
+
+  const stats = useMemo(() => {
+    // Map placa -> projectId
+    const itemToProject: Record<string, string> = {};
+    assignments.forEach((a) => {
+      if (!a.removed_at) itemToProject[a.plant_item_id] = a.project_id;
+    });
+    const placaToProject: Record<string, string> = {};
+    const placaToName: Record<string, string> = {};
+    plantItems.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (!placa) return;
+      placaToName[placa] = pi.name;
+      if (itemToProject[pi.id]) placaToProject[placa] = itemToProject[pi.id];
+    });
+
+    const perProject: Record<
+      string,
+      { litres: number; deliveries: number; topPlant: Record<string, number> }
+    > = {};
+    let unassignedLitres = 0;
+    let unassignedDeliveries = 0;
+
+    transactions.forEach((t) => {
+      const placa = (t.placa || "").toString().trim();
+      const pid = placaToProject[placa];
+      const litres = t.cantidad || 0;
+      if (!pid) {
+        unassignedLitres += litres;
+        unassignedDeliveries += 1;
+        return;
+      }
+      if (!perProject[pid]) perProject[pid] = { litres: 0, deliveries: 0, topPlant: {} };
+      perProject[pid].litres += litres;
+      perProject[pid].deliveries += 1;
+      const k = placaToName[placa] || placa;
+      perProject[pid].topPlant[k] = (perProject[pid].topPlant[k] || 0) + litres;
+    });
+
+    return { perProject, unassignedLitres, unassignedDeliveries };
+  }, [transactions, assignments, plantItems]);
+
+  if (prLoading) return <p style={muted(13)}>Loading...</p>;
+
+  const totalAssigned = Object.values(stats.perProject).reduce((s, v) => s + v.litres, 0);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div>
+        <h2 style={sectionTitle}>Projects</h2>
+        <p style={{ ...muted(12), margin: "4px 0 0" }}>
+          Fuel usage per project — assign plant items to projects on the Plant tab.
+        </p>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+        <div style={card}>
+          <div style={labelStyle}>Active Projects</div>
+          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: T.sansHead, fontVariantNumeric: "tabular-nums" }}>
+            {projects.length}
+          </div>
+        </div>
+        <div style={card}>
+          <div style={labelStyle}>Litres Assigned</div>
+          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: T.sansHead, fontVariantNumeric: "tabular-nums" }}>
+            {fmtL(totalAssigned)}
+          </div>
+        </div>
+        <div style={card}>
+          <div style={labelStyle}>Litres Unassigned</div>
+          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: T.sansHead, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+            {fmtL(stats.unassignedLitres)}
+          </div>
+          <div style={{ ...muted(11), marginTop: 4 }}>{stats.unassignedDeliveries} deliveries</div>
+        </div>
+      </div>
+
+      {projects.length === 0 ? (
+        <div style={card}>
+          <p style={muted(13)}>
+            No projects yet. Create projects on the Plant tab to track fuel usage by job.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {projects.map((p) => {
+            const s = stats.perProject[p.id];
+            const litres = s?.litres || 0;
+            const deliveries = s?.deliveries || 0;
+            const co2Tonnes = (litres * CO2_FACTOR) / 1000;
+            const topPlant = s
+              ? Object.entries(s.topPlant).sort((a, b) => b[1] - a[1]).slice(0, 5)
+              : [];
+            const maxLitres = topPlant[0]?.[1] || 1;
+            return (
+              <div key={p.id} style={card}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div style={{ fontSize: 16, fontWeight: 600, fontFamily: T.sansHead, color: T.text }}>{p.name}</div>
+                    {p.site_address && <div style={{ ...muted(11), marginTop: 2 }}>{p.site_address}</div>}
+                    <div style={{ ...muted(11), marginTop: 4, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                      {p.status}
+                      {p.start_date ? ` · ${format(parseISO(p.start_date), "dd MMM yyyy")}` : ""}
+                      {p.end_date ? ` → ${format(parseISO(p.end_date), "dd MMM yyyy")}` : ""}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
+                    <div>
+                      <div style={labelStyle}>Litres</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{fmtL(litres)}</div>
+                    </div>
+                    <div>
+                      <div style={labelStyle}>Deliveries</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{deliveries}</div>
+                    </div>
+                    <div>
+                      <div style={labelStyle}>CO₂e (t)</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+                        {fmtNum(co2Tonnes, 2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {topPlant.length > 0 && (
+                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
+                    <div style={{ ...labelStyle, marginBottom: 8 }}>Top Fuel Users</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {topPlant.map(([name, l]) => (
+                        <div key={name} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+                          <span style={{ color: T.textSecondary, width: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 0 }}>{name}</span>
+                          <div style={{ flex: 1, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden" }}>
+                            <div style={{ width: `${(l / maxLitres) * 100}%`, height: "100%", background: T.accent }} />
+                          </div>
+                          <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 70, textAlign: "right" }}>{fmtL(l)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 05 EMISSIONS — CO2e calc + jsPDF report (with editable assumptions)
 // ═══════════════════════════════════════════════════════════════════════
 type EmissionPeriod = "month" | "quarter" | "fy";
 
 function EmissionsTab({ transactions, companyName }: { transactions: any[]; companyName: string }) {
   const [period, setPeriod] = useState<EmissionPeriod>("month");
+  const [factor, setFactor] = useState<number>(CO2_FACTOR);
+  const [energyContent, setEnergyContent] = useState<number>(38.6); // GJ/kL diesel
+  const [oxidationFactor, setOxidationFactor] = useState<number>(1.0);
   const today = new Date();
 
   const periodInfo = useMemo(() => {
@@ -1057,11 +1222,13 @@ function EmissionsTab({ transactions, companyName }: { transactions: any[]; comp
     return { start: s, label: fyLabel(today), short: fyLabel(today).replace("/", "-") };
   }, [period, today]);
 
+  const effectiveFactor = factor * oxidationFactor;
   const startStr = format(periodInfo.start, "yyyy-MM-dd");
   const inPeriod = transactions.filter((t) => (t.date || "") >= startStr);
   const totalLitres = inPeriod.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const co2Kg = totalLitres * CO2_FACTOR;
+  const co2Kg = totalLitres * effectiveFactor;
   const co2Tonnes = co2Kg / 1000;
+  const energyGJ = (totalLitres / 1000) * energyContent;
 
   const siteBreakdown = useMemo(() => {
     const map: Record<string, number> = {};
@@ -1070,9 +1237,9 @@ function EmissionsTab({ transactions, companyName }: { transactions: any[]; comp
       map[site] = (map[site] || 0) + (t.cantidad || 0);
     });
     return Object.entries(map)
-      .map(([site, litres]) => ({ site, litres, kg: litres * CO2_FACTOR, tonnes: (litres * CO2_FACTOR) / 1000 }))
+      .map(([site, litres]) => ({ site, litres, kg: litres * effectiveFactor, tonnes: (litres * effectiveFactor) / 1000 }))
       .sort((a, b) => b.litres - a.litres);
-  }, [inPeriod]);
+  }, [inPeriod, effectiveFactor]);
 
   const exportPDF = () => {
     generateEmissionsPDF({
