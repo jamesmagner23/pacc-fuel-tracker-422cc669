@@ -27,8 +27,12 @@ function CustomerList() {
       else if (w >= 1024) perRow = 5;
       else if (w >= 768) perRow = 4;
       else if (w >= 480) perRow = 3;
-      const rows = h < 700 ? 2 : h < 900 ? 3 : 4;
-      setPageSize(perRow * rows);
+      // target ~12 tiles per page, scale up on taller screens
+      let target = 12;
+      if (h >= 900) target = 18;
+      if (h >= 1100) target = 24;
+      // round to a multiple of perRow for clean grid
+      setPageSize(Math.max(perRow, Math.round(target / perRow) * perRow));
     };
     compute();
     window.addEventListener("resize", compute);
