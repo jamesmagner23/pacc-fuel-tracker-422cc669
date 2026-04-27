@@ -843,6 +843,19 @@ function DeliveriesTab({
   const { data: assignments = [] } = useProjectAssignments(clientAccountId);
   const { data: plantItems = [] } = usePlantItems(clientAccountId);
 
+  // Per-transaction overrides set by drivers/admins
+  const txnIds = useMemo(
+    () => transactions.map((t: any) => Number(t.id)).filter((n) => Number.isFinite(n)),
+    [transactions]
+  );
+  const { data: overrides = {} } = useTransactionOverrides(txnIds);
+
+  const plantById = useMemo(() => {
+    const m: Record<string, typeof plantItems[number]> = {};
+    plantItems.forEach((pi) => { m[pi.id] = pi; });
+    return m;
+  }, [plantItems]);
+
   const [siteFilter, setSiteFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
