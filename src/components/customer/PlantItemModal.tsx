@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useUpsertPlantItem, type PlantItem } from "@/hooks/usePlantItems";
+import { useFtcRates } from "@/hooks/useFtcRates";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Props {
   open: boolean;
@@ -15,6 +17,7 @@ interface Props {
 
 export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }: Props) {
   const upsert = useUpsertPlantItem();
+  const { data: ftcRates = [] } = useFtcRates();
   const [form, setForm] = useState({
     id: "",
     placa: "",
@@ -24,6 +27,7 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
     description: "",
     photo_url: "",
     service_notes: "",
+    ftc_rate_id: "",
   });
 
   useEffect(() => {
@@ -37,6 +41,7 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
         description: initial?.description || "",
         photo_url: initial?.photo_url || "",
         service_notes: initial?.service_notes || "",
+        ftc_rate_id: (initial as any)?.ftc_rate_id || "",
       });
     }
   }, [open, initial]);
@@ -53,6 +58,7 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
       description: form.description || null,
       photo_url: form.photo_url || null,
       service_notes: form.service_notes || null,
+      ftc_rate_id: form.ftc_rate_id || null,
     } as any);
     onOpenChange(false);
   };
@@ -93,6 +99,28 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
           <div>
             <Label>Service Notes</Label>
             <Textarea rows={2} value={form.service_notes} onChange={(e) => setForm({ ...form, service_notes: e.target.value })} />
+          </div>
+          <div>
+            <Label>Fuel Tax Credit Category</Label>
+            <Select
+              value={form.ftc_rate_id || "none"}
+              onValueChange={(v) => setForm({ ...form, ftc_rate_id: v === "none" ? "" : v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select FTC category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Not eligible / unset —</SelectItem>
+                {ftcRates.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.equipment_type} — {(Number(r.rate_per_litre) * 100).toFixed(1)}c/L
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Used to calculate claimable fuel tax credits from delivered litres.
+            </p>
           </div>
         </div>
         <DialogFooter>
