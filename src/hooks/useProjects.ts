@@ -130,3 +130,62 @@ export function useToggleAssignment() {
     onError: (e: any) => toast({ title: "Update failed", description: e.message, variant: "destructive" }),
   });
 }
+
+/**
+ * Moves a plant item from any current project(s) to a single target project.
+ * Pass target_project_id = null to unassign (remove all assignments for this item).
+ */
+export function useMoveAssignment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      plant_item_id,
+      target_project_id,
+    }: {
+      plant_item_id: string;
+      target_project_id: string | null;
+      client_account_id: number;
+    }) => {
+      // Remove existing assignments for this plant item
+      const { error: delErr } = await supabase
+        .from("project_plant_assignments")
+        .delete()
+        .eq("plant_item_id", plant_item_id);
+      if (delErr) throw delErr;
+
+      if (target_project_id) {
+        const { error: insErr } = await supabase
+          .from("project_plant_assignments")
+          .insert({ plant_item_id, project_id: target_project_id });
+        if (insErr && !insErr.message.includes("duplicate")) throw insErr;
+      }
+    },
+    onMutate: async (vars) => {
+      await qc.cancelQueries({ queryKey: ["project-assignments", vars.client_account_id] });
+      const prev = qc.getQueryData<any[]>(["project-assignments", vars.client_account_id]);
+      if (prev) {
+        const next = prev.filter((a) => a.plant_item_id !== vars.plant_item_id);
+        if (vars.target_project_id) {
+          next.push({
+            id: `temp-${Date.now()}`,
+            project_id: vars.target_project_id,
+            plant_item_id: vars.plant_item_id,
+            assigned_at: new Date().toISOString(),
+            removed_at: null,
+          });
+        }
+        qc.setQueryData(["project-assignments", vars.client_account_id], next);
+      }
+      return { prev };
+    },
+    onError: (e: any, vars, ctx) => {
+      if (ctx?.prev) {
+        qc.setQueryData(["project-assignments", vars.client_account_id], ctx.prev);
+      }
+      toast({ title: "Move failed", description: e.message, variant: "destructive" });
+    },
+    onSettled: (_d, _e, vars) => {
+      qc.invalidateQueries({ queryKey: ["project-assignments", vars.client_account_id] });
+    },
+  });
+}
