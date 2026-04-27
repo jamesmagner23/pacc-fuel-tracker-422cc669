@@ -923,6 +923,30 @@ function DeliveriesTab({
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
 
+  // Unique unmapped placas (across ALL transactions, not just current filter)
+  // so the bulk tool always shows the full backlog.
+  const unmappedPlacaList = useMemo(() => {
+    const map = new Map<string, { count: number; litres: number }>();
+    transactions.forEach((t) => {
+      const placa = (t.placa || "").toString().trim();
+      if (!placa) return;
+      if (unmappedPlacaSet[placa]) return; // already mapped
+      const cur = map.get(placa) || { count: 0, litres: 0 };
+      cur.count += 1;
+      cur.litres += t.cantidad || 0;
+      map.set(placa, cur);
+    });
+    return Array.from(map.entries())
+      .map(([placa, v]) => ({ placa, ...v }))
+      .sort((a, b) => b.litres - a.litres);
+  }, [transactions, unmappedPlacaSet]);
+
+  const openMapPlaca = (placa: string) => {
+    setPrefillPlaca(placa);
+    setBulkOpen(false);
+    setPlantModalOpen(true);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {/* Unmapped warning banner — shown when there are unmapped placas
@@ -940,6 +964,7 @@ function DeliveriesTab({
             borderRadius: 8,
             color: "#F5E6D0",
             fontSize: 12,
+            flexWrap: "wrap",
           }}
         >
           <span style={{ fontSize: 16, lineHeight: 1 }}>⚠️</span>
@@ -950,6 +975,27 @@ function DeliveriesTab({
             item — add the placa under <em>Plant</em> to enable project tagging,
             colour coding and notes.
           </div>
+          {clientAccountId != null && unmappedPlacaList.length > 0 && (
+            <button
+              onClick={() => setBulkOpen(true)}
+              style={{
+                background: "transparent",
+                color: "#F59E0B",
+                border: "1px solid #F59E0B",
+                padding: "6px 10px",
+                borderRadius: 4,
+                fontSize: 11,
+                fontFamily: T.sansHead,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              Bulk Map ({unmappedPlacaList.length})
+            </button>
+          )}
           <button
             onClick={() => portalFilters.setUnmappedOnly(true)}
             style={{
