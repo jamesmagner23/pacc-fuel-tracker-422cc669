@@ -269,6 +269,8 @@ export default function EBITDATab() {
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)" }}
+                  labelStyle={{ color: "var(--text-primary)", fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: "var(--text-primary)" }}
                   formatter={(v: number, name: string) => [`$${Number(v).toLocaleString()}`, name]}
                 />
                 <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
