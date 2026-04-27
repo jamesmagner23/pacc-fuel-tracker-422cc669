@@ -1286,27 +1286,81 @@ function EmissionsTab({ transactions, companyName }: { transactions: any[]; comp
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
         <div style={card}>
           <div style={labelStyle}>Diesel Delivered</div>
-          <div style={{ fontSize: 28, fontFamily: T.sansHead, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: 26, fontFamily: T.sansHead, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
             {fmtL(totalLitres)}
           </div>
           <div style={{ ...muted(11), marginTop: 4 }}>{periodInfo.label}</div>
         </div>
         <div style={card}>
           <div style={labelStyle}>CO₂e (Tonnes)</div>
-          <div style={{ fontSize: 28, fontFamily: T.sansHead, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: 26, fontFamily: T.sansHead, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
             {fmtNum(co2Tonnes, 2)}
           </div>
-          <div style={{ ...muted(11), marginTop: 4 }}>tonnes CO₂e</div>
+          <div style={{ ...muted(11), marginTop: 4 }}>tonnes CO₂e (Scope 1)</div>
         </div>
         <div style={card}>
           <div style={labelStyle}>CO₂e (Kg)</div>
-          <div style={{ fontSize: 28, fontFamily: T.sansHead, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: 26, fontFamily: T.sansHead, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
             {fmtNum(co2Kg, 0)}
           </div>
           <div style={{ ...muted(11), marginTop: 4 }}>kg CO₂e</div>
+        </div>
+        <div style={card}>
+          <div style={labelStyle}>Energy Content</div>
+          <div style={{ fontSize: 26, fontFamily: T.sansHead, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+            {fmtNum(energyGJ, 2)}
+          </div>
+          <div style={{ ...muted(11), marginTop: 4 }}>GJ (NGER)</div>
+        </div>
+      </div>
+
+      {/* Editable NGER assumptions */}
+      <div style={card}>
+        <div style={{ ...labelStyle, marginBottom: 4 }}>NGER Assumptions</div>
+        <div style={{ ...muted(11), marginBottom: 12 }}>
+          Override defaults to match your own NGER methodology before exporting.
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Emission Factor (kg CO₂e/L)</label>
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              value={factor}
+              onChange={(e) => setFactor(parseFloat(e.target.value) || 0)}
+              style={inputStyle}
+            />
+            <div style={{ ...muted(11), marginTop: 4 }}>Default 2.68 (NGA diesel)</div>
+          </div>
+          <div>
+            <label style={labelStyle}>Energy Content (GJ/kL)</label>
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              value={energyContent}
+              onChange={(e) => setEnergyContent(parseFloat(e.target.value) || 0)}
+              style={inputStyle}
+            />
+            <div style={{ ...muted(11), marginTop: 4 }}>Default 38.6 (NGER diesel)</div>
+          </div>
+          <div>
+            <label style={labelStyle}>Oxidation Factor</label>
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              max={1}
+              value={oxidationFactor}
+              onChange={(e) => setOxidationFactor(parseFloat(e.target.value) || 0)}
+              style={inputStyle}
+            />
+            <div style={{ ...muted(11), marginTop: 4 }}>Default 1.0</div>
+          </div>
         </div>
       </div>
 
