@@ -805,10 +805,18 @@ function OverviewTab({
 // ═══════════════════════════════════════════════════════════════════════
 function DeliveriesTab({
   transactions,
+  allTransactionsCount,
+  portalFilters,
+  unmappedCount,
+  placaToPlant,
   demoSuffix,
   clientAccountId,
 }: {
   transactions: any[];
+  allTransactionsCount: number;
+  portalFilters: ReturnType<typeof usePortalFilters>;
+  unmappedCount: number;
+  placaToPlant: Record<string, string>;
   demoSuffix: string;
   clientAccountId: number | null;
 }) {
