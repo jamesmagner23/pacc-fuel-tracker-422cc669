@@ -282,7 +282,7 @@ export default function BuyPriceTab() {
                   labelStyle={{ color: "var(--text-primary)" }}
                   itemStyle={{ color: "var(--text-primary)" }}
                   formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]}
-                  cursor={{ stroke: "hsl(var(--muted-foreground) / 0.2)" }}
+                  cursor={{ stroke: "rgba(196,168,130,0.2)" }}
                 />
                 {avgPrice > 0 && <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground) / 0.4)" strokeWidth={1} />}
                 <Line type="monotone" dataKey="price" stroke="hsl(25, 95%, 53%)" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "hsl(25, 95%, 53%)" }} />
@@ -297,11 +297,11 @@ export default function BuyPriceTab() {
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end flex-wrap">
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] text-muted-foreground">Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-40" />
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-40" />
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] text-muted-foreground">Buy Price / Litre ($)</label>
-            <input type="number" step="0.0001" placeholder="e.g. 2.5400" value={price} onChange={(e) => setPrice(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }} className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-44" />
+            <input type="number" step="0.0001" placeholder="e.g. 2.5400" value={price} onChange={(e) => setPrice(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-44" />
           </div>
           <div className="flex gap-2">
             <button onClick={handleSave} disabled={upsert.isPending} className="bg-primary text-primary-foreground border-none rounded-full px-5 py-2 text-xs font-semibold cursor-pointer disabled:opacity-70">
@@ -319,7 +319,7 @@ export default function BuyPriceTab() {
             <div className="text-[11px] text-muted-foreground">
               One entry per line: <span className="text-foreground/70">YYYY-MM-DD, price</span>
             </div>
-            <textarea value={bulkText} onChange={(e) => setBulkText(e.target.value)} placeholder={"2026-03-01, 2.1520\n2026-03-06, 1.8022"} rows={8} className="bg-[hsl(var(--muted))] border border-surface-border rounded-lg text-foreground p-3 text-xs font-mono outline-none resize-y w-full" />
+            <textarea value={bulkText} onChange={(e) => setBulkText(e.target.value)} placeholder={"2026-03-01, 2.1520\n2026-03-06, 1.8022"} rows={8} className="bg-raised border border-surface-border rounded-lg text-foreground p-3 text-xs font-mono outline-none resize-y w-full" />
             <button onClick={handleBulkSave} disabled={upsert.isPending} className="bg-primary text-primary-foreground border-none rounded-full px-5 py-2 text-xs font-semibold cursor-pointer self-start">
               Save All Entries
             </button>
