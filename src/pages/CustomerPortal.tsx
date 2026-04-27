@@ -79,6 +79,7 @@ function useCustomerProfile() {
           client_account_id: a.id,
           companyName: a.company_name,
           speedsolNames: a.speedsol_names,
+          email: "demo@client.com",
         };
       }
       const { data: { user } } = await supabase.auth.getUser();
@@ -101,7 +102,7 @@ function useCustomerProfile() {
           speedsolNames = ca.speedsol_names || [];
         }
       }
-      return { ...data, companyName, speedsolNames };
+      return { ...data, companyName, speedsolNames, email: user.email || "" };
     },
   });
 }
