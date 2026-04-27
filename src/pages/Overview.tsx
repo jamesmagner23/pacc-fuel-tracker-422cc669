@@ -35,7 +35,7 @@ function TopCustomersTrendCard({
   series,
   totals,
 }: {
-  series: { date: string; [k: string]: string | number }[];
+  series: Array<Record<string, string | number>>;
   totals: { name: string; litres: number }[];
 }) {
   const tc = useThemeColors();
