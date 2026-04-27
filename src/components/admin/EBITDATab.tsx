@@ -1,62 +1,13 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { useOperatingExpenses, dailyRateFor } from "@/hooks/useOperatingExpenses";
+import RecurringExpensesPanel from "./RecurringExpensesPanel";
 import { subDays, parseISO, format, startOfMonth, endOfMonth, differenceInCalendarDays, eachDayOfInterval } from "date-fns";
 import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine, AreaChart, Area } from "recharts";
-import { DollarSign, Wallet } from "lucide-react";
-
-// Clamp arbitrary input to a safe non-negative finite number.
-const sanitizeAmount = (val: unknown): number => {
-  const n = typeof val === "number" ? val : Number(val);
-  if (!Number.isFinite(n) || n < 0) return 0;
-  // Cap at a sane upper bound to avoid distorting charts on accidental huge entries
-  return Math.min(n, 1_000_000_000);
-};
-
-// Ensure every key in OpexState has a finite, non-negative number.
-const normalizeOpex = (raw: Partial<OpexState> | undefined | null): OpexState => ({
-  wages: sanitizeAmount(raw?.wages),
-  fleet: sanitizeAmount(raw?.fleet),
-  rent: sanitizeAmount(raw?.rent),
-  insurance: sanitizeAmount(raw?.insurance),
-  fuel: sanitizeAmount(raw?.fuel),
-  repayments: sanitizeAmount(raw?.repayments),
-  tolls: sanitizeAmount(raw?.tolls),
-  other: sanitizeAmount(raw?.other),
-});
-
-const STORAGE_KEY = "admin_ebitda_opex_v2";
-type OpexState = {
-  wages: number;
-  fleet: number;
-  rent: number;
-  insurance: number;
-  fuel: number;
-  repayments: number;
-  tolls: number;
-  other: number;
-};
-
-const DEFAULT_OPEX: OpexState = {
-  wages: 0,
-  fleet: 0,
-  rent: 0,
-  insurance: 0,
-  fuel: 0,
-  repayments: 0,
-  tolls: 0,
-  other: 0,
-};
+import { Wallet } from "lucide-react";
 
 type Period = "30d" | "90d" | "ytd" | "12m";
-type OpexByPeriod = Record<Period, OpexState>;
-
-const DEFAULT_OPEX_BY_PERIOD: OpexByPeriod = {
-  "30d": { ...DEFAULT_OPEX },
-  "90d": { ...DEFAULT_OPEX },
-  ytd: { ...DEFAULT_OPEX },
-  "12m": { ...DEFAULT_OPEX },
-};
 
 const PERIOD_LABELS: Record<Period, string> = {
   "30d": "Last 30 days",
@@ -67,25 +18,11 @@ const PERIOD_LABELS: Record<Period, string> = {
 
 export default function EBITDATab() {
   const [period, setPeriod] = useState<Period>("30d");
-  const [opexByPeriod, setOpexByPeriod] = useState<OpexByPeriod>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) return DEFAULT_OPEX_BY_PERIOD;
-      const parsed = JSON.parse(saved);
-      return {
-        "30d": normalizeOpex(parsed["30d"]),
-        "90d": normalizeOpex(parsed["90d"]),
-        ytd: normalizeOpex(parsed.ytd),
-        "12m": normalizeOpex(parsed["12m"]),
-      };
-    } catch {
-      return DEFAULT_OPEX_BY_PERIOD;
-    }
-  });
-  const opex = opexByPeriod[period];
+  const [recurringPeriodTotal, setRecurringPeriodTotal] = useState(0);
 
   const { data: txns = [], isLoading } = useAllTransactions();
   const { data: buyPrices = [] } = useBuyPrices(730);
+  const { data: expenses = [] } = useOperatingExpenses();
 
   const periodStart = useMemo(() => {
     const today = new Date();
@@ -96,6 +33,11 @@ export default function EBITDATab() {
       case "12m": return subDays(today, 365);
     }
   }, [period]);
+
+  const periodDays = useMemo(
+    () => Math.max(1, differenceInCalendarDays(new Date(), periodStart) + 1),
+    [periodStart]
+  );
 
   // Sorted buy prices ascending for lookup
   const sortedBuy = useMemo(
@@ -129,16 +71,14 @@ export default function EBITDATab() {
       cogs += l * buy;
     });
     const grossProfit = revenue - cogs;
-    const totalOpex = Object.values(opex).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+    const totalOpex = recurringPeriodTotal;
     const ebitda = grossProfit - totalOpex;
     return { revenue, cogs, grossProfit, totalOpex, ebitda, litres, gpMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0, ebitdaMargin: revenue > 0 ? (ebitda / revenue) * 100 : 0 };
-  }, [periodTxns, sortedBuy, opex]);
+  }, [periodTxns, sortedBuy, recurringPeriodTotal]);
 
   // Monthly chart: always show last 12 months for context, pro-rate OpEx by days
   const monthlyChart = useMemo(() => {
-    const totalOpex = Object.values(opex).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
-    const periodDays = Math.max(1, differenceInCalendarDays(new Date(), periodStart) + 1);
-    const dailyOpex = totalOpex / periodDays;
+    const dailyOpex = recurringPeriodTotal / periodDays;
 
     const byMonth: Record<string, { revenue: number; cogs: number; litres: number }> = {};
     // Use ALL transactions, not just period — chart is always trailing 12 months
@@ -176,37 +116,29 @@ export default function EBITDATab() {
         ebitda: Math.round(gp - opexShare),
       };
     });
-  }, [txns, sortedBuy, opex, periodStart]);
+  }, [txns, sortedBuy, recurringPeriodTotal, periodStart, periodDays]);
 
-  const handleOpex = (key: keyof OpexState, val: string) => {
-    // Allow empty string while typing → treat as 0 for totals; store sanitized number
-    const trimmed = val.trim();
-    const safe = trimmed === "" ? 0 : sanitizeAmount(trimmed);
-    const nextPeriodOpex = normalizeOpex({ ...opex, [key]: safe });
-    const next = { ...opexByPeriod, [period]: nextPeriodOpex };
-    setOpexByPeriod(next);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
-  };
+  // Sum of daily repayments contribution from active 'Repayments' expenses
+  const dailyRepayments = useMemo(
+    () =>
+      expenses
+        .filter((e) => e.is_active && e.category === "Repayments")
+        .reduce((s, e) => s + dailyRateFor(e), 0),
+    [expenses]
+  );
 
-  // Repayments time-series for the selected period, with rolling average.
   const repaymentsSeries = useMemo(() => {
     const today = new Date();
     const days = eachDayOfInterval({ start: periodStart, end: today });
     if (days.length === 0) return [];
-    // Repayments entered as a period total → spread evenly across days.
-    const dailyRepayment = (opex.repayments || 0) / days.length;
-    const window = Math.min(7, days.length); // 7-day rolling average (or shorter if period < 7d)
-    return days.map((d, i) => {
-      const start = Math.max(0, i - window + 1);
-      const slice = i - start + 1;
-      const rolling = (dailyRepayment * slice) / slice; // constant in this model
-      return {
-        date: format(d, days.length > 90 ? "MMM d" : "MMM d"),
-        repayment: Math.round(dailyRepayment),
-        rolling: Math.round(rolling),
-      };
-    });
-  }, [opex.repayments, periodStart]);
+    return days.map((d) => ({
+      date: format(d, "MMM d"),
+      repayment: Math.round(dailyRepayments),
+      rolling: Math.round(dailyRepayments),
+    }));
+  }, [dailyRepayments, periodStart]);
+
+  const handleRecurringTotal = useCallback((total: number) => setRecurringPeriodTotal(total), []);
 
   const accent = "var(--accent)";
   const muted = "var(--text-secondary)";
@@ -287,54 +219,10 @@ export default function EBITDATab() {
           </div>
         </div>
 
-        {/* OpEx editor */}
-        <div className="bg-surface border border-surface-border rounded-[10px] p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Operating Expenses</h3>
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            Total for <span className="text-foreground font-medium">{PERIOD_LABELS[period]}</span>. Each period stores its own values. Saved locally.
-          </p>
-          {([
-            { key: "wages", label: "Wages & Salaries" },
-            { key: "fleet", label: "Fleet & Maintenance" },
-            { key: "fuel", label: "Vehicle Fuel" },
-            { key: "repayments", label: "Loan Repayments" },
-            { key: "tolls", label: "Tolls" },
-            { key: "rent", label: "Rent & Utilities" },
-            { key: "insurance", label: "Insurance" },
-            { key: "other", label: "Other" },
-          ] as { key: keyof OpexState; label: string }[]).map((row) => (
-            <div key={row.key} className="flex items-center justify-between gap-2">
-              <label className="text-xs text-muted-foreground flex-1">{row.label}</label>
-              <div className="relative w-32">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-                <input
-                  type="number"
-                  min={0}
-                  step="any"
-                  inputMode="decimal"
-                  value={opex[row.key] || ""}
-                  onChange={(e) => handleOpex(row.key, e.target.value)}
-                  onBlur={(e) => {
-                    // Re-normalize on blur so junk like "abc" or negatives clear to 0
-                    if (e.target.value.trim() === "") return;
-                    const safe = sanitizeAmount(e.target.value);
-                    if (safe !== Number(e.target.value)) handleOpex(row.key, String(safe));
-                  }}
-                  className="w-full bg-raised border border-surface-border rounded-md pl-5 pr-2 py-1.5 text-xs text-foreground tabular-nums text-right outline-none focus:ring-1 focus:ring-primary/50"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          ))}
-          <div className="border-t border-border pt-3 flex justify-between text-sm font-semibold">
-            <span>Total OpEx</span>
-            <span className="tabular-nums">${totals.totalOpex.toLocaleString()}</span>
-          </div>
-        </div>
       </div>
+
+      {/* Recurring expenses (drives EBITDA OpEx) */}
+      <RecurringExpensesPanel periodDays={periodDays} onPeriodTotalChange={handleRecurringTotal} />
 
       <div className="text-[10px] text-muted-foreground">
         COGS calculated as litres × supplier buy price on each transaction date. Adjust buy prices in Finance → Buy Prices.
@@ -348,11 +236,11 @@ export default function EBITDATab() {
             <h3 className="text-sm font-semibold">Loan Repayments — {PERIOD_LABELS[period]}</h3>
           </div>
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span>Total: <span className="text-foreground font-medium tabular-nums">${opex.repayments.toLocaleString()}</span></span>
-            <span>Daily avg: <span className="text-foreground font-medium tabular-nums">${repaymentsSeries[0]?.repayment.toLocaleString() ?? 0}</span></span>
+            <span>Period total: <span className="text-foreground font-medium tabular-nums">${Math.round(dailyRepayments * periodDays).toLocaleString()}</span></span>
+            <span>Daily: <span className="text-foreground font-medium tabular-nums">${dailyRepayments.toFixed(2)}</span></span>
           </div>
         </div>
-        {opex.repayments > 0 ? (
+        {dailyRepayments > 0 ? (
           <div className="h-56">
             <ResponsiveContainer>
               <AreaChart data={repaymentsSeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -389,7 +277,7 @@ export default function EBITDATab() {
           </div>
         ) : (
           <div className="text-center text-xs text-muted-foreground py-12">
-            Enter a Loan Repayments amount above to see the time-series breakdown.
+            Add a Repayments-category expense above to see the time-series breakdown.
           </div>
         )}
       </div>
