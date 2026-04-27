@@ -1109,6 +1109,27 @@ function DeliveriesTab({
                           ⚠ Unmapped
                         </span>
                       )}
+                      {placa && !unmappedPlacaSet[placa] && clientAccountId != null && (
+                        <button
+                          onClick={() => openMapPlaca(placa)}
+                          title={`Map ${placa} to a plant item`}
+                          style={{
+                            background: "transparent",
+                            color: "#F59E0B",
+                            border: "1px solid rgba(245, 158, 11, 0.55)",
+                            borderRadius: 3,
+                            padding: "1px 6px",
+                            fontSize: 9,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            fontFamily: T.sansHead,
+                          }}
+                        >
+                          Map →
+                        </button>
+                      )}
                       {!placa && (
                         <span
                           title="No placa recorded on this delivery."
