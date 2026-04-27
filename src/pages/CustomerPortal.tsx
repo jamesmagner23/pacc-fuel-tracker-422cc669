@@ -128,20 +128,6 @@ function useCustomerTransactions(speedsolNames: string[]) {
   });
 }
 
-function useFtcRates() {
-  return useQuery({
-    queryKey: ["ftc-rates"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ftc_rates")
-        .select("*")
-        .order("display_order");
-      if (error) throw error;
-      return data || [];
-    },
-  });
-}
-
 function useDeliveryRequests(clientAccountId: number | null) {
   return useQuery({
     queryKey: ["delivery-requests", clientAccountId],
