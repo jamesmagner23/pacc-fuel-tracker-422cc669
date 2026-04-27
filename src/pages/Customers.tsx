@@ -42,34 +42,62 @@ function CustomerList() {
       {rows.length === 0 ? (
         <div className="text-center text-muted-foreground py-12">No customers found. Click <strong>Sync Now</strong> to pull data.</div>
       ) : (
-        <div className="space-y-2">
-          {rows.map((c, i) => (
-            <button
-              key={c.name}
-              onClick={() => navigate(`/customers/${encodeURIComponent(c.name)}`)}
-              className="w-full glass-card p-3 sm:p-4 flex items-center justify-between hover:border-primary/30 transition-colors text-left animate-fade-in"
-              style={{ animationDelay: `${i * 30}ms` }}
-            >
-              <div className="min-w-0 flex-1 mr-3">
-                <div className="font-semibold text-xs sm:text-sm truncate">{c.name}</div>
-              </div>
-              <div className="flex gap-3 sm:gap-6 text-right shrink-0">
-                <div>
-                  <div className="text-xs sm:text-sm font-bold">{c.litres.toLocaleString()}L</div>
-                  <div className="text-[9px] sm:text-[10px] text-muted-foreground">Volume</div>
-                </div>
-                <div className="hidden sm:block">
-                  <div className="text-sm font-bold">{c.deliveries}</div>
-                  <div className="text-[10px] text-muted-foreground">Deliveries</div>
-                </div>
-                <div>
-                  <div className="text-xs sm:text-sm font-bold">${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                  <div className="text-[9px] sm:text-[10px] text-muted-foreground">Revenue</div>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="text-[11px] text-muted-foreground">
+            {rows.length} {rows.length === 1 ? "customer" : "customers"}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {rows.map((c, i) => {
+              const initials = c.name
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((w) => w[0])
+                .join("")
+                .toUpperCase();
+              return (
+                <button
+                  key={c.name}
+                  onClick={() => navigate(`/customers/${encodeURIComponent(c.name)}`)}
+                  className="group relative aspect-square glass-card p-3 sm:p-4 flex flex-col justify-between text-left hover:border-primary/40 hover:-translate-y-0.5 transition-all animate-fade-in overflow-hidden"
+                  style={{ animationDelay: `${i * 20}ms` }}
+                  title={c.name}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[11px] sm:text-xs font-bold shrink-0">
+                      {initials || "?"}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Deliveries</div>
+                      <div className="text-xs sm:text-sm font-semibold tabular-nums">{c.deliveries}</div>
+                    </div>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="font-semibold text-xs sm:text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                      {c.name}
+                    </div>
+                  </div>
+
+                  <div className="flex items-end justify-between gap-2 pt-1 border-t border-border/40">
+                    <div>
+                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Volume</div>
+                      <div className="text-xs sm:text-sm font-bold tabular-nums">
+                        {c.litres >= 1000 ? `${(c.litres / 1000).toFixed(1)}k` : c.litres.toFixed(0)}L
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Revenue</div>
+                      <div className="text-xs sm:text-sm font-bold tabular-nums">
+                        ${c.revenue >= 1000 ? `${(c.revenue / 1000).toFixed(1)}k` : c.revenue.toFixed(0)}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
