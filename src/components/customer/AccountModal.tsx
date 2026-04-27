@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X, AlertCircle, CheckCircle2 } from "lucide-react";
 import {
   useClientProfile,
   useUpsertClientProfile,
   type ClientProfile,
 } from "@/hooks/useClientProfile";
+import { abnError, formatAbn, stripAbn } from "@/lib/abn";
 
 const T = {
   bg: "#120a04",
@@ -72,11 +73,20 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
   const set = (k: keyof ClientProfile, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  // ABN: stored as digits-only in DB; displayed/edited as "XX XXX XXX XXX"
+  const abnDigits = stripAbn((form.abn as string) || "");
+  const abnDisplay = formatAbn(abnDigits);
+  const abnIssue = abnError(abnDigits);
+  const abnValid = abnDigits.length === 11 && !abnIssue;
+
   const handleSave = () => {
     if (!clientAccountId) return;
+    if (abnIssue) return; // blocked by validation
     // Only send client-editable fields. Admin fields stay untouched.
     const payload = {
       client_account_id: clientAccountId,
+      legal_business_name: form.legal_business_name?.trim() || null,
+      abn: abnDigits || null,
       website: form.website ?? null,
       primary_contact_name: form.primary_contact_name ?? null,
       primary_contact_email: form.primary_contact_email ?? null,
@@ -249,7 +259,7 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
             <p style={{ color: T.muted, fontSize: 13 }}>Loading...</p>
           ) : (
             <>
-              {/* Admin-managed business details (read-only) */}
+              {/* Business details — ABN & legal name client-editable, billing admin-only */}
               <div
                 style={{
                   background: T.card,
@@ -277,19 +287,6 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
                   >
                     Business Details
                   </div>
-                  <span
-                    style={{
-                      fontSize: 9,
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      color: T.muted,
-                      border: `1px solid ${T.border}`,
-                      padding: "3px 8px",
-                      borderRadius: 4,
-                    }}
-                  >
-                    Admin-managed
-                  </span>
                 </div>
                 <div
                   style={{
@@ -301,19 +298,73 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
                   <div>
                     <label style={label}>Legal Business Name</label>
                     <input
-                      style={inputDisabled}
-                      value={profile?.legal_business_name || companyName}
-                      disabled
+                      style={input}
+                      value={form.legal_business_name || ""}
+                      onChange={(e) => set("legal_business_name", e.target.value)}
+                      placeholder={companyName}
+                      maxLength={120}
                     />
                   </div>
                   <div>
-                    <label style={label}>ABN</label>
+                    <label style={label}>
+                      ABN{" "}
+                      <span style={{ color: T.muted, textTransform: "none", letterSpacing: 0 }}>
+                        (11 digits)
+                      </span>
+                    </label>
                     <input
-                      style={inputDisabled}
-                      value={profile?.abn || ""}
-                      placeholder="Not set"
-                      disabled
+                      style={{
+                        ...input,
+                        borderColor: abnIssue
+                          ? "#e0593c"
+                          : abnValid
+                          ? "#3a7d4a"
+                          : T.border,
+                        fontVariantNumeric: "tabular-nums",
+                        letterSpacing: "0.05em",
+                      }}
+                      value={abnDisplay}
+                      onChange={(e) => set("abn", stripAbn(e.target.value))}
+                      onBlur={() =>
+                        // normalise display on blur (also re-runs format)
+                        set("abn", stripAbn((form.abn as string) || ""))
+                      }
+                      placeholder="XX XXX XXX XXX"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      maxLength={14}
+                      aria-invalid={!!abnIssue}
+                      aria-describedby="abn-help"
                     />
+                    <div
+                      id="abn-help"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontSize: 11,
+                        marginTop: 4,
+                        color: abnIssue
+                          ? "#e0593c"
+                          : abnValid
+                          ? "#7bbf8b"
+                          : T.muted,
+                      }}
+                    >
+                      {abnIssue ? (
+                        <>
+                          <AlertCircle size={12} />
+                          <span>{abnIssue}</span>
+                        </>
+                      ) : abnValid ? (
+                        <>
+                          <CheckCircle2 size={12} />
+                          <span>Valid ABN</span>
+                        </>
+                      ) : (
+                        <span>Enter your 11-digit ABN — we'll format it automatically.</span>
+                      )}
+                    </div>
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={label}>Billing Address</label>
@@ -322,11 +373,11 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
                       value={billingLine || "Not set"}
                       disabled
                     />
+                    <p style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>
+                      Billing address is admin-managed — contact your account manager to update it.
+                    </p>
                   </div>
                 </div>
-                <p style={{ fontSize: 11, color: T.muted, marginTop: 10 }}>
-                  Need to update these? Contact your account manager.
-                </p>
               </div>
 
               {/* Client-editable: website */}
@@ -406,7 +457,7 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
           </button>
           <button
             onClick={handleSave}
-            disabled={upsert.isPending || !clientAccountId}
+            disabled={upsert.isPending || !clientAccountId || !!abnIssue}
             style={{
               background: T.accent,
               border: "none",
@@ -418,9 +469,10 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
               fontWeight: 600,
               letterSpacing: "0.08em",
               textTransform: "uppercase",
-              cursor: upsert.isPending ? "wait" : "pointer",
-              opacity: upsert.isPending ? 0.7 : 1,
+              cursor: upsert.isPending ? "wait" : abnIssue ? "not-allowed" : "pointer",
+              opacity: upsert.isPending || abnIssue ? 0.6 : 1,
             }}
+            title={abnIssue || undefined}
           >
             {upsert.isPending ? "Saving..." : "Save Changes"}
           </button>
