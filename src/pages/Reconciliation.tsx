@@ -205,7 +205,7 @@ function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any
         <p className="text-xl font-bold text-foreground">{totalPump.toLocaleString()}L</p>
       </div>
       <div className="card p-4">
-        <p className="kpi-label mb-1">Total SpeedSol Delivery</p>
+        <p className="kpi-label mb-1">Total Fuel System Delivery</p>
         <p className="text-xl font-bold text-foreground">{totalSpeedsol.toLocaleString()}L</p>
       </div>
       <div className="card p-4">
@@ -238,7 +238,7 @@ function DailyBreakdownTable({ rows }: { rows: DailyReconRow[] }) {
             <tr className="border-b border-surface-border">
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Date</th>
               <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Pump (L)</th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">SpeedSol (L)</th>
+              <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Fuel System (L)</th>
               <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Variance (L)</th>
               <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Variance %</th>
               <th className="text-center px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Status</th>
@@ -290,7 +290,7 @@ function DailyBreakdownTable({ rows }: { rows: DailyReconRow[] }) {
                           <p className="text-warning">⚠ Missing pump reading for this day</p>
                         )}
                         {row.speedsolLitres === 0 && row.pumpLitres > 0 && (
-                          <p className="text-warning">⚠ No SpeedSol transactions recorded</p>
+                          <p className="text-warning">⚠ No Fuel System transactions recorded</p>
                         )}
                         {row.pumpLitres === 0 && row.speedsolLitres === 0 && (
                           <p>No data recorded for this day</p>
