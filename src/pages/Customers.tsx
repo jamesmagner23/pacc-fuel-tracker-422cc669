@@ -13,6 +13,7 @@ function CustomerList() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState<"litres" | "deliveries" | "revenue">("litres");
   const navigate = useNavigate();
   const { data: filtered = [], isLoading } = useTransactions(range);
 
@@ -50,8 +51,8 @@ function CustomerList() {
     });
     return Object.values(map)
       .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => b.litres - a.litres);
-  }, [filtered, search]);
+      .sort((a, b) => b[sortBy] - a[sortBy]);
+  }, [filtered, search, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, totalPages - 1);
@@ -75,6 +76,30 @@ function CustomerList() {
           }}
           className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
         />
+      </div>
+
+      <div className="flex items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Sort by</span>
+        {([
+          { key: "litres", label: "Litres" },
+          { key: "deliveries", label: "Deliveries" },
+          { key: "revenue", label: "Revenue" },
+        ] as const).map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => {
+              setSortBy(opt.key);
+              setPage(0);
+            }}
+            className={`px-2.5 py-1 rounded-md border transition-colors ${
+              sortBy === opt.key
+                ? "bg-primary/15 border-primary/40 text-foreground font-semibold"
+                : "border-border text-muted-foreground hover:text-foreground hover:bg-card"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {rows.length === 0 ? (
