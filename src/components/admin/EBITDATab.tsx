@@ -257,6 +257,8 @@ export default function EBITDATab() {
             { key: "wages", label: "Wages & Salaries" },
             { key: "fleet", label: "Fleet & Maintenance" },
             { key: "fuel", label: "Vehicle Fuel" },
+            { key: "repayments", label: "Loan Repayments" },
+            { key: "tolls", label: "Tolls" },
             { key: "rent", label: "Rent & Utilities" },
             { key: "insurance", label: "Insurance" },
             { key: "other", label: "Other" },
