@@ -77,7 +77,7 @@ export default function ImportSpeedsolClients({ existingSpeedsolNames }: Props) 
       >
         <div>
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Import from Transactions</div>
-          <div className="text-[12px] text-muted-foreground">Auto-create client accounts from SpeedSol data</div>
+          <div className="text-[12px] text-muted-foreground">Auto-create client accounts from Fuel System data</div>
         </div>
         <Download className="w-4 h-4 text-muted-foreground" />
       </button>
@@ -88,7 +88,7 @@ export default function ImportSpeedsolClients({ existingSpeedsolNames }: Props) 
     <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
       <div className="flex items-center justify-between mb-3">
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-          Import SpeedSol Customers ({unimported.length} new)
+          Import Fuel System Customers ({unimported.length} new)
         </div>
         <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground p-1">
           <X className="w-4 h-4" />

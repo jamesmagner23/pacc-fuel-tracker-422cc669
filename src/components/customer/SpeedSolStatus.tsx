@@ -71,7 +71,7 @@ export function SpeedSolStatus({
   if (!linked) {
     dotColor = T.warn;
     Icon = AlertTriangle;
-    title = "Account not linked to SpeedSol";
+    title = "Account not linked to Fuel System";
     subtitle =
       "Your account hasn't been linked yet — contact your account manager to enable live deliveries.";
   } else if (isDemo) {
@@ -151,7 +151,7 @@ export function SpeedSolStatus({
               marginBottom: 2,
             }}
           >
-            SpeedSol Data Status
+            Fuel System Data Status
           </div>
           <div
             style={{
@@ -186,7 +186,7 @@ export function SpeedSolStatus({
           tone={linked ? "ok" : "warn"}
         />
         <Stat
-          label="SpeedSol Names"
+          label="Fuel System Names"
           value={linked ? String(speedsolNames.length) : "—"}
         />
         <Stat

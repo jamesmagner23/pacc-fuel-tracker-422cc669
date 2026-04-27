@@ -127,7 +127,7 @@ function ClientSiteCard({ site }: { site: DBSite }) {
           </div>
 
           <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--accent)" }}>
-            SpeedSol Codes
+            Fuel System Codes
           </div>
           <div className="rounded-lg overflow-hidden border border-surface-border">
             {site.codes.map((c, i) => (
