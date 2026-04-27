@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Filter, X, AlertTriangle, ChevronDown } from "lucide-react";
+import { Filter, X, ChevronDown } from "lucide-react";
 import type { PortalFilters } from "@/hooks/usePortalFilters";
 
 const T = {
@@ -18,7 +18,6 @@ interface Props {
   onTypes: (v: string[]) => void;
   onProjects: (v: string[]) => void;
   onTags: (v: string[]) => void;
-  onUnmappedOnly: (v: boolean) => void;
   onReset: () => void;
   /** Available equipment types from the client's plant_items. */
   availableTypes: string[];
@@ -26,8 +25,6 @@ interface Props {
   availableProjects: { id: string; name: string }[];
   /** Available tags [{ id, name }]. */
   availableTags: { id: string; name: string }[];
-  /** Number of unmapped placas in the current dataset (for the toggle badge). */
-  unmappedCount: number;
 }
 
 export function PortalFilterBar({
@@ -35,18 +32,15 @@ export function PortalFilterBar({
   onTypes,
   onProjects,
   onTags,
-  onUnmappedOnly,
   onReset,
   availableTypes,
   availableProjects,
   availableTags,
-  unmappedCount,
 }: Props) {
   const isActive =
     filters.types.length > 0 ||
     filters.projects.length > 0 ||
-    filters.tags.length > 0 ||
-    filters.unmappedOnly;
+    filters.tags.length > 0;
 
   return (
     <div
@@ -104,46 +98,6 @@ export function PortalFilterBar({
         onChange={onTags}
         emptyText="All tags"
       />
-
-      <button
-        type="button"
-        onClick={() => onUnmappedOnly(!filters.unmappedOnly)}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          background: filters.unmappedOnly ? `${T.warn}22` : "transparent",
-          border: `1px solid ${filters.unmappedOnly ? T.warn : T.border}`,
-          color: filters.unmappedOnly ? T.warn : T.textSecondary,
-          fontSize: 11,
-          fontFamily: T.sansHead,
-          fontWeight: 600,
-          letterSpacing: "0.06em",
-          padding: "6px 10px",
-          borderRadius: 6,
-          cursor: "pointer",
-        }}
-        aria-pressed={filters.unmappedOnly}
-      >
-        <AlertTriangle size={11} />
-        Unmapped only
-        {unmappedCount > 0 && (
-          <span
-            style={{
-              background: T.warn,
-              color: "#3D2B1A",
-              fontWeight: 700,
-              fontSize: 10,
-              padding: "0 5px",
-              borderRadius: 8,
-              minWidth: 16,
-              textAlign: "center",
-            }}
-          >
-            {unmappedCount}
-          </span>
-        )}
-      </button>
 
       {isActive && (
         <button
