@@ -521,7 +521,7 @@ export default function CustomerPortal() {
             display: "flex",
             gap: 0,
             borderBottom: `1px solid ${T.border}`,
-            marginBottom: 24,
+            marginBottom: 16,
             overflowX: "auto",
             scrollbarWidth: "none",
           }}
@@ -555,13 +555,31 @@ export default function CustomerPortal() {
           })}
         </div>
 
+        {/* Shared filter bar — applies to Overview / Deliveries / Plant */}
+        {(activeTab === "01 Overview" ||
+          activeTab === "02 Deliveries" ||
+          activeTab === "04 Plant") && (
+          <div style={{ marginBottom: 16 }}>
+            <PortalFilterBar
+              filters={portalFilters.filters}
+              onTypes={portalFilters.setTypes}
+              onProjects={portalFilters.setProjects}
+              onUnmappedOnly={portalFilters.setUnmappedOnly}
+              onReset={portalFilters.reset}
+              availableTypes={availableTypes}
+              availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
+              unmappedCount={unmappedCount}
+            />
+          </div>
+        )}
+
         {isLoading && activeTab !== "04 Plant" ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
             {activeTab === "01 Overview" && (
               <OverviewTab
-                transactions={transactions}
+                transactions={filteredTransactions}
                 demoSuffix={demoSuffix}
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
@@ -569,7 +587,11 @@ export default function CustomerPortal() {
             )}
             {activeTab === "02 Deliveries" && (
               <DeliveriesTab
-                transactions={transactions}
+                transactions={filteredTransactions}
+                allTransactionsCount={transactions.length}
+                portalFilters={portalFilters}
+                unmappedCount={unmappedCount}
+                placaToPlant={lookups.placaToPlant}
                 demoSuffix={demoSuffix}
                 clientAccountId={clientAccountId}
               />
@@ -577,7 +599,7 @@ export default function CustomerPortal() {
             {activeTab === "03 Projects" && (
               <ProjectsTab transactions={transactions} clientAccountId={clientAccountId} />
             )}
-            {activeTab === "04 Plant" && <PlantTab clientAccountId={clientAccountId} transactions={transactions} />}
+            {activeTab === "04 Plant" && <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />}
             {activeTab === "05 Emissions" && (
               <EmissionsTab transactions={transactions} companyName={companyName} />
             )}
