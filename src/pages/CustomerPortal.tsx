@@ -254,6 +254,25 @@ export default function CustomerPortal() {
   const speedsolNames = profile?.speedsolNames || [];
   const companyName = profile?.companyName || "Your Account";
   const clientAccountId = profile?.client_account_id || null;
+  const userEmail = (profile as any)?.email || "";
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = () => setMenuOpen(false);
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, [menuOpen]);
+
+  const initials = (companyName || "?")
+    .split(/\s+/)
+    .map((w) => w[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   const { data: transactions = [], isLoading } = useCustomerTransactions(speedsolNames);
 
@@ -279,26 +298,152 @@ export default function CustomerPortal() {
           }}
         >
           <PACCLogo />
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <span style={{ fontSize: 12, fontFamily: T.sansHead, letterSpacing: "0.08em", textTransform: "uppercase", color: T.muted }}>
-              {companyName}
-            </span>
+          <div style={{ position: "relative" }}>
             <button
-              onClick={handleSignOut}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: T.muted,
-                fontSize: 11,
-                fontFamily: T.sansHead,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                padding: 0,
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((o) => !o);
               }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                background: "transparent",
+                border: `1px solid ${T.border}`,
+                borderRadius: 999,
+                padding: "6px 12px 6px 6px",
+                cursor: "pointer",
+                color: T.text,
+              }}
+              aria-label="Account menu"
             >
-              Sign Out
+              <span
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: T.accent,
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 11,
+                  fontFamily: T.sansHead,
+                  fontWeight: 700,
+                  letterSpacing: "0.04em",
+                }}
+              >
+                {initials}
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontFamily: T.sansHead,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: T.textSecondary,
+                  maxWidth: 160,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {companyName}
+              </span>
+              <ChevronDown size={14} style={{ color: T.muted }} />
             </button>
+
+            {menuOpen && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "calc(100% + 8px)",
+                  background: T.surface,
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 8,
+                  minWidth: 220,
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+                  zIndex: 60,
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}` }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontFamily: T.sansHead,
+                      fontWeight: 600,
+                      color: T.text,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {companyName}
+                  </div>
+                  {userEmail && (
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: T.muted,
+                        marginTop: 2,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {userEmail}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setAccountOpen(true);
+                  }}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 14px",
+                    background: "transparent",
+                    border: "none",
+                    color: T.text,
+                    fontSize: 12,
+                    fontFamily: T.sansBody,
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <UserIcon size={14} style={{ color: T.muted }} />
+                  My Account
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 14px",
+                    background: "transparent",
+                    border: "none",
+                    borderTop: `1px solid ${T.border}`,
+                    color: T.text,
+                    fontSize: 12,
+                    fontFamily: T.sansBody,
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <LogOut size={14} style={{ color: T.muted }} />
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
