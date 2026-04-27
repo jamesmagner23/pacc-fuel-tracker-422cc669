@@ -114,7 +114,7 @@ export default function CustomerHub() {
         )}
         {!account && (
           <p className="text-xs text-primary mt-1">
-            No client account linked yet. Link this Speedsol name in Customers → Client Pricing to enable equipment & projects.
+            No client account linked yet. Link this Fuel System name in Customers → Client Pricing to enable equipment & projects.
           </p>
         )}
       </div>
