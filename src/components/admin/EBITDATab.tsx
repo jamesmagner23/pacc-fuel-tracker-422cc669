@@ -180,8 +180,22 @@ export default function EBITDATab() {
               <BarChart data={monthlyChart}>
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => `$${v.toLocaleString()}`} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Tooltip
+                  cursor={{ fill: "hsl(var(--foreground) / 0.06)" }}
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--primary) / 0.4)",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: "hsl(var(--foreground))",
+                    boxShadow: "0 8px 24px -8px hsl(0 0% 0% / 0.5)",
+                    padding: "8px 10px",
+                  }}
+                  labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600, marginBottom: 4 }}
+                  itemStyle={{ color: "hsl(var(--foreground))" }}
+                  formatter={(v: number) => `$${v.toLocaleString()}`}
+                />
+                <Legend wrapperStyle={{ fontSize: 11, color: "hsl(var(--foreground))" }} />
                 <Bar dataKey="revenue" name="Revenue" fill={accent} radius={[3, 3, 0, 0]} />
                 <Bar dataKey="cogs" name="COGS" fill="hsl(var(--muted-foreground))" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="ebitda" name="EBITDA" fill="hsl(var(--positive))" radius={[3, 3, 0, 0]} />
