@@ -288,6 +288,8 @@ export default function CustomerPortal() {
   const { data: plantItemsAll = [] } = usePlantItems(clientAccountId);
   const { data: projectsAll = [] } = useProjects(clientAccountId);
   const { data: assignmentsAll = [] } = useProjectAssignments(clientAccountId);
+  const { data: plantTagsAll = [] } = usePlantTags(clientAccountId);
+  const { data: plantTagLinks = [] } = usePlantItemTagLinks(clientAccountId);
 
   const lookups = useMemo(() => {
     const placaToPlant: Record<string, string> = {};
@@ -307,8 +309,18 @@ export default function CustomerPortal() {
       const placa = (pi.placa || "").toString().trim();
       if (placa && itemToProject[pi.id]) placaToProject[placa] = itemToProject[pi.id];
     });
-    return { placaToPlant, placaToType, placaToProject };
-  }, [plantItemsAll, assignmentsAll]);
+    // Build placa → tag IDs lookup
+    const itemToTagIds: Record<string, string[]> = {};
+    plantTagLinks.forEach((l) => {
+      (itemToTagIds[l.plant_item_id] ||= []).push(l.tag_id);
+    });
+    const placaToTags: Record<string, string[]> = {};
+    plantItemsAll.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (placa && itemToTagIds[pi.id]) placaToTags[placa] = itemToTagIds[pi.id];
+    });
+    return { placaToPlant, placaToType, placaToProject, placaToTags };
+  }, [plantItemsAll, assignmentsAll, plantTagLinks]);
 
   const availableTypes = useMemo(() => {
     const set = new Set<string>();
