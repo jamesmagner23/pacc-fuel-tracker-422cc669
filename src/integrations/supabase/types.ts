@@ -1103,6 +1103,51 @@ export type Database = {
         }
         Relationships: []
       }
+      transaction_overrides: {
+        Row: {
+          created_at: string
+          notes: string | null
+          plant_item_id: string | null
+          project_id: string | null
+          set_by: string | null
+          transaction_id: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          notes?: string | null
+          plant_item_id?: string | null
+          project_id?: string | null
+          set_by?: string | null
+          transaction_id: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          notes?: string | null
+          plant_item_id?: string | null
+          project_id?: string | null
+          set_by?: string | null
+          transaction_id?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_overrides_plant_item_id_fkey"
+            columns: ["plant_item_id"]
+            isOneToOne: false
+            referencedRelation: "plant_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_overrides_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           cantidad: number | null
