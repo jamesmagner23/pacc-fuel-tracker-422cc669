@@ -17,6 +17,7 @@ import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
+import { SpeedSolStatus } from "@/components/customer/SpeedSolStatus";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
@@ -503,7 +504,14 @@ export default function CustomerPortal() {
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
-            {activeTab === "01 Overview" && <OverviewTab transactions={transactions} demoSuffix={demoSuffix} />}
+            {activeTab === "01 Overview" && (
+              <OverviewTab
+                transactions={transactions}
+                demoSuffix={demoSuffix}
+                speedsolNames={speedsolNames}
+                isDemo={isDemo}
+              />
+            )}
             {activeTab === "02 Deliveries" && (
               <DeliveriesTab
                 transactions={transactions}
@@ -536,7 +544,17 @@ export default function CustomerPortal() {
 // ═══════════════════════════════════════════════════════════════════════
 // 01 OVERVIEW (preserved — no pricing, simplified to spec rules)
 // ═══════════════════════════════════════════════════════════════════════
-function OverviewTab({ transactions, demoSuffix }: { transactions: any[]; demoSuffix: string }) {
+function OverviewTab({
+  transactions,
+  demoSuffix,
+  speedsolNames,
+  isDemo,
+}: {
+  transactions: any[];
+  demoSuffix: string;
+  speedsolNames: string[];
+  isDemo: boolean;
+}) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
   const totalLitres = transactions.reduce((s, t) => s + (t.cantidad || 0), 0);
@@ -577,6 +595,11 @@ function OverviewTab({ transactions, demoSuffix }: { transactions: any[]; demoSu
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <SpeedSolStatus
+        speedsolNames={speedsolNames}
+        transactions={transactions}
+        isDemo={isDemo}
+      />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
         {kpis.map((k) => (
           <div key={k.label} style={card}>
