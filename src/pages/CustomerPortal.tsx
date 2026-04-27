@@ -808,7 +808,7 @@ function DeliveriesTab({
   allTransactionsCount,
   portalFilters,
   unmappedCount,
-  placaToPlant,
+  unmappedPlacaSet,
   demoSuffix,
   clientAccountId,
 }: {
@@ -816,7 +816,8 @@ function DeliveriesTab({
   allTransactionsCount: number;
   portalFilters: ReturnType<typeof usePortalFilters>;
   unmappedCount: number;
-  placaToPlant: Record<string, string>;
+  /** placa → plant_item.id (presence used to detect unmapped). */
+  unmappedPlacaSet: Record<string, string>;
   demoSuffix: string;
   clientAccountId: number | null;
 }) {
