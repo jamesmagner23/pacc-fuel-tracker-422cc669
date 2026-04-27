@@ -439,7 +439,7 @@ export default function ClientPricingTab() {
                         <div className="bg-raised rounded-lg p-2 flex flex-col gap-0.5">
                           <div className="flex items-center gap-1.5 mb-1">
                             <Sparkles className="w-3 h-3 text-primary" />
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Matching SpeedSol names</span>
+                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Matching Fuel System names</span>
                           </div>
                           {suggestions.map((s) => (
                             <button
@@ -645,7 +645,7 @@ export default function ClientPricingTab() {
                         </div>
                       )}
                       {clientSpeedsolNames.length === 0 && !isMapping && (
-                        <div className="text-[9px] text-warning mt-1 ml-5.5">⚠ No SpeedSol names mapped</div>
+                        <div className="text-[9px] text-warning mt-1 ml-5.5">⚠ No Fuel System names mapped</div>
                       )}
                     </div>
                     <div className="flex items-center gap-3 ml-3">
@@ -655,7 +655,7 @@ export default function ClientPricingTab() {
                         </div>
                         <div className="text-[10px] text-muted-foreground">{tiers[0]?.payment_terms}</div>
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); setMappingClientId(isMapping ? null : clientId); }} title="Map SpeedSol names" className={`bg-transparent border-none cursor-pointer p-1.5 transition-colors ${isMapping ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                      <button onClick={(e) => { e.stopPropagation(); setMappingClientId(isMapping ? null : clientId); }} title="Map Fuel System names" className={`bg-transparent border-none cursor-pointer p-1.5 transition-colors ${isMapping ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
                         <Link2 className="w-3.5 h-3.5" />
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); openAddForm(clientId); }} title="Add tiers" className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-primary p-1.5 transition-colors">
@@ -752,7 +752,7 @@ export default function ClientPricingTab() {
                   {/* SpeedSol mapping with fuzzy suggestions */}
                   {isMapping && (
                     <div className="ml-5.5 mb-3 p-3 bg-raised rounded-lg">
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Map SpeedSol Names → {client?.company_name}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Map Fuel System Names → {client?.company_name}</div>
                       {/* Auto-suggested matches */}
                       {(() => {
                         const companyName = client?.company_name || "";
@@ -784,7 +784,7 @@ export default function ClientPricingTab() {
                           </div>
                         );
                       })()}
-                      <input type="text" placeholder="Search SpeedSol names…" value={mappingSearch} onChange={(e) => setMappingSearch(e.target.value)} className="bg-card border border-border rounded-lg text-foreground px-3 py-1.5 text-[11px] outline-none w-full mb-2" />
+                      <input type="text" placeholder="Search Fuel System names…" value={mappingSearch} onChange={(e) => setMappingSearch(e.target.value)} className="bg-card border border-border rounded-lg text-foreground px-3 py-1.5 text-[11px] outline-none w-full mb-2" />
                       <div className="max-h-40 overflow-y-auto flex flex-col gap-0.5">
                         {unmappedTxnNames
                           .filter((n) => !mappingSearch || n.toLowerCase().includes(mappingSearch.toLowerCase()))
