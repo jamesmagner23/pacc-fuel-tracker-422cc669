@@ -13,6 +13,8 @@ interface EquipmentEntry {
     name: string;
     equipment_type?: string | null;
     photo_url?: string | null;
+    colour?: string | null;
+    service_notes?: string | null;
   } | null;
 }
 
@@ -224,7 +226,16 @@ export function PlantBoard({
                           {!readOnly && (
                             <GripVertical className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
                           )}
-                          <Truck className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                          {e.enriched!.colour ? (
+                            <span
+                              aria-hidden
+                              title={`Colour: ${e.enriched!.colour}`}
+                              className="w-3 h-3 rounded-sm shrink-0 mt-0.5 border border-border"
+                              style={{ background: e.enriched!.colour }}
+                            />
+                          ) : (
+                            <Truck className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                          )}
                           <div className="min-w-0 flex-1">
                             <div className="text-xs font-medium truncate leading-tight">
                               {e.enriched!.name}
@@ -238,6 +249,11 @@ export function PlantBoard({
                             <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
                               {e.litres.toLocaleString()}L · {e.deliveries} fills
                             </div>
+                            {e.enriched!.service_notes && (
+                              <div className="text-[10px] text-muted-foreground/80 italic truncate mt-0.5">
+                                {e.enriched!.service_notes}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
