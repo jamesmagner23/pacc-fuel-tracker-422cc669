@@ -232,7 +232,7 @@ function SiteEditor({ site, onClose }: { site: SiteRow | null; onClose: () => vo
             ))}
           </div>
 
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">SpeedSol Codes</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2">Fuel System Codes</div>
           {codes.map((c, i) => (
             <div key={i} className="flex gap-2">
               <input value={c.code} onChange={(e) => { const u = [...codes]; u[i] = { ...u[i], code: e.target.value }; setCodes(u); }}
