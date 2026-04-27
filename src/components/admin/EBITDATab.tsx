@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
-import { subDays, parseISO, format, startOfMonth, endOfMonth } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { subDays, parseISO, format, startOfMonth, endOfMonth, differenceInCalendarDays } from "date-fns";
+import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine } from "recharts";
 import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 
 const STORAGE_KEY = "admin_ebitda_opex_v1";
@@ -85,10 +85,15 @@ export default function EBITDATab() {
     return { revenue, cogs, grossProfit, totalOpex, ebitda, litres, gpMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0, ebitdaMargin: revenue > 0 ? (ebitda / revenue) * 100 : 0 };
   }, [periodTxns, sortedBuy, opex]);
 
-  // Monthly chart
+  // Monthly chart: always show last 12 months for context, pro-rate OpEx by days
   const monthlyChart = useMemo(() => {
+    const totalOpex = Object.values(opex).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+    const periodDays = Math.max(1, differenceInCalendarDays(new Date(), periodStart) + 1);
+    const dailyOpex = totalOpex / periodDays;
+
     const byMonth: Record<string, { revenue: number; cogs: number; litres: number }> = {};
-    periodTxns.forEach((t) => {
+    // Use ALL transactions, not just period — chart is always trailing 12 months
+    txns.forEach((t) => {
       const d = parseISO(t.fecha);
       const key = format(startOfMonth(d), "yyyy-MM");
       if (!byMonth[key]) byMonth[key] = { revenue: 0, cogs: 0, litres: 0 };
@@ -97,23 +102,32 @@ export default function EBITDATab() {
       byMonth[key].cogs += (t.cantidad || 0) * buy;
       byMonth[key].litres += t.cantidad || 0;
     });
-    const totalOpex = Object.values(opex).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
-    return Object.entries(byMonth)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => {
-        // Pro-rate opex if period > 1 month: distribute as monthly rate
-        const months = Object.keys(byMonth).length || 1;
-        const opexShare = totalOpex / months;
-        const gp = v.revenue - v.cogs;
-        return {
-          month: format(parseISO(k + "-01"), "MMM yy"),
-          revenue: Math.round(v.revenue),
-          cogs: Math.round(v.cogs),
-          opex: Math.round(opexShare),
-          ebitda: Math.round(gp - opexShare),
-        };
-      });
-  }, [periodTxns, sortedBuy, opex]);
+
+    // Build last 12 month buckets (fills gaps with zeros)
+    const buckets: { key: string; label: string }[] = [];
+    const today = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      buckets.push({ key: format(d, "yyyy-MM"), label: format(d, "MMM yy") });
+    }
+
+    return buckets.map(({ key, label }) => {
+      const v = byMonth[key] || { revenue: 0, cogs: 0, litres: 0 };
+      // Days in this month → opex share at the daily rate set by current period
+      const monthStart = parseISO(key + "-01");
+      const daysInMonth = differenceInCalendarDays(endOfMonth(monthStart), monthStart) + 1;
+      const opexShare = dailyOpex * daysInMonth;
+      const gp = v.revenue - v.cogs;
+      return {
+        month: label,
+        revenue: Math.round(v.revenue),
+        cogs: Math.round(v.cogs),
+        opex: Math.round(opexShare),
+        gp: Math.round(gp),
+        ebitda: Math.round(gp - opexShare),
+      };
+    });
+  }, [txns, sortedBuy, opex, periodStart]);
 
   const handleOpex = (key: string, val: string) => {
     const next = { ...opex, [key]: Number(val) || 0 };
@@ -174,18 +188,28 @@ export default function EBITDATab() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Chart */}
         <div className="lg:col-span-2 bg-surface border border-surface-border rounded-[10px] p-5">
-          <h3 className="text-sm font-semibold mb-3">Monthly P&L</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold">Monthly P&amp;L — Last 12 Months</h3>
+            <span className="text-[10px] text-muted-foreground">EBITDA line uses OpEx pro-rated daily from selected period</span>
+          </div>
           <div className="h-72">
             <ResponsiveContainer>
-              <BarChart data={monthlyChart}>
+              <ComposedChart data={monthlyChart} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="var(--surface-border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => `$${v.toLocaleString()}`} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)" }}
+                  formatter={(v: number, name: string) => [`$${Number(v).toLocaleString()}`, name]}
+                />
+                <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
+                <ReferenceLine y={0} stroke="var(--surface-border)" />
+                {/* Stack costs so revenue clearly sits above the cost stack */}
+                <Bar dataKey="cogs" name="COGS (Fuel)" stackId="cost" fill="#8B5E3C" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="opex" name="OpEx" stackId="cost" fill="var(--text-muted)" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="revenue" name="Revenue" fill={accent} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="cogs" name="COGS" fill="var(--text-secondary)" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="ebitda" name="EBITDA" fill="#10B981" radius={[3, 3, 0, 0]} />
-              </BarChart>
+                <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke="#10B981" strokeWidth={2.5} dot={{ r: 3, fill: "#10B981" }} />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>
