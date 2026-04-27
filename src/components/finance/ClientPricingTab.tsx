@@ -180,7 +180,7 @@ export default function ClientPricingTab() {
       const { error } = await supabase.from("client_accounts").update({ speedsol_names: names } as any).eq("id", clientId);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client-accounts"] }); toast.success("SpeedSol mapping updated"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client-accounts"] }); toast.success("Fuel System mapping updated"); },
     onError: () => toast.error("Failed to update mapping"),
   });
   const addSpeedsolName = (clientId: number, name: string) => {
