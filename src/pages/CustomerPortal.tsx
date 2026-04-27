@@ -17,7 +17,6 @@ import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
-import { SpeedSolStatus } from "@/components/customer/SpeedSolStatus";
 import {
   usePortalFilters,
   filterTransactions,
@@ -25,8 +24,6 @@ import {
 } from "@/hooks/usePortalFilters";
 import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
-import { BulkMapModal } from "@/components/customer/BulkMapModal";
-import { PlantItemModal } from "@/components/customer/PlantItemModal";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
@@ -581,12 +578,10 @@ export default function CustomerPortal() {
               onTypes={portalFilters.setTypes}
               onProjects={portalFilters.setProjects}
               onTags={portalFilters.setTags}
-              onUnmappedOnly={portalFilters.setUnmappedOnly}
               onReset={portalFilters.reset}
               availableTypes={availableTypes}
               availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
               availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
-              unmappedCount={unmappedCount}
             />
           </div>
         )}
@@ -690,11 +685,6 @@ function OverviewTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <SpeedSolStatus
-        speedsolNames={speedsolNames}
-        transactions={transactions}
-        isDemo={isDemo}
-      />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
         {kpis.map((k) => (
           <div key={k.label} style={card}>
@@ -861,11 +851,6 @@ function DeliveriesTab({
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  // Mapping UI state
-  const [bulkOpen, setBulkOpen] = useState(false);
-  const [plantModalOpen, setPlantModalOpen] = useState(false);
-  const [prefillPlaca, setPrefillPlaca] = useState<string>("");
-
   const sites = useMemo(
     () => Array.from(new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean))) as string[],
     [transactions]
@@ -955,80 +940,18 @@ function DeliveriesTab({
       .sort((a, b) => b.litres - a.litres);
   }, [transactions, unmappedPlacaSet]);
 
-  const openMapPlaca = (placa: string) => {
-    setPrefillPlaca(placa);
-    setBulkOpen(false);
-    setPlantModalOpen(true);
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {/* Unmapped warning banner — shown when there are unmapped placas
-          and the global "Unmapped only" filter isn't already on. */}
-      {unmappedCount > 0 && !portalFilters.filters.unmappedOnly && (
+      {unmappedCount > 0 && (
         <div
-          role="alert"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "10px 12px",
-            background: "rgba(245, 158, 11, 0.12)",
-            border: "1px solid rgba(245, 158, 11, 0.45)",
-            borderRadius: 8,
-            color: "#F5E6D0",
-            fontSize: 12,
-            flexWrap: "wrap",
+            fontSize: 11,
+            color: T.muted,
+            fontStyle: "italic",
+            padding: "4px 2px",
           }}
         >
-          <span style={{ fontSize: 16, lineHeight: 1 }}>⚠️</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <strong style={{ color: "#F59E0B" }}>{unmappedCount}</strong>{" "}
-            {unmappedCount === 1 ? "delivery" : "deliveries"} from{" "}
-            {allTransactionsCount.toLocaleString()} can't be matched to a plant
-            item — add the placa under <em>Plant</em> to enable project tagging,
-            colour coding and notes.
-          </div>
-          {clientAccountId != null && unmappedPlacaList.length > 0 && (
-            <button
-              onClick={() => setBulkOpen(true)}
-              style={{
-                background: "transparent",
-                color: "#F59E0B",
-                border: "1px solid #F59E0B",
-                padding: "6px 10px",
-                borderRadius: 4,
-                fontSize: 11,
-                fontFamily: T.sansHead,
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-                flexShrink: 0,
-              }}
-            >
-              Bulk Map ({unmappedPlacaList.length})
-            </button>
-          )}
-          <button
-            onClick={() => portalFilters.setUnmappedOnly(true)}
-            style={{
-              background: "#F59E0B",
-              color: "#3D2B1A",
-              border: "none",
-              padding: "6px 10px",
-              borderRadius: 4,
-              fontSize: 11,
-              fontFamily: T.sansHead,
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
-          >
-            View Unmapped
-          </button>
+          Equipment names are assigned by our team — some deliveries may show the truck rego while we update them.
         </div>
       )}
 
@@ -1107,48 +1030,6 @@ function DeliveriesTab({
                           borderRadius: 3, padding: "1px 5px",
                         }} title={project.site_address || undefined}>{project.name}</span>
                       )}
-                      {placa && !unmappedPlacaSet[placa] && (
-                        <span
-                          title="This placa hasn't been added as a plant item yet. Open the Plant tab to map it."
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 3,
-                            fontSize: 9,
-                            letterSpacing: "0.08em",
-                            textTransform: "uppercase",
-                            color: "#F59E0B",
-                            border: "1px solid rgba(245, 158, 11, 0.55)",
-                            background: "rgba(245, 158, 11, 0.12)",
-                            borderRadius: 3,
-                            padding: "1px 5px",
-                            fontWeight: 600,
-                          }}
-                        >
-                          ⚠ Unmapped
-                        </span>
-                      )}
-                      {placa && !unmappedPlacaSet[placa] && clientAccountId != null && (
-                        <button
-                          onClick={() => openMapPlaca(placa)}
-                          title={`Map ${placa} to a plant item`}
-                          style={{
-                            background: "transparent",
-                            color: "#F59E0B",
-                            border: "1px solid rgba(245, 158, 11, 0.55)",
-                            borderRadius: 3,
-                            padding: "1px 6px",
-                            fontSize: 9,
-                            letterSpacing: "0.08em",
-                            textTransform: "uppercase",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            fontFamily: T.sansHead,
-                          }}
-                        >
-                          Map →
-                        </button>
-                      )}
                       {!placa && (
                         <span
                           title="No placa recorded on this delivery."
@@ -1207,27 +1088,6 @@ function DeliveriesTab({
         )}
       </div>
 
-      {clientAccountId != null && (
-        <>
-          <BulkMapModal
-            open={bulkOpen}
-            onOpenChange={setBulkOpen}
-            unmappedPlacas={unmappedPlacaList}
-            plantItems={plantItems}
-            clientAccountId={clientAccountId}
-            onCreateNew={(p) => openMapPlaca(p)}
-          />
-          <PlantItemModal
-            open={plantModalOpen}
-            onOpenChange={(v) => {
-              setPlantModalOpen(v);
-              if (!v) setPrefillPlaca("");
-            }}
-            clientAccountId={clientAccountId}
-            initial={prefillPlaca ? ({ placa: prefillPlaca, name: "" } as any) : null}
-          />
-        </>
-      )}
     </div>
   );
 }
