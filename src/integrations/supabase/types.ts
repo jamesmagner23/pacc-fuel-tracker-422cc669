@@ -142,6 +142,98 @@ export type Database = {
           },
         ]
       }
+      client_profiles: {
+        Row: {
+          abn: string | null
+          accounts_contact_email: string | null
+          accounts_contact_name: string | null
+          accounts_contact_phone: string | null
+          billing_address_line1: string | null
+          billing_address_line2: string | null
+          billing_country: string | null
+          billing_postcode: string | null
+          billing_state: string | null
+          billing_suburb: string | null
+          client_account_id: number
+          created_at: string
+          id: string
+          legal_business_name: string | null
+          ops_contact_email: string | null
+          ops_contact_name: string | null
+          ops_contact_phone: string | null
+          primary_contact_email: string | null
+          primary_contact_name: string | null
+          primary_contact_phone: string | null
+          site_contact_email: string | null
+          site_contact_name: string | null
+          site_contact_phone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          abn?: string | null
+          accounts_contact_email?: string | null
+          accounts_contact_name?: string | null
+          accounts_contact_phone?: string | null
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_country?: string | null
+          billing_postcode?: string | null
+          billing_state?: string | null
+          billing_suburb?: string | null
+          client_account_id: number
+          created_at?: string
+          id?: string
+          legal_business_name?: string | null
+          ops_contact_email?: string | null
+          ops_contact_name?: string | null
+          ops_contact_phone?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          site_contact_email?: string | null
+          site_contact_name?: string | null
+          site_contact_phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          abn?: string | null
+          accounts_contact_email?: string | null
+          accounts_contact_name?: string | null
+          accounts_contact_phone?: string | null
+          billing_address_line1?: string | null
+          billing_address_line2?: string | null
+          billing_country?: string | null
+          billing_postcode?: string | null
+          billing_state?: string | null
+          billing_suburb?: string | null
+          client_account_id?: number
+          created_at?: string
+          id?: string
+          legal_business_name?: string | null
+          ops_contact_email?: string | null
+          ops_contact_name?: string | null
+          ops_contact_phone?: string | null
+          primary_contact_email?: string | null
+          primary_contact_name?: string | null
+          primary_contact_phone?: string | null
+          site_contact_email?: string | null
+          site_contact_name?: string | null
+          site_contact_phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_profiles_client_account_id_fkey"
+            columns: ["client_account_id"]
+            isOneToOne: true
+            referencedRelation: "client_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_pricing: {
         Row: {
           client_account_id: number
