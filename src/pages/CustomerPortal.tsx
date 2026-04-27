@@ -591,7 +591,7 @@ export default function CustomerPortal() {
                 allTransactionsCount={transactions.length}
                 portalFilters={portalFilters}
                 unmappedCount={unmappedCount}
-                placaToPlant={lookups.placaToPlant}
+                unmappedPlacaSet={lookups.placaToPlant}
                 demoSuffix={demoSuffix}
                 clientAccountId={clientAccountId}
               />
