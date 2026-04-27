@@ -1,9 +1,29 @@
 import { useMemo, useState } from "react";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
-import { subDays, parseISO, format, startOfMonth, endOfMonth, differenceInCalendarDays } from "date-fns";
-import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { subDays, parseISO, format, startOfMonth, endOfMonth, differenceInCalendarDays, eachDayOfInterval } from "date-fns";
+import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine, AreaChart, Area } from "recharts";
+import { DollarSign, Wallet } from "lucide-react";
+
+// Clamp arbitrary input to a safe non-negative finite number.
+const sanitizeAmount = (val: unknown): number => {
+  const n = typeof val === "number" ? val : Number(val);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  // Cap at a sane upper bound to avoid distorting charts on accidental huge entries
+  return Math.min(n, 1_000_000_000);
+};
+
+// Ensure every key in OpexState has a finite, non-negative number.
+const normalizeOpex = (raw: Partial<OpexState> | undefined | null): OpexState => ({
+  wages: sanitizeAmount(raw?.wages),
+  fleet: sanitizeAmount(raw?.fleet),
+  rent: sanitizeAmount(raw?.rent),
+  insurance: sanitizeAmount(raw?.insurance),
+  fuel: sanitizeAmount(raw?.fuel),
+  repayments: sanitizeAmount(raw?.repayments),
+  tolls: sanitizeAmount(raw?.tolls),
+  other: sanitizeAmount(raw?.other),
+});
 
 const STORAGE_KEY = "admin_ebitda_opex_v2";
 type OpexState = {
@@ -53,10 +73,10 @@ export default function EBITDATab() {
       if (!saved) return DEFAULT_OPEX_BY_PERIOD;
       const parsed = JSON.parse(saved);
       return {
-        "30d": { ...DEFAULT_OPEX, ...(parsed["30d"] || {}) },
-        "90d": { ...DEFAULT_OPEX, ...(parsed["90d"] || {}) },
-        ytd: { ...DEFAULT_OPEX, ...(parsed.ytd || {}) },
-        "12m": { ...DEFAULT_OPEX, ...(parsed["12m"] || {}) },
+        "30d": normalizeOpex(parsed["30d"]),
+        "90d": normalizeOpex(parsed["90d"]),
+        ytd: normalizeOpex(parsed.ytd),
+        "12m": normalizeOpex(parsed["12m"]),
       };
     } catch {
       return DEFAULT_OPEX_BY_PERIOD;
@@ -158,12 +178,35 @@ export default function EBITDATab() {
     });
   }, [txns, sortedBuy, opex, periodStart]);
 
-  const handleOpex = (key: string, val: string) => {
-    const nextPeriodOpex = { ...opex, [key]: Number(val) || 0 };
+  const handleOpex = (key: keyof OpexState, val: string) => {
+    // Allow empty string while typing → treat as 0 for totals; store sanitized number
+    const trimmed = val.trim();
+    const safe = trimmed === "" ? 0 : sanitizeAmount(trimmed);
+    const nextPeriodOpex = normalizeOpex({ ...opex, [key]: safe });
     const next = { ...opexByPeriod, [period]: nextPeriodOpex };
     setOpexByPeriod(next);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
   };
+
+  // Repayments time-series for the selected period, with rolling average.
+  const repaymentsSeries = useMemo(() => {
+    const today = new Date();
+    const days = eachDayOfInterval({ start: periodStart, end: today });
+    if (days.length === 0) return [];
+    // Repayments entered as a period total → spread evenly across days.
+    const dailyRepayment = (opex.repayments || 0) / days.length;
+    const window = Math.min(7, days.length); // 7-day rolling average (or shorter if period < 7d)
+    return days.map((d, i) => {
+      const start = Math.max(0, i - window + 1);
+      const slice = i - start + 1;
+      const rolling = (dailyRepayment * slice) / slice; // constant in this model
+      return {
+        date: format(d, days.length > 90 ? "MMM d" : "MMM d"),
+        repayment: Math.round(dailyRepayment),
+        rolling: Math.round(rolling),
+      };
+    });
+  }, [opex.repayments, periodStart]);
 
   const accent = "var(--accent)";
   const muted = "var(--text-secondary)";
@@ -253,7 +296,7 @@ export default function EBITDATab() {
           <p className="text-[11px] text-muted-foreground">
             Total for <span className="text-foreground font-medium">{PERIOD_LABELS[period]}</span>. Each period stores its own values. Saved locally.
           </p>
-          {[
+          {([
             { key: "wages", label: "Wages & Salaries" },
             { key: "fleet", label: "Fleet & Maintenance" },
             { key: "fuel", label: "Vehicle Fuel" },
@@ -262,15 +305,24 @@ export default function EBITDATab() {
             { key: "rent", label: "Rent & Utilities" },
             { key: "insurance", label: "Insurance" },
             { key: "other", label: "Other" },
-          ].map((row) => (
+          ] as { key: keyof OpexState; label: string }[]).map((row) => (
             <div key={row.key} className="flex items-center justify-between gap-2">
               <label className="text-xs text-muted-foreground flex-1">{row.label}</label>
               <div className="relative w-32">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
                 <input
                   type="number"
-                  value={opex[row.key as keyof typeof opex] || ""}
+                  min={0}
+                  step="any"
+                  inputMode="decimal"
+                  value={opex[row.key] || ""}
                   onChange={(e) => handleOpex(row.key, e.target.value)}
+                  onBlur={(e) => {
+                    // Re-normalize on blur so junk like "abc" or negatives clear to 0
+                    if (e.target.value.trim() === "") return;
+                    const safe = sanitizeAmount(e.target.value);
+                    if (safe !== Number(e.target.value)) handleOpex(row.key, String(safe));
+                  }}
                   className="w-full bg-raised border border-surface-border rounded-md pl-5 pr-2 py-1.5 text-xs text-foreground tabular-nums text-right outline-none focus:ring-1 focus:ring-primary/50"
                   placeholder="0"
                 />
@@ -286,6 +338,60 @@ export default function EBITDATab() {
 
       <div className="text-[10px] text-muted-foreground">
         COGS calculated as litres × supplier buy price on each transaction date. Adjust buy prices in Finance → Buy Prices.
+      </div>
+
+      {/* Repayments time-series */}
+      <div className="bg-surface border border-surface-border rounded-[10px] p-5">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold">Loan Repayments — {PERIOD_LABELS[period]}</h3>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span>Total: <span className="text-foreground font-medium tabular-nums">${opex.repayments.toLocaleString()}</span></span>
+            <span>Daily avg: <span className="text-foreground font-medium tabular-nums">${repaymentsSeries[0]?.repayment.toLocaleString() ?? 0}</span></span>
+          </div>
+        </div>
+        {opex.repayments > 0 ? (
+          <div className="h-56">
+            <ResponsiveContainer>
+              <AreaChart data={repaymentsSeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="repayFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={accent} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={accent} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="var(--surface-border)" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: muted }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval="preserveStartEnd"
+                  minTickGap={24}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: muted }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(1) + "k" : v}`}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)" }}
+                  formatter={(v: number, name: string) => [`$${Number(v).toLocaleString()}`, name]}
+                />
+                <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
+                <Area type="monotone" dataKey="repayment" name="Daily repayment" stroke={accent} strokeWidth={2} fill="url(#repayFill)" />
+                <Line type="monotone" dataKey="rolling" name="7-day rolling avg" stroke="#10B981" strokeWidth={2} dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="text-center text-xs text-muted-foreground py-12">
+            Enter a Loan Repayments amount above to see the time-series breakdown.
+          </div>
+        )}
       </div>
     </div>
   );
