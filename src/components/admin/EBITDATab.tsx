@@ -73,10 +73,10 @@ export default function EBITDATab() {
       if (!saved) return DEFAULT_OPEX_BY_PERIOD;
       const parsed = JSON.parse(saved);
       return {
-        "30d": { ...DEFAULT_OPEX, ...(parsed["30d"] || {}) },
-        "90d": { ...DEFAULT_OPEX, ...(parsed["90d"] || {}) },
-        ytd: { ...DEFAULT_OPEX, ...(parsed.ytd || {}) },
-        "12m": { ...DEFAULT_OPEX, ...(parsed["12m"] || {}) },
+        "30d": normalizeOpex(parsed["30d"]),
+        "90d": normalizeOpex(parsed["90d"]),
+        ytd: normalizeOpex(parsed.ytd),
+        "12m": normalizeOpex(parsed["12m"]),
       };
     } catch {
       return DEFAULT_OPEX_BY_PERIOD;
