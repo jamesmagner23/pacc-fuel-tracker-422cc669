@@ -940,12 +940,6 @@ function DeliveriesTab({
       .sort((a, b) => b.litres - a.litres);
   }, [transactions, unmappedPlacaSet]);
 
-  const openMapPlaca = (placa: string) => {
-    setPrefillPlaca(placa);
-    setBulkOpen(false);
-    setPlantModalOpen(true);
-  };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {unmappedCount > 0 && (
