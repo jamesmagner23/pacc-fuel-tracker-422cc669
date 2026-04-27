@@ -11,6 +11,9 @@ import { logActivity } from "@/hooks/useActivityLog";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PlantBoard } from "@/components/customer/PlantBoard";
+import { usePlantItems } from "@/hooks/usePlantItems";
+import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
@@ -35,8 +38,9 @@ const tabs = [
   "01 Overview",
   "02 Dockets",
   "03 Sites",
-  "04 FTC",
-  "05 Schedule",
+  "04 Plant",
+  "05 FTC",
+  "06 Schedule",
 ] as const;
 type Tab = (typeof tabs)[number];
 
