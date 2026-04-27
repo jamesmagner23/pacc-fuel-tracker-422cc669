@@ -1187,6 +1187,28 @@ function DeliveriesTab({
           })
         )}
       </div>
+
+      {clientAccountId != null && (
+        <>
+          <BulkMapModal
+            open={bulkOpen}
+            onOpenChange={setBulkOpen}
+            unmappedPlacas={unmappedPlacaList}
+            plantItems={plantItems}
+            clientAccountId={clientAccountId}
+            onCreateNew={(p) => openMapPlaca(p)}
+          />
+          <PlantItemModal
+            open={plantModalOpen}
+            onOpenChange={(v) => {
+              setPlantModalOpen(v);
+              if (!v) setPrefillPlaca("");
+            }}
+            clientAccountId={clientAccountId}
+            initial={prefillPlaca ? ({ placa: prefillPlaca, name: "" } as any) : null}
+          />
+        </>
+      )}
     </div>
   );
 }
