@@ -763,6 +763,22 @@ function DeliveriesTab({
     return map;
   }, [assignments, plantItems]);
 
+  // Build placa → enriched plant item lookup (alias / colour / type / notes)
+  const placaToPlant = useMemo(() => {
+    const map: Record<string, typeof plantItems[number]> = {};
+    plantItems.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (placa) map[placa] = pi;
+    });
+    return map;
+  }, [plantItems]);
+
+  const projectById = useMemo(() => {
+    const m: Record<string, typeof projects[number]> = {};
+    projects.forEach((p) => { m[p.id] = p; });
+    return m;
+  }, [projects]);
+
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
       if (siteFilter !== "all" && t.nombre_cliente1 !== siteFilter) return false;
@@ -824,48 +840,92 @@ function DeliveriesTab({
         {filtered.length === 0 ? (
           <p style={muted(13)}>No deliveries recorded for this period.</p>
         ) : (
-          filtered.map((t, i) => (
-            <div
-              key={t.id || i}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "12px 0",
-                borderTop: i > 0 ? `1px solid ${T.border}` : "none",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 13, color: T.text }}>{t.nombre_cliente1}</div>
-                <div style={muted(11)}>
-                  {t.date ? format(parseISO(t.date), "EEE dd MMM yyyy") : "—"}
-                  {t.factura ? ` · #${t.factura}` : ""}
+          filtered.map((t, i) => {
+            const placa = (t.placa || "").toString().trim();
+            const plant = placa ? placaToPlant[placa] : undefined;
+            const project = placa ? projectById[placaToProject[placa] || ""] : undefined;
+            const swatch = plant?.colour || T.border;
+            return (
+              <div
+                key={t.id || i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "12px 0",
+                  borderTop: i > 0 ? `1px solid ${T.border}` : "none",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "stretch", gap: 10, minWidth: 0, flex: 1 }}>
+                  <div
+                    aria-hidden
+                    title={plant?.colour ? `Plant colour: ${plant.colour}` : undefined}
+                    style={{
+                      width: 3,
+                      borderRadius: 2,
+                      background: swatch,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, color: T.text, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 600 }}>{plant?.name || placa || t.nombre_cliente1}</span>
+                      {placa && plant?.name && (
+                        <span style={{ fontSize: 10, color: T.muted, fontFamily: "monospace" }}>{placa}</span>
+                      )}
+                      {plant?.equipment_type && (
+                        <span style={{
+                          fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase",
+                          color: T.textSecondary, border: `1px solid ${T.border}`, borderRadius: 3, padding: "1px 5px",
+                        }}>{plant.equipment_type}</span>
+                      )}
+                      {project && (
+                        <span style={{
+                          fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase",
+                          color: T.accent, border: `1px solid ${T.accent}55`, background: `${T.accent}11`,
+                          borderRadius: 3, padding: "1px 5px",
+                        }} title={project.site_address || undefined}>{project.name}</span>
+                      )}
+                    </div>
+                    <div style={muted(11)}>
+                      {t.nombre_cliente1}
+                      {" · "}
+                      {t.date ? format(parseISO(t.date), "EEE dd MMM yyyy") : "—"}
+                      {t.factura ? ` · #${t.factura}` : ""}
+                    </div>
+                    {plant?.service_notes && (
+                      <div style={{ fontSize: 10, color: T.muted, marginTop: 2, fontStyle: "italic" }}>
+                        {plant.service_notes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                  <span style={{ fontSize: 14, fontFamily: T.sansHead, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                    {fmtL(t.cantidad || 0)}
+                  </span>
+                  <button
+                    onClick={() => window.open(`/docket/${t.id}${demoSuffix}`, "_blank")}
+                    style={{
+                      background: "transparent",
+                      border: `1px solid ${T.border}`,
+                      color: T.muted,
+                      fontSize: 10,
+                      fontFamily: T.sansHead,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      padding: "5px 10px",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Docket
+                  </button>
                 </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 14, fontFamily: T.sansHead, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                  {fmtL(t.cantidad || 0)}
-                </span>
-                <button
-                  onClick={() => window.open(`/docket/${t.id}${demoSuffix}`, "_blank")}
-                  style={{
-                    background: "transparent",
-                    border: `1px solid ${T.border}`,
-                    color: T.muted,
-                    fontSize: 10,
-                    fontFamily: T.sansHead,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                    padding: "5px 10px",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                  }}
-                >
-                  Docket
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -1960,6 +2020,8 @@ function PlantTab({
         name: pi.name,
         equipment_type: pi.equipment_type,
         photo_url: pi.photo_url,
+        colour: pi.colour,
+        service_notes: pi.service_notes,
         ftc_rate_id: (pi as any).ftc_rate_id || null,
       },
     }));
