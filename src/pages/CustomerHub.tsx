@@ -523,8 +523,8 @@ function AnalyticsTab({
   projects: Project[];
   assignments: any[];
 }) {
-  const accent = "hsl(var(--primary))";
-  const muted = "hsl(var(--muted-foreground))";
+  const accent = "var(--accent)";
+  const muted = "var(--text-secondary)";
 
   const equipmentChart = equipment.slice(0, 10).map((e) => ({
     name: e.enriched?.name || e.placa || "—",
@@ -559,7 +559,7 @@ function AnalyticsTab({
     return Object.entries(map).map(([type, litres]) => ({ type, litres })).sort((a, b) => b.litres - a.litres);
   }, [equipment]);
 
-  const tt = { backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 };
+  const tt = { backgroundColor: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)" };
 
   return (
     <div className="space-y-4">
