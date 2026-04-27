@@ -14,6 +14,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { usePlantItems } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
+import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
@@ -1477,6 +1478,7 @@ function PlantTab({
   const { data: plantItems = [], isLoading: pLoading } = usePlantItems(clientAccountId);
   const { data: projects = [], isLoading: prLoading } = useProjects(clientAccountId);
   const { data: assignments = [] } = useProjectAssignments(clientAccountId);
+  const { data: ftcRates = [] } = useFtcRates();
 
   // Build equipment list from plant items + transaction stats keyed on placa
   const equipment = useMemo(() => {
@@ -1497,9 +1499,35 @@ function PlantTab({
         name: pi.name,
         equipment_type: pi.equipment_type,
         photo_url: pi.photo_url,
+        ftc_rate_id: (pi as any).ftc_rate_id || null,
       },
     }));
   }, [plantItems, transactions]);
+
+  const ftcRollup = useMemo(() => {
+    const rateById: Record<string, FtcRate> = {};
+    ftcRates.forEach((r) => { rateById[r.id] = r; });
+    const byCategory: Record<string, { name: string; rate: number; litres: number; claim: number; items: number }> = {};
+    let unclassifiedItems = 0;
+    let unclassifiedLitres = 0;
+    equipment.forEach((e: any) => {
+      const rateId = e.enriched?.ftc_rate_id;
+      const rate = rateId ? rateById[rateId] : null;
+      if (!rate) {
+        if (e.litres > 0) { unclassifiedItems += 1; unclassifiedLitres += e.litres; }
+        return;
+      }
+      if (!byCategory[rate.id]) {
+        byCategory[rate.id] = { name: rate.equipment_type, rate: Number(rate.rate_per_litre), litres: 0, claim: 0, items: 0 };
+      }
+      byCategory[rate.id].litres += e.litres;
+      byCategory[rate.id].claim += e.litres * Number(rate.rate_per_litre);
+      byCategory[rate.id].items += 1;
+    });
+    const rows = Object.values(byCategory).sort((a, b) => b.claim - a.claim);
+    const totalClaim = rows.reduce((s, r) => s + r.claim, 0);
+    return { rows, totalClaim, unclassifiedItems, unclassifiedLitres };
+  }, [equipment, ftcRates]);
 
   if (!clientAccountId) {
     return <p style={muted(13)}>No account linked.</p>;
@@ -1523,6 +1551,56 @@ function PlantTab({
         assignments={assignments}
         clientAccountId={clientAccountId}
       />
+
+      <div className="glass-card p-5">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div>
+            <h3 className="text-sm font-semibold">Fuel Tax Credit Estimate</h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Based on delivered litres × ATO rate per category. Indicative — confirm with your accountant.
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Claimable</div>
+            <div className="text-xl font-bold text-primary">${ftcRollup.totalClaim.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+          </div>
+        </div>
+        {ftcRollup.rows.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-2">
+            None of your plant has an FTC category set. Contact PACC to have categories assigned to enable claim tracking.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-muted-foreground border-b border-border">
+                  <th className="pb-2 pr-3">Category</th>
+                  <th className="pb-2 pr-3 text-right">Items</th>
+                  <th className="pb-2 pr-3 text-right">Litres</th>
+                  <th className="pb-2 pr-3 text-right">Rate (c/L)</th>
+                  <th className="pb-2 text-right">Claim</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ftcRollup.rows.map((r) => (
+                  <tr key={r.name} className="border-b border-border/50">
+                    <td className="py-2 pr-3">{r.name}</td>
+                    <td className="py-2 pr-3 text-right">{r.items}</td>
+                    <td className="py-2 pr-3 text-right">{r.litres.toLocaleString()}</td>
+                    <td className="py-2 pr-3 text-right">{(r.rate * 100).toFixed(1)}</td>
+                    <td className="py-2 text-right font-semibold">${r.claim.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {ftcRollup.unclassifiedItems > 0 && (
+          <p className="text-[11px] text-muted-foreground mt-3">
+            {ftcRollup.unclassifiedItems} item{ftcRollup.unclassifiedItems !== 1 ? "s" : ""} with {ftcRollup.unclassifiedLitres.toLocaleString()}L delivered are excluded (no FTC category set).
+          </p>
+        )}
+      </div>
     </div>
   );
 }
