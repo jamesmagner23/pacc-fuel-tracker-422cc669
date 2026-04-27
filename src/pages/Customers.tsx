@@ -20,9 +20,15 @@ function CustomerList() {
   useEffect(() => {
     const compute = () => {
       const h = window.innerHeight;
-      if (h < 700) setPageSize(8);
-      else if (h < 850) setPageSize(9);
-      else setPageSize(10);
+      const w = window.innerWidth;
+      // tile grid: aim for ~2 rows of tiles
+      let perRow = 3;
+      if (w >= 1280) perRow = 6;
+      else if (w >= 1024) perRow = 5;
+      else if (w >= 768) perRow = 4;
+      else if (w >= 480) perRow = 3;
+      const rows = h < 700 ? 2 : h < 900 ? 3 : 4;
+      setPageSize(perRow * rows);
     };
     compute();
     window.addEventListener("resize", compute);
@@ -71,34 +77,44 @@ function CustomerList() {
         <div className="text-center text-muted-foreground py-12">No customers found. Click <strong>Sync Now</strong> to pull data.</div>
       ) : (
         <>
-          <div className="rounded-lg border border-border overflow-hidden">
-            <div className="hidden sm:grid grid-cols-[40px_1fr_100px_90px_110px] gap-3 px-4 py-2 bg-card/50 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-b border-border">
-              <div>#</div>
-              <div>Customer</div>
-              <div className="text-right">Volume</div>
-              <div className="text-right">Deliveries</div>
-              <div className="text-right">Revenue</div>
-            </div>
+          <div className="grid grid-cols-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
             {pageRows.map((c, i) => {
-              const rank = currentPage * pageSize + i + 1;
+              const initials = c.name
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((w) => w[0])
+                .join("")
+                .toUpperCase();
+              const litresLabel =
+                c.litres >= 1000
+                  ? `${(c.litres / 1000).toFixed(1)}kL`
+                  : `${Math.round(c.litres)}L`;
               return (
                 <button
                   key={c.name}
                   onClick={() => navigate(`/customers/${encodeURIComponent(c.name)}`)}
-                  className="w-full grid grid-cols-[32px_1fr_auto] sm:grid-cols-[40px_1fr_100px_90px_110px] gap-3 px-3 sm:px-4 py-2.5 items-center text-left bg-card/30 hover:bg-card transition-colors border-b border-border last:border-b-0 animate-fade-in"
+                  className="aspect-square rounded-lg border border-border bg-card/40 hover:bg-card hover:border-primary/40 transition-all p-2.5 flex flex-col text-left animate-fade-in"
                   style={{ animationDelay: `${i * 20}ms` }}
                 >
-                  <div className="text-[11px] text-muted-foreground font-mono">{rank}</div>
-                  <div className="min-w-0">
-                    <div className="font-medium text-xs sm:text-sm truncate text-foreground">{c.name}</div>
-                    <div className="sm:hidden text-[10px] text-muted-foreground mt-0.5">
-                      {c.litres.toLocaleString()}L · {c.deliveries} deliveries
+                  <div className="flex items-start justify-between gap-1">
+                    <div className="w-7 h-7 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
+                      {initials || "?"}
+                    </div>
+                    {c.revenue > 0 && (
+                      <div className="text-[9px] text-muted-foreground font-medium tabular-nums leading-tight text-right">
+                        ${c.revenue >= 1000 ? `${(c.revenue / 1000).toFixed(1)}k` : Math.round(c.revenue)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 flex-1 min-h-0">
+                    <div className="text-[11px] font-semibold text-foreground line-clamp-2 leading-tight">
+                      {c.name}
                     </div>
                   </div>
-                  <div className="hidden sm:block text-right text-xs font-semibold tabular-nums">{c.litres.toLocaleString()}L</div>
-                  <div className="hidden sm:block text-right text-xs text-muted-foreground tabular-nums">{c.deliveries}</div>
-                  <div className="text-right text-xs sm:text-sm font-semibold tabular-nums">
-                    ${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  <div className="mt-1.5 pt-1.5 border-t border-border/60 flex items-baseline justify-between gap-1">
+                    <span className="text-xs font-bold text-foreground tabular-nums">{litresLabel}</span>
+                    <span className="text-[9px] text-muted-foreground tabular-nums">{c.deliveries}d</span>
                   </div>
                 </button>
               );
