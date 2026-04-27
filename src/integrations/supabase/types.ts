@@ -521,6 +521,39 @@ export type Database = {
         }
         Relationships: []
       }
+      plant_item_tags: {
+        Row: {
+          created_at: string
+          plant_item_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          plant_item_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          plant_item_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_item_tags_plant_item_id_fkey"
+            columns: ["plant_item_id"]
+            isOneToOne: false
+            referencedRelation: "plant_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plant_item_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "plant_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plant_items: {
         Row: {
           client_account_id: number
@@ -595,6 +628,41 @@ export type Database = {
             columns: ["ftc_rate_id"]
             isOneToOne: false
             referencedRelation: "ftc_rates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plant_tags: {
+        Row: {
+          client_account_id: number
+          colour: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          client_account_id: number
+          colour?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          client_account_id?: number
+          colour?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_tags_client_account_id_fkey"
+            columns: ["client_account_id"]
+            isOneToOne: false
+            referencedRelation: "client_accounts"
             referencedColumns: ["id"]
           },
         ]
