@@ -296,7 +296,7 @@ export default function EBITDATab() {
           <p className="text-[11px] text-muted-foreground">
             Total for <span className="text-foreground font-medium">{PERIOD_LABELS[period]}</span>. Each period stores its own values. Saved locally.
           </p>
-          {[
+          {([
             { key: "wages", label: "Wages & Salaries" },
             { key: "fleet", label: "Fleet & Maintenance" },
             { key: "fuel", label: "Vehicle Fuel" },
@@ -305,15 +305,24 @@ export default function EBITDATab() {
             { key: "rent", label: "Rent & Utilities" },
             { key: "insurance", label: "Insurance" },
             { key: "other", label: "Other" },
-          ].map((row) => (
+          ] as { key: keyof OpexState; label: string }[]).map((row) => (
             <div key={row.key} className="flex items-center justify-between gap-2">
               <label className="text-xs text-muted-foreground flex-1">{row.label}</label>
               <div className="relative w-32">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
                 <input
                   type="number"
-                  value={opex[row.key as keyof typeof opex] || ""}
+                  min={0}
+                  step="any"
+                  inputMode="decimal"
+                  value={opex[row.key] || ""}
                   onChange={(e) => handleOpex(row.key, e.target.value)}
+                  onBlur={(e) => {
+                    // Re-normalize on blur so junk like "abc" or negatives clear to 0
+                    if (e.target.value.trim() === "") return;
+                    const safe = sanitizeAmount(e.target.value);
+                    if (safe !== Number(e.target.value)) handleOpex(row.key, String(safe));
+                  }}
                   className="w-full bg-raised border border-surface-border rounded-md pl-5 pr-2 py-1.5 text-xs text-foreground tabular-nums text-right outline-none focus:ring-1 focus:ring-primary/50"
                   placeholder="0"
                 />
