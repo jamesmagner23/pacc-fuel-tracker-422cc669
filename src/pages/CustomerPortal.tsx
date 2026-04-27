@@ -1997,6 +1997,8 @@ function PlantTab({
         name: pi.name,
         equipment_type: pi.equipment_type,
         photo_url: pi.photo_url,
+        colour: pi.colour,
+        service_notes: pi.service_notes,
         ftc_rate_id: (pi as any).ftc_rate_id || null,
       },
     }));
