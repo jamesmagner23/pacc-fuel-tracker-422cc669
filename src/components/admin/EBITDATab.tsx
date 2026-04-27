@@ -1,9 +1,29 @@
 import { useMemo, useState } from "react";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
-import { subDays, parseISO, format, startOfMonth, endOfMonth, differenceInCalendarDays } from "date-fns";
-import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { subDays, parseISO, format, startOfMonth, endOfMonth, differenceInCalendarDays, eachDayOfInterval } from "date-fns";
+import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine, AreaChart, Area } from "recharts";
+import { DollarSign, Wallet } from "lucide-react";
+
+// Clamp arbitrary input to a safe non-negative finite number.
+const sanitizeAmount = (val: unknown): number => {
+  const n = typeof val === "number" ? val : Number(val);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  // Cap at a sane upper bound to avoid distorting charts on accidental huge entries
+  return Math.min(n, 1_000_000_000);
+};
+
+// Ensure every key in OpexState has a finite, non-negative number.
+const normalizeOpex = (raw: Partial<OpexState> | undefined | null): OpexState => ({
+  wages: sanitizeAmount(raw?.wages),
+  fleet: sanitizeAmount(raw?.fleet),
+  rent: sanitizeAmount(raw?.rent),
+  insurance: sanitizeAmount(raw?.insurance),
+  fuel: sanitizeAmount(raw?.fuel),
+  repayments: sanitizeAmount(raw?.repayments),
+  tolls: sanitizeAmount(raw?.tolls),
+  other: sanitizeAmount(raw?.other),
+});
 
 const STORAGE_KEY = "admin_ebitda_opex_v2";
 type OpexState = {
