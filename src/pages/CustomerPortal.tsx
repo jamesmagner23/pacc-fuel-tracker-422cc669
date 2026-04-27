@@ -1020,6 +1020,43 @@ function DeliveriesTab({
                           borderRadius: 3, padding: "1px 5px",
                         }} title={project.site_address || undefined}>{project.name}</span>
                       )}
+                      {placa && !unmappedPlacaSet[placa] && (
+                        <span
+                          title="This placa hasn't been added as a plant item yet. Open the Plant tab to map it."
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 3,
+                            fontSize: 9,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: "#F59E0B",
+                            border: "1px solid rgba(245, 158, 11, 0.55)",
+                            background: "rgba(245, 158, 11, 0.12)",
+                            borderRadius: 3,
+                            padding: "1px 5px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          ⚠ Unmapped
+                        </span>
+                      )}
+                      {!placa && (
+                        <span
+                          title="No placa recorded on this delivery."
+                          style={{
+                            fontSize: 9,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: T.muted,
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 3,
+                            padding: "1px 5px",
+                          }}
+                        >
+                          No placa
+                        </span>
+                      )}
                     </div>
                     <div style={muted(11)}>
                       {t.nombre_cliente1}
