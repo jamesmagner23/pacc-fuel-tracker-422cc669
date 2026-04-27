@@ -12,6 +12,8 @@ type OpexState = {
   rent: number;
   insurance: number;
   fuel: number;
+  repayments: number;
+  tolls: number;
   other: number;
 };
 
@@ -21,6 +23,8 @@ const DEFAULT_OPEX: OpexState = {
   rent: 0,
   insurance: 0,
   fuel: 0,
+  repayments: 0,
+  tolls: 0,
   other: 0,
 };
 
