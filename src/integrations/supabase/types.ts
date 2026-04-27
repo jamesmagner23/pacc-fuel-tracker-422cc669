@@ -1163,6 +1163,13 @@ export type Database = {
     }
     Functions: {
       get_client_company_name: { Args: { _user_id: string }; Returns: string }
+      get_last_sync_status: {
+        Args: never
+        Returns: {
+          status: string
+          synced_at: string
+        }[]
+      }
       get_user_client_account_id: {
         Args: { _user_id: string }
         Returns: number
