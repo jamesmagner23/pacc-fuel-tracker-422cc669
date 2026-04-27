@@ -504,7 +504,14 @@ export default function CustomerPortal() {
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
-            {activeTab === "01 Overview" && <OverviewTab transactions={transactions} demoSuffix={demoSuffix} />}
+            {activeTab === "01 Overview" && (
+              <OverviewTab
+                transactions={transactions}
+                demoSuffix={demoSuffix}
+                speedsolNames={speedsolNames}
+                isDemo={isDemo}
+              />
+            )}
             {activeTab === "02 Deliveries" && (
               <DeliveriesTab
                 transactions={transactions}
