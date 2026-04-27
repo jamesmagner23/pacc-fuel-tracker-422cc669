@@ -94,11 +94,11 @@ function CustomerList() {
                 <button
                   key={c.name}
                   onClick={() => navigate(`/customers/${encodeURIComponent(c.name)}`)}
-                  className="aspect-square rounded-lg border border-border bg-card/40 hover:bg-card hover:border-primary/40 transition-all p-2.5 flex flex-col text-left animate-fade-in"
+                  className="rounded-lg border border-border bg-card/40 hover:bg-card hover:border-primary/40 transition-all p-2 flex flex-col text-left animate-fade-in min-h-[88px]"
                   style={{ animationDelay: `${i * 20}ms` }}
                 >
                   <div className="flex items-start justify-between gap-1">
-                    <div className="w-7 h-7 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
+                    <div className="w-6 h-6 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
                       {initials || "?"}
                     </div>
                     {c.revenue > 0 && (
@@ -107,14 +107,14 @@ function CustomerList() {
                       </div>
                     )}
                   </div>
-                  <div className="mt-2 flex-1 min-h-0">
-                    <div className="text-[11px] font-semibold text-foreground line-clamp-2 leading-tight">
+                  <div className="mt-1.5 flex-1 min-h-0">
+                    <div className="text-[11px] font-semibold text-foreground line-clamp-1 leading-tight">
                       {c.name}
                     </div>
                   </div>
-                  <div className="mt-1.5 pt-1.5 border-t border-border/60 flex items-baseline justify-between gap-1">
+                  <div className="mt-1 pt-1 border-t border-border/60 flex items-baseline justify-between gap-1">
                     <span className="text-xs font-bold text-foreground tabular-nums">{litresLabel}</span>
-                    <span className="text-[9px] text-muted-foreground tabular-nums">{c.deliveries}d</span>
+                    <span className="text-[9px] text-muted-foreground tabular-nums">{c.deliveries} drops</span>
                   </div>
                 </button>
               );
