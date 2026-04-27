@@ -17,6 +17,7 @@ import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
+import { SpeedSolStatus } from "@/components/customer/SpeedSolStatus";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
