@@ -432,47 +432,62 @@ export type Database = {
       plant_items: {
         Row: {
           client_account_id: number
+          colour: string | null
           created_at: string
           description: string | null
           equipment_type: string | null
           ftc_rate_id: string | null
           id: string
           is_active: boolean
+          manufacturer: string | null
+          model: string | null
           name: string
           photo_url: string | null
           placa: string | null
           serial_number: string | null
           service_notes: string | null
+          size: string | null
+          tank_size_litres: number | null
           updated_at: string
         }
         Insert: {
           client_account_id: number
+          colour?: string | null
           created_at?: string
           description?: string | null
           equipment_type?: string | null
           ftc_rate_id?: string | null
           id?: string
           is_active?: boolean
+          manufacturer?: string | null
+          model?: string | null
           name: string
           photo_url?: string | null
           placa?: string | null
           serial_number?: string | null
           service_notes?: string | null
+          size?: string | null
+          tank_size_litres?: number | null
           updated_at?: string
         }
         Update: {
           client_account_id?: number
+          colour?: string | null
           created_at?: string
           description?: string | null
           equipment_type?: string | null
           ftc_rate_id?: string | null
           id?: string
           is_active?: boolean
+          manufacturer?: string | null
+          model?: string | null
           name?: string
           photo_url?: string | null
           placa?: string | null
           serial_number?: string | null
           service_notes?: string | null
+          size?: string | null
+          tank_size_litres?: number | null
           updated_at?: string
         }
         Relationships: [
