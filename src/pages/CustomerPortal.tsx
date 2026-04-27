@@ -18,6 +18,12 @@ import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
 import { SpeedSolStatus } from "@/components/customer/SpeedSolStatus";
+import {
+  usePortalFilters,
+  filterTransactions,
+  type PortalFilters,
+} from "@/hooks/usePortalFilters";
+import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
@@ -277,6 +283,55 @@ export default function CustomerPortal() {
 
   const { data: transactions = [], isLoading } = useCustomerTransactions(speedsolNames);
 
+  // Shared lookups: placa → plant_item type / project assignment
+  const { data: plantItemsAll = [] } = usePlantItems(clientAccountId);
+  const { data: projectsAll = [] } = useProjects(clientAccountId);
+  const { data: assignmentsAll = [] } = useProjectAssignments(clientAccountId);
+
+  const lookups = useMemo(() => {
+    const placaToPlant: Record<string, string> = {};
+    const placaToType: Record<string, string | null | undefined> = {};
+    plantItemsAll.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (!placa) return;
+      placaToPlant[placa] = pi.id;
+      placaToType[placa] = pi.equipment_type;
+    });
+    const itemToProject: Record<string, string> = {};
+    assignmentsAll.forEach((a: any) => {
+      if (!a.removed_at) itemToProject[a.plant_item_id] = a.project_id;
+    });
+    const placaToProject: Record<string, string> = {};
+    plantItemsAll.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (placa && itemToProject[pi.id]) placaToProject[placa] = itemToProject[pi.id];
+    });
+    return { placaToPlant, placaToType, placaToProject };
+  }, [plantItemsAll, assignmentsAll]);
+
+  const availableTypes = useMemo(() => {
+    const set = new Set<string>();
+    plantItemsAll.forEach((pi) => {
+      if (pi.equipment_type) set.add(pi.equipment_type);
+    });
+    return Array.from(set).sort();
+  }, [plantItemsAll]);
+
+  const unmappedCount = useMemo(() => {
+    let n = 0;
+    transactions.forEach((t: any) => {
+      const placa = (t.placa || "").toString().trim();
+      if (!placa || !lookups.placaToPlant[placa]) n++;
+    });
+    return n;
+  }, [transactions, lookups]);
+
+  const portalFilters = usePortalFilters();
+  const filteredTransactions = useMemo(
+    () => filterTransactions(transactions, portalFilters.filters, lookups),
+    [transactions, portalFilters.filters, lookups]
+  );
+
   useEffect(() => {
     logActivity("page_view", { page: "customer_portal" });
   }, []);
@@ -466,7 +521,7 @@ export default function CustomerPortal() {
             display: "flex",
             gap: 0,
             borderBottom: `1px solid ${T.border}`,
-            marginBottom: 24,
+            marginBottom: 16,
             overflowX: "auto",
             scrollbarWidth: "none",
           }}
@@ -500,13 +555,31 @@ export default function CustomerPortal() {
           })}
         </div>
 
+        {/* Shared filter bar — applies to Overview / Deliveries / Plant */}
+        {(activeTab === "01 Overview" ||
+          activeTab === "02 Deliveries" ||
+          activeTab === "04 Plant") && (
+          <div style={{ marginBottom: 16 }}>
+            <PortalFilterBar
+              filters={portalFilters.filters}
+              onTypes={portalFilters.setTypes}
+              onProjects={portalFilters.setProjects}
+              onUnmappedOnly={portalFilters.setUnmappedOnly}
+              onReset={portalFilters.reset}
+              availableTypes={availableTypes}
+              availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
+              unmappedCount={unmappedCount}
+            />
+          </div>
+        )}
+
         {isLoading && activeTab !== "04 Plant" ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
             {activeTab === "01 Overview" && (
               <OverviewTab
-                transactions={transactions}
+                transactions={filteredTransactions}
                 demoSuffix={demoSuffix}
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
@@ -514,7 +587,11 @@ export default function CustomerPortal() {
             )}
             {activeTab === "02 Deliveries" && (
               <DeliveriesTab
-                transactions={transactions}
+                transactions={filteredTransactions}
+                allTransactionsCount={transactions.length}
+                portalFilters={portalFilters}
+                unmappedCount={unmappedCount}
+                unmappedPlacaSet={lookups.placaToPlant}
                 demoSuffix={demoSuffix}
                 clientAccountId={clientAccountId}
               />
@@ -522,7 +599,7 @@ export default function CustomerPortal() {
             {activeTab === "03 Projects" && (
               <ProjectsTab transactions={transactions} clientAccountId={clientAccountId} />
             )}
-            {activeTab === "04 Plant" && <PlantTab clientAccountId={clientAccountId} transactions={transactions} />}
+            {activeTab === "04 Plant" && <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />}
             {activeTab === "05 Emissions" && (
               <EmissionsTab transactions={transactions} companyName={companyName} />
             )}
@@ -728,10 +805,19 @@ function OverviewTab({
 // ═══════════════════════════════════════════════════════════════════════
 function DeliveriesTab({
   transactions,
+  allTransactionsCount,
+  portalFilters,
+  unmappedCount,
+  unmappedPlacaSet,
   demoSuffix,
   clientAccountId,
 }: {
   transactions: any[];
+  allTransactionsCount: number;
+  portalFilters: ReturnType<typeof usePortalFilters>;
+  unmappedCount: number;
+  /** placa → plant_item.id (presence used to detect unmapped). */
+  unmappedPlacaSet: Record<string, string>;
   demoSuffix: string;
   clientAccountId: number | null;
 }) {
@@ -817,6 +903,53 @@ function DeliveriesTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Unmapped warning banner — shown when there are unmapped placas
+          and the global "Unmapped only" filter isn't already on. */}
+      {unmappedCount > 0 && !portalFilters.filters.unmappedOnly && (
+        <div
+          role="alert"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 12px",
+            background: "rgba(245, 158, 11, 0.12)",
+            border: "1px solid rgba(245, 158, 11, 0.45)",
+            borderRadius: 8,
+            color: "#F5E6D0",
+            fontSize: 12,
+          }}
+        >
+          <span style={{ fontSize: 16, lineHeight: 1 }}>⚠️</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <strong style={{ color: "#F59E0B" }}>{unmappedCount}</strong>{" "}
+            {unmappedCount === 1 ? "delivery" : "deliveries"} from{" "}
+            {allTransactionsCount.toLocaleString()} can't be matched to a plant
+            item — add the placa under <em>Plant</em> to enable project tagging,
+            colour coding and notes.
+          </div>
+          <button
+            onClick={() => portalFilters.setUnmappedOnly(true)}
+            style={{
+              background: "#F59E0B",
+              color: "#3D2B1A",
+              border: "none",
+              padding: "6px 10px",
+              borderRadius: 4,
+              fontSize: 11,
+              fontFamily: T.sansHead,
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            View Unmapped
+          </button>
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8 }}>
         <select value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)} style={inputStyle}>
           <option value="all">All Sites</option>
@@ -886,6 +1019,43 @@ function DeliveriesTab({
                           color: T.accent, border: `1px solid ${T.accent}55`, background: `${T.accent}11`,
                           borderRadius: 3, padding: "1px 5px",
                         }} title={project.site_address || undefined}>{project.name}</span>
+                      )}
+                      {placa && !unmappedPlacaSet[placa] && (
+                        <span
+                          title="This placa hasn't been added as a plant item yet. Open the Plant tab to map it."
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 3,
+                            fontSize: 9,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: "#F59E0B",
+                            border: "1px solid rgba(245, 158, 11, 0.55)",
+                            background: "rgba(245, 158, 11, 0.12)",
+                            borderRadius: 3,
+                            padding: "1px 5px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          ⚠ Unmapped
+                        </span>
+                      )}
+                      {!placa && (
+                        <span
+                          title="No placa recorded on this delivery."
+                          style={{
+                            fontSize: 9,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: T.muted,
+                            border: `1px solid ${T.border}`,
+                            borderRadius: 3,
+                            padding: "1px 5px",
+                          }}
+                        >
+                          No placa
+                        </span>
                       )}
                     </div>
                     <div style={muted(11)}>
