@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -12,8 +12,22 @@ function CustomerList() {
   const { range } = useDateRange();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const navigate = useNavigate();
   const { data: filtered = [], isLoading } = useTransactions(range);
+
+  // Responsive page size: 8–10 based on viewport height
+  useEffect(() => {
+    const compute = () => {
+      const h = window.innerHeight;
+      if (h < 700) setPageSize(8);
+      else if (h < 850) setPageSize(9);
+      else setPageSize(10);
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, []);
 
   const rows = useMemo(() => {
     const map: Record<string, { name: string; litres: number; deliveries: number; revenue: number }> = {};
@@ -29,10 +43,9 @@ function CustomerList() {
       .sort((a, b) => b.litres - a.litres);
   }, [filtered, search]);
 
-  const PAGE_SIZE = 10;
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, totalPages - 1);
-  const pageRows = rows.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
+  const pageRows = rows.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
@@ -67,7 +80,7 @@ function CustomerList() {
               <div className="text-right">Revenue</div>
             </div>
             {pageRows.map((c, i) => {
-              const rank = currentPage * PAGE_SIZE + i + 1;
+              const rank = currentPage * pageSize + i + 1;
               return (
                 <button
                   key={c.name}
@@ -94,7 +107,7 @@ function CustomerList() {
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div>
-              Showing {currentPage * PAGE_SIZE + 1}–{Math.min((currentPage + 1) * PAGE_SIZE, rows.length)} of {rows.length}
+              Showing {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, rows.length)} of {rows.length}
             </div>
             <div className="flex items-center gap-2">
               <button
