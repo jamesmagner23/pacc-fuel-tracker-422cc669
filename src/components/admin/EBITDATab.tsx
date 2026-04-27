@@ -339,6 +339,60 @@ export default function EBITDATab() {
       <div className="text-[10px] text-muted-foreground">
         COGS calculated as litres × supplier buy price on each transaction date. Adjust buy prices in Finance → Buy Prices.
       </div>
+
+      {/* Repayments time-series */}
+      <div className="bg-surface border border-surface-border rounded-[10px] p-5">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold">Loan Repayments — {PERIOD_LABELS[period]}</h3>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+            <span>Total: <span className="text-foreground font-medium tabular-nums">${opex.repayments.toLocaleString()}</span></span>
+            <span>Daily avg: <span className="text-foreground font-medium tabular-nums">${repaymentsSeries[0]?.repayment.toLocaleString() ?? 0}</span></span>
+          </div>
+        </div>
+        {opex.repayments > 0 ? (
+          <div className="h-56">
+            <ResponsiveContainer>
+              <AreaChart data={repaymentsSeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="repayFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={accent} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={accent} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="var(--surface-border)" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: muted }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval="preserveStartEnd"
+                  minTickGap={24}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: muted }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(1) + "k" : v}`}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 12, color: "var(--text-primary)" }}
+                  formatter={(v: number, name: string) => [`$${Number(v).toLocaleString()}`, name]}
+                />
+                <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
+                <Area type="monotone" dataKey="repayment" name="Daily repayment" stroke={accent} strokeWidth={2} fill="url(#repayFill)" />
+                <Line type="monotone" dataKey="rolling" name="7-day rolling avg" stroke="#10B981" strokeWidth={2} dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="text-center text-xs text-muted-foreground py-12">
+            Enter a Loan Repayments amount above to see the time-series breakdown.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
