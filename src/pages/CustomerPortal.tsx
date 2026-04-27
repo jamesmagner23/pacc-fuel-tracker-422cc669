@@ -17,7 +17,6 @@ import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
-import { SpeedSolStatus } from "@/components/customer/SpeedSolStatus";
 import {
   usePortalFilters,
   filterTransactions,
@@ -25,8 +24,6 @@ import {
 } from "@/hooks/usePortalFilters";
 import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
-import { BulkMapModal } from "@/components/customer/BulkMapModal";
-import { PlantItemModal } from "@/components/customer/PlantItemModal";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
@@ -581,12 +578,10 @@ export default function CustomerPortal() {
               onTypes={portalFilters.setTypes}
               onProjects={portalFilters.setProjects}
               onTags={portalFilters.setTags}
-              onUnmappedOnly={portalFilters.setUnmappedOnly}
               onReset={portalFilters.reset}
               availableTypes={availableTypes}
               availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
               availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
-              unmappedCount={unmappedCount}
             />
           </div>
         )}
