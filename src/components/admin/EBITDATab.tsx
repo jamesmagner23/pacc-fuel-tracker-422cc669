@@ -178,12 +178,35 @@ export default function EBITDATab() {
     });
   }, [txns, sortedBuy, opex, periodStart]);
 
-  const handleOpex = (key: string, val: string) => {
-    const nextPeriodOpex = { ...opex, [key]: Number(val) || 0 };
+  const handleOpex = (key: keyof OpexState, val: string) => {
+    // Allow empty string while typing → treat as 0 for totals; store sanitized number
+    const trimmed = val.trim();
+    const safe = trimmed === "" ? 0 : sanitizeAmount(trimmed);
+    const nextPeriodOpex = normalizeOpex({ ...opex, [key]: safe });
     const next = { ...opexByPeriod, [period]: nextPeriodOpex };
     setOpexByPeriod(next);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
   };
+
+  // Repayments time-series for the selected period, with rolling average.
+  const repaymentsSeries = useMemo(() => {
+    const today = new Date();
+    const days = eachDayOfInterval({ start: periodStart, end: today });
+    if (days.length === 0) return [];
+    // Repayments entered as a period total → spread evenly across days.
+    const dailyRepayment = (opex.repayments || 0) / days.length;
+    const window = Math.min(7, days.length); // 7-day rolling average (or shorter if period < 7d)
+    return days.map((d, i) => {
+      const start = Math.max(0, i - window + 1);
+      const slice = i - start + 1;
+      const rolling = (dailyRepayment * slice) / slice; // constant in this model
+      return {
+        date: format(d, days.length > 90 ? "MMM d" : "MMM d"),
+        repayment: Math.round(dailyRepayment),
+        rolling: Math.round(rolling),
+      };
+    });
+  }, [opex.repayments, periodStart]);
 
   const accent = "var(--accent)";
   const muted = "var(--text-secondary)";
