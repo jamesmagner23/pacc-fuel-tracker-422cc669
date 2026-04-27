@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -11,6 +11,7 @@ import PricingTab from "@/components/finance/PricingTab";
 function CustomerList() {
   const { range } = useDateRange();
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
   const navigate = useNavigate();
   const { data: filtered = [], isLoading } = useTransactions(range);
 
@@ -28,6 +29,11 @@ function CustomerList() {
       .sort((a, b) => b.litres - a.litres);
   }, [filtered, search]);
 
+  const PAGE_SIZE = 10;
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages - 1);
+  const pageRows = rows.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
   }
@@ -36,66 +42,81 @@ function CustomerList() {
     <div className="space-y-4">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input type="text" placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+        <input
+          type="text"
+          placeholder="Search customers..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+          }}
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+        />
       </div>
 
       {rows.length === 0 ? (
         <div className="text-center text-muted-foreground py-12">No customers found. Click <strong>Sync Now</strong> to pull data.</div>
       ) : (
         <>
-          <div className="text-[11px] text-muted-foreground">
-            {rows.length} {rows.length === 1 ? "customer" : "customers"}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {rows.map((c, i) => {
-              const initials = c.name
-                .split(/\s+/)
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((w) => w[0])
-                .join("")
-                .toUpperCase();
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="hidden sm:grid grid-cols-[40px_1fr_100px_90px_110px] gap-3 px-4 py-2 bg-card/50 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-b border-border">
+              <div>#</div>
+              <div>Customer</div>
+              <div className="text-right">Volume</div>
+              <div className="text-right">Deliveries</div>
+              <div className="text-right">Revenue</div>
+            </div>
+            {pageRows.map((c, i) => {
+              const rank = currentPage * PAGE_SIZE + i + 1;
               return (
                 <button
                   key={c.name}
                   onClick={() => navigate(`/customers/${encodeURIComponent(c.name)}`)}
-                  className="group relative aspect-square glass-card p-3 sm:p-4 flex flex-col justify-between text-left hover:border-primary/40 hover:-translate-y-0.5 transition-all animate-fade-in overflow-hidden"
+                  className="w-full grid grid-cols-[32px_1fr_auto] sm:grid-cols-[40px_1fr_100px_90px_110px] gap-3 px-3 sm:px-4 py-2.5 items-center text-left bg-card/30 hover:bg-card transition-colors border-b border-border last:border-b-0 animate-fade-in"
                   style={{ animationDelay: `${i * 20}ms` }}
-                  title={c.name}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[11px] sm:text-xs font-bold shrink-0">
-                      {initials || "?"}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Deliveries</div>
-                      <div className="text-xs sm:text-sm font-semibold tabular-nums">{c.deliveries}</div>
-                    </div>
-                  </div>
-
+                  <div className="text-[11px] text-muted-foreground font-mono">{rank}</div>
                   <div className="min-w-0">
-                    <div className="font-semibold text-xs sm:text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-                      {c.name}
+                    <div className="font-medium text-xs sm:text-sm truncate text-foreground">{c.name}</div>
+                    <div className="sm:hidden text-[10px] text-muted-foreground mt-0.5">
+                      {c.litres.toLocaleString()}L · {c.deliveries} deliveries
                     </div>
                   </div>
-
-                  <div className="flex items-end justify-between gap-2 pt-1 border-t border-border/40">
-                    <div>
-                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Volume</div>
-                      <div className="text-xs sm:text-sm font-bold tabular-nums">
-                        {c.litres >= 1000 ? `${(c.litres / 1000).toFixed(1)}k` : c.litres.toFixed(0)}L
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground">Revenue</div>
-                      <div className="text-xs sm:text-sm font-bold tabular-nums">
-                        ${c.revenue >= 1000 ? `${(c.revenue / 1000).toFixed(1)}k` : c.revenue.toFixed(0)}
-                      </div>
-                    </div>
+                  <div className="hidden sm:block text-right text-xs font-semibold tabular-nums">{c.litres.toLocaleString()}L</div>
+                  <div className="hidden sm:block text-right text-xs text-muted-foreground tabular-nums">{c.deliveries}</div>
+                  <div className="text-right text-xs sm:text-sm font-semibold tabular-nums">
+                    ${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
                 </button>
               );
             })}
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div>
+              Showing {currentPage * PAGE_SIZE + 1}–{Math.min((currentPage + 1) * PAGE_SIZE, rows.length)} of {rows.length}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={currentPage === 0}
+                className="p-1.5 rounded-md border border-border hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <span className="tabular-nums">
+                {currentPage + 1} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={currentPage >= totalPages - 1}
+                className="p-1.5 rounded-md border border-border hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Next page"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </>
       )}

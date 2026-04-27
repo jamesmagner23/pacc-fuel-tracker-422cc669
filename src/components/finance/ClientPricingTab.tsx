@@ -576,18 +576,8 @@ export default function ClientPricingTab() {
                 <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} unit="%" width={36} />
                 <Tooltip
-                  cursor={{ fill: "hsl(var(--foreground) / 0.06)" }}
-                  contentStyle={{
-                    background: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--primary) / 0.4)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    color: "hsl(var(--foreground))",
-                    boxShadow: "0 8px 24px -8px hsl(0 0% 0% / 0.5)",
-                    padding: "8px 10px",
-                  }}
-                  itemStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-                  labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600, marginBottom: 4 }}
+                  cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
+                  contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
                   formatter={(value: number) => [`${value}%`, "Avg Margin"]}
                   labelFormatter={(_l, payload) => {
                     const item = payload?.[0]?.payload;

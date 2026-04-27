@@ -87,21 +87,7 @@ export default function AdminOverview() {
               <LineChart data={dailyChart}>
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  cursor={{ stroke: "hsl(var(--primary) / 0.4)", strokeWidth: 1 }}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--primary) / 0.4)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    color: "hsl(var(--foreground))",
-                    boxShadow: "0 8px 24px -8px hsl(0 0% 0% / 0.5)",
-                    padding: "8px 10px",
-                  }}
-                  labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600, marginBottom: 4 }}
-                  itemStyle={{ color: "hsl(var(--foreground))" }}
-                  formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
-                />
+                <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]} />
                 <Line type="monotone" dataKey="litres" stroke={accent} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>

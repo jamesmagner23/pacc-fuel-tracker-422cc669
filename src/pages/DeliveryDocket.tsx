@@ -82,14 +82,6 @@ export default function DeliveryDocket() {
     else if (id) fetchSingle();
   }, [id, isMulti, multiIds, isDemo]);
 
-  // Auto-print when ?print=1 is present (after data loads)
-  useEffect(() => {
-    if (!loading && items.length > 0 && searchParams.get("print") === "1") {
-      const t = setTimeout(() => window.print(), 300);
-      return () => clearTimeout(t);
-    }
-  }, [loading, items.length, searchParams]);
-
   const handlePrint = () => window.print();
 
   const handleThermalPrint = () => {
