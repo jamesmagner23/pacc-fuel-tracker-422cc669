@@ -595,6 +595,11 @@ function OverviewTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <SpeedSolStatus
+        speedsolNames={speedsolNames}
+        transactions={transactions}
+        isDemo={isDemo}
+      />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
         {kpis.map((k) => (
           <div key={k.label} style={card}>
