@@ -307,10 +307,12 @@ function EquipmentTab({
   equipment,
   clientAccountId,
   txns,
+  ftcRates,
 }: {
   equipment: any[];
   clientAccountId: number | null;
   txns: any[];
+  ftcRates: FtcRate[];
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<PlantItem> | null>(null);
@@ -322,6 +324,11 @@ function EquipmentTab({
     () => (selected ? txns.filter((t) => t.placa === selected) : []),
     [txns, selected]
   );
+  const selectedRate = useMemo(() => {
+    const id = selectedItem?.enriched?.ftc_rate_id;
+    return id ? ftcRates.find((r) => r.id === id) : null;
+  }, [selectedItem, ftcRates]);
+  const selectedClaim = selectedRate ? (selectedItem?.litres || 0) * Number(selectedRate.rate_per_litre) : 0;
 
   const handleEdit = (item: any) => {
     setEditing(item.enriched || { placa: item.placa, name: item.placa });
@@ -419,6 +426,21 @@ function EquipmentTab({
           {selectedItem.enriched?.service_notes && (
             <div className="text-xs bg-secondary/40 p-3 rounded-lg whitespace-pre-wrap">{selectedItem.enriched.service_notes}</div>
           )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-lg border border-border bg-secondary/30">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">FTC Category</div>
+              <div className="text-sm font-medium mt-0.5">{selectedRate?.equipment_type || "— Not set —"}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Rate</div>
+              <div className="text-sm font-medium mt-0.5">{selectedRate ? `${(Number(selectedRate.rate_per_litre) * 100).toFixed(1)}c/L` : "—"}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Claimable (all-time)</div>
+              <div className="text-sm font-bold text-primary mt-0.5">${selectedClaim.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+            </div>
+          </div>
 
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Recent Fills ({selectedTxns.length})</h3>
