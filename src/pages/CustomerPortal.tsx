@@ -283,6 +283,55 @@ export default function CustomerPortal() {
 
   const { data: transactions = [], isLoading } = useCustomerTransactions(speedsolNames);
 
+  // Shared lookups: placa → plant_item type / project assignment
+  const { data: plantItemsAll = [] } = usePlantItems(clientAccountId);
+  const { data: projectsAll = [] } = useProjects(clientAccountId);
+  const { data: assignmentsAll = [] } = useProjectAssignments(clientAccountId);
+
+  const lookups = useMemo(() => {
+    const placaToPlant: Record<string, string> = {};
+    const placaToType: Record<string, string | null | undefined> = {};
+    plantItemsAll.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (!placa) return;
+      placaToPlant[placa] = pi.id;
+      placaToType[placa] = pi.equipment_type;
+    });
+    const itemToProject: Record<string, string> = {};
+    assignmentsAll.forEach((a: any) => {
+      if (!a.removed_at) itemToProject[a.plant_item_id] = a.project_id;
+    });
+    const placaToProject: Record<string, string> = {};
+    plantItemsAll.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (placa && itemToProject[pi.id]) placaToProject[placa] = itemToProject[pi.id];
+    });
+    return { placaToPlant, placaToType, placaToProject };
+  }, [plantItemsAll, assignmentsAll]);
+
+  const availableTypes = useMemo(() => {
+    const set = new Set<string>();
+    plantItemsAll.forEach((pi) => {
+      if (pi.equipment_type) set.add(pi.equipment_type);
+    });
+    return Array.from(set).sort();
+  }, [plantItemsAll]);
+
+  const unmappedCount = useMemo(() => {
+    let n = 0;
+    transactions.forEach((t: any) => {
+      const placa = (t.placa || "").toString().trim();
+      if (!placa || !lookups.placaToPlant[placa]) n++;
+    });
+    return n;
+  }, [transactions, lookups]);
+
+  const portalFilters = usePortalFilters();
+  const filteredTransactions = useMemo(
+    () => filterTransactions(transactions, portalFilters.filters, lookups),
+    [transactions, portalFilters.filters, lookups]
+  );
+
   useEffect(() => {
     logActivity("page_view", { page: "customer_portal" });
   }, []);
