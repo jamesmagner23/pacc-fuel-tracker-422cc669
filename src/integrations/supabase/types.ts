@@ -390,6 +390,59 @@ export type Database = {
         }
         Relationships: []
       }
+      plant_items: {
+        Row: {
+          client_account_id: number
+          created_at: string
+          description: string | null
+          equipment_type: string | null
+          id: string
+          is_active: boolean
+          name: string
+          photo_url: string | null
+          placa: string | null
+          serial_number: string | null
+          service_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_account_id: number
+          created_at?: string
+          description?: string | null
+          equipment_type?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          photo_url?: string | null
+          placa?: string | null
+          serial_number?: string | null
+          service_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_account_id?: number
+          created_at?: string
+          description?: string | null
+          equipment_type?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          photo_url?: string | null
+          placa?: string | null
+          serial_number?: string | null
+          service_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_items_client_account_id_fkey"
+            columns: ["client_account_id"]
+            isOneToOne: false
+            referencedRelation: "client_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pricing_tiers: {
         Row: {
           created_at: string | null
@@ -416,6 +469,92 @@ export type Database = {
           tier_name?: string
         }
         Relationships: []
+      }
+      project_plant_assignments: {
+        Row: {
+          assigned_at: string
+          id: string
+          plant_item_id: string
+          project_id: string
+          removed_at: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          plant_item_id: string
+          project_id: string
+          removed_at?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          plant_item_id?: string
+          project_id?: string
+          removed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_plant_assignments_plant_item_id_fkey"
+            columns: ["plant_item_id"]
+            isOneToOne: false
+            referencedRelation: "plant_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_plant_assignments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          client_account_id: number
+          created_at: string
+          end_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          site_address: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_account_id: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          site_address?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_account_id?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          site_address?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_account_id_fkey"
+            columns: ["client_account_id"]
+            isOneToOne: false
+            referencedRelation: "client_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pump_readings: {
         Row: {
