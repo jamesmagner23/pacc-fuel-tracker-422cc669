@@ -219,54 +219,10 @@ export default function EBITDATab() {
           </div>
         </div>
 
-        {/* OpEx editor */}
-        <div className="bg-surface border border-surface-border rounded-[10px] p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Operating Expenses</h3>
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            Total for <span className="text-foreground font-medium">{PERIOD_LABELS[period]}</span>. Each period stores its own values. Saved locally.
-          </p>
-          {([
-            { key: "wages", label: "Wages & Salaries" },
-            { key: "fleet", label: "Fleet & Maintenance" },
-            { key: "fuel", label: "Vehicle Fuel" },
-            { key: "repayments", label: "Loan Repayments" },
-            { key: "tolls", label: "Tolls" },
-            { key: "rent", label: "Rent & Utilities" },
-            { key: "insurance", label: "Insurance" },
-            { key: "other", label: "Other" },
-          ] as { key: keyof OpexState; label: string }[]).map((row) => (
-            <div key={row.key} className="flex items-center justify-between gap-2">
-              <label className="text-xs text-muted-foreground flex-1">{row.label}</label>
-              <div className="relative w-32">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-                <input
-                  type="number"
-                  min={0}
-                  step="any"
-                  inputMode="decimal"
-                  value={opex[row.key] || ""}
-                  onChange={(e) => handleOpex(row.key, e.target.value)}
-                  onBlur={(e) => {
-                    // Re-normalize on blur so junk like "abc" or negatives clear to 0
-                    if (e.target.value.trim() === "") return;
-                    const safe = sanitizeAmount(e.target.value);
-                    if (safe !== Number(e.target.value)) handleOpex(row.key, String(safe));
-                  }}
-                  className="w-full bg-raised border border-surface-border rounded-md pl-5 pr-2 py-1.5 text-xs text-foreground tabular-nums text-right outline-none focus:ring-1 focus:ring-primary/50"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          ))}
-          <div className="border-t border-border pt-3 flex justify-between text-sm font-semibold">
-            <span>Total OpEx</span>
-            <span className="tabular-nums">${totals.totalOpex.toLocaleString()}</span>
-          </div>
-        </div>
       </div>
+
+      {/* Recurring expenses (drives EBITDA OpEx) */}
+      <RecurringExpensesPanel periodDays={periodDays} onPeriodTotalChange={handleRecurringTotal} />
 
       <div className="text-[10px] text-muted-foreground">
         COGS calculated as litres × supplier buy price on each transaction date. Adjust buy prices in Finance → Buy Prices.
@@ -280,11 +236,11 @@ export default function EBITDATab() {
             <h3 className="text-sm font-semibold">Loan Repayments — {PERIOD_LABELS[period]}</h3>
           </div>
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span>Total: <span className="text-foreground font-medium tabular-nums">${opex.repayments.toLocaleString()}</span></span>
-            <span>Daily avg: <span className="text-foreground font-medium tabular-nums">${repaymentsSeries[0]?.repayment.toLocaleString() ?? 0}</span></span>
+            <span>Period total: <span className="text-foreground font-medium tabular-nums">${Math.round(dailyRepayments * periodDays).toLocaleString()}</span></span>
+            <span>Daily: <span className="text-foreground font-medium tabular-nums">${dailyRepayments.toFixed(2)}</span></span>
           </div>
         </div>
-        {opex.repayments > 0 ? (
+        {dailyRepayments > 0 ? (
           <div className="h-56">
             <ResponsiveContainer>
               <AreaChart data={repaymentsSeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -321,7 +277,7 @@ export default function EBITDATab() {
           </div>
         ) : (
           <div className="text-center text-xs text-muted-foreground py-12">
-            Enter a Loan Repayments amount above to see the time-series breakdown.
+            Add a Repayments-category expense above to see the time-series breakdown.
           </div>
         )}
       </div>
