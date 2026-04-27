@@ -239,10 +239,10 @@ export default function PLOverview() {
               style={{
                 color:
                   k.positive === false
-                    ? "hsl(var(--destructive))"
+                    ? "#EF4444"
                     : k.positive === true
                     ? "#10B981"
-                    : "hsl(var(--foreground))",
+                    : "var(--text-primary)",
               }}
             >
               {k.value}
@@ -251,7 +251,7 @@ export default function PLOverview() {
               {k.pct !== undefined && k.pct !== null && (
                 <span
                   className="text-[11px] flex items-center gap-1"
-                  style={{ color: k.pct >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
+                  style={{ color: k.pct >= 0 ? "#10B981" : "#EF4444" }}
                 >
                   {k.pct >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
                   {k.pct >= 0 ? "+" : ""}
@@ -312,12 +312,12 @@ export default function PLOverview() {
               >
                 <XAxis
                   dataKey="name"
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                  tick={{ fill: "var(--text-secondary)", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                  tick={{ fill: "var(--text-secondary)", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
@@ -326,13 +326,13 @@ export default function PLOverview() {
                 <Tooltip
                   cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
                   contentStyle={{
-                    background: "hsl(var(--background))",
-                    border: "1px solid hsl(var(--border))",
+                    background: "var(--background)",
+                    border: "1px solid var(--surface-border)",
                     borderRadius: 8,
                     fontSize: 11,
                   }}
-                  labelStyle={{ color: "hsl(var(--foreground))" }}
-                  itemStyle={{ color: "hsl(var(--foreground))" }}
+                  labelStyle={{ color: "var(--text-primary)" }}
+                  itemStyle={{ color: "var(--text-primary)" }}
                   formatter={(value: number) => [`$${value.toLocaleString()}`, "Profit"]}
                   labelFormatter={(_label, payload) => {
                     const item = payload?.[0]?.payload;
@@ -398,7 +398,7 @@ export default function PLOverview() {
                     <td className="py-2.5 text-right text-foreground tabular-nums">
                       {c.litres.toLocaleString()}
                     </td>
-                    <td className="py-2.5 text-right tabular-nums" style={{ color: c.hasCustomPricing ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}>
+                    <td className="py-2.5 text-right tabular-nums" style={{ color: c.hasCustomPricing ? "var(--text-primary)" : "var(--text-secondary)" }}>
                       {c.hasCustomPricing ? `$${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
                     </td>
                     <td className="py-2.5 text-right tabular-nums text-muted-foreground">
@@ -406,13 +406,13 @@ export default function PLOverview() {
                     </td>
                     <td
                       className="py-2.5 text-right font-medium tabular-nums"
-                      style={{ color: !c.hasCustomPricing ? "hsl(var(--muted-foreground))" : c.profit >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
+                      style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.profit >= 0 ? "#10B981" : "#EF4444" }}
                     >
                       {c.hasCustomPricing ? `$${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
                     </td>
                     <td
                       className="py-2.5 text-right tabular-nums"
-                      style={{ color: !c.hasCustomPricing ? "hsl(var(--muted-foreground))" : c.margin >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
+                      style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.margin >= 0 ? "#10B981" : "#EF4444" }}
                     >
                       {c.hasCustomPricing ? `${c.margin.toFixed(1)}%` : "—"}
                     </td>
@@ -432,13 +432,13 @@ export default function PLOverview() {
                   </td>
                   <td
                     className="py-2.5 text-right tabular-nums"
-                    style={{ color: grossProfit >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
+                    style={{ color: grossProfit >= 0 ? "#10B981" : "#EF4444" }}
                   >
                     ${grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </td>
                   <td
                     className="py-2.5 text-right tabular-nums"
-                    style={{ color: grossMargin >= 0 ? "#10B981" : "hsl(var(--destructive))" }}
+                    style={{ color: grossMargin >= 0 ? "#10B981" : "#EF4444" }}
                   >
                     {grossMargin.toFixed(1)}%
                   </td>

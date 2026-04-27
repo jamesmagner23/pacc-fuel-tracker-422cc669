@@ -573,11 +573,11 @@ export default function ClientPricingTab() {
                 }).sort((a, b) => b.margin - a.margin)}
                 margin={{ top: 4, right: 8, bottom: 4, left: 0 }}
               >
-                <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} unit="%" width={36} />
+                <XAxis dataKey="name" tick={{ fill: "var(--text-secondary)", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "var(--text-secondary)", fontSize: 10 }} axisLine={false} tickLine={false} unit="%" width={36} />
                 <Tooltip
                   cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
-                  contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                  contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }}
                   formatter={(value: number) => [`${value}%`, "Avg Margin"]}
                   labelFormatter={(_l, payload) => {
                     const item = payload?.[0]?.payload;
@@ -623,7 +623,7 @@ export default function ClientPricingTab() {
               const worstMargin = Math.max(...margins);
 
               return (
-                <div key={clientId} style={{ borderBottom: gi < filteredGroups.length - 1 ? "1px solid hsl(var(--border))" : "none" }}>
+                <div key={clientId} style={{ borderBottom: gi < filteredGroups.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
                   {/* Client header */}
                   <div className="py-3 flex items-center justify-between cursor-pointer" onClick={() => setExpandedClient(isExpanded ? null : clientId)}>
                     <div className="min-w-0 flex-1">

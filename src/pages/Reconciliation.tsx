@@ -102,7 +102,7 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
       {/* Mode toggle */}
-      <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: "hsl(var(--surface-raised))", border: "1px solid hsl(var(--border))" }}>
+      <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: "var(--surface-raised)", border: "1px solid var(--surface-border)" }}>
         {(["week", "month", "custom"] as RangeMode[]).map((m) => (
           <button
             key={m}

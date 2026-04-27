@@ -201,14 +201,14 @@ export default function BuyPriceTab() {
                   <div className="mt-4 h-32">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={overlayData}>
-                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                        <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                        <YAxis tick={{ fontSize: 9, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                         <Tooltip
-                          contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }}
+                          contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }}
                           formatter={(v: number, name: string) => [`$${v?.toFixed(4)}/L ex GST`, name === "tgp" ? "TGP (AIP)" : "Your Buy"]}
                         />
-                        <Line type="monotone" dataKey="tgp" stroke="hsl(var(--muted-foreground))" strokeWidth={1.5} dot={false} connectNulls />
-                        <Line type="monotone" dataKey="buy" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} connectNulls />
+                        <Line type="monotone" dataKey="tgp" stroke="var(--text-secondary)" strokeWidth={1.5} dot={false} connectNulls />
+                        <Line type="monotone" dataKey="buy" stroke="var(--accent)" strokeWidth={2} dot={false} connectNulls />
                       </LineChart>
                     </ResponsiveContainer>
                     <div className="flex items-center justify-center gap-4 mt-1">
@@ -275,12 +275,12 @@ export default function BuyPriceTab() {
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
+                <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 9, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                 <Tooltip
-                  contentStyle={{ background: "hsl(var(--background))", border: "1px solid hsl(var(--primary))", borderRadius: 8, fontSize: 12 }}
-                  labelStyle={{ color: "hsl(var(--foreground))" }}
-                  itemStyle={{ color: "hsl(var(--foreground))" }}
+                  contentStyle={{ background: "var(--background)", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 12 }}
+                  labelStyle={{ color: "var(--text-primary)" }}
+                  itemStyle={{ color: "var(--text-primary)" }}
                   formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]}
                   cursor={{ stroke: "hsl(var(--muted-foreground) / 0.2)" }}
                 />
@@ -339,7 +339,7 @@ export default function BuyPriceTab() {
               const next = prices[i + 1];
               const change = next ? p.price_per_litre - next.price_per_litre : null;
               return (
-                <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderBottom: i < prices.length - 1 ? "1px solid hsl(var(--border))" : "none" }}>
+                <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderBottom: i < prices.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
                   <div>
                     <div className="text-[13px] text-foreground font-medium">{format(parseISO(p.price_date), "EEE dd MMM yyyy")}</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5">{p.supplier}</div>

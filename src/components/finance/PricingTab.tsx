@@ -704,7 +704,7 @@ export default function PricingTab() {
               {filteredQuotes.map((q, i, arr) => {
                 const items: any[] = (q as any).line_items || [];
                 return (
-                  <div key={q.id} className="flex items-center justify-between py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid hsl(var(--border))" : "none" }}>
+                  <div key={q.id} className="flex items-center justify-between py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
                     <div className="flex items-start gap-2 min-w-0 flex-1">
                       <button onClick={() => toggleSelect(q.id)} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-0 mt-0.5 flex-shrink-0 transition-colors">
                         {selectedIds.has(q.id) ? <CheckSquare className="w-3.5 h-3.5 text-primary" /> : <Square className="w-3.5 h-3.5" />}

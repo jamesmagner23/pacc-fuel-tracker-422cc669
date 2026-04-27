@@ -121,8 +121,8 @@ export default function EBITDATab() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
   };
 
-  const accent = "hsl(var(--primary))";
-  const muted = "hsl(var(--muted-foreground))";
+  const accent = "var(--accent)";
+  const muted = "var(--text-secondary)";
 
   if (isLoading) return <div className="text-muted-foreground py-12 text-center">Loading…</div>;
 
@@ -142,8 +142,8 @@ export default function EBITDATab() {
               onClick={() => setPeriod(p.v as any)}
               className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
               style={{
-                background: period === p.v ? "hsl(var(--primary))" : "transparent",
-                color: period === p.v ? "hsl(var(--primary-foreground))" : "hsl(var(--muted-foreground))",
+                background: period === p.v ? "var(--accent)" : "transparent",
+                color: period === p.v ? "#ffffff" : "var(--text-secondary)",
               }}
             >
               {p.l}
@@ -180,10 +180,10 @@ export default function EBITDATab() {
               <BarChart data={monthlyChart}>
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: muted }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => `$${v.toLocaleString()}`} />
+                <Tooltip contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => `$${v.toLocaleString()}`} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="revenue" name="Revenue" fill={accent} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="cogs" name="COGS" fill="hsl(var(--muted-foreground))" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="cogs" name="COGS" fill="var(--text-secondary)" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="ebitda" name="EBITDA" fill="hsl(var(--positive))" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
