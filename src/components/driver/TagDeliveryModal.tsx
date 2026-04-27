@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus } from "lucide-react";
+import { AlertTriangle, Loader2, Plus } from "lucide-react";
 import { usePlantItems } from "@/hooks/usePlantItems";
 import { useProjects, useUpsertProject } from "@/hooks/useProjects";
 import { useUpsertTransactionOverride } from "@/hooks/useTransactionOverrides";
@@ -45,6 +46,10 @@ export function TagDeliveryModal({
   const [plantItemId, setPlantItemId] = useState<string>("");
   const [projectId, setProjectId] = useState<string>("");
   const [newProjectName, setNewProjectName] = useState<string>("");
+  const [newProjectSite, setNewProjectSite] = useState<string>("");
+  const [newProjectCode, setNewProjectCode] = useState<string>("");
+  const [newProjectStart, setNewProjectStart] = useState<string>("");
+  const [newProjectEnd, setNewProjectEnd] = useState<string>("");
   const [creatingProject, setCreatingProject] = useState(false);
 
   const upsert = useUpsertTransactionOverride();
@@ -60,12 +65,23 @@ export function TagDeliveryModal({
     setPlantItemId(currentOverride?.plant_item_id || "");
     setProjectId(currentOverride?.project_id || "");
     setNewProjectName("");
+    setNewProjectSite("");
+    setNewProjectCode("");
+    setNewProjectStart("");
+    setNewProjectEnd("");
   }, [open, transaction, currentOverride]);
 
   const sortedPlant = useMemo(
     () => [...plantItems].sort((a, b) => a.name.localeCompare(b.name)),
     [plantItems]
   );
+
+  // Duplicate detection: case-insensitive trimmed match against this client's projects
+  const duplicateProject = useMemo(() => {
+    const q = newProjectName.trim().toLowerCase();
+    if (!q || projectId !== NEW) return null;
+    return projects.find((p) => (p.name || "").trim().toLowerCase() === q) || null;
+  }, [newProjectName, projects, projectId]);
 
   const handleSave = async () => {
     if (!transaction) return;
@@ -81,11 +97,25 @@ export function TagDeliveryModal({
         toast.error("Enter a name for the new project.");
         return;
       }
+      // Block save when a duplicate exists — force the user to choose
+      if (duplicateProject) {
+        toast.error("A project with this name already exists. Use it instead.");
+        return;
+      }
+      if (newProjectStart && newProjectEnd && newProjectEnd < newProjectStart) {
+        toast.error("End date can't be before start date.");
+        return;
+      }
       setCreatingProject(true);
       try {
         const res = await upsertProject.mutateAsync({
           client_account_id: clientId,
           name: newProjectName.trim(),
+          site_address: newProjectSite.trim() || null,
+          // Job code stored alongside the name in notes (no dedicated column)
+          notes: newProjectCode.trim() ? `Job code: ${newProjectCode.trim()}` : null,
+          start_date: newProjectStart || null,
+          end_date: newProjectEnd || null,
         } as any);
         finalProjectId = (res as any)?.id || null;
       } catch (e: any) {
@@ -203,13 +233,79 @@ export function TagDeliveryModal({
             </Select>
 
             {projectId === NEW && (
-              <Input
-                className="mt-2"
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                placeholder="New project name"
-                autoFocus
-              />
+              <div className="mt-2 grid gap-2 p-3 rounded-md border border-border bg-muted/30">
+                <div>
+                  <Label className="text-[11px]">Project name *</Label>
+                  <Input
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    placeholder="e.g. Westgate Tunnel — Stage 2"
+                    autoFocus
+                  />
+                  {duplicateProject && (
+                    <div className="mt-2 flex items-start gap-2 text-xs p-2 rounded border border-destructive/40 bg-destructive/10 text-destructive">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="m-0 font-medium">
+                          "{duplicateProject.name}" already exists for this customer.
+                        </p>
+                        <button
+                          type="button"
+                          className="mt-1 underline font-semibold"
+                          onClick={() => {
+                            setProjectId(duplicateProject.id);
+                            setNewProjectName("");
+                            setNewProjectSite("");
+                            setNewProjectCode("");
+                            setNewProjectStart("");
+                            setNewProjectEnd("");
+                          }}
+                        >
+                          Use existing project instead
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[11px]">Job code</Label>
+                    <Input
+                      value={newProjectCode}
+                      onChange={(e) => setNewProjectCode(e.target.value)}
+                      placeholder="Optional"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">Site address</Label>
+                    <Input
+                      value={newProjectSite}
+                      onChange={(e) => setNewProjectSite(e.target.value)}
+                      placeholder="Optional"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[11px]">Start date</Label>
+                    <Input
+                      type="date"
+                      value={newProjectStart}
+                      onChange={(e) => setNewProjectStart(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">End date</Label>
+                    <Input
+                      type="date"
+                      value={newProjectEnd}
+                      onChange={(e) => setNewProjectEnd(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
