@@ -47,9 +47,15 @@ export function useUpsertPlantItem() {
       if (item.id) {
         const { error } = await supabase.from("plant_items").update(payload).eq("id", item.id);
         if (error) throw error;
+        return { id: item.id };
       } else {
-        const { error } = await supabase.from("plant_items").insert(payload);
+        const { data, error } = await supabase
+          .from("plant_items")
+          .insert(payload)
+          .select("id")
+          .single();
         if (error) throw error;
+        return { id: data!.id as string };
       }
     },
     onSuccess: (_d, vars) => {

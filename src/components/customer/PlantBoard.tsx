@@ -29,6 +29,8 @@ interface PlantBoardProps {
   assignments: Assignment[];
   clientAccountId: number;
   readOnly?: boolean;
+  /** plant_item.id → tag names attached to that item (rendered as chips). */
+  tagsByItem?: Record<string, string[]>;
 }
 
 /**
@@ -42,6 +44,7 @@ export function PlantBoard({
   assignments,
   clientAccountId,
   readOnly = false,
+  tagsByItem = {},
 }: PlantBoardProps) {
   const move = useMoveAssignment();
   const [dragging, setDragging] = useState<string | null>(null);
@@ -252,6 +255,18 @@ export function PlantBoard({
                             {e.enriched!.service_notes && (
                               <div className="text-[10px] text-muted-foreground/80 italic truncate mt-0.5">
                                 {e.enriched!.service_notes}
+                              </div>
+                            )}
+                            {tagsByItem[id] && tagsByItem[id].length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {tagsByItem[id].map((t) => (
+                                  <span
+                                    key={t}
+                                    className="inline-block text-[9px] font-medium leading-none px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/25"
+                                  >
+                                    {t}
+                                  </span>
+                                ))}
                               </div>
                             )}
                           </div>

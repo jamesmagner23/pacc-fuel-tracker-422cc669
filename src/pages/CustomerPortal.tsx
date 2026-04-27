@@ -24,6 +24,7 @@ import {
   type PortalFilters,
 } from "@/hooks/usePortalFilters";
 import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
+import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 
 // ─── Theme tokens — match the rest of the PACC site ──────────────────
 const T = {
@@ -287,6 +288,8 @@ export default function CustomerPortal() {
   const { data: plantItemsAll = [] } = usePlantItems(clientAccountId);
   const { data: projectsAll = [] } = useProjects(clientAccountId);
   const { data: assignmentsAll = [] } = useProjectAssignments(clientAccountId);
+  const { data: plantTagsAll = [] } = usePlantTags(clientAccountId);
+  const { data: plantTagLinks = [] } = usePlantItemTagLinks(clientAccountId);
 
   const lookups = useMemo(() => {
     const placaToPlant: Record<string, string> = {};
@@ -306,8 +309,18 @@ export default function CustomerPortal() {
       const placa = (pi.placa || "").toString().trim();
       if (placa && itemToProject[pi.id]) placaToProject[placa] = itemToProject[pi.id];
     });
-    return { placaToPlant, placaToType, placaToProject };
-  }, [plantItemsAll, assignmentsAll]);
+    // Build placa → tag IDs lookup
+    const itemToTagIds: Record<string, string[]> = {};
+    plantTagLinks.forEach((l) => {
+      (itemToTagIds[l.plant_item_id] ||= []).push(l.tag_id);
+    });
+    const placaToTags: Record<string, string[]> = {};
+    plantItemsAll.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (placa && itemToTagIds[pi.id]) placaToTags[placa] = itemToTagIds[pi.id];
+    });
+    return { placaToPlant, placaToType, placaToProject, placaToTags };
+  }, [plantItemsAll, assignmentsAll, plantTagLinks]);
 
   const availableTypes = useMemo(() => {
     const set = new Set<string>();
@@ -564,10 +577,12 @@ export default function CustomerPortal() {
               filters={portalFilters.filters}
               onTypes={portalFilters.setTypes}
               onProjects={portalFilters.setProjects}
+              onTags={portalFilters.setTags}
               onUnmappedOnly={portalFilters.setUnmappedOnly}
               onReset={portalFilters.reset}
               availableTypes={availableTypes}
               availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
+              availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
               unmappedCount={unmappedCount}
             />
           </div>
@@ -2170,6 +2185,21 @@ function PlantTab({
   const { data: projects = [], isLoading: prLoading } = useProjects(clientAccountId);
   const { data: assignments = [] } = useProjectAssignments(clientAccountId);
   const { data: ftcRates = [] } = useFtcRates();
+  const { data: tagLibrary = [] } = usePlantTags(clientAccountId);
+  const { data: tagLinks = [] } = usePlantItemTagLinks(clientAccountId);
+
+  const tagsByItem = useMemo(() => {
+    const nameById: Record<string, string> = {};
+    tagLibrary.forEach((t) => { nameById[t.id] = t.name; });
+    const map: Record<string, string[]> = {};
+    tagLinks.forEach((l) => {
+      const name = nameById[l.tag_id];
+      if (!name) return;
+      (map[l.plant_item_id] ||= []).push(name);
+    });
+    Object.values(map).forEach((arr) => arr.sort());
+    return map;
+  }, [tagLibrary, tagLinks]);
 
   // Build equipment list from plant items + transaction stats keyed on placa
   const equipment = useMemo(() => {
@@ -2243,6 +2273,7 @@ function PlantTab({
         equipment={equipment}
         assignments={assignments}
         clientAccountId={clientAccountId}
+        tagsByItem={tagsByItem}
       />
 
       <div className="glass-card p-5">

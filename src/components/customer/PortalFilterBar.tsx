@@ -17,12 +17,15 @@ interface Props {
   filters: PortalFilters;
   onTypes: (v: string[]) => void;
   onProjects: (v: string[]) => void;
+  onTags: (v: string[]) => void;
   onUnmappedOnly: (v: boolean) => void;
   onReset: () => void;
   /** Available equipment types from the client's plant_items. */
   availableTypes: string[];
   /** Available projects [{ id, name }]. */
   availableProjects: { id: string; name: string }[];
+  /** Available tags [{ id, name }]. */
+  availableTags: { id: string; name: string }[];
   /** Number of unmapped placas in the current dataset (for the toggle badge). */
   unmappedCount: number;
 }
@@ -31,15 +34,18 @@ export function PortalFilterBar({
   filters,
   onTypes,
   onProjects,
+  onTags,
   onUnmappedOnly,
   onReset,
   availableTypes,
   availableProjects,
+  availableTags,
   unmappedCount,
 }: Props) {
   const isActive =
     filters.types.length > 0 ||
     filters.projects.length > 0 ||
+    filters.tags.length > 0 ||
     filters.unmappedOnly;
 
   return (
@@ -87,6 +93,16 @@ export function PortalFilterBar({
         selected={filters.projects}
         onChange={onProjects}
         emptyText="All projects"
+      />
+      <MultiPicker
+        label="Tags"
+        options={[
+          { value: "__none__", label: "Untagged" },
+          ...availableTags.map((t) => ({ value: t.id, label: t.name })),
+        ]}
+        selected={filters.tags}
+        onChange={onTags}
+        emptyText="All tags"
       />
 
       <button

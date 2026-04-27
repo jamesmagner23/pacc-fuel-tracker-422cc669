@@ -6,6 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useUpsertPlantItem, uploadPlantPhoto, type PlantItem } from "@/hooks/usePlantItems";
 import { useFtcRates } from "@/hooks/useFtcRates";
+import {
+  usePlantTags,
+  usePlantItemTagLinks,
+  useSavePlantItemTags,
+} from "@/hooks/usePlantTags";
+import { TagInput } from "@/components/customer/TagInput";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Upload, Loader2, X } from "lucide-react";
@@ -19,9 +25,13 @@ interface Props {
 
 export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }: Props) {
   const upsert = useUpsertPlantItem();
+  const saveTags = useSavePlantItemTags();
   const { data: ftcRates = [] } = useFtcRates();
+  const { data: allTags = [] } = usePlantTags(clientAccountId);
+  const { data: tagLinks = [] } = usePlantItemTagLinks(clientAccountId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
   const [form, setForm] = useState({
     id: "",
     placa: "",
@@ -58,8 +68,19 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
           initial?.tank_size_litres != null ? String(initial.tank_size_litres) : "",
         colour: (initial as any)?.colour || "",
       });
+      // Hydrate tags for this item from existing links
+      if (initial?.id) {
+        const tagIdsForItem = new Set(
+          tagLinks.filter((l) => l.plant_item_id === initial.id).map((l) => l.tag_id)
+        );
+        setTags(
+          allTags.filter((t) => tagIdsForItem.has(t.id)).map((t) => t.name)
+        );
+      } else {
+        setTags([]);
+      }
     }
-  }, [open, initial]);
+  }, [open, initial, tagLinks, allTags]);
 
   const handleFile = async (file: File | null) => {
     if (!file) return;
@@ -91,7 +112,7 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
       toast({ title: "Invalid tank size", description: "Must be a positive number.", variant: "destructive" });
       return;
     }
-    await upsert.mutateAsync({
+    const result = await upsert.mutateAsync({
       id: form.id || undefined,
       client_account_id: clientAccountId,
       placa: form.placa || null,
@@ -108,6 +129,17 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
       tank_size_litres: tankNum,
       colour: form.colour || null,
     } as any);
+    if (result?.id) {
+      try {
+        await saveTags.mutateAsync({
+          plantItemId: result.id,
+          clientAccountId,
+          tagNames: tags,
+        });
+      } catch {
+        /* toast handled inside the hook */
+      }
+    }
     onOpenChange(false);
   };
 
@@ -223,6 +255,18 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
           <div>
             <Label>Service Notes</Label>
             <Textarea rows={2} value={form.service_notes} onChange={(e) => setForm({ ...form, service_notes: e.target.value })} />
+          </div>
+          <div>
+            <Label>Tags</Label>
+            <TagInput
+              value={tags}
+              onChange={setTags}
+              suggestions={allTags.map((t) => t.name)}
+              placeholder="e.g. excavator, night-shift, site-42"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Free-form labels for grouping and filtering. Press Enter or comma to add. Existing tags appear as suggestions.
+            </p>
           </div>
           <div>
             <Label>Fuel Tax Credit Category</Label>

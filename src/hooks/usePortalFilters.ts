@@ -7,11 +7,13 @@ export interface PortalFilters {
   types: string[];
   /** Project IDs to include. Empty = all projects. Special value "__none__" = unassigned. */
   projects: string[];
+  /** Plant tag IDs to include. Empty = all tags. Special value "__none__" = untagged. */
+  tags: string[];
   /** Show only deliveries whose placa has no matching plant_item. */
   unmappedOnly: boolean;
 }
 
-const EMPTY: PortalFilters = { types: [], projects: [], unmappedOnly: false };
+const EMPTY: PortalFilters = { types: [], projects: [], tags: [], unmappedOnly: false };
 
 function read(): PortalFilters {
   try {
@@ -21,6 +23,7 @@ function read(): PortalFilters {
     return {
       types: Array.isArray(v.types) ? v.types : [],
       projects: Array.isArray(v.projects) ? v.projects : [],
+      tags: Array.isArray(v.tags) ? v.tags : [],
       unmappedOnly: !!v.unmappedOnly,
     };
   } catch {
@@ -69,6 +72,10 @@ export function usePortalFilters() {
     (projects: string[]) => setFilters((f) => ({ ...f, projects })),
     []
   );
+  const setTags = useCallback(
+    (tags: string[]) => setFilters((f) => ({ ...f, tags })),
+    []
+  );
   const setUnmappedOnly = useCallback(
     (unmappedOnly: boolean) => setFilters((f) => ({ ...f, unmappedOnly })),
     []
@@ -79,11 +86,12 @@ export function usePortalFilters() {
     () =>
       filters.types.length > 0 ||
       filters.projects.length > 0 ||
+      filters.tags.length > 0 ||
       filters.unmappedOnly,
     [filters]
   );
 
-  return { filters, setTypes, setProjects, setUnmappedOnly, reset, isActive };
+  return { filters, setTypes, setProjects, setTags, setUnmappedOnly, reset, isActive };
 }
 
 /**
@@ -104,23 +112,28 @@ export function filterTransactions<T extends { placa?: string | null }>(
     placaToType: Record<string, string | null | undefined>;
     placaToProject: Record<string, string>;
     placaToPlant: Record<string, unknown>;
+    /** placa → list of tag ids attached to that plant_item. */
+    placaToTags?: Record<string, string[]>;
   }
 ): T[] {
-  const { types, projects, unmappedOnly } = filters;
-  if (!types.length && !projects.length && !unmappedOnly) return transactions;
+  const { types, projects, tags, unmappedOnly } = filters;
+  if (!types.length && !projects.length && !tags.length && !unmappedOnly)
+    return transactions;
 
   const typeSet = new Set(types);
   const projSet = new Set(projects);
+  const tagSet = new Set(tags);
+  const placaToTags = lookups.placaToTags || {};
 
   return transactions.filter((t) => {
     const placa = (t.placa || "").toString().trim();
     const isMapped = !!placa && !!lookups.placaToPlant[placa];
 
     if (unmappedOnly && isMapped) return false;
-    // When unmappedOnly is the only active filter, skip type/project checks.
-    if (unmappedOnly && !types.length && !projects.length) return true;
+    // When unmappedOnly is the only active filter, skip downstream checks.
+    if (unmappedOnly && !types.length && !projects.length && !tags.length) return true;
 
-    // Unmapped rows can't satisfy type/project filters
+    // Unmapped rows can't satisfy type/project/tag filters
     if (!isMapped) return unmappedOnly ? true : false;
 
     if (typeSet.size > 0) {
@@ -130,6 +143,16 @@ export function filterTransactions<T extends { placa?: string | null }>(
     if (projSet.size > 0) {
       const pid = lookups.placaToProject[placa] || "__none__";
       if (!projSet.has(pid)) return false;
+    }
+    if (tagSet.size > 0) {
+      const itemTags = placaToTags[placa] || [];
+      if (itemTags.length === 0) {
+        if (!tagSet.has("__none__")) return false;
+      } else {
+        const ok = itemTags.some((id) => tagSet.has(id)) ||
+          (tagSet.has("__none__") && itemTags.length === 0);
+        if (!ok) return false;
+      }
     }
     return true;
   });
