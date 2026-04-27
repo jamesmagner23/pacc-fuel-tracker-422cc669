@@ -2185,6 +2185,21 @@ function PlantTab({
   const { data: projects = [], isLoading: prLoading } = useProjects(clientAccountId);
   const { data: assignments = [] } = useProjectAssignments(clientAccountId);
   const { data: ftcRates = [] } = useFtcRates();
+  const { data: tagLibrary = [] } = usePlantTags(clientAccountId);
+  const { data: tagLinks = [] } = usePlantItemTagLinks(clientAccountId);
+
+  const tagsByItem = useMemo(() => {
+    const nameById: Record<string, string> = {};
+    tagLibrary.forEach((t) => { nameById[t.id] = t.name; });
+    const map: Record<string, string[]> = {};
+    tagLinks.forEach((l) => {
+      const name = nameById[l.tag_id];
+      if (!name) return;
+      (map[l.plant_item_id] ||= []).push(name);
+    });
+    Object.values(map).forEach((arr) => arr.sort());
+    return map;
+  }, [tagLibrary, tagLinks]);
 
   // Build equipment list from plant items + transaction stats keyed on placa
   const equipment = useMemo(() => {
@@ -2258,6 +2273,7 @@ function PlantTab({
         equipment={equipment}
         assignments={assignments}
         clientAccountId={clientAccountId}
+        tagsByItem={tagsByItem}
       />
 
       <div className="glass-card p-5">
