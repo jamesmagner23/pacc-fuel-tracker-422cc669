@@ -10,9 +10,10 @@ import { abnError, formatAbn, stripAbn } from "@/lib/abn";
 const T = {
   bg: "#120a04",
   card: "#1e1008",
-  border: "#3a2418",
+  border: "#5a3a26",
   text: "#f5e6d6",
-  muted: "rgba(245,230,214,0.55)",
+  muted: "rgba(245,230,214,0.78)",
+  subtle: "rgba(245,230,214,0.92)",
   accent: "#f04a1a",
   sansHead: "Inter, system-ui, sans-serif",
   sansBody: "Inter, system-ui, sans-serif",
@@ -42,7 +43,9 @@ const input: React.CSSProperties = {
 
 const inputDisabled: React.CSSProperties = {
   ...input,
-  opacity: 0.55,
+  background: "#2a1810",
+  color: T.subtle,
+  opacity: 1,
   cursor: "not-allowed",
 };
 
