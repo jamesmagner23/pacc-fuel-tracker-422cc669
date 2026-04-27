@@ -521,6 +521,14 @@ export default function CustomerPortal() {
           </>
         )}
       </div>
+
+      <AccountModal
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+        clientAccountId={clientAccountId}
+        companyName={companyName}
+        userEmail={userEmail}
+      />
     </div>
   );
 }
