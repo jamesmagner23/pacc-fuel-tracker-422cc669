@@ -23,7 +23,7 @@ function useRegoConflicts() {
     queryFn: async (): Promise<ConflictGroup[]> => {
       const { data, error } = await supabase.rpc("list_rego_conflicts");
       if (error) throw error;
-      return (data || []) as ConflictGroup[];
+      return (data as unknown as ConflictGroup[]) || [];
     },
   });
 }
