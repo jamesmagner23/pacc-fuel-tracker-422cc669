@@ -1471,7 +1471,7 @@ function ProjectsTab({
 
     const perProject: Record<
       string,
-      { litres: number; deliveries: number; topPlant: Record<string, number> }
+      { litres: number; deliveries: number; topPlant: Record<string, number>; weekly: Record<string, { litres: number; deliveries: number }> }
     > = {};
     let unassignedLitres = 0;
     let unassignedDeliveries = 0;
@@ -1497,10 +1497,19 @@ function ProjectsTab({
         unassignedDeliveries += 1;
         return;
       }
-      if (!perProject[pid]) perProject[pid] = { litres: 0, deliveries: 0, topPlant: {} };
+      if (!perProject[pid]) perProject[pid] = { litres: 0, deliveries: 0, topPlant: {}, weekly: {} };
       perProject[pid].litres += litres;
       perProject[pid].deliveries += 1;
       perProject[pid].topPlant[plantName] = (perProject[pid].topPlant[plantName] || 0) + litres;
+      // Week bucket (Monday start)
+      if (t.date) {
+        try {
+          const wkStart = format(startOfWeek(parseISO(t.date), { weekStartsOn: 1 }), "yyyy-MM-dd");
+          if (!perProject[pid].weekly[wkStart]) perProject[pid].weekly[wkStart] = { litres: 0, deliveries: 0 };
+          perProject[pid].weekly[wkStart].litres += litres;
+          perProject[pid].weekly[wkStart].deliveries += 1;
+        } catch {}
+      }
     });
 
     return { perProject, unassignedLitres, unassignedDeliveries };
