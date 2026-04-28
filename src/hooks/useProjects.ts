@@ -154,6 +154,15 @@ export function useMoveAssignment() {
     }) => {
       const now = new Date().toISOString();
 
+      // Capture current open assignment (if any) BEFORE we close it,
+      // so we can write an accurate audit entry with the from-project.
+      const { data: openRows } = await supabase
+        .from("project_plant_assignments")
+        .select("project_id")
+        .eq("plant_item_id", plant_item_id)
+        .is("removed_at", null);
+      const fromProjectId = openRows?.[0]?.project_id ?? null;
+
       // Soft-close any currently open assignment(s) so historical attribution
       // is preserved. Each transaction will be attributed to the project that
       // was active at that delivery's date.
@@ -175,6 +184,19 @@ export function useMoveAssignment() {
             removed_at: null,
           });
         if (insErr) throw insErr;
+      }
+
+      // Audit the move (best-effort: don't fail the user action if audit insert fails).
+      if (fromProjectId !== target_project_id) {
+        const { data: userData } = await supabase.auth.getUser();
+        await supabase.from("plant_assignment_audit").insert({
+          plant_item_id,
+          from_project_id: fromProjectId,
+          to_project_id: target_project_id,
+          changed_by: userData?.user?.id ?? null,
+          changed_at: now,
+          source: "drag_and_drop",
+        });
       }
     },
     onMutate: async (vars) => {
@@ -209,6 +231,34 @@ export function useMoveAssignment() {
     },
     onSettled: (_d, _e, vars) => {
       qc.invalidateQueries({ queryKey: ["project-assignments", vars.client_account_id] });
+      qc.invalidateQueries({ queryKey: ["plant-assignment-audit", vars.plant_item_id] });
+    },
+  });
+}
+
+export interface PlantAssignmentAuditEntry {
+  id: string;
+  plant_item_id: string;
+  from_project_id: string | null;
+  to_project_id: string | null;
+  changed_by: string | null;
+  changed_at: string;
+  source: string;
+  notes: string | null;
+}
+
+export function usePlantAssignmentAudit(plant_item_id: string | null | undefined) {
+  return useQuery({
+    queryKey: ["plant-assignment-audit", plant_item_id],
+    enabled: !!plant_item_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plant_assignment_audit")
+        .select("*")
+        .eq("plant_item_id", plant_item_id!)
+        .order("changed_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as PlantAssignmentAuditEntry[];
     },
   });
 }
