@@ -15,6 +15,7 @@ import { TagInput } from "@/components/customer/TagInput";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Upload, Loader2, X } from "lucide-react";
+import { PlantAssignmentTimeline } from "@/components/customer/PlantAssignmentTimeline";
 
 interface Props {
   open: boolean;
@@ -290,6 +291,12 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
               Used to calculate claimable fuel tax credits from delivered litres.
             </p>
           </div>
+          {form.id && (
+            <div className="border-t border-border pt-4">
+              <Label className="mb-2 block">Project assignment history</Label>
+              <PlantAssignmentTimeline plantItemId={form.id} clientAccountId={clientAccountId} />
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>

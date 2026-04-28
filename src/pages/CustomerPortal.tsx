@@ -14,6 +14,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { usePlantItems } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
+import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttribution";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
@@ -1454,36 +1455,12 @@ function ProjectsTab({
 
   const stats = useMemo(() => {
     // Group all assignment history by plant_item_id so we can look up the
-    // project that was active on the date of each transaction. This makes
-    // moves between projects time-aware: deliveries before a move stay with
-    // the old project, deliveries after the move belong to the new one.
-    const itemAssignments: Record<string, Array<{ project_id: string; assigned_at: string; removed_at: string | null }>> = {};
-    assignments.forEach((a: any) => {
-      (itemAssignments[a.plant_item_id] ||= []).push({
-        project_id: a.project_id,
-        assigned_at: a.assigned_at,
-        removed_at: a.removed_at,
-      });
-    });
-    // Sort each list ascending by assigned_at for deterministic lookup
-    Object.values(itemAssignments).forEach((list) =>
-      list.sort((a, b) => (a.assigned_at < b.assigned_at ? -1 : 1))
-    );
-    const projectForItemAt = (itemId: string | undefined, isoDate: string | null): string | undefined => {
-      if (!itemId) return undefined;
-      const list = itemAssignments[itemId];
-      if (!list || !list.length) return undefined;
-      const ts = isoDate || new Date().toISOString();
-      // Find an assignment window containing this timestamp
-      for (const a of list) {
-        if (a.assigned_at <= ts && (a.removed_at === null || ts < a.removed_at)) {
-          return a.project_id;
-        }
-      }
-      // Fallback: if the txn predates any assignment, use the earliest one
-      // (covers historical data synced before the assignment was recorded).
-      return list[0].project_id;
-    };
+    // project that was active on the date of each transaction. Time-aware:
+    // deliveries before a move stay with the old project, deliveries after
+    // belong to the new one. (See src/lib/projectAttribution.ts for tests.)
+    const itemAssignments = groupAssignmentsByPlantItem(assignments as any);
+    const resolveProject = (itemId: string | undefined, isoDate: string | null) =>
+      projectForItemAt(itemAssignments, itemId, isoDate);
 
     const placaToName: Record<string, string> = {};
     const itemIdToName: Record<string, string> = {};
@@ -1516,9 +1493,9 @@ function ProjectsTab({
       }
       if (ov?.plant_item_id) {
         plantName = itemIdToName[ov.plant_item_id];
-        if (!pid) pid = projectForItemAt(ov.plant_item_id, txnDate);
+        if (!pid) pid = resolveProject(ov.plant_item_id, txnDate);
       }
-      if (!pid) pid = projectForItemAt(placaToItemId[placa], txnDate);
+      if (!pid) pid = resolveProject(placaToItemId[placa], txnDate);
       if (!plantName) plantName = placaToName[placa] || placa || "Untagged";
       if (!pid) {
         unassignedLitres += litres;
