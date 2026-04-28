@@ -62,16 +62,17 @@ function CustomerList() {
     const compute = () => {
       const h = window.innerHeight;
       const w = window.innerWidth;
-      // tile grid: aim for ~2 rows of tiles
-      let perRow = 3;
-      if (w >= 1280) perRow = 6;
-      else if (w >= 1024) perRow = 5;
-      else if (w >= 768) perRow = 4;
-      else if (w >= 480) perRow = 3;
-      // target ~12 tiles per page, scale up on taller screens
-      let target = 12;
-      if (h >= 900) target = 18;
-      if (h >= 1100) target = 24;
+      // Denser tile grid: more tiles per row + roughly double the per-page count
+      let perRow = 4;
+      if (w >= 1536) perRow = 10;
+      else if (w >= 1280) perRow = 9;
+      else if (w >= 1024) perRow = 8;
+      else if (w >= 768) perRow = 6;
+      else if (w >= 480) perRow = 5;
+      // target ~24 tiles per page, scale up on taller screens
+      let target = 24;
+      if (h >= 900) target = 36;
+      if (h >= 1100) target = 48;
       // round to a multiple of perRow for clean grid
       setPageSize(Math.max(perRow, Math.round(target / perRow) * perRow));
     };
@@ -208,7 +209,7 @@ function CustomerList() {
         <div className="text-center text-muted-foreground py-12">No customers found. Click <strong>Sync Now</strong> to pull data.</div>
       ) : (
         <>
-          <div className="grid grid-cols-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+          <div className="grid grid-cols-4 min-[480px]:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9 2xl:grid-cols-10 gap-2">
             {pageRows.map((c, i) => {
               const initials = c.name
                 .split(/\s+/)
@@ -225,11 +226,11 @@ function CustomerList() {
                 <button
                   key={c.name}
                   onClick={() => navigate(`/customers/${encodeURIComponent(c.name)}`)}
-                  className="rounded-lg border border-border bg-card/40 hover:bg-card hover:border-primary/40 transition-all p-2 flex flex-col text-left animate-fade-in min-h-[88px]"
+                  className="rounded-lg border border-border bg-card/40 hover:bg-card hover:border-primary/40 transition-all p-1.5 flex flex-col text-left animate-fade-in min-h-[68px]"
                   style={{ animationDelay: `${i * 20}ms` }}
                 >
                   <div className="flex items-start justify-between gap-1">
-                    <div className="w-6 h-6 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
+                    <div className="w-5 h-5 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[9px] font-bold shrink-0">
                       {initials || "?"}
                     </div>
                     {c.revenue > 0 && (
@@ -238,13 +239,13 @@ function CustomerList() {
                       </div>
                     )}
                   </div>
-                  <div className="mt-1.5 flex-1 min-h-0">
-                    <div className="text-[11px] font-semibold text-foreground line-clamp-1 leading-tight">
+                  <div className="mt-1 flex-1 min-h-0">
+                    <div className="text-[10px] font-semibold text-foreground line-clamp-2 leading-tight">
                       {c.name}
                     </div>
                   </div>
                   <div className="mt-1 pt-1 border-t border-border/60 flex items-baseline justify-between gap-1">
-                    <span className="text-xs font-bold text-foreground tabular-nums">{litresLabel}</span>
+                    <span className="text-[11px] font-bold text-foreground tabular-nums">{litresLabel}</span>
                     <span className="text-[9px] text-muted-foreground tabular-nums">{c.deliveries} drops</span>
                   </div>
                 </button>
