@@ -1294,6 +1294,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_rego_conflicts: {
+        Args: never
+        Returns: {
+          placa: string
+          plant_items: Json
+        }[]
+      }
+      tag_transaction_with_feedback: {
+        Args: {
+          _notes?: string
+          _plant_item_id: string
+          _project_id: string
+          _transaction_id: number
+        }
+        Returns: Json
+      }
       user_owns_speedsol_name: {
         Args: { _name: string; _user_id: string }
         Returns: boolean

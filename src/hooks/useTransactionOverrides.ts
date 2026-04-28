@@ -36,7 +36,18 @@ export function useTransactionOverrides(transactionIds: number[] | undefined) {
   });
 }
 
-/** Upsert (create or update) a single transaction override. */
+export interface TagFeedback {
+  plant_item_name: string | null;
+  placa: string | null;
+  backfill_count: number;
+  conflict: boolean;
+}
+
+/**
+ * Upsert a single transaction override via the `tag_transaction_with_feedback`
+ * RPC. Returns rich feedback (plant name, backfill count, conflict flag) so
+ * callers can render a precise confirmation toast for drivers.
+ */
 export function useUpsertTransactionOverride() {
   const qc = useQueryClient();
   return useMutation({
@@ -45,24 +56,53 @@ export function useUpsertTransactionOverride() {
       plant_item_id?: string | null;
       project_id?: string | null;
       notes?: string | null;
-    }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const payload = {
-        transaction_id: input.transaction_id,
-        plant_item_id: input.plant_item_id ?? null,
-        project_id: input.project_id ?? null,
-        notes: input.notes ?? null,
-        set_by: user?.id ?? null,
-      };
-      const { error } = await supabase
-        .from("transaction_overrides")
-        .upsert(payload, { onConflict: "transaction_id" });
+    }): Promise<TagFeedback> => {
+      const { data, error } = await supabase.rpc("tag_transaction_with_feedback", {
+        _transaction_id: input.transaction_id,
+        _plant_item_id: input.plant_item_id ?? null,
+        _project_id: input.project_id ?? null,
+        _notes: input.notes ?? null,
+      });
       if (error) throw error;
-      return payload;
+      const r = (data || {}) as any;
+      return {
+        plant_item_name: r.plant_item_name ?? null,
+        placa: r.placa ?? null,
+        backfill_count: Number(r.backfill_count ?? 0),
+        conflict: Boolean(r.conflict),
+      };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["transaction-overrides"] });
-      toast({ title: "Delivery tagged" });
+      // Build a precise message; fall back to a generic one when no plant.
+      if (!res.plant_item_name) {
+        toast({ title: "Delivery tagged" });
+        return;
+      }
+      let description = res.placa ? `Rego ${res.placa}` : undefined;
+      if (res.conflict) {
+        toast({
+          title: `Tagged to ${res.plant_item_name}`,
+          description:
+            (description ? description + " · " : "") +
+            "⚠ Rego is on multiple active plant items — auto-backfill skipped. Resolve in Admin › Rego Conflicts.",
+          variant: "destructive",
+        });
+      } else if (res.backfill_count > 0) {
+        toast({
+          title: `Tagged to ${res.plant_item_name}`,
+          description:
+            (description ? description + " · " : "") +
+            `Auto-backfilled ${res.backfill_count} matching deliver${
+              res.backfill_count === 1 ? "y" : "ies"
+            }.`,
+        });
+      } else {
+        toast({
+          title: `Tagged to ${res.plant_item_name}`,
+          description,
+        });
+      }
     },
     onError: (e: any) =>
       toast({ title: "Save failed", description: e.message, variant: "destructive" }),
