@@ -51,21 +51,11 @@ export function useEnsureClientAccount() {
       });
       if (match) return match.id as number;
 
-      // Compute next id (table has no default — use max+1)
-      const { data: maxRow } = await supabase
-        .from("client_accounts")
-        .select("id")
-        .order("id", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      const nextId = ((maxRow?.id as number | undefined) || 0) + 1;
-
       const { data, error } = await supabase
         .from("client_accounts")
         .insert({
-          id: nextId,
           company_name: trimmed,
-          contact_email: `unknown+${nextId}@placeholder.local`,
+          contact_email: `unknown+${Date.now()}@placeholder.local`,
           speedsol_name: trimmed,
           speedsol_names: [trimmed],
         })
