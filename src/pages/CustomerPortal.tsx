@@ -1453,20 +1453,47 @@ function ProjectsTab({
   const { data: overrides = {} } = useTransactionOverrides(txnIds);
 
   const stats = useMemo(() => {
-    // Map placa -> projectId
-    const itemToProject: Record<string, string> = {};
-    assignments.forEach((a) => {
-      if (!a.removed_at) itemToProject[a.plant_item_id] = a.project_id;
+    // Group all assignment history by plant_item_id so we can look up the
+    // project that was active on the date of each transaction. This makes
+    // moves between projects time-aware: deliveries before a move stay with
+    // the old project, deliveries after the move belong to the new one.
+    const itemAssignments: Record<string, Array<{ project_id: string; assigned_at: string; removed_at: string | null }>> = {};
+    assignments.forEach((a: any) => {
+      (itemAssignments[a.plant_item_id] ||= []).push({
+        project_id: a.project_id,
+        assigned_at: a.assigned_at,
+        removed_at: a.removed_at,
+      });
     });
-    const placaToProject: Record<string, string> = {};
+    // Sort each list ascending by assigned_at for deterministic lookup
+    Object.values(itemAssignments).forEach((list) =>
+      list.sort((a, b) => (a.assigned_at < b.assigned_at ? -1 : 1))
+    );
+    const projectForItemAt = (itemId: string | undefined, isoDate: string | null): string | undefined => {
+      if (!itemId) return undefined;
+      const list = itemAssignments[itemId];
+      if (!list || !list.length) return undefined;
+      const ts = isoDate || new Date().toISOString();
+      // Find an assignment window containing this timestamp
+      for (const a of list) {
+        if (a.assigned_at <= ts && (a.removed_at === null || ts < a.removed_at)) {
+          return a.project_id;
+        }
+      }
+      // Fallback: if the txn predates any assignment, use the earliest one
+      // (covers historical data synced before the assignment was recorded).
+      return list[0].project_id;
+    };
+
     const placaToName: Record<string, string> = {};
     const itemIdToName: Record<string, string> = {};
+    const placaToItemId: Record<string, string> = {};
     plantItems.forEach((pi) => {
       itemIdToName[pi.id] = pi.name;
       const placa = (pi.placa || "").toString().trim();
       if (!placa) return;
       placaToName[placa] = pi.name;
-      if (itemToProject[pi.id]) placaToProject[placa] = itemToProject[pi.id];
+      placaToItemId[placa] = pi.id;
     });
 
     const perProject: Record<
@@ -1479,6 +1506,7 @@ function ProjectsTab({
     transactions.forEach((t) => {
       const placa = (t.placa || "").toString().trim();
       const litres = t.cantidad || 0;
+      const txnDate = t.fecha || (t.date ? t.date + "T00:00:00.000Z" : null);
       // Priority: direct transaction override > override.plant_item assignment > placa lookup
       const ov = overrides[t.id];
       let pid: string | undefined;
@@ -1488,9 +1516,9 @@ function ProjectsTab({
       }
       if (ov?.plant_item_id) {
         plantName = itemIdToName[ov.plant_item_id];
-        if (!pid) pid = itemToProject[ov.plant_item_id];
+        if (!pid) pid = projectForItemAt(ov.plant_item_id, txnDate);
       }
-      if (!pid) pid = placaToProject[placa];
+      if (!pid) pid = projectForItemAt(placaToItemId[placa], txnDate);
       if (!plantName) plantName = placaToName[placa] || placa || "Untagged";
       if (!pid) {
         unassignedLitres += litres;
