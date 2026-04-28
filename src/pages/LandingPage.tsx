@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye } from "lucide-react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone } from "lucide-react";
 import heroImg from "@/assets/hero-construction.jpg";
 import refuelImg from "@/assets/refuelling-closeup.jpg";
 import truckSideImg from "@/assets/truck-side.jpg";
