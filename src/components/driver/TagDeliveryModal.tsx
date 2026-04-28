@@ -244,7 +244,7 @@ export function TagDeliveryModal({
                           preview.conflict_count > 3 ? ", …" : ""
                         })`
                       : ""}
-                    . Ask an admin to resolve this in <strong>Admin › Rego Conflicts</strong> first.
+                    . Ask an admin to clear or change the duplicate rego on one of those plant items first.
                   </p>
                 </div>
               </div>
