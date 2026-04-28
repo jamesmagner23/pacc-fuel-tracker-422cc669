@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.learn_plant_placa_from_override() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.auto_tag_transaction_by_placa() FROM PUBLIC, anon, authenticated;
