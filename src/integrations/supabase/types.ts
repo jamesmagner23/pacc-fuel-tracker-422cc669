@@ -521,6 +521,39 @@ export type Database = {
         }
         Relationships: []
       }
+      plant_assignment_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          from_project_id: string | null
+          id: string
+          notes: string | null
+          plant_item_id: string
+          source: string
+          to_project_id: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          from_project_id?: string | null
+          id?: string
+          notes?: string | null
+          plant_item_id: string
+          source?: string
+          to_project_id?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          from_project_id?: string | null
+          id?: string
+          notes?: string | null
+          plant_item_id?: string
+          source?: string
+          to_project_id?: string | null
+        }
+        Relationships: []
+      }
       plant_item_tags: {
         Row: {
           created_at: string
