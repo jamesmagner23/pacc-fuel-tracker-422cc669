@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
-import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, addDays } from "date-fns";
+import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, addDays, startOfWeek } from "date-fns";
 
 import { supabase } from "@/integrations/supabase/client";
 import { PACCLogo } from "@/components/PACCLogo";
@@ -1471,7 +1471,7 @@ function ProjectsTab({
 
     const perProject: Record<
       string,
-      { litres: number; deliveries: number; topPlant: Record<string, number> }
+      { litres: number; deliveries: number; topPlant: Record<string, number>; weekly: Record<string, { litres: number; deliveries: number }> }
     > = {};
     let unassignedLitres = 0;
     let unassignedDeliveries = 0;
@@ -1497,10 +1497,19 @@ function ProjectsTab({
         unassignedDeliveries += 1;
         return;
       }
-      if (!perProject[pid]) perProject[pid] = { litres: 0, deliveries: 0, topPlant: {} };
+      if (!perProject[pid]) perProject[pid] = { litres: 0, deliveries: 0, topPlant: {}, weekly: {} };
       perProject[pid].litres += litres;
       perProject[pid].deliveries += 1;
       perProject[pid].topPlant[plantName] = (perProject[pid].topPlant[plantName] || 0) + litres;
+      // Week bucket (Monday start)
+      if (t.date) {
+        try {
+          const wkStart = format(startOfWeek(parseISO(t.date), { weekStartsOn: 1 }), "yyyy-MM-dd");
+          if (!perProject[pid].weekly[wkStart]) perProject[pid].weekly[wkStart] = { litres: 0, deliveries: 0 };
+          perProject[pid].weekly[wkStart].litres += litres;
+          perProject[pid].weekly[wkStart].deliveries += 1;
+        } catch {}
+      }
     });
 
     return { perProject, unassignedLitres, unassignedDeliveries };
@@ -1558,6 +1567,10 @@ function ProjectsTab({
               ? Object.entries(s.topPlant).sort((a, b) => b[1] - a[1]).slice(0, 5)
               : [];
             const maxLitres = topPlant[0]?.[1] || 1;
+            const weekly = s
+              ? Object.entries(s.weekly).sort((a, b) => b[0].localeCompare(a[0]))
+              : [];
+            const maxWeekLitres = weekly.reduce((m, [, v]) => Math.max(m, v.litres), 0) || 1;
             return (
               <div key={p.id} style={card}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
@@ -1601,6 +1614,28 @@ function ProjectsTab({
                           <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 70, textAlign: "right" }}>{fmtL(l)}</span>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {weekly.length > 0 && (
+                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
+                    <div style={{ ...labelStyle, marginBottom: 8 }}>Weekly Breakdown</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {weekly.map(([wkStart, v]) => {
+                        const wkEnd = format(addDays(parseISO(wkStart), 6), "dd MMM");
+                        const label = `${format(parseISO(wkStart), "dd MMM")} – ${wkEnd}`;
+                        return (
+                          <div key={wkStart} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+                            <span style={{ color: T.textSecondary, width: 140, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{label}</span>
+                            <div style={{ flex: 1, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden" }}>
+                              <div style={{ width: `${(v.litres / maxWeekLitres) * 100}%`, height: "100%", background: T.accent }} />
+                            </div>
+                            <span style={{ color: T.muted, fontSize: 11, fontVariantNumeric: "tabular-nums", minWidth: 50, textAlign: "right" }}>{v.deliveries} dlv</span>
+                            <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 70, textAlign: "right" }}>{fmtL(v.litres)}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
