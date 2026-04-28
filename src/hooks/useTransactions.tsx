@@ -76,6 +76,28 @@ function filterByDateRange(txns: Transaction[], start: string, end: string) {
   return txns.filter(t => t.date && t.date >= start && t.date <= end);
 }
 
+/** Paginate a date-bounded transactions query past Supabase's 1000-row cap. */
+async function fetchAllInRange(start: string, end: string): Promise<Transaction[]> {
+  const PAGE = 1000;
+  const all: Transaction[] = [];
+  let from = 0;
+  for (let i = 0; i < 50; i++) {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .gte("date", start)
+      .lte("date", end)
+      .order("fecha", { ascending: false })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    const batch = (data || []) as Transaction[];
+    all.push(...batch);
+    if (batch.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
 export function useTransactions(range: DateRange) {
   const isDemo = useDemo();
   const { start, end } = getDateRange(range);
@@ -86,15 +108,7 @@ export function useTransactions(range: DateRange) {
       if (isDemo) {
         return filterByDateRange(getDemoData().transactions, start, end);
       }
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .gte("date", start)
-        .lte("date", end)
-        .order("fecha", { ascending: false });
-
-      if (error) throw error;
-      return (data || []) as Transaction[];
+      return fetchAllInRange(start, end);
     },
   });
 }
@@ -109,14 +123,7 @@ export function usePreviousTransactions(range: DateRange) {
       if (isDemo) {
         return filterByDateRange(getDemoData().transactions, start, end);
       }
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .gte("date", start)
-        .lte("date", end);
-
-      if (error) throw error;
-      return (data || []) as Transaction[];
+      return fetchAllInRange(start, end);
     },
   });
 }
