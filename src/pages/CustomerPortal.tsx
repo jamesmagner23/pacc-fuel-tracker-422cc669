@@ -357,6 +357,7 @@ export default function CustomerPortal() {
 
   return (
     <div style={{ minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
+      <WelcomeModal />
       {!isDemo && (
         <div
           style={{
