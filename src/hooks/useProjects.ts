@@ -152,31 +152,48 @@ export function useMoveAssignment() {
       target_project_id: string | null;
       client_account_id: number;
     }) => {
-      // Remove existing assignments for this plant item
-      const { error: delErr } = await supabase
-        .from("project_plant_assignments")
-        .delete()
-        .eq("plant_item_id", plant_item_id);
-      if (delErr) throw delErr;
+      const now = new Date().toISOString();
 
+      // Soft-close any currently open assignment(s) so historical attribution
+      // is preserved. Each transaction will be attributed to the project that
+      // was active at that delivery's date.
+      const { error: closeErr } = await supabase
+        .from("project_plant_assignments")
+        .update({ removed_at: now })
+        .eq("plant_item_id", plant_item_id)
+        .is("removed_at", null);
+      if (closeErr) throw closeErr;
+
+      // Open a new assignment on the target project starting now.
       if (target_project_id) {
         const { error: insErr } = await supabase
           .from("project_plant_assignments")
-          .insert({ plant_item_id, project_id: target_project_id });
-        if (insErr && !insErr.message.includes("duplicate")) throw insErr;
+          .insert({
+            plant_item_id,
+            project_id: target_project_id,
+            assigned_at: now,
+            removed_at: null,
+          });
+        if (insErr) throw insErr;
       }
     },
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey: ["project-assignments", vars.client_account_id] });
       const prev = qc.getQueryData<any[]>(["project-assignments", vars.client_account_id]);
       if (prev) {
-        const next = prev.filter((a) => a.plant_item_id !== vars.plant_item_id);
+        const now = new Date().toISOString();
+        // Soft-close existing open rows for this plant item; keep history rows intact.
+        const next = prev.map((a) =>
+          a.plant_item_id === vars.plant_item_id && !a.removed_at
+            ? { ...a, removed_at: now }
+            : a
+        );
         if (vars.target_project_id) {
           next.push({
             id: `temp-${Date.now()}`,
             project_id: vars.target_project_id,
             plant_item_id: vars.plant_item_id,
-            assigned_at: new Date().toISOString(),
+            assigned_at: now,
             removed_at: null,
           });
         }
