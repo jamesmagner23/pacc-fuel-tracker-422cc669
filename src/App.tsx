@@ -20,7 +20,6 @@ import DriverPortal from "./pages/DriverPortal";
 import Admin from "./pages/Admin";
 import Reconciliation from "./pages/Reconciliation";
 import TagDeliveries from "./pages/TagDeliveries";
-import RegoConflicts from "./pages/RegoConflicts";
 
 import Dispatch from "./pages/Dispatch";
 import Login from "./pages/Login";
@@ -58,7 +57,6 @@ function DemoAwareRoutes() {
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/dispatch" element={<Dispatch />} />
                 <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
-                <Route path="/admin/rego-conflicts" element={<RegoConflicts />} />
                 <Route path="/portal" element={<CustomerPortal />} />
                 <Route path="/driver" element={<DriverPortal />} />
                 <Route path="*" element={<NotFound />} />
@@ -85,7 +83,6 @@ function DemoAwareRoutes() {
                    
                    <Route path="/dispatch" element={<Dispatch />} />
                   <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
-                  <Route path="/admin/rego-conflicts" element={<RegoConflicts />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>

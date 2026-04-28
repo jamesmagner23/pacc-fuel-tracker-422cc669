@@ -63,8 +63,8 @@ export class RegoConflictError extends Error {
  *
  * Before saving, we call `check_plant_rego_conflict` for the target plant
  * item. If the rego is active on more than one plant item, we **block** the
- * tag entirely and surface a driver-facing warning toast pointing to the
- * Admin › Rego Conflicts screen for resolution.
+ * tag entirely and surface a driver-facing warning toast asking an admin to
+ * fix the duplicate rego on the plant item record.
  */
 export function useUpsertTransactionOverride() {
   const qc = useQueryClient();
@@ -122,7 +122,7 @@ export function useUpsertTransactionOverride() {
           title: `Tagged to ${res.plant_item_name}`,
           description:
             (description ? description + " · " : "") +
-            "⚠ Rego is on multiple active plant items — auto-backfill skipped. Resolve in Admin › Rego Conflicts.",
+            "⚠ Rego is on multiple active plant items — auto-backfill skipped. Ask an admin to fix the duplicate rego on the plant item.",
           variant: "destructive",
         });
       } else if (res.backfill_count > 0) {
@@ -149,7 +149,7 @@ export function useUpsertTransactionOverride() {
           description:
             `Rego ${e.placa ?? ""} is active on ${e.count} plant items` +
             (others ? ` (${others}${e.count > 3 ? ", …" : ""})` : "") +
-            ". Ask an admin to resolve this in Admin › Rego Conflicts before tagging.",
+            ". Ask an admin to clear or change the duplicate rego on one of the plant items before tagging.",
           variant: "destructive",
         });
         return;

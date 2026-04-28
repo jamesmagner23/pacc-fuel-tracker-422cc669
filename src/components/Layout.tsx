@@ -14,7 +14,6 @@ const navItems = [
   { to: "/finance", label: "Finance" },
   { to: "/dispatch", label: "Dispatch" },
   { to: "/admin/tag-deliveries", label: "Tag Deliveries" },
-  { to: "/admin/rego-conflicts", label: "Rego Conflicts" },
   { to: "/portal", label: "Client Portal", demoOnly: true },
   { to: "/driver", label: "Driver Portal", demoOnly: true },
   
