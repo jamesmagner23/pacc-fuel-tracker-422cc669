@@ -5,6 +5,7 @@ import { format, parseISO, subDays } from "date-fns";
 import { Users, Truck, Briefcase, AlertTriangle, Activity, Database } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useAllTransactions, useSyncLog } from "@/hooks/useTransactions";
+import DataHealthWidget from "./DataHealthWidget";
 
 export default function AdminOverview() {
   const { data: txns = [] } = useAllTransactions();
@@ -117,6 +118,8 @@ export default function AdminOverview() {
           </div>
         </div>
       </div>
+
+      <DataHealthWidget />
     </div>
   );
 }
