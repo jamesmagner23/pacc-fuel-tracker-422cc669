@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye } from "lucide-react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone } from "lucide-react";
 import heroImg from "@/assets/hero-construction.jpg";
 import refuelImg from "@/assets/refuelling-closeup.jpg";
 import truckSideImg from "@/assets/truck-side.jpg";
@@ -240,6 +240,51 @@ export default function LandingPage() {
               <span className="text-xs font-medium" style={{ color: "#F5E6D0" }}>{ind}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── CLIENT PORTAL ── */}
+      <section style={{ background: "#4A3525", borderTop: "1px solid #6B5240", borderBottom: "1px solid #6B5240" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+          <div className="text-center mb-10">
+            <p className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#E8461E" }}>
+              More Than Just Fuel
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: "#F5E6D0" }}>
+              Your Free Live Fuel Dashboard
+            </h2>
+            <p className="mt-3 text-sm max-w-xl mx-auto" style={{ color: "#C4A882" }}>
+              Every PACC Energy customer gets free 24/7 access to a private online portal — see every drop the moment
+              it lands, broken down by site, project, and machine. No spreadsheets, no waiting for end-of-month invoices.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            {[
+              { icon: BarChart3, title: "Live Deliveries", desc: "Watch every drop appear in real time with litres, driver, and price." },
+              { icon: Layers, title: "Project & Plant View", desc: "Fuel costs broken down per site and per machine — bill back accurately." },
+              { icon: FileText, title: "Instant Dockets", desc: "Download branded PDF dockets and CSV exports for your accounts team." },
+              { icon: Smartphone, title: "Works on Mobile", desc: "Site supervisors can check fuel status from the ute on 4G." },
+            ].map((f) => (
+              <div key={f.title} className="p-5 rounded-xl" style={{ background: "#56402E", border: "1px solid #6B5240" }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4" style={{ background: "rgba(232,70,30,0.12)" }}>
+                  <f.icon className="w-5 h-5" style={{ color: "#E8461E" }} />
+                </div>
+                <h3 className="text-sm font-semibold mb-2" style={{ color: "#F5E6D0" }}>{f.title}</h3>
+                <p className="text-xs leading-relaxed" style={{ color: "#8B7355" }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={() => navigate("/?demo=true")}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold cursor-pointer transition-all"
+              style={{ background: "#E8461E", color: "#fff", boxShadow: "0 8px 32px rgba(232,70,30,0.3)" }}
+            >
+              <Eye className="w-4 h-4" /> See a Live Demo
+            </button>
+          </div>
         </div>
       </section>
 
