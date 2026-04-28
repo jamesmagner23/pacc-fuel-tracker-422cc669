@@ -14,6 +14,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { usePlantItems } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
+import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttribution";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
