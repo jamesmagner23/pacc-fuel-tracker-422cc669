@@ -127,13 +127,24 @@ export function useAllTransactions() {
     queryKey: ["transactions-all", isDemo],
     queryFn: async () => {
       if (isDemo) return getDemoData().transactions;
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .order("fecha", { ascending: false });
-
-      if (error) throw error;
-      return (data || []) as Transaction[];
+      // Supabase caps a single response at 1000 rows. Paginate to get everything.
+      const PAGE = 1000;
+      const all: Transaction[] = [];
+      let from = 0;
+      // Safety cap so a runaway never hangs the UI
+      for (let i = 0; i < 50; i++) {
+        const { data, error } = await supabase
+          .from("transactions")
+          .select("*")
+          .order("fecha", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const batch = (data || []) as Transaction[];
+        all.push(...batch);
+        if (batch.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
     },
   });
 }
