@@ -1449,6 +1449,8 @@ function ProjectsTab({
   const { data: projects = [], isLoading: prLoading } = useProjects(clientAccountId);
   const { data: assignments = [] } = useProjectAssignments(clientAccountId);
   const { data: plantItems = [] } = usePlantItems(clientAccountId);
+  const txnIds = useMemo(() => transactions.map((t) => t.id).filter(Boolean), [transactions]);
+  const { data: overrides = {} } = useTransactionOverrides(txnIds);
 
   const stats = useMemo(() => {
     // Map placa -> projectId
@@ -1458,7 +1460,9 @@ function ProjectsTab({
     });
     const placaToProject: Record<string, string> = {};
     const placaToName: Record<string, string> = {};
+    const itemIdToName: Record<string, string> = {};
     plantItems.forEach((pi) => {
+      itemIdToName[pi.id] = pi.name;
       const placa = (pi.placa || "").toString().trim();
       if (!placa) return;
       placaToName[placa] = pi.name;
@@ -1474,8 +1478,20 @@ function ProjectsTab({
 
     transactions.forEach((t) => {
       const placa = (t.placa || "").toString().trim();
-      const pid = placaToProject[placa];
       const litres = t.cantidad || 0;
+      // Priority: direct transaction override > override.plant_item assignment > placa lookup
+      const ov = overrides[t.id];
+      let pid: string | undefined;
+      let plantName: string | undefined;
+      if (ov?.project_id) {
+        pid = ov.project_id;
+      }
+      if (ov?.plant_item_id) {
+        plantName = itemIdToName[ov.plant_item_id];
+        if (!pid) pid = itemToProject[ov.plant_item_id];
+      }
+      if (!pid) pid = placaToProject[placa];
+      if (!plantName) plantName = placaToName[placa] || placa || "Untagged";
       if (!pid) {
         unassignedLitres += litres;
         unassignedDeliveries += 1;
@@ -1484,12 +1500,11 @@ function ProjectsTab({
       if (!perProject[pid]) perProject[pid] = { litres: 0, deliveries: 0, topPlant: {} };
       perProject[pid].litres += litres;
       perProject[pid].deliveries += 1;
-      const k = placaToName[placa] || placa;
-      perProject[pid].topPlant[k] = (perProject[pid].topPlant[k] || 0) + litres;
+      perProject[pid].topPlant[plantName] = (perProject[pid].topPlant[plantName] || 0) + litres;
     });
 
     return { perProject, unassignedLitres, unassignedDeliveries };
-  }, [transactions, assignments, plantItems]);
+  }, [transactions, assignments, plantItems, overrides]);
 
   if (prLoading) return <p style={muted(13)}>Loading...</p>;
 
