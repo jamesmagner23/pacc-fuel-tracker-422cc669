@@ -1305,6 +1305,10 @@ export type Database = {
           plant_items: Json
         }[]
       }
+      preview_tag_transaction: {
+        Args: { _plant_item_id: string; _transaction_id: number }
+        Returns: Json
+      }
       tag_transaction_with_feedback: {
         Args: {
           _notes?: string

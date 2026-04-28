@@ -22,6 +22,7 @@ import { useProjects, useUpsertProject } from "@/hooks/useProjects";
 import { useUpsertTransactionOverride } from "@/hooks/useTransactionOverrides";
 import type { TransactionOverride } from "@/hooks/useTransactionOverrides";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   open: boolean;
@@ -51,6 +52,20 @@ export function TagDeliveryModal({
   const [newProjectEnd, setNewProjectEnd] = useState<string>("");
   const [creatingProject, setCreatingProject] = useState(false);
 
+  // Confirmation step: once a preview is loaded we show the summary and
+  // require an explicit "Confirm & Apply" before writing the override.
+  const [preview, setPreview] = useState<{
+    plant_item_name: string | null;
+    placa: string | null;
+    conflict: boolean;
+    conflict_count: number;
+    conflict_names: string[];
+    backfill_count: number;
+    plant_label: string;
+    project_label: string;
+  } | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+
   const upsert = useUpsertTransactionOverride();
   const upsertProject = useUpsertProject();
 
@@ -68,6 +83,7 @@ export function TagDeliveryModal({
     setNewProjectCode("");
     setNewProjectStart("");
     setNewProjectEnd("");
+    setPreview(null);
   }, [open, transaction, currentOverride]);
 
   const sortedPlant = useMemo(
@@ -82,11 +98,23 @@ export function TagDeliveryModal({
     return projects.find((p) => (p.name || "").trim().toLowerCase() === q) || null;
   }, [newProjectName, projects, projectId]);
 
-  const handleSave = async () => {
-    if (!transaction) return;
-    let finalProjectId: string | null = projectId === NONE || !projectId ? null : projectId;
+  // Build the in-memory project label for the preview summary.
+  const selectedProjectLabel = useMemo(() => {
+    if (!projectId || projectId === NONE) return "— None —";
+    if (projectId === NEW) return newProjectName.trim() || "(new project)";
+    return projects.find((p) => p.id === projectId)?.name || "(project)";
+  }, [projectId, newProjectName, projects]);
 
-    // Create new project if requested
+  const selectedPlantLabel = useMemo(() => {
+    if (!plantItemId || plantItemId === NONE) return "— None —";
+    const pi = sortedPlant.find((p) => p.id === plantItemId);
+    return pi ? `${pi.name}${pi.placa ? ` · ${pi.placa}` : ""}` : "(plant)";
+  }, [plantItemId, sortedPlant]);
+
+  /** Step 1: validate inputs, fetch the preview, and show the confirm summary. */
+  const handleReview = async () => {
+    if (!transaction) return;
+
     if (projectId === NEW) {
       if (!clientId) {
         toast.error("Pick a client first to create a project.");
@@ -96,7 +124,6 @@ export function TagDeliveryModal({
         toast.error("Enter a name for the new project.");
         return;
       }
-      // Block save when a duplicate exists — force the user to choose
       if (duplicateProject) {
         toast.error("A project with this name already exists. Use it instead.");
         return;
@@ -105,13 +132,46 @@ export function TagDeliveryModal({
         toast.error("End date can't be before start date.");
         return;
       }
+    }
+
+    setPreviewing(true);
+    try {
+      const pid = plantItemId && plantItemId !== NONE ? plantItemId : null;
+      const { data, error } = await supabase.rpc("preview_tag_transaction", {
+        _transaction_id: Number(transaction.id),
+        _plant_item_id: pid,
+      });
+      if (error) throw error;
+      const r = (data || {}) as any;
+      setPreview({
+        plant_item_name: r.plant_item_name ?? null,
+        placa: r.placa ?? null,
+        conflict: Boolean(r.conflict),
+        conflict_count: Number(r.conflict_count ?? 0),
+        conflict_names: Array.isArray(r.conflict_names) ? r.conflict_names : [],
+        backfill_count: Number(r.backfill_count ?? 0),
+        plant_label: selectedPlantLabel,
+        project_label: selectedProjectLabel,
+      });
+    } catch (e: any) {
+      toast.error(e.message || "Couldn't load preview");
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
+  /** Step 2: user confirmed — create the project (if new) and write the override. */
+  const handleConfirm = async () => {
+    if (!transaction) return;
+    let finalProjectId: string | null = projectId === NONE || !projectId ? null : projectId;
+
+    if (projectId === NEW) {
       setCreatingProject(true);
       try {
         const res = await upsertProject.mutateAsync({
           client_account_id: clientId,
           name: newProjectName.trim(),
           site_address: newProjectSite.trim() || null,
-          // Job code stored alongside the name in notes (no dedicated column)
           notes: newProjectCode.trim() ? `Job code: ${newProjectCode.trim()}` : null,
           start_date: newProjectStart || null,
           end_date: newProjectEnd || null,
@@ -141,7 +201,7 @@ export function TagDeliveryModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Tag Delivery</DialogTitle>
+          <DialogTitle>{preview ? "Confirm Tag" : "Tag Delivery"}</DialogTitle>
         </DialogHeader>
 
         {transaction && (
@@ -157,6 +217,53 @@ export function TagDeliveryModal({
           </div>
         )}
 
+        {preview ? (
+          <div className="grid gap-3 text-sm">
+            <div className="rounded-md border border-border p-3 grid gap-2">
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Plant / Equipment</span>
+                <span className="font-medium text-right">{preview.plant_label}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Project</span>
+                <span className="font-medium text-right">{preview.project_label}</span>
+              </div>
+            </div>
+
+            {preview.conflict ? (
+              <div className="flex items-start gap-2 text-xs p-3 rounded border border-destructive/40 bg-destructive/10 text-destructive">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold m-0">
+                    Rego conflict — tagging is blocked
+                  </p>
+                  <p className="m-0 mt-1">
+                    Rego {preview.placa} is active on {preview.conflict_count} plant items
+                    {preview.conflict_names.length
+                      ? ` (${preview.conflict_names.slice(0, 3).join(", ")}${
+                          preview.conflict_count > 3 ? ", …" : ""
+                        })`
+                      : ""}
+                    . Ask an admin to resolve this in <strong>Admin › Rego Conflicts</strong> first.
+                  </p>
+                </div>
+              </div>
+            ) : preview.backfill_count > 0 ? (
+              <div className="text-xs p-3 rounded border border-primary/40 bg-primary/10 text-foreground">
+                <p className="m-0">
+                  This will also <strong>auto-backfill {preview.backfill_count}</strong>{" "}
+                  matching deliver{preview.backfill_count === 1 ? "y" : "ies"} with rego{" "}
+                  <strong>{preview.placa}</strong> to{" "}
+                  <strong>{preview.plant_item_name}</strong>.
+                </p>
+              </div>
+            ) : preview.plant_item_name ? (
+              <p className="text-xs text-muted-foreground">
+                No other untagged deliveries match this plant item's rego.
+              </p>
+            ) : null}
+          </div>
+        ) : (
         <div className="grid gap-3">
           <div>
             <Label>Client</Label>
@@ -308,36 +415,63 @@ export function TagDeliveryModal({
             )}
           </div>
         </div>
+        )}
 
         <DialogFooter>
+          {preview ? (
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => setPreview(null)}
+                disabled={upsert.isPending || creatingProject}
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                disabled={upsert.isPending || creatingProject || preview.conflict}
+              >
+                {upsert.isPending || creatingProject ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    Applying…
+                  </>
+                ) : (
+                  "Confirm & Apply"
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            disabled={upsert.isPending || creatingProject}
+            disabled={previewing}
           >
             Cancel
           </Button>
           <Button
-            onClick={handleSave}
+            onClick={handleReview}
             disabled={
-              upsert.isPending ||
-              creatingProject ||
+              previewing ||
               !clientId ||
               (!plantItemId && !projectId)
             }
           >
-            {upsert.isPending || creatingProject ? (
+            {previewing ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                Saving…
+                Checking…
               </>
             ) : (
               <>
                 <Plus className="w-3.5 h-3.5 mr-1.5" />
-                Save Tag
+                Review &amp; Tag
               </>
             )}
           </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
