@@ -1275,6 +1275,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_plant_rego_conflict: {
+        Args: { _plant_item_id: string }
+        Returns: Json
+      }
       get_client_company_name: { Args: { _user_id: string }; Returns: string }
       get_last_sync_status: {
         Args: never

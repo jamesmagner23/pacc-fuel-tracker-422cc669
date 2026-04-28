@@ -43,10 +43,28 @@ export interface TagFeedback {
   conflict: boolean;
 }
 
+export class RegoConflictError extends Error {
+  placa: string | null;
+  count: number;
+  names: string[];
+  constructor(placa: string | null, count: number, names: string[]) {
+    super("Rego conflict — tag blocked");
+    this.name = "RegoConflictError";
+    this.placa = placa;
+    this.count = count;
+    this.names = names;
+  }
+}
+
 /**
  * Upsert a single transaction override via the `tag_transaction_with_feedback`
  * RPC. Returns rich feedback (plant name, backfill count, conflict flag) so
  * callers can render a precise confirmation toast for drivers.
+ *
+ * Before saving, we call `check_plant_rego_conflict` for the target plant
+ * item. If the rego is active on more than one plant item, we **block** the
+ * tag entirely and surface a driver-facing warning toast pointing to the
+ * Admin › Rego Conflicts screen for resolution.
  */
 export function useUpsertTransactionOverride() {
   const qc = useQueryClient();
@@ -57,6 +75,25 @@ export function useUpsertTransactionOverride() {
       project_id?: string | null;
       notes?: string | null;
     }): Promise<TagFeedback> => {
+      // Pre-check: block tagging if the target plant item shares a rego with
+      // another active plant item. This prevents bad auto-backfill and forces
+      // an admin to resolve the conflict first.
+      if (input.plant_item_id) {
+        const { data: check, error: checkErr } = await supabase.rpc(
+          "check_plant_rego_conflict",
+          { _plant_item_id: input.plant_item_id }
+        );
+        if (checkErr) throw checkErr;
+        const c = (check || {}) as any;
+        if (c.conflict) {
+          throw new RegoConflictError(
+            c.placa ?? null,
+            Number(c.count ?? 0),
+            Array.isArray(c.names) ? c.names : []
+          );
+        }
+      }
+
       const { data, error } = await supabase.rpc("tag_transaction_with_feedback", {
         _transaction_id: input.transaction_id,
         _plant_item_id: input.plant_item_id ?? null,
@@ -104,8 +141,21 @@ export function useUpsertTransactionOverride() {
         });
       }
     },
-    onError: (e: any) =>
-      toast({ title: "Save failed", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      if (e instanceof RegoConflictError) {
+        const others = (e.names || []).slice(0, 3).join(", ");
+        toast({
+          title: "⚠ Tag blocked — rego conflict",
+          description:
+            `Rego ${e.placa ?? ""} is active on ${e.count} plant items` +
+            (others ? ` (${others}${e.count > 3 ? ", …" : ""})` : "") +
+            ". Ask an admin to resolve this in Admin › Rego Conflicts before tagging.",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({ title: "Save failed", description: e.message, variant: "destructive" });
+    },
   });
 }
 
