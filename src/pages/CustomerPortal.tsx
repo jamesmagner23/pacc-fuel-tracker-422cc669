@@ -1493,9 +1493,9 @@ function ProjectsTab({
       }
       if (ov?.plant_item_id) {
         plantName = itemIdToName[ov.plant_item_id];
-        if (!pid) pid = projectForItemAt(ov.plant_item_id, txnDate);
+        if (!pid) pid = resolveProject(ov.plant_item_id, txnDate);
       }
-      if (!pid) pid = projectForItemAt(placaToItemId[placa], txnDate);
+      if (!pid) pid = resolveProject(placaToItemId[placa], txnDate);
       if (!plantName) plantName = placaToName[placa] || placa || "Untagged";
       if (!pid) {
         unassignedLitres += litres;
