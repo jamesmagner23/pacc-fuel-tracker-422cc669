@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_PLANT_ITEMS } from "@/data/demoData";
 
 export interface PlantItem {
   id: string;
@@ -24,10 +26,14 @@ export interface PlantItem {
 }
 
 export function usePlantItems(clientAccountId: number | null | undefined) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["plant-items", clientAccountId],
+    queryKey: ["plant-items", clientAccountId, isDemo],
     enabled: !!clientAccountId,
     queryFn: async () => {
+      if (isDemo) {
+        return DEMO_PLANT_ITEMS.filter((p) => p.client_account_id === clientAccountId) as PlantItem[];
+      }
       const { data, error } = await supabase
         .from("plant_items")
         .select("*")

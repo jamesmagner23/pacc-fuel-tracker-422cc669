@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
-import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, addDays, startOfWeek } from "date-fns";
+import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, addDays, startOfWeek, subDays } from "date-fns";
 
 import { supabase } from "@/integrations/supabase/client";
 import { PACCLogo } from "@/components/PACCLogo";
@@ -98,9 +98,19 @@ const tabs = [
   "02 Deliveries",
   "03 Projects",
   "04 Plant",
-  "05 Emissions",
+  "05 Analytics",
+  "06 Emissions",
 ] as const;
 type Tab = (typeof tabs)[number];
+
+// Day / Week / Month period toggle for the customer portal.
+type PortalPeriod = "day" | "week" | "month" | "all";
+const PERIOD_DAYS: Record<PortalPeriod, number | null> = {
+  day: 1, week: 7, month: 30, all: null,
+};
+const PERIOD_LABELS: Record<PortalPeriod, string> = {
+  day: "Today", week: "This Week", month: "This Month", all: "All Time",
+};
 
 const CO2_FACTOR = 2.68; // kg CO2e per litre diesel (Australian NGA)
 
@@ -302,6 +312,7 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 // ─── Main component ──────────────────────────────────────────────────
 export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState<Tab>("01 Overview");
+  const [period, setPeriod] = useState<PortalPeriod>("month");
   const isDemo = useDemo();
   const { theme: portalTheme, vars: portalVars, tokens: portalTokens } = usePortalTheme();
   // Sync the mutable T + style objects to the active theme BEFORE this
@@ -392,9 +403,20 @@ export default function CustomerPortal() {
   }, [transactions, lookups]);
 
   const portalFilters = usePortalFilters();
+  // Apply Day/Week/Month period to the raw transactions BEFORE the
+  // chip-style filter bar, so KPIs, charts and the analytics tab all
+  // respect the same time window.
+  const periodTransactions = useMemo(() => {
+    const days = PERIOD_DAYS[period];
+    if (days == null) return transactions;
+    const cutoff = subDays(new Date(), days);
+    cutoff.setHours(0, 0, 0, 0);
+    const cutoffStr = format(cutoff, "yyyy-MM-dd");
+    return transactions.filter((t: any) => (t.date || "") >= cutoffStr);
+  }, [transactions, period]);
   const filteredTransactions = useMemo(
-    () => filterTransactions(transactions, portalFilters.filters, lookups),
-    [transactions, portalFilters.filters, lookups]
+    () => filterTransactions(periodTransactions, portalFilters.filters, lookups),
+    [periodTransactions, portalFilters.filters, lookups]
   );
 
   useEffect(() => {
@@ -645,6 +667,42 @@ export default function CustomerPortal() {
           })}
         </div>
 
+        {/* Day / Week / Month period toggle — applies to Overview, Deliveries,
+            Plant and Analytics tabs. */}
+        {(activeTab === "01 Overview" ||
+          activeTab === "02 Deliveries" ||
+          activeTab === "04 Plant" ||
+          activeTab === "05 Analytics") && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+            <div style={{ display: "inline-flex", border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
+              {(["day", "week", "month", "all"] as PortalPeriod[]).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  style={{
+                    padding: "8px 14px",
+                    fontSize: 11,
+                    fontFamily: T.sansHead,
+                    fontWeight: period === p ? 600 : 500,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: period === p ? "#ffffff" : T.textSecondary,
+                    background: period === p ? T.accent : "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {PERIOD_LABELS[p]}
+                </button>
+              ))}
+            </div>
+            <span style={{ ...muted(11), letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Showing {periodTransactions.length.toLocaleString()} deliveries · {PERIOD_LABELS[period]}
+            </span>
+          </div>
+        )}
+
         {/* Shared filter bar — applies to Overview / Deliveries / Plant */}
         {(activeTab === "01 Overview" ||
           activeTab === "02 Deliveries" ||
@@ -687,10 +745,17 @@ export default function CustomerPortal() {
               />
             )}
             {activeTab === "03 Projects" && (
-              <ProjectsTab transactions={transactions} clientAccountId={clientAccountId} />
+              <ProjectsTab transactions={periodTransactions} clientAccountId={clientAccountId} />
             )}
             {activeTab === "04 Plant" && <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />}
-            {activeTab === "05 Emissions" && (
+            {activeTab === "05 Analytics" && (
+              <AnalyticsTab
+                transactions={filteredTransactions}
+                clientAccountId={clientAccountId}
+                periodLabel={PERIOD_LABELS[period]}
+              />
+            )}
+            {activeTab === "06 Emissions" && (
               <EmissionsTab transactions={transactions} companyName={companyName} />
             )}
           </>
@@ -2434,6 +2499,360 @@ function PlantTab({
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 05 ANALYTICS — machinery vs machinery, project vs project comparisons
+// ═══════════════════════════════════════════════════════════════════════
+function AnalyticsTab({
+  transactions,
+  clientAccountId,
+  periodLabel,
+}: {
+  transactions: any[];
+  clientAccountId: number | null;
+  periodLabel: string;
+}) {
+  const { data: plantItems = [] } = usePlantItems(clientAccountId);
+  const { data: projects = [] } = useProjects(clientAccountId);
+  const { data: assignments = [] } = useProjectAssignments(clientAccountId);
+  const { data: ftcRates = [] } = useFtcRates();
+
+  // placa → enriched item, item.id → project lookups
+  const enriched = useMemo(() => {
+    const placaToItem: Record<string, any> = {};
+    plantItems.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (placa) placaToItem[placa] = pi;
+    });
+    const itemToProject: Record<string, string> = {};
+    assignments.forEach((a: any) => {
+      if (!a.removed_at) itemToProject[a.plant_item_id] = a.project_id;
+    });
+    const projectById: Record<string, any> = {};
+    projects.forEach((p) => {
+      projectById[p.id] = p;
+    });
+    const ftcById: Record<string, FtcRate> = {};
+    ftcRates.forEach((r) => {
+      ftcById[r.id] = r;
+    });
+    return { placaToItem, itemToProject, projectById, ftcById };
+  }, [plantItems, projects, assignments, ftcRates]);
+
+  // Per-machinery roll-up
+  const perMachine = useMemo(() => {
+    const rows: Record<
+      string,
+      { id: string; name: string; type: string; placa: string; colour: string | null; litres: number; deliveries: number; ftcClaim: number; projectName: string }
+    > = {};
+    transactions.forEach((t) => {
+      const placa = (t.placa || "").toString().trim();
+      if (!placa) return;
+      const item = enriched.placaToItem[placa];
+      if (!item) return;
+      const projId = enriched.itemToProject[item.id];
+      const projName = projId ? enriched.projectById[projId]?.name || "Unassigned" : "Unassigned";
+      if (!rows[item.id]) {
+        rows[item.id] = {
+          id: item.id,
+          name: item.name,
+          type: item.equipment_type || "—",
+          placa,
+          colour: item.colour || null,
+          litres: 0,
+          deliveries: 0,
+          ftcClaim: 0,
+          projectName: projName,
+        };
+      }
+      const litres = t.cantidad || 0;
+      rows[item.id].litres += litres;
+      rows[item.id].deliveries += 1;
+      const ftc = item.ftc_rate_id ? enriched.ftcById[item.ftc_rate_id] : null;
+      if (ftc) rows[item.id].ftcClaim += litres * Number(ftc.rate_per_litre);
+    });
+    return Object.values(rows).sort((a, b) => b.litres - a.litres);
+  }, [transactions, enriched]);
+
+  // Per-project roll-up
+  const perProject = useMemo(() => {
+    const rows: Record<
+      string,
+      { id: string; name: string; site: string | null; litres: number; deliveries: number; ftcClaim: number; machineCount: Set<string> }
+    > = {};
+    transactions.forEach((t) => {
+      const placa = (t.placa || "").toString().trim();
+      if (!placa) return;
+      const item = enriched.placaToItem[placa];
+      if (!item) return;
+      const projId = enriched.itemToProject[item.id];
+      if (!projId) return;
+      const proj = enriched.projectById[projId];
+      if (!proj) return;
+      if (!rows[projId]) {
+        rows[projId] = {
+          id: projId,
+          name: proj.name,
+          site: proj.site_address,
+          litres: 0,
+          deliveries: 0,
+          ftcClaim: 0,
+          machineCount: new Set(),
+        };
+      }
+      const litres = t.cantidad || 0;
+      rows[projId].litres += litres;
+      rows[projId].deliveries += 1;
+      rows[projId].machineCount.add(item.id);
+      const ftc = item.ftc_rate_id ? enriched.ftcById[item.ftc_rate_id] : null;
+      if (ftc) rows[projId].ftcClaim += litres * Number(ftc.rate_per_litre);
+    });
+    return Object.values(rows)
+      .map((r) => ({ ...r, machines: r.machineCount.size }))
+      .sort((a, b) => b.litres - a.litres);
+  }, [transactions, enriched]);
+
+  // A vs B comparator state — defaults to top two of each
+  const [machA, setMachA] = useState<string>("");
+  const [machB, setMachB] = useState<string>("");
+  const [projA, setProjA] = useState<string>("");
+  const [projB, setProjB] = useState<string>("");
+  useEffect(() => {
+    if (!machA && perMachine[0]) setMachA(perMachine[0].id);
+    if (!machB && perMachine[1]) setMachB(perMachine[1].id);
+  }, [perMachine, machA, machB]);
+  useEffect(() => {
+    if (!projA && perProject[0]) setProjA(perProject[0].id);
+    if (!projB && perProject[1]) setProjB(perProject[1].id);
+  }, [perProject, projA, projB]);
+
+  const machineMaxLitres = perMachine[0]?.litres || 1;
+  const projectMaxLitres = perProject[0]?.litres || 1;
+
+  const aMach = perMachine.find((m) => m.id === machA);
+  const bMach = perMachine.find((m) => m.id === machB);
+  const aProj = perProject.find((p) => p.id === projA);
+  const bProj = perProject.find((p) => p.id === projB);
+
+  const fmt$ = (n: number) =>
+    `$${n.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })}`;
+
+  const totalLitres = perMachine.reduce((s, m) => s + m.litres, 0);
+  const totalFtc = perMachine.reduce((s, m) => s + m.ftcClaim, 0);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <h2 style={sectionTitle}>Analytics</h2>
+          <p style={{ ...muted(12), margin: "4px 0 0" }}>
+            Machine-vs-machine and project-vs-project comparisons for {periodLabel.toLowerCase()}.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 16 }}>
+          <div>
+            <div style={labelStyle}>Tracked litres</div>
+            <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: T.text }}>
+              {fmtL(totalLitres)}
+            </div>
+          </div>
+          <div>
+            <div style={labelStyle}>FTC claimable</div>
+            <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: T.accent }}>
+              {fmt$(totalFtc)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Machinery leaderboard ── */}
+      <div style={card}>
+        <div style={{ ...labelStyle, marginBottom: 4 }}>Machinery Leaderboard</div>
+        <div style={{ ...muted(11), marginBottom: 14 }}>Ranked by fuel volume in this period.</div>
+        {perMachine.length === 0 ? (
+          <p style={muted(13)}>No machinery deliveries in this period.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {perMachine.slice(0, 10).map((m, i) => (
+              <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+                <span style={{ color: T.muted, width: 22, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{i + 1}</span>
+                <span
+                  aria-hidden
+                  style={{
+                    width: 10, height: 10, borderRadius: 2, flexShrink: 0,
+                    background: m.colour || T.muted,
+                    border: `1px solid ${T.border}`,
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: T.text, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {m.name}
+                  </div>
+                  <div style={{ ...muted(10) }}>
+                    {m.placa} · {m.type} · {m.projectName}
+                  </div>
+                </div>
+                <div style={{ width: 140, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
+                  <div style={{ width: `${(m.litres / machineMaxLitres) * 100}%`, height: "100%", background: T.accent }} />
+                </div>
+                <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                  {fmtL(m.litres)}
+                </span>
+                <span style={{ minWidth: 80, textAlign: "right", color: T.accent, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                  {fmt$(m.ftcClaim)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Machine vs machine compare ── */}
+      <div style={card}>
+        <div style={{ ...labelStyle, marginBottom: 4 }}>Machinery vs Machinery</div>
+        <div style={{ ...muted(11), marginBottom: 14 }}>
+          Pick any two pieces of plant to benchmark fuel volume, deliveries and FTC.
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+          <select value={machA} onChange={(e) => setMachA(e.target.value)} style={inputStyle}>
+            {perMachine.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+          </select>
+          <select value={machB} onChange={(e) => setMachB(e.target.value)} style={inputStyle}>
+            {perMachine.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+          </select>
+        </div>
+        {aMach && bMach ? (
+          <CompareGrid
+            a={{ label: aMach.name, sublabel: `${aMach.placa} · ${aMach.type}`,
+                 stats: [
+                   { label: "Litres", value: fmtL(aMach.litres) },
+                   { label: "Deliveries", value: aMach.deliveries.toString() },
+                   { label: "Avg / Delivery", value: aMach.deliveries ? fmtL(aMach.litres / aMach.deliveries) : "—" },
+                   { label: "FTC Claim", value: fmt$(aMach.ftcClaim) },
+                 ] }}
+            b={{ label: bMach.name, sublabel: `${bMach.placa} · ${bMach.type}`,
+                 stats: [
+                   { label: "Litres", value: fmtL(bMach.litres) },
+                   { label: "Deliveries", value: bMach.deliveries.toString() },
+                   { label: "Avg / Delivery", value: bMach.deliveries ? fmtL(bMach.litres / bMach.deliveries) : "—" },
+                   { label: "FTC Claim", value: fmt$(bMach.ftcClaim) },
+                 ] }}
+          />
+        ) : (
+          <p style={muted(13)}>Need at least two machines with deliveries to compare.</p>
+        )}
+      </div>
+
+      {/* ── Project leaderboard ── */}
+      <div style={card}>
+        <div style={{ ...labelStyle, marginBottom: 4 }}>Project Leaderboard</div>
+        <div style={{ ...muted(11), marginBottom: 14 }}>Fuel attributed to each active project.</div>
+        {perProject.length === 0 ? (
+          <p style={muted(13)}>No project-attributed deliveries in this period.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {perProject.map((p, i) => (
+              <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+                <span style={{ color: T.muted, width: 22, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{i + 1}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: T.text, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {p.name}
+                  </div>
+                  <div style={{ ...muted(10) }}>
+                    {p.site || "—"} · {p.machines} machine{p.machines === 1 ? "" : "s"} · {p.deliveries} dlv
+                  </div>
+                </div>
+                <div style={{ width: 140, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
+                  <div style={{ width: `${(p.litres / projectMaxLitres) * 100}%`, height: "100%", background: T.accent }} />
+                </div>
+                <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                  {fmtL(p.litres)}
+                </span>
+                <span style={{ minWidth: 80, textAlign: "right", color: T.accent, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                  {fmt$(p.ftcClaim)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Project vs project compare ── */}
+      <div style={card}>
+        <div style={{ ...labelStyle, marginBottom: 4 }}>Project vs Project</div>
+        <div style={{ ...muted(11), marginBottom: 14 }}>
+          Benchmark sites against each other on fuel intensity and tax credits.
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+          <select value={projA} onChange={(e) => setProjA(e.target.value)} style={inputStyle}>
+            {perProject.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <select value={projB} onChange={(e) => setProjB(e.target.value)} style={inputStyle}>
+            {perProject.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+        {aProj && bProj ? (
+          <CompareGrid
+            a={{ label: aProj.name, sublabel: aProj.site || "—",
+                 stats: [
+                   { label: "Litres", value: fmtL(aProj.litres) },
+                   { label: "Deliveries", value: aProj.deliveries.toString() },
+                   { label: "Active Plant", value: aProj.machines.toString() },
+                   { label: "FTC Claim", value: fmt$(aProj.ftcClaim) },
+                 ] }}
+            b={{ label: bProj.name, sublabel: bProj.site || "—",
+                 stats: [
+                   { label: "Litres", value: fmtL(bProj.litres) },
+                   { label: "Deliveries", value: bProj.deliveries.toString() },
+                   { label: "Active Plant", value: bProj.machines.toString() },
+                   { label: "FTC Claim", value: fmt$(bProj.ftcClaim) },
+                 ] }}
+          />
+        ) : (
+          <p style={muted(13)}>Need at least two projects with deliveries to compare.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CompareGrid({
+  a, b,
+}: {
+  a: { label: string; sublabel: string; stats: { label: string; value: string }[] };
+  b: { label: string; sublabel: string; stats: { label: string; value: string }[] };
+}) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      {[a, b].map((side, idx) => (
+        <div key={idx} style={{ border: `1px solid ${T.border}`, borderRadius: 6, padding: "12px 14px", background: T.bg }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, fontFamily: T.sansHead, marginBottom: 2 }}>
+            {side.label}
+          </div>
+          <div style={{ ...muted(10), marginBottom: 12 }}>{side.sublabel}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {side.stats.map((s) => (
+              <div key={s.label}>
+                <div style={labelStyle}>{s.label}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
+                  {s.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_PROJECTS, DEMO_PROJECT_ASSIGNMENTS } from "@/data/demoData";
 
 export interface Project {
   id: string;
@@ -24,10 +26,14 @@ export interface ProjectAssignment {
 }
 
 export function useProjects(clientAccountId: number | null | undefined) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["projects", clientAccountId],
+    queryKey: ["projects", clientAccountId, isDemo],
     enabled: !!clientAccountId,
     queryFn: async () => {
+      if (isDemo) {
+        return DEMO_PROJECTS.filter((p) => p.client_account_id === clientAccountId) as Project[];
+      }
       const { data, error } = await supabase
         .from("projects")
         .select("*")
@@ -40,10 +46,17 @@ export function useProjects(clientAccountId: number | null | undefined) {
 }
 
 export function useProjectAssignments(clientAccountId: number | null | undefined) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["project-assignments", clientAccountId],
+    queryKey: ["project-assignments", clientAccountId, isDemo],
     enabled: !!clientAccountId,
     queryFn: async () => {
+      if (isDemo) {
+        const projectIds = new Set(
+          DEMO_PROJECTS.filter((p) => p.client_account_id === clientAccountId).map((p) => p.id)
+        );
+        return DEMO_PROJECT_ASSIGNMENTS.filter((a) => projectIds.has(a.project_id)) as ProjectAssignment[];
+      }
       // Pull all assignments for projects of this client
       const { data: projects, error: pErr } = await supabase
         .from("projects")
