@@ -437,7 +437,7 @@ export default function CustomerPortal() {
                   border: `1px solid ${T.border}`,
                   borderRadius: 8,
                   minWidth: 220,
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+                  boxShadow: "0 10px 30px rgba(61,43,26,0.12)",
                   zIndex: 60,
                   overflow: "hidden",
                 }}
