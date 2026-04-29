@@ -7,14 +7,15 @@ import {
 } from "@/hooks/useClientProfile";
 import { abnError, formatAbn, stripAbn } from "@/lib/abn";
 
+// Light "showcase email" palette — matches CustomerPortal root.
 const T = {
-  bg: "#120a04",
-  card: "#1e1008",
-  border: "#5a3a26",
-  text: "#f5e6d6",
-  muted: "rgba(245,230,214,0.78)",
-  subtle: "rgba(245,230,214,0.92)",
-  accent: "#f04a1a",
+  bg: "#FAF6EF",
+  card: "#FFFFFF",
+  border: "#EDE3D2",
+  text: "#3D2B1A",
+  muted: "#8B7355",
+  subtle: "#6B5240",
+  accent: "#E8461E",
   sansHead: "Inter, system-ui, sans-serif",
   sansBody: "Inter, system-ui, sans-serif",
 };
@@ -43,7 +44,7 @@ const input: React.CSSProperties = {
 
 const inputDisabled: React.CSSProperties = {
   ...input,
-  background: "#2a1810",
+  background: "#F1E8D8",
   color: T.subtle,
   opacity: 1,
   cursor: "not-allowed",
@@ -195,7 +196,7 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.7)",
+        background: "rgba(61,43,26,0.45)",
         zIndex: 100,
         display: "flex",
         alignItems: "flex-start",

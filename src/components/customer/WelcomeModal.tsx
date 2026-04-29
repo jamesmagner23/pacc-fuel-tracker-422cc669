@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { LayoutDashboard, Truck, Layers, Wrench, Leaf, X, ChevronRight, ChevronLeft } from "lucide-react";
 
+// Light "showcase email" palette — matches CustomerPortal root.
 const T = {
-  bg: "#3D2B1A",
-  surface: "#4A3525",
-  surfaceRaised: "#56402E",
-  border: "#6B5240",
+  bg: "#FAF6EF",
+  surface: "#FFFFFF",
+  surfaceRaised: "#FFFFFF",
+  border: "#EDE3D2",
   accent: "#E8461E",
-  text: "#F5E6D0",
-  textSecondary: "#C4A882",
+  text: "#3D2B1A",
+  textSecondary: "#6B5240",
   muted: "#8B7355",
   sansHead: "'Inter', system-ui, sans-serif",
 };
@@ -80,7 +81,7 @@ export function WelcomeModal() {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.6)",
+        background: "rgba(61,43,26,0.45)",
         backdropFilter: "blur(4px)",
         display: "flex",
         alignItems: "center",
@@ -100,7 +101,7 @@ export function WelcomeModal() {
           width: "100%",
           padding: 28,
           position: "relative",
-          boxShadow: "0 30px 80px rgba(0,0,0,0.5)",
+          boxShadow: "0 30px 80px rgba(61,43,26,0.18)",
         }}
       >
         <button
