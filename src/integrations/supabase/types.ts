@@ -323,6 +323,54 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_analytics_events: {
+        Row: {
+          accent_color: string | null
+          brand: string | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          path: string | null
+          referrer: string | null
+          search_params: string | null
+          section: string | null
+          session_id: string | null
+          source: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          brand?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          path?: string | null
+          referrer?: string | null
+          search_params?: string | null
+          section?: string | null
+          session_id?: string | null
+          source?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          brand?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          path?: string | null
+          referrer?: string | null
+          search_params?: string | null
+          section?: string | null
+          session_id?: string | null
+          source?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       demo_leads: {
         Row: {
           brand_param: string | null
