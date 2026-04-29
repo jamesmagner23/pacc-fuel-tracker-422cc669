@@ -80,8 +80,9 @@ export async function exportEmailHtmlToPdf({ html, filename }: ExportEmailPdfOpt
     const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     const contentWidthMm = A4_WIDTH_MM - PAGE_MARGIN_MM * 2;
     const contentHeightMm = A4_HEIGHT_MM - PAGE_MARGIN_MM * 2;
-    const pxToMm = contentWidthMm / canvas.width;
-    const imageHeightMm = canvas.height * pxToMm;
+    const imagePxToMm = contentWidthMm / canvas.width;
+    const cssPxToMm = contentWidthMm / contentWidth;
+    const imageHeightMm = canvas.height * imagePxToMm;
     const image = canvas.toDataURL("image/png");
     const pageCount = Math.max(1, Math.ceil(imageHeightMm / contentHeightMm));
 
@@ -91,10 +92,10 @@ export async function exportEmailHtmlToPdf({ html, filename }: ExportEmailPdfOpt
       pdf.addImage(image, "PNG", PAGE_MARGIN_MM, offsetY, contentWidthMm, imageHeightMm);
 
       for (const link of links) {
-        const x = PAGE_MARGIN_MM + link.x * pxToMm;
-        const y = PAGE_MARGIN_MM + link.y * pxToMm - pageIndex * contentHeightMm;
-        const width = link.width * pxToMm;
-        const height = link.height * pxToMm;
+        const x = PAGE_MARGIN_MM + link.x * cssPxToMm;
+        const y = PAGE_MARGIN_MM + link.y * cssPxToMm - pageIndex * contentHeightMm;
+        const width = link.width * cssPxToMm;
+        const height = link.height * cssPxToMm;
         const visibleTop = Math.max(PAGE_MARGIN_MM, y);
         const visibleBottom = Math.min(A4_HEIGHT_MM - PAGE_MARGIN_MM, y + height);
         if (visibleBottom > visibleTop) {
