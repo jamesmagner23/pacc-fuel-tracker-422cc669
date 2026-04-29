@@ -27,9 +27,13 @@ import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
+import { usePortalTheme, tokensFor, themeVarsFor, type PortalTheme } from "@/lib/portalTheme";
+import { PortalThemeToggle } from "@/components/portal/PortalThemeToggle";
 
 // ─── Theme tokens — light "showcase email" palette ──────────────────
-// Cream background, white cards, deep-brown text, hairline borders.
+// Mutable holder. Properties get re-assigned by applyPortalTheme() below
+// whenever the user toggles light/dark, so all module-scoped style
+// objects (card, labelStyle, ...) that reference T see the new palette.
 const T = {
   bg: "#FAF6EF",
   surface: "#FFFFFF",
@@ -48,53 +52,45 @@ const T = {
   badgeCompleted: "#0F8A5E",
 };
 
-// CSS-variable overrides applied to the portal root so any child
-// component (PlantBoard, modals, shadcn primitives, etc.) that reads
-// Tailwind tokens or var(--*) from the global :root automatically
-// picks up the light "showcase email" palette without touching admin.
-const lightThemeVars: React.CSSProperties = {
-  // Surfaces
-  ["--background" as any]: T.bg,
-  ["--surface" as any]: T.surface,
-  ["--surface-raised" as any]: T.surfaceRaised,
-  ["--surface-border" as any]: T.border,
-  ["--surface-hover" as any]: "#F7F1E4",
-  // Accent (unchanged hue, but ensure halo reads on light)
-  ["--accent" as any]: T.accent,
-  ["--accent-hover" as any]: T.accentHover,
-  ["--accent-light" as any]: "rgba(232,70,30,0.10)",
-  ["--accent-text" as any]: T.accent,
-  // Text
-  ["--text-primary" as any]: T.text,
-  ["--text-secondary" as any]: T.textSecondary,
-  ["--text-muted" as any]: T.muted,
-  // Status — darker variants legible on white
-  ["--positive" as any]: "#0F8A5E",
-  ["--positive-bg" as any]: "rgba(15,138,94,0.10)",
-  ["--negative" as any]: "#B91C1C",
-  ["--negative-bg" as any]: "rgba(185,28,28,0.08)",
-  ["--warning" as any]: "#B45309",
-  ["--warning-bg" as any]: "rgba(180,83,9,0.10)",
-  // Borders
-  ["--border" as any]: T.border,
-  ["--border-subtle" as any]: T.borderSubtle,
-  // Shadcn compat
-  ["--foreground" as any]: T.text,
-  ["--card" as any]: T.surface,
-  ["--card-foreground" as any]: T.text,
-  ["--popover" as any]: T.surface,
-  ["--popover-foreground" as any]: T.text,
-  ["--secondary" as any]: "#F7F1E4",
-  ["--secondary-foreground" as any]: T.text,
-  ["--muted" as any]: "#F7F1E4",
-  ["--muted-foreground" as any]: T.textSecondary,
-  ["--input" as any]: T.border,
-  ["--ring" as any]: T.accent,
-  // Map placeholders / loading states pick up these — keep them cream so
-  // the customer portal doesn't flash a black box while the truck map loads.
-  ["--map-bg" as any]: "#F7F1E4",
-  ["--map-border" as any]: T.border,
-};
+/**
+ * Re-write T's keys (and the precomputed style objects further down)
+ * to match the active portal theme. Called once before each render
+ * via a useLayoutEffect-like sync inside CustomerPortal.
+ */
+function applyPortalTheme(theme: PortalTheme) {
+  const tk = tokensFor(theme);
+  Object.assign(T, {
+    bg: tk.bg,
+    surface: tk.surface,
+    surfaceRaised: tk.surfaceRaised,
+    border: tk.border,
+    borderSubtle: tk.borderSubtle,
+    accent: tk.accent,
+    accentHover: tk.accentHover,
+    text: tk.text,
+    textSecondary: tk.textSecondary,
+    muted: tk.textMuted,
+    badgePending: tk.badgePending,
+    badgeConfirmed: tk.badgeConfirmed,
+    badgeCompleted: tk.badgeCompleted,
+  });
+  // Refresh style objects that snapshotted T at module load.
+  Object.assign(card, {
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+  });
+  Object.assign(ghostBtn, {
+    border: `1px solid ${T.border}`,
+    color: T.muted,
+  });
+  Object.assign(inputStyle, {
+    background: T.bg,
+    border: `1px solid ${T.border}`,
+    color: T.text,
+  });
+  Object.assign(labelStyle, { color: T.muted });
+  Object.assign(sectionTitle, { color: T.text });
+}
 
 const tabs = [
   "01 Overview",
