@@ -605,11 +605,14 @@ export type Database = {
           body: string
           channel: string
           created_at: string
+          gmail_message_id: string | null
+          gmail_thread_id: string | null
           id: string
           organisation: string | null
           pipedrive_person_id: number | null
           recipient_email: string | null
           recipient_name: string | null
+          send_status: string
           sent_by: string
           subject: string
           template_id: string | null
@@ -619,11 +622,14 @@ export type Database = {
           body: string
           channel: string
           created_at?: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
           id?: string
           organisation?: string | null
           pipedrive_person_id?: number | null
           recipient_email?: string | null
           recipient_name?: string | null
+          send_status?: string
           sent_by: string
           subject: string
           template_id?: string | null
@@ -633,11 +639,14 @@ export type Database = {
           body?: string
           channel?: string
           created_at?: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
           id?: string
           organisation?: string | null
           pipedrive_person_id?: number | null
           recipient_email?: string | null
           recipient_name?: string | null
+          send_status?: string
           sent_by?: string
           subject?: string
           template_id?: string | null
