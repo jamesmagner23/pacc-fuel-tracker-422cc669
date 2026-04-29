@@ -20,6 +20,7 @@ import DriverPortal from "./pages/DriverPortal";
 import Admin from "./pages/Admin";
 import Reconciliation from "./pages/Reconciliation";
 import TagDeliveries from "./pages/TagDeliveries";
+import Outreach from "./pages/Outreach";
 
 import Dispatch from "./pages/Dispatch";
 import Login from "./pages/Login";
