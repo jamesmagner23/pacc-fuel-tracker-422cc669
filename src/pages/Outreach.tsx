@@ -101,6 +101,16 @@ async function copyBrandedEmail(html: string, text: string) {
   await navigator.clipboard.writeText(html || text);
 }
 
+function normalizePipedriveHost(rawDomain?: string | null) {
+  const cleaned = String(rawDomain ?? "")
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/\.+$/, "");
+  if (!cleaned) return null;
+  return cleaned.endsWith(".pipedrive.com") ? cleaned : `${cleaned}.pipedrive.com`;
+}
+
 export default function Outreach() {
   const { toast } = useToast();
 
@@ -109,6 +119,7 @@ export default function Outreach() {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(false);
   const [bcc, setBcc] = useState<string | null>(null);
+  const [pipedriveHost, setPipedriveHost] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Person | null>(null);
 
@@ -152,6 +163,7 @@ export default function Outreach() {
       if ((data as any)?.error) throw new Error((data as any).error);
       setPeople((data as any)?.persons ?? []);
       setBcc((data as any)?.bcc ?? null);
+      setPipedriveHost(normalizePipedriveHost((data as any)?.company_domain));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
       setPeople([]);
@@ -252,6 +264,12 @@ export default function Outreach() {
     const inferred = extractVariables(activeTemplate.subject, activeTemplate.text_body, activeTemplate.html_body);
     return Array.from(new Set([...declared, ...inferred]));
   }, [activeTemplate]);
+
+  const selectedPipedriveUrl = useMemo(() => {
+    if (!selected || selected.id <= 0) return null;
+    if (pipedriveHost) return `https://${pipedriveHost}/person/${selected.id}`;
+    return selected.pipedrive_url || null;
+  }, [selected, pipedriveHost]);
 
   // ── Mailto / Gmail links ─────────────────────────────────────────────────
   const mailtoHref = useMemo(() => {
@@ -590,10 +608,12 @@ export default function Outreach() {
                     {selected.email ?? "no email on file"}{selected.org_name ? ` · ${selected.org_name}` : ""}
                   </div>
                 </div>
-                <a href={selected.pipedrive_url} target="_blank" rel="noreferrer"
-                   className="text-xs inline-flex items-center gap-1 text-[#C4A882] hover:text-[#F5E6D0]">
-                  Open in Pipedrive <ExternalLink className="h-3 w-3" />
-                </a>
+                {selectedPipedriveUrl && (
+                  <a href={selectedPipedriveUrl} target="_blank" rel="noreferrer"
+                     className="text-xs inline-flex items-center gap-1 text-[#C4A882] hover:text-[#F5E6D0]">
+                    Open in Pipedrive <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
 
               {/* Template picker */}
