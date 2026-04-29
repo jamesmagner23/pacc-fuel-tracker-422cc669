@@ -3,16 +3,16 @@ import { useLocation } from "react-router-dom";
 import { Eye } from "lucide-react";
 
 export function DemoBanner() {
-  const { isDemo, brand, accentColor } = useDemoContext();
+  const { isDemo, brand, accentColor, isPaccBranded } = useDemoContext();
   const location = useLocation();
 
   // Hide banner on docket pages so it doesn't interfere with print layout
   if (!isDemo || location.pathname.startsWith("/docket")) return null;
   if (!isDemo) return null;
 
-  const bgColor = accentColor
-    ? `hsl(${accentColor})`
-    : "#3B82F6";
+  const bgColor = isPaccBranded
+    ? "#E8461E"
+    : (accentColor ? `hsl(${accentColor})` : "#3B82F6");
 
   return (
     <div
