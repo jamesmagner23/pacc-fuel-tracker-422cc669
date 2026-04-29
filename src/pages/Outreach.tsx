@@ -852,6 +852,7 @@ function TemplateEditor({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Template>>({});
   const [saving, setSaving] = useState(false);
+  const [exportingDraftPdf, setExportingDraftPdf] = useState(false);
 
   useEffect(() => {
     if (!open) { setEditingId(null); setDraft({}); }
@@ -912,6 +913,26 @@ function TemplateEditor({
     } catch (e) {
       toast({ title: "Save failed", description: e instanceof Error ? e.message : "Unknown", variant: "destructive" });
     } finally { setSaving(false); }
+  };
+
+  const exportDraftPdf = async () => {
+    if (!draft.html_body) return;
+    setExportingDraftPdf(true);
+    try {
+      await exportEmailHtmlToPdf({
+        html: normalizePortalDemoLinks(draft.html_body),
+        filename: draft.name || "email-campaign-template",
+      });
+      toast({ title: "PDF exported", description: "Clickable links are preserved in the PDF." });
+    } catch (e) {
+      toast({
+        title: "PDF export failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingDraftPdf(false);
+    }
   };
 
   return (
@@ -975,6 +996,12 @@ function TemplateEditor({
               Detected variables: {inferred.length > 0 ? inferred.map(v => <code key={v} className="text-[#F5E6D0] mr-2">{`{{${v}}}`}</code>) : "—"}
             </div>
             <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => void exportDraftPdf()} disabled={exportingDraftPdf || !draft.html_body}
+                      className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+                {exportingDraftPdf
+                  ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
+                  : (<><Download className="h-4 w-4 mr-2" /> Export PDF</>)}
+              </Button>
               <Button variant="outline" onClick={() => { setEditingId(null); setDraft({}); }}
                       className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">Cancel</Button>
               <Button onClick={save} disabled={saving} className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
