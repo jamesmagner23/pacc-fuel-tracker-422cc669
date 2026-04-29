@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PACCLogo } from "@/components/PACCLogo";
 import { TruckMap } from "@/components/TruckMap";
 import { logActivity } from "@/hooks/useActivityLog";
+import { logDemoEvent } from "@/lib/demoAnalytics";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -400,6 +401,26 @@ export default function CustomerPortal() {
     logActivity("page_view", { page: "customer_portal" });
   }, []);
 
+  // Demo-only analytics: capture portal opens (incl. ?source=email)
+  useEffect(() => {
+    if (!isDemo) return;
+    logDemoEvent({
+      eventType: "portal_opened",
+      metadata: {
+        company_name: companyName,
+      },
+    });
+  }, [isDemo, companyName]);
+
+  // Demo-only analytics: capture which key sections the visitor reaches
+  useEffect(() => {
+    if (!isDemo) return;
+    logDemoEvent({
+      eventType: "section_viewed",
+      section: activeTab,
+    });
+  }, [isDemo, activeTab]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     window.location.href = "/login";
@@ -407,7 +428,8 @@ export default function CustomerPortal() {
 
   return (
     <div style={{ ...portalVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
-      <WelcomeModal />
+      {/* Hide the welcome/onboarding modal in demo mode — recipients want to explore, not be onboarded. */}
+      {!isDemo && <WelcomeModal />}
       {!isDemo && (
         <div
           style={{
