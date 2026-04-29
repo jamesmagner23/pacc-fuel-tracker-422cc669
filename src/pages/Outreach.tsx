@@ -730,9 +730,17 @@ export default function Outreach() {
 
               {/* Desktop send actions */}
               <div className="hidden lg:flex flex-wrap gap-2">
+                <Button disabled={!selected.email || sendingGmail}
+                        onClick={() => void sendViaGmail()}
+                        className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
+                  {sendingGmail
+                    ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</>)
+                    : (<><Send className="h-4 w-4 mr-2" /> Send branded email via Gmail</>)}
+                </Button>
                 <Button disabled={!selected.email}
                         onClick={() => void openBrandedCompose("default_mail")}
-                        className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
+                        variant="outline"
+                        className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   <Mail className="h-4 w-4 mr-2" /> Open in default mail
                 </Button>
                 <Button variant="outline" disabled={!selected.email}
@@ -765,14 +773,17 @@ export default function Outreach() {
       {selected && selected.email && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#6B5240] bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex gap-2">
-            <Button onClick={() => void openBrandedCompose("default_mail")}
+            <Button onClick={() => void sendViaGmail()}
+                    disabled={sendingGmail}
                     className="flex-1 h-12 bg-[#E8461E] hover:bg-[#c93a17] text-white">
-              <Mail className="h-4 w-4 mr-2" /> Send via mail app
+              {sendingGmail
+                ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</>)
+                : (<><Send className="h-4 w-4 mr-2" /> Send via Gmail</>)}
             </Button>
             <Button variant="outline"
-                    onClick={() => void openBrandedCompose("gmail")}
+                    onClick={() => void openBrandedCompose("default_mail")}
                     className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
-              Gmail
+              Mail
             </Button>
           </div>
         </div>
