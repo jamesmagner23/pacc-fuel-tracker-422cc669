@@ -28,23 +28,72 @@ import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
 
-// ─── Theme tokens — match the rest of the PACC site ──────────────────
+// ─── Theme tokens — light "showcase email" palette ──────────────────
+// Cream background, white cards, deep-brown text, hairline borders.
 const T = {
-  bg: "#3D2B1A",
-  surface: "#4A3525",
-  surfaceRaised: "#56402E",
-  border: "#6B5240",
-  borderSubtle: "#56402E",
+  bg: "#FAF6EF",
+  surface: "#FFFFFF",
+  surfaceRaised: "#FFFFFF",
+  border: "#EDE3D2",
+  borderSubtle: "#F1E8D8",
   accent: "#E8461E",
   accentHover: "#D13A14",
-  text: "#F5E6D0",
-  textSecondary: "#C4A882",
+  text: "#3D2B1A",
+  textSecondary: "#6B5240",
   muted: "#8B7355",
   sansHead: "'Inter', system-ui, sans-serif",
   sansBody: "'Inter', system-ui, sans-serif",
   badgePending: "#8B7355",
   badgeConfirmed: "#E8461E",
-  badgeCompleted: "#10B981",
+  badgeCompleted: "#0F8A5E",
+};
+
+// CSS-variable overrides applied to the portal root so any child
+// component (PlantBoard, modals, shadcn primitives, etc.) that reads
+// Tailwind tokens or var(--*) from the global :root automatically
+// picks up the light "showcase email" palette without touching admin.
+const lightThemeVars: React.CSSProperties = {
+  // Surfaces
+  ["--background" as any]: T.bg,
+  ["--surface" as any]: T.surface,
+  ["--surface-raised" as any]: T.surfaceRaised,
+  ["--surface-border" as any]: T.border,
+  ["--surface-hover" as any]: "#F7F1E4",
+  // Accent (unchanged hue, but ensure halo reads on light)
+  ["--accent" as any]: T.accent,
+  ["--accent-hover" as any]: T.accentHover,
+  ["--accent-light" as any]: "rgba(232,70,30,0.10)",
+  ["--accent-text" as any]: T.accent,
+  // Text
+  ["--text-primary" as any]: T.text,
+  ["--text-secondary" as any]: T.textSecondary,
+  ["--text-muted" as any]: T.muted,
+  // Status — darker variants legible on white
+  ["--positive" as any]: "#0F8A5E",
+  ["--positive-bg" as any]: "rgba(15,138,94,0.10)",
+  ["--negative" as any]: "#B91C1C",
+  ["--negative-bg" as any]: "rgba(185,28,28,0.08)",
+  ["--warning" as any]: "#B45309",
+  ["--warning-bg" as any]: "rgba(180,83,9,0.10)",
+  // Borders
+  ["--border" as any]: T.border,
+  ["--border-subtle" as any]: T.borderSubtle,
+  // Shadcn compat
+  ["--foreground" as any]: T.text,
+  ["--card" as any]: T.surface,
+  ["--card-foreground" as any]: T.text,
+  ["--popover" as any]: T.surface,
+  ["--popover-foreground" as any]: T.text,
+  ["--secondary" as any]: "#F7F1E4",
+  ["--secondary-foreground" as any]: T.text,
+  ["--muted" as any]: "#F7F1E4",
+  ["--muted-foreground" as any]: T.textSecondary,
+  ["--input" as any]: T.border,
+  ["--ring" as any]: T.accent,
+  // Map placeholders / loading states pick up these — keep them cream so
+  // the customer portal doesn't flash a black box while the truck map loads.
+  ["--map-bg" as any]: "#F7F1E4",
+  ["--map-border" as any]: T.border,
 };
 
 const tabs = [
@@ -357,7 +406,7 @@ export default function CustomerPortal() {
   };
 
   return (
-    <div style={{ minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
+    <div style={{ ...lightThemeVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
       <WelcomeModal />
       {!isDemo && (
         <div
@@ -369,7 +418,7 @@ export default function CustomerPortal() {
             justifyContent: "space-between",
           }}
         >
-          <PACCLogo />
+          <PACCLogo tone="light" />
           <div style={{ position: "relative" }}>
             <button
               onClick={(e) => {
@@ -436,7 +485,7 @@ export default function CustomerPortal() {
                   border: `1px solid ${T.border}`,
                   borderRadius: 8,
                   minWidth: 220,
-                  boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+                  boxShadow: "0 10px 30px rgba(61,43,26,0.12)",
                   zIndex: 60,
                   overflow: "hidden",
                 }}
@@ -674,7 +723,8 @@ function OverviewTab({
   const topPlants = plantBreakdown.slice(0, 6);
   const topPlant = plantBreakdown[0];
 
-  const PIE_COLORS = ["#E8461E", "#FF6B42", "#F5E6D0", "#C4A882", "#D88B5C", "#8B7355"];
+  // Orange + brown palette tuned for white backgrounds (no light cream — would disappear)
+  const PIE_COLORS = ["#E8461E", "#3D2B1A", "#D88B5C", "#6B5240", "#F59E0B", "#8B7355"];
 
   const kpis = [
     { label: "Total Litres", value: fmtL(totalLitres) },

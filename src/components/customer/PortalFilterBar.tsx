@@ -2,14 +2,15 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { Filter, X, ChevronDown } from "lucide-react";
 import type { PortalFilters } from "@/hooks/usePortalFilters";
 
+// Light "showcase email" palette — matches CustomerPortal root.
 const T = {
-  surface: "#4A3525",
-  border: "#6B5240",
-  text: "#F5E6D0",
-  textSecondary: "#C4A882",
+  surface: "#FFFFFF",
+  border: "#EDE3D2",
+  text: "#3D2B1A",
+  textSecondary: "#6B5240",
   muted: "#8B7355",
   accent: "#E8461E",
-  warn: "#F59E0B",
+  warn: "#B45309",
   sansHead: "'Inter', system-ui, sans-serif",
 };
 
@@ -205,7 +206,7 @@ function MultiPicker({
             maxHeight: 260,
             overflowY: "auto",
             zIndex: 20,
-            boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
+            boxShadow: "0 6px 20px rgba(61,43,26,0.12)",
           }}
         >
           {options.length === 0 ? (

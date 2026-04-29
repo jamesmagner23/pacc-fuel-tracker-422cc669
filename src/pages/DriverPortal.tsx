@@ -15,6 +15,47 @@ import { useSchedule, useCreateOrder, useReorderStops, useLocations } from "@/ho
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { TagDeliveriesTab } from "@/components/driver/TagDeliveriesTab";
 
+// Light "showcase email" palette — applied as CSS variable overrides on
+// the driver portal root so all child components (Tailwind tokens, shadcn,
+// var(--*)) automatically re-skin without affecting the admin app.
+const LIGHT_THEME_VARS: React.CSSProperties = {
+  ["--background" as any]: "#FAF6EF",
+  ["--surface" as any]: "#FFFFFF",
+  ["--surface-raised" as any]: "#FFFFFF",
+  ["--surface-border" as any]: "#EDE3D2",
+  ["--surface-hover" as any]: "#F7F1E4",
+  ["--accent" as any]: "#E8461E",
+  ["--accent-hover" as any]: "#D13A14",
+  ["--accent-light" as any]: "rgba(232,70,30,0.10)",
+  ["--accent-text" as any]: "#E8461E",
+  ["--text-primary" as any]: "#3D2B1A",
+  ["--text-secondary" as any]: "#6B5240",
+  ["--text-muted" as any]: "#8B7355",
+  ["--positive" as any]: "#0F8A5E",
+  ["--positive-bg" as any]: "rgba(15,138,94,0.10)",
+  ["--negative" as any]: "#B91C1C",
+  ["--negative-bg" as any]: "rgba(185,28,28,0.08)",
+  ["--warning" as any]: "#B45309",
+  ["--warning-bg" as any]: "rgba(180,83,9,0.10)",
+  ["--border" as any]: "#EDE3D2",
+  ["--border-subtle" as any]: "#F1E8D8",
+  ["--foreground" as any]: "#3D2B1A",
+  ["--card" as any]: "#FFFFFF",
+  ["--card-foreground" as any]: "#3D2B1A",
+  ["--popover" as any]: "#FFFFFF",
+  ["--popover-foreground" as any]: "#3D2B1A",
+  ["--secondary" as any]: "#F7F1E4",
+  ["--secondary-foreground" as any]: "#3D2B1A",
+  ["--muted" as any]: "#F7F1E4",
+  ["--muted-foreground" as any]: "#6B5240",
+  ["--input" as any]: "#EDE3D2",
+  ["--ring" as any]: "#E8461E",
+  // Map placeholders use these — keep them on the cream palette so the
+  // loading/empty states blend into the page instead of going black.
+  ["--map-bg" as any]: "#F7F1E4",
+  ["--map-border" as any]: "#EDE3D2",
+};
+
 function IntakeLogRow({ log }: { log: any }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -744,11 +785,14 @@ export default function DriverPortal() {
   };
 
   return (
-    <div className={isDemo ? "bg-background text-foreground" : "min-h-screen bg-background text-foreground"}>
+    <div
+      style={LIGHT_THEME_VARS}
+      className={isDemo ? "bg-background text-foreground" : "min-h-screen bg-background text-foreground"}
+    >
       {/* Header — hidden in demo mode since Layout provides navigation */}
       {!isDemo && (
       <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
-        <PACCLogo size="sm" />
+        <PACCLogo size="sm" tone="light" />
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-muted-foreground">Stephan</span>
           <button
