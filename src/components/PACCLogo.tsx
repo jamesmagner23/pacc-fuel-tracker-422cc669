@@ -1,11 +1,13 @@
 import { useDemoContext } from "@/hooks/useDemo";
 
 export function PACCLogo({ size = "md" }: { size?: "sm" | "md" }) {
-  const { isDemo, brand, accentColor } = useDemoContext();
+  const { isDemo, brand, accentColor, isPaccBranded } = useDemoContext();
   const fontSize = size === "sm" ? 14 : 17;
 
-  const displayName = isDemo ? (brand || "FuelTrack") : "PACC";
-  const accentStyle = isDemo
+  // PACC-branded demo renders identical to production
+  const showPaccChrome = !isDemo || isPaccBranded;
+  const displayName = showPaccChrome ? "PACC" : (brand || "FuelTrack");
+  const accentStyle = !showPaccChrome
     ? (accentColor ? `hsl(${accentColor})` : "#3B82F6")
     : "#E8461E";
 
@@ -16,18 +18,18 @@ export function PACCLogo({ size = "md" }: { size?: "sm" | "md" }) {
           style={{
             fontSize,
             fontWeight: 800,
-            color: isDemo ? "#e8eaf0" : "#F5E6D0",
+            color: showPaccChrome ? "#F5E6D0" : "#e8eaf0",
             letterSpacing: "-0.02em",
             textTransform: "uppercase",
             lineHeight: 1,
           }}
         >
           {displayName}
-          {!isDemo && (
+          {showPaccChrome && (
             <span style={{ color: accentStyle, fontSize: fontSize * 0.65 }}>®</span>
           )}
         </div>
-        {!isDemo && (
+        {showPaccChrome && (
           <div
             style={{
               fontSize: size === "sm" ? 7 : 8,
