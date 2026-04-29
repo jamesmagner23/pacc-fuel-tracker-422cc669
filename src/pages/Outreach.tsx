@@ -101,6 +101,16 @@ async function copyBrandedEmail(html: string, text: string) {
   await navigator.clipboard.writeText(html || text);
 }
 
+function normalizePipedriveHost(rawDomain?: string | null) {
+  const cleaned = String(rawDomain ?? "")
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/\.+$/, "");
+  if (!cleaned) return null;
+  return cleaned.endsWith(".pipedrive.com") ? cleaned : `${cleaned}.pipedrive.com`;
+}
+
 export default function Outreach() {
   const { toast } = useToast();
 
@@ -109,6 +119,7 @@ export default function Outreach() {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(false);
   const [bcc, setBcc] = useState<string | null>(null);
+  const [pipedriveHost, setPipedriveHost] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Person | null>(null);
 
@@ -152,6 +163,7 @@ export default function Outreach() {
       if ((data as any)?.error) throw new Error((data as any).error);
       setPeople((data as any)?.persons ?? []);
       setBcc((data as any)?.bcc ?? null);
+      setPipedriveHost(normalizePipedriveHost((data as any)?.company_domain));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
       setPeople([]);
