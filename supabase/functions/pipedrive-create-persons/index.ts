@@ -6,6 +6,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+function pipedriveHost(rawDomain: string) {
+  const cleaned = rawDomain
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/\.+$/, "");
+  return cleaned.endsWith(".pipedrive.com") ? cleaned : `${cleaned}.pipedrive.com`;
+}
+
 type Lead = { name: string; email: string; org?: string };
 type ResultRow = {
   email: string;
@@ -49,7 +58,7 @@ Deno.serve(async (req) => {
     if (leads.length === 0) return json({ error: "No leads provided" }, 400);
     if (leads.length > 200) return json({ error: "Max 200 leads per import" }, 400);
 
-    const base = `https://${PD_DOMAIN}.pipedrive.com/api/v1`;
+    const base = `https://${pipedriveHost(PD_DOMAIN)}/api/v1`;
     const results: ResultRow[] = [];
 
     for (const raw of leads) {
