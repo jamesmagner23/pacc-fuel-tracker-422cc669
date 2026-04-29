@@ -265,6 +265,12 @@ export default function Outreach() {
     return Array.from(new Set([...declared, ...inferred]));
   }, [activeTemplate]);
 
+  const selectedPipedriveUrl = useMemo(() => {
+    if (!selected || selected.id <= 0) return null;
+    if (pipedriveHost) return `https://${pipedriveHost}/person/${selected.id}`;
+    return selected.pipedrive_url || null;
+  }, [selected, pipedriveHost]);
+
   // ── Mailto / Gmail links ─────────────────────────────────────────────────
   const mailtoHref = useMemo(() => {
     if (!selected?.email) return "#";
@@ -602,10 +608,12 @@ export default function Outreach() {
                     {selected.email ?? "no email on file"}{selected.org_name ? ` · ${selected.org_name}` : ""}
                   </div>
                 </div>
-                <a href={selected.pipedrive_url} target="_blank" rel="noreferrer"
-                   className="text-xs inline-flex items-center gap-1 text-[#C4A882] hover:text-[#F5E6D0]">
-                  Open in Pipedrive <ExternalLink className="h-3 w-3" />
-                </a>
+                {selectedPipedriveUrl && (
+                  <a href={selectedPipedriveUrl} target="_blank" rel="noreferrer"
+                     className="text-xs inline-flex items-center gap-1 text-[#C4A882] hover:text-[#F5E6D0]">
+                    Open in Pipedrive <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
 
               {/* Template picker */}
