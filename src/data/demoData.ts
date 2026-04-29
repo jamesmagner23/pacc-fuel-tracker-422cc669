@@ -42,23 +42,31 @@ function randomBetween(min: number, max: number) {
   return Math.round(min + Math.random() * (max - min));
 }
 
-// ── Transactions (last 65 days — covers current + previous period) ──
-// We need buy prices first to derive realistic sell prices
+// ── Transactions (last 90 days — covers current + previous period with depth) ──
+// We need buy prices first to derive realistic sell prices.
+// The showcase client (index 0 — Metro Construction Group) is over-weighted so
+// the demo portal shows a substantial, business-relevant volume history.
 function generateTransactions(buyPrices: BuyPrice[]): Transaction[] {
   const txns: Transaction[] = [];
   // Margins per customer aligned with customerPricing (~20% blended)
   const CUSTOMER_MARGINS = [22, 18, 24, 16, 20, 25, 15, 19, 23, 17, 21, 20, 18, 22, 20];
+  // Showcase client gets ~50% of all deliveries across multiple sites/projects
+  const SHOWCASE_IDX = 0;
+  const SHOWCASE_SITES = ["Dandenong", "Laverton", "Epping", "Campbellfield"];
 
-  for (let day = 0; day < 65; day++) {
-    const deliveries = randomBetween(3, 8);
+  for (let day = 0; day < 90; day++) {
+    // 6–12 deliveries/day across the fleet
+    const deliveries = randomBetween(6, 12);
     // Find buy price for this day (or closest)
     const dateStr = d(day);
     const bp = buyPrices.find(p => p.price_date === dateStr);
     const baseBuy = bp ? bp.price_per_litre : 1.48;
 
     for (let j = 0; j < deliveries; j++) {
-      const qty = randomBetween(200, 2800);
-      const custIdx = Math.floor(Math.random() * CUSTOMERS.length);
+      // Bias ~55% of deliveries to the showcase client so the portal is meaty
+      const isShowcase = Math.random() < 0.55;
+      const custIdx = isShowcase ? SHOWCASE_IDX : 1 + Math.floor(Math.random() * (CUSTOMERS.length - 1));
+      const qty = isShowcase ? randomBetween(800, 3500) : randomBetween(200, 2800);
       const customer = CUSTOMERS[custIdx];
       const margin = CUSTOMER_MARGINS[custIdx];
       // Derive sell price: buy / (1 - margin%) with small random noise ±1%
@@ -67,7 +75,9 @@ function generateTransactions(buyPrices: BuyPrice[]): Transaction[] {
       const total = qty * ppu;
       const driver = DRIVERS[Math.floor(Math.random() * DRIVERS.length)];
       const truck = TRUCKS[Math.floor(Math.random() * TRUCKS.length)];
-      const location = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+      const location = isShowcase
+        ? SHOWCASE_SITES[Math.floor(Math.random() * SHOWCASE_SITES.length)]
+        : LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
       const hour = randomBetween(5, 18);
 
       txns.push({
