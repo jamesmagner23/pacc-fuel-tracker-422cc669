@@ -54,11 +54,17 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     : null;
 
   const [unlocked, setUnlocked] = useState(() =>
-    sessionStorage.getItem("demo_unlocked") === "true" ||
-    // Bypass the lead-capture gate when arriving from an outreach email link.
-    // Recipients should land directly in the demo without friction.
-    new URLSearchParams(window.location.search).get("source") === "email"
+    sessionStorage.getItem("demo_unlocked") === "true"
   );
+
+  // Bypass the lead-capture gate when arriving from an outreach email link.
+  // Recipients should land directly in the demo portal without friction.
+  useEffect(() => {
+    if (isDemo && params.get("source") === "email" && !unlocked) {
+      sessionStorage.setItem("demo_unlocked", "true");
+      setUnlocked(true);
+    }
+  }, [isDemo, params, unlocked]);
 
   const accentColor = useMemo(() => resolveColor(rawColor), [rawColor]);
   const hexColor = useMemo(() => {
