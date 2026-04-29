@@ -14,7 +14,8 @@
  */
 import { readFileSync, existsSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { resolve } from "node:path";
+import { resolve, basename } from "node:path";
+import { createServer } from "node:http";
 
 const RED = (s) => `\x1b[31m${s}\x1b[0m`;
 const GREEN = (s) => `\x1b[32m${s}\x1b[0m`;
@@ -126,6 +127,16 @@ console.log(DIM(`${passes.length} passed, ${failures.length} failed`));
 /* ── Render preview PNGs (desktop + mobile) ──────────────────────── */
 // Most prospects open email on a phone first, so we render both widths
 // to confirm the tour + walkthrough buttons stack and remain tappable.
+// Serve the file over a tiny localhost HTTP server so Chromium parses
+// it as text/html (file:// gets sniffed as text/plain in this sandbox).
+const server = createServer((_req, res) => {
+  res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+  res.end(html);
+});
+await new Promise((r) => server.listen(0, "127.0.0.1", r));
+const port = server.address().port;
+const url = `http://127.0.0.1:${port}/${basename(inputPath)}`;
+
 const renders = [
   { label: "desktop", out: previewPath,        size: "680,3200" },
   { label: "mobile",  out: previewMobilePath,  size: "375,4200" }, // iPhone-ish width
@@ -136,7 +147,7 @@ for (const r of renders) {
     execSync(
       `nix run nixpkgs#chromium -- --headless=new --disable-gpu --no-sandbox ` +
       `--hide-scrollbars --window-size=${r.size} --virtual-time-budget=2000 ` +
-      `--screenshot=${r.out} file://${inputPath}`,
+      `--screenshot=${r.out} ${url}`,
       { stdio: "pipe", timeout: 120_000 }
     );
     console.log(GREEN(`✓ ${r.label} preview written to ${r.out}`));
@@ -145,6 +156,7 @@ for (const r of renders) {
     failures.push({ name: `Preview render (${r.label})`, detail: err.message.split("\n")[0] });
   }
 }
+server.close();
 
 /* ── Exit code ───────────────────────────────────────────────────── */
 process.exit(failures.length === 0 ? 0 : 1);
