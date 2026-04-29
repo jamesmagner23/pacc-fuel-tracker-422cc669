@@ -356,6 +356,39 @@ export type Database = {
         }
         Relationships: []
       }
+      email_cta_clicks: {
+        Row: {
+          campaign: string
+          clicked_at: string
+          cta_id: string
+          destination: string | null
+          id: string
+          ip_hash: string | null
+          referer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          campaign?: string
+          clicked_at?: string
+          cta_id: string
+          destination?: string | null
+          id?: string
+          ip_hash?: string | null
+          referer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          campaign?: string
+          clicked_at?: string
+          cta_id?: string
+          destination?: string | null
+          id?: string
+          ip_hash?: string | null
+          referer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       ftc_rates: {
         Row: {
           created_at: string
