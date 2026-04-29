@@ -681,17 +681,15 @@ export default function Outreach() {
 
               {/* Desktop send actions */}
               <div className="hidden lg:flex flex-wrap gap-2">
-                <Button asChild disabled={!selected.email}
+                <Button disabled={!selected.email}
+                        onClick={() => void openBrandedCompose("default_mail")}
                         className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
-                  <a href={mailtoHref} onClick={() => void logSend("default_mail")}>
-                    <Mail className="h-4 w-4 mr-2" /> Open in default mail
-                  </a>
+                  <Mail className="h-4 w-4 mr-2" /> Open in default mail
                 </Button>
-                <Button asChild variant="outline" disabled={!selected.email}
+                <Button variant="outline" disabled={!selected.email}
+                        onClick={() => void openBrandedCompose("gmail")}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
-                  <a href={gmailHref} target="_blank" rel="noreferrer" onClick={() => void logSend("gmail")}>
-                    <Mail className="h-4 w-4 mr-2" /> Open in Gmail
-                  </a>
+                  <Mail className="h-4 w-4 mr-2" /> Open in Gmail
                 </Button>
                 <Button variant="outline" onClick={copyHtml}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
