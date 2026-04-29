@@ -716,17 +716,14 @@ export default function Outreach() {
       {selected && selected.email && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#6B5240] bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex gap-2">
-            <Button asChild
+            <Button onClick={() => void openBrandedCompose("default_mail")}
                     className="flex-1 h-12 bg-[#E8461E] hover:bg-[#c93a17] text-white">
-              <a href={mailtoHref} onClick={() => void logSend("default_mail")}>
-                <Mail className="h-4 w-4 mr-2" /> Send via mail app
-              </a>
+              <Mail className="h-4 w-4 mr-2" /> Send via mail app
             </Button>
-            <Button asChild variant="outline"
+            <Button variant="outline"
+                    onClick={() => void openBrandedCompose("gmail")}
                     className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
-              <a href={gmailHref} target="_blank" rel="noreferrer" onClick={() => void logSend("gmail")}>
-                Gmail
-              </a>
+              Gmail
             </Button>
           </div>
         </div>
