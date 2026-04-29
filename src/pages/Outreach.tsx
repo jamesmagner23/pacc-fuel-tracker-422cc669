@@ -14,10 +14,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Loader2, Search, Mail, ExternalLink, Copy, Check, Upload, Settings2, RefreshCw,
-  ArrowLeft, Eye, ChevronDown, UserPlus, Send,
+  ArrowLeft, Eye, ChevronDown, UserPlus, Send, Download,
 } from "lucide-react";
 import { renderTemplate, extractVariables } from "@/lib/templateVars";
 import { normalizePortalDemoLinks } from "@/lib/outreachLinks";
+import { exportEmailHtmlToPdf } from "@/lib/emailPdf";
 import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
 type Person = {
@@ -156,6 +157,7 @@ export default function Outreach() {
 
   const [copiedHtml, setCopiedHtml] = useState(false);
   const [sendingGmail, setSendingGmail] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   // ── Data loaders ─────────────────────────────────────────────────────────
   const fetchPeople = useCallback(async (term: string) => {
@@ -315,6 +317,26 @@ export default function Outreach() {
     await copyBrandedEmail(renderedHtml, renderedText);
     setCopiedHtml(true);
     setTimeout(() => setCopiedHtml(false), 1800);
+  };
+
+  const exportPdf = async () => {
+    if (!activeTemplate || !renderedHtml) return;
+    setExportingPdf(true);
+    try {
+      await exportEmailHtmlToPdf({
+        html: renderedHtml,
+        filename: `${activeTemplate.name}-${selected?.org_name || selected?.name || "campaign"}`,
+      });
+      toast({ title: "PDF exported", description: "Clickable links are preserved in the PDF." });
+    } catch (e) {
+      toast({
+        title: "PDF export failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   const logSend = async (
@@ -767,6 +789,12 @@ export default function Outreach() {
                     ? (<><Check className="h-4 w-4 mr-2" /> HTML copied</>)
                     : (<><Copy className="h-4 w-4 mr-2" /> Copy rendered HTML</>)}
                 </Button>
+                <Button variant="outline" onClick={() => void exportPdf()} disabled={exportingPdf || !renderedHtml}
+                        className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+                  {exportingPdf
+                    ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
+                    : (<><Download className="h-4 w-4 mr-2" /> Export clickable PDF</>)}
+                </Button>
               </div>
             </>
           )}
@@ -798,6 +826,12 @@ export default function Outreach() {
                     className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
               Mail
             </Button>
+            <Button variant="outline"
+                    onClick={() => void exportPdf()}
+                    disabled={exportingPdf || !renderedHtml}
+                    className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+              {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
       )}
@@ -818,6 +852,7 @@ function TemplateEditor({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Partial<Template>>({});
   const [saving, setSaving] = useState(false);
+  const [exportingDraftPdf, setExportingDraftPdf] = useState(false);
 
   useEffect(() => {
     if (!open) { setEditingId(null); setDraft({}); }
@@ -878,6 +913,26 @@ function TemplateEditor({
     } catch (e) {
       toast({ title: "Save failed", description: e instanceof Error ? e.message : "Unknown", variant: "destructive" });
     } finally { setSaving(false); }
+  };
+
+  const exportDraftPdf = async () => {
+    if (!draft.html_body) return;
+    setExportingDraftPdf(true);
+    try {
+      await exportEmailHtmlToPdf({
+        html: normalizePortalDemoLinks(draft.html_body),
+        filename: draft.name || "email-campaign-template",
+      });
+      toast({ title: "PDF exported", description: "Clickable links are preserved in the PDF." });
+    } catch (e) {
+      toast({
+        title: "PDF export failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingDraftPdf(false);
+    }
   };
 
   return (
@@ -941,6 +996,12 @@ function TemplateEditor({
               Detected variables: {inferred.length > 0 ? inferred.map(v => <code key={v} className="text-[#F5E6D0] mr-2">{`{{${v}}}`}</code>) : "—"}
             </div>
             <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => void exportDraftPdf()} disabled={exportingDraftPdf || !draft.html_body}
+                      className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+                {exportingDraftPdf
+                  ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
+                  : (<><Download className="h-4 w-4 mr-2" /> Export PDF</>)}
+              </Button>
               <Button variant="outline" onClick={() => { setEditingId(null); setDraft({}); }}
                       className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">Cancel</Button>
               <Button onClick={save} disabled={saving} className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
