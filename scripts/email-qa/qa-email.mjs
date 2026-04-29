@@ -12,10 +12,10 @@
  * Default input: /mnt/documents/pacc-portal-showcase-email_v3.html
  * Output:        /mnt/documents/email-preview.png   (+ exits non-zero on failure)
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { resolve, basename } from "node:path";
-import { createServer } from "node:http";
+import { resolve } from "node:path";
+import { tmpdir } from "node:os";
 
 const RED = (s) => `\x1b[31m${s}\x1b[0m`;
 const GREEN = (s) => `\x1b[32m${s}\x1b[0m`;
@@ -127,15 +127,14 @@ console.log(DIM(`${passes.length} passed, ${failures.length} failed`));
 /* ── Render preview PNGs (desktop + mobile) ──────────────────────── */
 // Most prospects open email on a phone first, so we render both widths
 // to confirm the tour + walkthrough buttons stack and remain tappable.
-// Serve the file over a tiny localhost HTTP server so Chromium parses
-// it as text/html (file:// gets sniffed as text/plain in this sandbox).
-const server = createServer((_req, res) => {
-  res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-  res.end(html);
-});
-await new Promise((r) => server.listen(0, "127.0.0.1", r));
-const port = server.address().port;
-const url = `http://127.0.0.1:${port}/${basename(inputPath)}`;
+//
+// Chromium in this sandbox MIME-sniffs file:// .html files as text/plain
+// and renders the source. Workaround: copy the file into /tmp with a
+// fresh .html extension that Chromium recognises via its own sniffer
+// (the original path lives under /mnt/documents which behaves oddly).
+const tmpHtml = `${tmpdir()}/email-qa-${Date.now()}.html`;
+writeFileSync(tmpHtml, html, "utf8");
+const url = `file://${tmpHtml}`;
 
 const renders = [
   { label: "desktop", out: previewPath,        size: "680,3200" },
@@ -156,7 +155,6 @@ for (const r of renders) {
     failures.push({ name: `Preview render (${r.label})`, detail: err.message.split("\n")[0] });
   }
 }
-server.close();
 
 /* ── Exit code ───────────────────────────────────────────────────── */
 process.exit(failures.length === 0 ? 0 : 1);
