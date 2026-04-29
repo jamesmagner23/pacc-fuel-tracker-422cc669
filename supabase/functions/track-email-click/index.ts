@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
   const rawTo = url.searchParams.get("to") || "";
   const trackedDestination = isSafeRedirect(rawTo) ? rawTo : FALLBACK_URL;
   const destination =
-    campaign === "portal-showcase" && cta.startsWith("tour")
+    campaign === "portal-showcase" && (cta.startsWith("tour") || rawTo.includes("paccenergy.com/portal"))
       ? PORTAL_SHOWCASE_DEMO_URL
       : trackedDestination;
 

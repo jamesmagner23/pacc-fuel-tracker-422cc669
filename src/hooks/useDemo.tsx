@@ -41,8 +41,13 @@ function resolveColor(color: string | null): string | null {
 
 export function DemoProvider({ children }: { children: React.ReactNode }) {
   const [params] = useSearchParams();
-  const isDemo = params.get("demo") === "true";
-  const rawBrand = isDemo ? params.get("brand") : null;
+  const isEmailPortalDemo =
+    params.get("source") === "email" ||
+    params.get("utm_source") === "email" ||
+    params.get("ref") === "email" ||
+    params.get("campaign") === "portal-showcase";
+  const isDemo = params.get("demo") === "true" || isEmailPortalDemo;
+  const rawBrand = isDemo ? (isEmailPortalDemo ? "pacc" : params.get("brand")) : null;
   const isPaccBranded = isDemo && (rawBrand?.toLowerCase() === "pacc");
   // PACC-branded demo keeps the real "PACC" wordmark; otherwise fall back to FuelTrack default
   const brand = isDemo
@@ -66,7 +71,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
         sp.get("ref") === "email" ||
         // Click tracker preserves campaign even when some clients strip params
         sp.get("campaign") === "portal-showcase";
-      if (sp.get("demo") === "true" && isEmailSource) {
+      if (isEmailSource || (sp.get("demo") === "true" && sp.get("brand") === "pacc")) {
         sessionStorage.setItem("demo_unlocked", "true");
         return true;
       }
