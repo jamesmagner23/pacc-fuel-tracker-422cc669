@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Loader2, Search, Mail, ExternalLink, Copy, Check, Upload, Settings2, RefreshCw,
+  ArrowLeft, Eye, ChevronDown,
 } from "lucide-react";
 import { renderTemplate, extractVariables } from "@/lib/templateVars";
 
