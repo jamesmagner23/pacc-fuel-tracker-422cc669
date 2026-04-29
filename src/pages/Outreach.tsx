@@ -17,6 +17,7 @@ import {
   ArrowLeft, Eye, ChevronDown, UserPlus, Send,
 } from "lucide-react";
 import { renderTemplate, extractVariables } from "@/lib/templateVars";
+import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
 type Person = {
   id: number;
@@ -315,7 +316,10 @@ export default function Outreach() {
     setTimeout(() => setCopiedHtml(false), 1800);
   };
 
-  const logSend = async (channel: "default_mail" | "gmail") => {
+  const logSend = async (
+    channel: "default_mail" | "gmail",
+    extra?: { gmail_message_id?: string | null; gmail_thread_id?: string | null; send_status?: string },
+  ) => {
     if (!selected || !activeTemplate) return;
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -331,6 +335,9 @@ export default function Outreach() {
         body: renderedText,
         bcc,
         template_id: activeTemplate.id,
+        gmail_message_id: extra?.gmail_message_id ?? null,
+        gmail_thread_id: extra?.gmail_thread_id ?? null,
+        send_status: extra?.send_status ?? "sent",
       });
       // Optimistically mark this recipient as pending
       if (selected.email) {
@@ -390,7 +397,11 @@ export default function Outreach() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: "Email sent", description: `Branded email delivered to ${selected.email} from your Gmail account.` });
-      void logSend("gmail");
+      void logSend("gmail", {
+        gmail_message_id: (data as any)?.messageId ?? null,
+        gmail_thread_id: (data as any)?.threadId ?? null,
+        send_status: "sent",
+      });
     } catch (e) {
       toast({
         title: "Send failed",
@@ -472,6 +483,7 @@ export default function Outreach() {
           </Button>
         )}
         <div className="flex gap-2 flex-wrap">
+          <EmailActivityLog />
           <Button
             variant="outline"
             onClick={refreshStatuses}
