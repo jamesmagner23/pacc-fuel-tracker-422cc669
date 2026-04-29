@@ -315,7 +315,10 @@ export default function Outreach() {
     setTimeout(() => setCopiedHtml(false), 1800);
   };
 
-  const logSend = async (channel: "default_mail" | "gmail") => {
+  const logSend = async (
+    channel: "default_mail" | "gmail",
+    extra?: { gmail_message_id?: string | null; gmail_thread_id?: string | null; send_status?: string },
+  ) => {
     if (!selected || !activeTemplate) return;
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -331,6 +334,9 @@ export default function Outreach() {
         body: renderedText,
         bcc,
         template_id: activeTemplate.id,
+        gmail_message_id: extra?.gmail_message_id ?? null,
+        gmail_thread_id: extra?.gmail_thread_id ?? null,
+        send_status: extra?.send_status ?? "sent",
       });
       // Optimistically mark this recipient as pending
       if (selected.email) {
