@@ -718,6 +718,7 @@ function MyDayTab() {
 
 export default function DriverPortal() {
   const isDemo = useDemo();
+  const { vars: portalVars, isDark } = usePortalTheme();
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "myday" | "tag" | "sops"
   >("dashboard");
@@ -751,14 +752,15 @@ export default function DriverPortal() {
 
   return (
     <div
-      style={LIGHT_THEME_VARS}
+      style={portalVars}
       className={isDemo ? "bg-background text-foreground" : "min-h-screen bg-background text-foreground"}
     >
       {/* Header — hidden in demo mode since Layout provides navigation */}
       {!isDemo && (
       <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
-        <PACCLogo size="sm" tone="light" />
+        <PACCLogo size="sm" tone={isDark ? "dark" : "light"} />
         <div className="flex items-center gap-3">
+          <PortalThemeToggle size="sm" />
           <span className="text-sm font-medium text-muted-foreground">Stephan</span>
           <button
             onClick={handleSignOut}
