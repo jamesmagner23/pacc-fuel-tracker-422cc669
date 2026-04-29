@@ -300,11 +300,15 @@ export const DEMO_PRICING_TIERS = [
   { id: "pt-4", tier_name: "Bulk", min_litres: 5000, max_litres: null, margin_percent: 6, created_at: ts(30) },
 ];
 
-// ── Demo Scheduled Deliveries ──
+// ── Demo Scheduled Deliveries (next 14 days, weighted toward showcase client) ──
 export const DEMO_SCHEDULED_DELIVERIES = [
-  { id: "sd-1", client_account_id: 1, site_name: "Dandenong Depot", scheduled_date: d(-2), estimated_litres: 3000, notes: "Morning delivery", status: "scheduled", created_at: ts(1), client_accounts: { company_name: "Metro Construction Group" } },
-  { id: "sd-2", client_account_id: 2, site_name: "Laverton Yard", scheduled_date: d(-3), estimated_litres: 2500, notes: null, status: "scheduled", created_at: ts(1), client_accounts: { company_name: "Citywide Earthworks" } },
-  { id: "sd-3", client_account_id: 5, site_name: "Mine Site Alpha", scheduled_date: d(-5), estimated_litres: 8000, notes: "Access via Gate B", status: "scheduled", created_at: ts(2), client_accounts: { company_name: "Southern Cross Mining" } },
+  { id: "sd-1", client_account_id: 1, site_name: "Dandenong Depot",   scheduled_date: d(-1),  estimated_litres: 3200, notes: "Morning delivery — gate 2", status: "scheduled", created_at: ts(1), client_accounts: { company_name: "Metro Construction Group" } },
+  { id: "sd-2", client_account_id: 1, site_name: "Laverton Site B",    scheduled_date: d(-3),  estimated_litres: 2800, notes: "Plant refuel — afternoon",  status: "scheduled", created_at: ts(1), client_accounts: { company_name: "Metro Construction Group" } },
+  { id: "sd-3", client_account_id: 1, site_name: "Epping Yard",         scheduled_date: d(-6),  estimated_litres: 4100, notes: "Project Apex — bulk drop",  status: "scheduled", created_at: ts(1), client_accounts: { company_name: "Metro Construction Group" } },
+  { id: "sd-4", client_account_id: 1, site_name: "Campbellfield Depot", scheduled_date: d(-9),  estimated_litres: 2600, notes: null,                         status: "scheduled", created_at: ts(2), client_accounts: { company_name: "Metro Construction Group" } },
+  { id: "sd-5", client_account_id: 1, site_name: "Dandenong Depot",     scheduled_date: d(-12), estimated_litres: 3000, notes: "Recurring weekly fill",      status: "scheduled", created_at: ts(2), client_accounts: { company_name: "Metro Construction Group" } },
+  { id: "sd-6", client_account_id: 2, site_name: "Laverton Yard",       scheduled_date: d(-3),  estimated_litres: 2500, notes: null,                         status: "scheduled", created_at: ts(1), client_accounts: { company_name: "Citywide Earthworks" } },
+  { id: "sd-7", client_account_id: 5, site_name: "Mine Site Alpha",     scheduled_date: d(-5),  estimated_litres: 8000, notes: "Access via Gate B",          status: "scheduled", created_at: ts(2), client_accounts: { company_name: "Southern Cross Mining" } },
 ];
 
 // ── Demo Pump Readings (last 14 days — closely track transaction totals) ──
