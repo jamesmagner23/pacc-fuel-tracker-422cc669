@@ -28,23 +28,24 @@ import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
 
-// ─── Theme tokens — match the rest of the PACC site ──────────────────
+// ─── Theme tokens — light "showcase email" palette ──────────────────
+// Cream background, white cards, deep-brown text, hairline borders.
 const T = {
-  bg: "#3D2B1A",
-  surface: "#4A3525",
-  surfaceRaised: "#56402E",
-  border: "#6B5240",
-  borderSubtle: "#56402E",
+  bg: "#FAF6EF",
+  surface: "#FFFFFF",
+  surfaceRaised: "#FFFFFF",
+  border: "#EDE3D2",
+  borderSubtle: "#F1E8D8",
   accent: "#E8461E",
   accentHover: "#D13A14",
-  text: "#F5E6D0",
-  textSecondary: "#C4A882",
+  text: "#3D2B1A",
+  textSecondary: "#6B5240",
   muted: "#8B7355",
   sansHead: "'Inter', system-ui, sans-serif",
   sansBody: "'Inter', system-ui, sans-serif",
   badgePending: "#8B7355",
   badgeConfirmed: "#E8461E",
-  badgeCompleted: "#10B981",
+  badgeCompleted: "#0F8A5E",
 };
 
 const tabs = [
