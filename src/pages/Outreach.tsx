@@ -374,6 +374,34 @@ export default function Outreach() {
     window.location.href = href;
   };
 
+  const sendViaGmail = async () => {
+    if (!selected?.email || !activeTemplate) return;
+    setSendingGmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-via-gmail", {
+        body: {
+          to: selected.email,
+          subject: renderedSubject,
+          html: renderedHtml,
+          text: renderedText,
+          bcc: bcc || undefined,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "Email sent", description: `Branded email delivered to ${selected.email} from your Gmail account.` });
+      void logSend("gmail");
+    } catch (e) {
+      toast({
+        title: "Send failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingGmail(false);
+    }
+  };
+
   const importCsv = async () => {
     const leads = parseCSV(csvText);
     if (leads.length === 0) {
