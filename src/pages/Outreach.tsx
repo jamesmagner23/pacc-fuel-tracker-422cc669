@@ -1,12 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Mail, ExternalLink, Copy, Check } from "lucide-react";
-import showcaseHtml from "@/assets/outreach/showcase-email.html?raw";
-import showcaseTxt from "@/assets/outreach/showcase-email.txt?raw";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Loader2, Search, Mail, ExternalLink, Copy, Check, Upload, Settings2, RefreshCw,
+} from "lucide-react";
+import { renderTemplate, extractVariables } from "@/lib/templateVars";
 
 type Person = {
   id: number;
@@ -17,34 +26,107 @@ type Person = {
   pipedrive_url: string;
 };
 
-const DEFAULT_SUBJECT =
-  "A quick look at your fuel data — built for your team";
+type Template = {
+  id: string;
+  name: string;
+  description: string | null;
+  subject: string;
+  html_body: string;
+  text_body: string;
+  variables: string[];
+  default_values: Record<string, string>;
+  is_active: boolean;
+};
 
-function buildBody(person: Person): string {
-  const firstName = (person.name || "there").split(" ")[0];
-  const intro = `Hi ${firstName},\n\n`;
-  return intro + showcaseTxt;
+type SendStatus = {
+  send_id: string;
+  pipedrive_person_id: number | null;
+  recipient_email: string | null;
+  created_at: string;
+  status: "pending" | "logged" | "replied" | "none" | null;
+  last_message_at: string | null;
+};
+
+const STATUS_META: Record<string, { label: string; color: string }> = {
+  pending: { label: "Pending sync", color: "bg-[#3a2818] text-[#C4A882] border-[#6B5240]" },
+  none: { label: "Not in Pipedrive yet", color: "bg-[#3a2818] text-[#C4A882] border-[#6B5240]" },
+  logged: { label: "Logged in Pipedrive", color: "bg-[#1f3a26] text-[#9be3a8] border-[#2f5a3a]" },
+  replied: { label: "Replied", color: "bg-[#3a2a14] text-[#ffb37a] border-[#E8461E]" },
+};
+
+function parseCSV(text: string): { name: string; email: string; org: string }[] {
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (lines.length === 0) return [];
+  // Detect header
+  const first = lines[0].toLowerCase();
+  const hasHeader = /name/.test(first) && /email/.test(first);
+  const rows = hasHeader ? lines.slice(1) : lines;
+  const header = hasHeader
+    ? first.split(",").map(h => h.trim().replace(/"/g, ""))
+    : ["name", "email", "org"];
+  const idxName = header.findIndex(h => h === "name" || h === "full_name");
+  const idxEmail = header.findIndex(h => h === "email");
+  const idxOrg = header.findIndex(h => h === "org" || h === "organisation" || h === "organization" || h === "company");
+
+  return rows.map(line => {
+    // Simple CSV parse — handles quoted fields with commas
+    const cells: string[] = [];
+    let cur = ""; let inQ = false;
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ; continue; }
+      if (ch === "," && !inQ) { cells.push(cur); cur = ""; continue; }
+      cur += ch;
+    }
+    cells.push(cur);
+    return {
+      name: (cells[idxName >= 0 ? idxName : 0] ?? "").trim(),
+      email: (cells[idxEmail >= 0 ? idxEmail : 1] ?? "").trim(),
+      org: (cells[idxOrg >= 0 ? idxOrg : 2] ?? "").trim(),
+    };
+  }).filter(r => r.email);
 }
 
 export default function Outreach() {
+  const { toast } = useToast();
+
+  // People list
   const [query, setQuery] = useState("");
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(false);
   const [bcc, setBcc] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Person | null>(null);
-  const [subject, setSubject] = useState(DEFAULT_SUBJECT);
-  const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Person | null>(null);
+
+  // Templates
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templateId, setTemplateId] = useState<string | null>(null);
+  const activeTemplate = useMemo(
+    () => templates.find(t => t.id === templateId) ?? null,
+    [templates, templateId]
+  );
+
+  // Variable values for current compose session
+  const [vars, setVars] = useState<Record<string, string>>({});
+
+  // Send statuses (keyed by recipient_email)
+  const [statuses, setStatuses] = useState<Record<string, SendStatus>>({});
+  const [refreshingStatus, setRefreshingStatus] = useState(false);
+
+  // CSV import dialog
+  const [importOpen, setImportOpen] = useState(false);
+  const [csvText, setCsvText] = useState("");
+  const [importing, setImporting] = useState(false);
+
+  // Template editor dialog
+  const [editorOpen, setEditorOpen] = useState(false);
+
   const [copiedHtml, setCopiedHtml] = useState(false);
 
-  const fetchPeople = async (term: string) => {
-    setLoading(true);
-    setError(null);
+  // ── Data loaders ─────────────────────────────────────────────────────────
+  const fetchPeople = useCallback(async (term: string) => {
+    setLoading(true); setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "pipedrive-people",
-        { body: { q: term } }
-      );
+      const { data, error } = await supabase.functions.invoke("pipedrive-people", { body: { q: term } });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       setPeople((data as any)?.persons ?? []);
@@ -52,57 +134,132 @@ export default function Outreach() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
       setPeople([]);
-    } finally {
-      setLoading(false);
+    } finally { setLoading(false); }
+  }, []);
+
+  const fetchTemplates = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("email_templates")
+      .select("*")
+      .eq("is_active", true)
+      .order("name");
+    if (error) { console.error(error); return; }
+    const rows: Template[] = (data ?? []).map((r: any) => ({
+      ...r,
+      variables: Array.isArray(r.variables) ? r.variables : [],
+      default_values: r.default_values ?? {},
+    }));
+    setTemplates(rows);
+    if (!templateId && rows.length > 0) setTemplateId(rows[0].id);
+  }, [templateId]);
+
+  const fetchStatuses = useCallback(async () => {
+    // Pull last 50 sends + their cached status
+    const { data, error } = await supabase
+      .from("outreach_send_log")
+      .select("id, pipedrive_person_id, recipient_email, created_at, outreach_thread_status(status, last_message_at)")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) { console.error(error); return; }
+    const map: Record<string, SendStatus> = {};
+    for (const row of data as any[]) {
+      const ts = Array.isArray(row.outreach_thread_status) ? row.outreach_thread_status[0] : row.outreach_thread_status;
+      // Latest send per recipient wins (data is desc-sorted)
+      if (row.recipient_email && !map[row.recipient_email]) {
+        map[row.recipient_email] = {
+          send_id: row.id,
+          pipedrive_person_id: row.pipedrive_person_id,
+          recipient_email: row.recipient_email,
+          created_at: row.created_at,
+          status: ts?.status ?? "pending",
+          last_message_at: ts?.last_message_at ?? null,
+        };
+      }
     }
+    setStatuses(map);
+  }, []);
+
+  const refreshStatuses = async () => {
+    setRefreshingStatus(true);
+    try {
+      const { error } = await supabase.functions.invoke("pipedrive-thread-status", { body: {} });
+      if (error) throw error;
+      await fetchStatuses();
+      toast({ title: "Status refreshed", description: "Pulled latest mail-thread state from Pipedrive." });
+    } catch (e) {
+      toast({ title: "Status refresh failed", description: e instanceof Error ? e.message : "Unknown", variant: "destructive" });
+    } finally { setRefreshingStatus(false); }
   };
 
-  useEffect(() => {
-    void fetchPeople("");
-  }, []);
+  useEffect(() => { void fetchPeople(""); void fetchTemplates(); void fetchStatuses(); }, [fetchPeople, fetchTemplates, fetchStatuses]);
 
   useEffect(() => {
     const t = setTimeout(() => void fetchPeople(query), 350);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [query, fetchPeople]);
 
+  // Reset variable values when template or person changes
   useEffect(() => {
-    if (selected) setBody(buildBody(selected));
-  }, [selected]);
+    if (!activeTemplate) return;
+    const next: Record<string, string> = { ...activeTemplate.default_values };
+    if (selected) {
+      const firstName = (selected.name || "there").split(" ")[0];
+      if (!next.customerName || next.customerName === activeTemplate.default_values.customerName) {
+        next.customerName = firstName;
+      }
+    }
+    setVars(next);
+  }, [activeTemplate, selected]);
 
+  // ── Rendered subject / body / html ───────────────────────────────────────
+  const renderedSubject = useMemo(
+    () => activeTemplate ? renderTemplate(activeTemplate.subject, vars) : "",
+    [activeTemplate, vars]
+  );
+  const renderedText = useMemo(
+    () => activeTemplate ? renderTemplate(activeTemplate.text_body, vars) : "",
+    [activeTemplate, vars]
+  );
+  const renderedHtml = useMemo(
+    () => activeTemplate ? renderTemplate(activeTemplate.html_body, vars) : "",
+    [activeTemplate, vars]
+  );
+
+  const allVarKeys = useMemo(() => {
+    if (!activeTemplate) return [];
+    const declared = activeTemplate.variables ?? [];
+    const inferred = extractVariables(activeTemplate.subject, activeTemplate.text_body, activeTemplate.html_body);
+    return Array.from(new Set([...declared, ...inferred]));
+  }, [activeTemplate]);
+
+  // ── Mailto / Gmail links ─────────────────────────────────────────────────
   const mailtoHref = useMemo(() => {
     if (!selected?.email) return "#";
     const params = new URLSearchParams();
-    params.set("subject", subject);
-    params.set("body", body);
+    params.set("subject", renderedSubject);
+    params.set("body", renderedText);
     if (bcc) params.set("bcc", bcc);
-    return `mailto:${encodeURIComponent(selected.email)}?${params
-      .toString()
-      .replace(/\+/g, "%20")}`;
-  }, [selected, subject, body, bcc]);
+    return `mailto:${encodeURIComponent(selected.email)}?${params.toString().replace(/\+/g, "%20")}`;
+  }, [selected, renderedSubject, renderedText, bcc]);
 
   const gmailHref = useMemo(() => {
     if (!selected?.email) return "#";
     const params = new URLSearchParams({
-      view: "cm",
-      fs: "1",
-      to: selected.email,
-      su: subject,
-      body,
+      view: "cm", fs: "1", to: selected.email, su: renderedSubject, body: renderedText,
     });
     if (bcc) params.set("bcc", bcc);
     return `https://mail.google.com/mail/?${params.toString()}`;
-  }, [selected, subject, body, bcc]);
+  }, [selected, renderedSubject, renderedText, bcc]);
 
+  // ── Actions ──────────────────────────────────────────────────────────────
   const copyHtml = async () => {
-    await navigator.clipboard.writeText(showcaseHtml);
+    await navigator.clipboard.writeText(renderedHtml);
     setCopiedHtml(true);
     setTimeout(() => setCopiedHtml(false), 1800);
   };
 
   const logSend = async (channel: "default_mail" | "gmail") => {
-    if (!selected) return;
+    if (!selected || !activeTemplate) return;
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return;
@@ -113,25 +270,117 @@ export default function Outreach() {
         recipient_name: selected.name,
         recipient_email: selected.email,
         organisation: selected.org_name,
-        subject,
-        body,
+        subject: renderedSubject,
+        body: renderedText,
         bcc,
+        template_id: activeTemplate.id,
       });
+      // Optimistically mark this recipient as pending
+      if (selected.email) {
+        setStatuses(prev => ({
+          ...prev,
+          [selected.email!]: {
+            send_id: "local",
+            pipedrive_person_id: selected.id,
+            recipient_email: selected.email,
+            created_at: new Date().toISOString(),
+            status: "pending",
+            last_message_at: null,
+          },
+        }));
+      }
     } catch (e) {
-      // non-blocking — log only
       console.error("Failed to log outreach send", e);
     }
   };
 
+  const importCsv = async () => {
+    const leads = parseCSV(csvText);
+    if (leads.length === 0) {
+      toast({ title: "No valid rows", description: "Need at least an email column.", variant: "destructive" });
+      return;
+    }
+    setImporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("pipedrive-create-persons", {
+        body: { leads },
+      });
+      if (error) throw error;
+      const results = (data as any)?.results ?? [];
+      const created = results.filter((r: any) => r.status === "created").length;
+      const exists = results.filter((r: any) => r.status === "exists").length;
+      const errored = results.filter((r: any) => r.status === "error").length;
+      toast({
+        title: `Import complete`,
+        description: `${created} created · ${exists} already in Pipedrive · ${errored} errors`,
+      });
+      setImportOpen(false);
+      setCsvText("");
+      await fetchPeople("");
+    } catch (e) {
+      toast({ title: "Import failed", description: e instanceof Error ? e.message : "Unknown", variant: "destructive" });
+    } finally { setImporting(false); }
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="p-4 md:p-8 space-y-6 text-[#F5E6D0]">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-semibold">Outreach</h1>
-        <p className="text-sm text-[#C4A882] mt-1">
-          Send the portal showcase email to a Pipedrive contact from your own
-          inbox. Pipedrive's BCC is added automatically so the thread is logged
-          to their timeline.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-semibold">Outreach</h1>
+          <p className="text-sm text-[#C4A882] mt-1">
+            Send templated emails from your inbox. Pipedrive's Smart BCC logs the thread automatically.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={refreshStatuses}
+            disabled={refreshingStatus}
+            className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]"
+          >
+            {refreshingStatus
+              ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              : <RefreshCw className="h-4 w-4 mr-2" />}
+            Sync status from Pipedrive
+          </Button>
+          <Dialog open={importOpen} onOpenChange={setImportOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+                <Upload className="h-4 w-4 mr-2" /> Import CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#2a1d11] border-[#6B5240] text-[#F5E6D0] max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Import recipients into Pipedrive</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-[#C4A882]">
+                Paste a CSV with columns <code className="text-[#F5E6D0]">name, email, org</code>. Each row will be
+                created as a Person in Pipedrive (or matched if the email already exists).
+              </p>
+              <Textarea
+                value={csvText}
+                onChange={(e) => setCsvText(e.target.value)}
+                rows={10}
+                placeholder={"name,email,org\nJane Smith,jane@acme.com,Acme Pty Ltd"}
+                className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] font-mono text-xs"
+              />
+              <DialogFooter>
+                <Button onClick={importCsv} disabled={importing} className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
+                  {importing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Push to Pipedrive
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Button
+            variant="outline"
+            onClick={() => setEditorOpen(true)}
+            className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]"
+          >
+            <Settings2 className="h-4 w-4 mr-2" /> Templates
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
@@ -153,53 +402,50 @@ export default function Outreach() {
             </div>
           )}
           {error && (
-            <div className="text-sm text-[#ff8866] bg-[#3a1810] border border-[#6b2a1a] rounded p-2">
-              {error}
-            </div>
+            <div className="text-sm text-[#ff8866] bg-[#3a1810] border border-[#6b2a1a] rounded p-2">{error}</div>
           )}
 
-          <div className="max-h-[60vh] overflow-y-auto divide-y divide-[#6B5240]/50">
+          <div className="max-h-[65vh] overflow-y-auto divide-y divide-[#6B5240]/50">
             {people.map((p) => {
               const isSel = selected?.id === p.id;
+              const st = p.email ? statuses[p.email.toLowerCase()] : undefined;
+              const meta = st?.status ? STATUS_META[st.status] : null;
               return (
                 <button
                   key={p.id}
                   onClick={() => setSelected(p)}
-                  className={`w-full text-left py-3 px-2 hover:bg-[#3a2818] rounded transition ${
-                    isSel ? "bg-[#3a2818] ring-1 ring-[#E8461E]" : ""
-                  }`}
+                  className={`w-full text-left py-3 px-2 hover:bg-[#3a2818] rounded transition ${isSel ? "bg-[#3a2818] ring-1 ring-[#E8461E]" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium truncate">{p.name}</span>
                     {!p.email && (
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] border-[#8a7559] text-[#C4A882]"
-                      >
-                        no email
-                      </Badge>
+                      <Badge variant="outline" className="text-[10px] border-[#8a7559] text-[#C4A882]">no email</Badge>
                     )}
                   </div>
                   <div className="text-xs text-[#C4A882] truncate">
-                    {p.email ?? "—"}
-                    {p.org_name ? ` · ${p.org_name}` : ""}
+                    {p.email ?? "—"}{p.org_name ? ` · ${p.org_name}` : ""}
                   </div>
+                  {meta && (
+                    <div className="mt-1">
+                      <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded border ${meta.color}`}>
+                        {meta.label}
+                      </span>
+                    </div>
+                  )}
                 </button>
               );
             })}
             {!loading && people.length === 0 && (
-              <div className="text-sm text-[#C4A882] py-6 text-center">
-                No contacts found.
-              </div>
+              <div className="text-sm text-[#C4A882] py-6 text-center">No contacts found.</div>
             )}
           </div>
         </div>
 
-        {/* Compose / preview */}
+        {/* Compose */}
         <div className="rounded-lg border border-[#6B5240] bg-[#2a1d11] p-4 space-y-4">
           {!selected ? (
             <div className="text-sm text-[#C4A882] py-12 text-center">
-              Pick a Pipedrive contact on the left to compose.
+              Pick a Pipedrive contact on the left to compose, or import a CSV to add new leads.
             </div>
           ) : (
             <>
@@ -207,103 +453,263 @@ export default function Outreach() {
                 <div>
                   <div className="text-lg font-semibold">{selected.name}</div>
                   <div className="text-sm text-[#C4A882]">
-                    {selected.email ?? "no email on file"}
-                    {selected.org_name ? ` · ${selected.org_name}` : ""}
+                    {selected.email ?? "no email on file"}{selected.org_name ? ` · ${selected.org_name}` : ""}
                   </div>
                 </div>
-                <a
-                  href={selected.pipedrive_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs inline-flex items-center gap-1 text-[#C4A882] hover:text-[#F5E6D0]"
-                >
+                <a href={selected.pipedrive_url} target="_blank" rel="noreferrer"
+                   className="text-xs inline-flex items-center gap-1 text-[#C4A882] hover:text-[#F5E6D0]">
                   Open in Pipedrive <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
 
+              {/* Template picker */}
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-wide text-[#C4A882]">
-                  Subject
-                </label>
-                <Input
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]"
-                />
+                <label className="text-xs uppercase tracking-wide text-[#C4A882]">Template</label>
+                <Select value={templateId ?? ""} onValueChange={setTemplateId}>
+                  <SelectTrigger className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]">
+                    <SelectValue placeholder="Pick a template" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#2a1d11] border-[#6B5240] text-[#F5E6D0]">
+                    {templates.map(t => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
+              {/* Variables */}
+              {allVarKeys.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-wide text-[#C4A882]">Variables</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {allVarKeys.map(key => (
+                      <div key={key} className="space-y-1">
+                        <span className="text-[11px] text-[#C4A882] font-mono">{`{{${key}}}`}</span>
+                        <Input
+                          value={vars[key] ?? ""}
+                          onChange={(e) => setVars(v => ({ ...v, [key]: e.target.value }))}
+                          placeholder={activeTemplate?.default_values?.[key] ?? ""}
+                          className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Subject (read-only rendered) */}
               <div className="space-y-2">
+                <label className="text-xs uppercase tracking-wide text-[#C4A882]">Subject (rendered)</label>
+                <Input value={renderedSubject} readOnly
+                       className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]" />
+              </div>
+
+              {/* Preview tabs */}
+              <Tabs defaultValue="html">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs uppercase tracking-wide text-[#C4A882]">
-                    Plain-text body (sent via your inbox)
-                  </label>
+                  <TabsList className="bg-[#1f150b] border border-[#6B5240]">
+                    <TabsTrigger value="html">HTML preview</TabsTrigger>
+                    <TabsTrigger value="text">Plain-text body</TabsTrigger>
+                  </TabsList>
                   {bcc && (
                     <span className="text-[11px] text-[#C4A882]">
                       BCC: <span className="text-[#F5E6D0]">{bcc}</span>
                     </span>
                   )}
                 </div>
-                <Textarea
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  rows={14}
-                  className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] font-mono text-xs"
-                />
-              </div>
+                <TabsContent value="html" className="mt-3">
+                  <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
+                    <iframe title="Email preview" srcDoc={renderedHtml} className="w-full h-[600px] border-0" />
+                  </div>
+                </TabsContent>
+                <TabsContent value="text" className="mt-3">
+                  <Textarea value={renderedText} readOnly rows={20}
+                            className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] font-mono text-xs" />
+                </TabsContent>
+              </Tabs>
 
               <div className="flex flex-wrap gap-2">
-                <Button
-                  asChild
-                  disabled={!selected.email}
-                  className="bg-[#E8461E] hover:bg-[#c93a17] text-white"
-                >
+                <Button asChild disabled={!selected.email}
+                        className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
                   <a href={mailtoHref} onClick={() => void logSend("default_mail")}>
                     <Mail className="h-4 w-4 mr-2" /> Open in default mail
                   </a>
                 </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  disabled={!selected.email}
-                  className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]"
-                >
-                  <a
-                    href={gmailHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => void logSend("gmail")}
-                  >
+                <Button asChild variant="outline" disabled={!selected.email}
+                        className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+                  <a href={gmailHref} target="_blank" rel="noreferrer" onClick={() => void logSend("gmail")}>
                     <Mail className="h-4 w-4 mr-2" /> Open in Gmail
                   </a>
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={copyHtml}
-                  className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]"
-                >
-                  {copiedHtml ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2" /> HTML copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" /> Copy rich HTML
-                    </>
-                  )}
+                <Button variant="outline" onClick={copyHtml}
+                        className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+                  {copiedHtml
+                    ? (<><Check className="h-4 w-4 mr-2" /> HTML copied</>)
+                    : (<><Copy className="h-4 w-4 mr-2" /> Copy rendered HTML</>)}
                 </Button>
-              </div>
-
-              <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
-                <iframe
-                  title="Email preview"
-                  srcDoc={showcaseHtml}
-                  className="w-full h-[600px] border-0"
-                />
               </div>
             </>
           )}
         </div>
       </div>
+
+      {/* Template editor */}
+      <TemplateEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        templates={templates}
+        onChanged={() => void fetchTemplates()}
+      />
     </div>
+  );
+}
+
+// ─── Template editor ───────────────────────────────────────────────────────
+function TemplateEditor({
+  open, onOpenChange, templates, onChanged,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  templates: Template[];
+  onChanged: () => void;
+}) {
+  const { toast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Partial<Template>>({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) { setEditingId(null); setDraft({}); }
+  }, [open]);
+
+  const startEdit = (t: Template) => {
+    setEditingId(t.id);
+    setDraft({ ...t });
+  };
+
+  const startNew = () => {
+    setEditingId("new");
+    setDraft({
+      name: "New template",
+      description: "",
+      subject: "Subject for {{customerName}}",
+      html_body: "<p>Hi {{customerName}},</p>",
+      text_body: "Hi {{customerName}},",
+      variables: ["customerName"],
+      default_values: { customerName: "there" },
+      is_active: true,
+    });
+  };
+
+  const inferred = useMemo(() => {
+    return extractVariables(
+      draft.subject ?? "", draft.text_body ?? "", draft.html_body ?? ""
+    );
+  }, [draft.subject, draft.text_body, draft.html_body]);
+
+  const save = async () => {
+    if (!draft.name || !draft.subject || !draft.html_body || !draft.text_body) {
+      toast({ title: "Missing fields", description: "Name, subject, html and text are required.", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        name: draft.name,
+        description: draft.description ?? null,
+        subject: draft.subject,
+        html_body: draft.html_body,
+        text_body: draft.text_body,
+        variables: inferred,
+        default_values: draft.default_values ?? {},
+        is_active: draft.is_active ?? true,
+      };
+      if (editingId === "new") {
+        const { error } = await supabase.from("email_templates").insert(payload);
+        if (error) throw error;
+      } else if (editingId) {
+        const { error } = await supabase.from("email_templates").update(payload).eq("id", editingId);
+        if (error) throw error;
+      }
+      toast({ title: "Saved", description: "Template saved." });
+      onChanged();
+      setEditingId(null); setDraft({});
+    } catch (e) {
+      toast({ title: "Save failed", description: e instanceof Error ? e.message : "Unknown", variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-[#2a1d11] border-[#6B5240] text-[#F5E6D0] max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Email templates</DialogTitle>
+        </DialogHeader>
+
+        {!editingId ? (
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <Button onClick={startNew} className="bg-[#E8461E] hover:bg-[#c93a17] text-white">+ New template</Button>
+            </div>
+            <div className="divide-y divide-[#6B5240]/50">
+              {templates.map(t => (
+                <button key={t.id} onClick={() => startEdit(t)}
+                        className="w-full text-left py-3 px-2 hover:bg-[#3a2818] rounded">
+                  <div className="font-medium">{t.name}</div>
+                  <div className="text-xs text-[#C4A882] truncate">{t.subject}</div>
+                  <div className="text-[11px] text-[#8a7559] mt-1">
+                    Variables: {(t.variables ?? []).join(", ") || "—"}
+                  </div>
+                </button>
+              ))}
+              {templates.length === 0 && (
+                <div className="text-sm text-[#C4A882] py-6 text-center">No templates yet.</div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs uppercase text-[#C4A882]">Name</label>
+                <Input value={draft.name ?? ""} onChange={(e) => setDraft(d => ({ ...d, name: e.target.value }))}
+                       className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs uppercase text-[#C4A882]">Description</label>
+                <Input value={draft.description ?? ""} onChange={(e) => setDraft(d => ({ ...d, description: e.target.value }))}
+                       className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs uppercase text-[#C4A882]">Subject</label>
+              <Input value={draft.subject ?? ""} onChange={(e) => setDraft(d => ({ ...d, subject: e.target.value }))}
+                     className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs uppercase text-[#C4A882]">Plain-text body</label>
+              <Textarea rows={8} value={draft.text_body ?? ""} onChange={(e) => setDraft(d => ({ ...d, text_body: e.target.value }))}
+                        className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] font-mono text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs uppercase text-[#C4A882]">HTML body</label>
+              <Textarea rows={12} value={draft.html_body ?? ""} onChange={(e) => setDraft(d => ({ ...d, html_body: e.target.value }))}
+                        className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] font-mono text-xs" />
+            </div>
+            <div className="text-xs text-[#C4A882]">
+              Detected variables: {inferred.length > 0 ? inferred.map(v => <code key={v} className="text-[#F5E6D0] mr-2">{`{{${v}}}`}</code>) : "—"}
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => { setEditingId(null); setDraft({}); }}
+                      className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">Cancel</Button>
+              <Button onClick={save} disabled={saving} className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
+                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Save template
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
