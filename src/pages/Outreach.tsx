@@ -87,6 +87,20 @@ function parseCSV(text: string): { name: string; email: string; org: string }[] 
   }).filter(r => r.email);
 }
 
+async function copyBrandedEmail(html: string, text: string) {
+  const ClipboardItemCtor = (window as any).ClipboardItem;
+  if (navigator.clipboard?.write && ClipboardItemCtor) {
+    await navigator.clipboard.write([
+      new ClipboardItemCtor({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([text], { type: "text/plain" }),
+      }),
+    ]);
+    return;
+  }
+  await navigator.clipboard.writeText(html || text);
+}
+
 export default function Outreach() {
   const { toast } = useToast();
 
@@ -258,9 +272,26 @@ export default function Outreach() {
     return `https://mail.google.com/mail/?${params.toString()}`;
   }, [selected, renderedSubject, renderedText, bcc]);
 
+  const brandedMailtoHref = useMemo(() => {
+    if (!selected?.email) return "#";
+    const params = new URLSearchParams();
+    params.set("subject", renderedSubject);
+    if (bcc) params.set("bcc", bcc);
+    return `mailto:${encodeURIComponent(selected.email)}?${params.toString().replace(/\+/g, "%20")}`;
+  }, [selected, renderedSubject, bcc]);
+
+  const brandedGmailHref = useMemo(() => {
+    if (!selected?.email) return "#";
+    const params = new URLSearchParams({
+      view: "cm", fs: "1", to: selected.email, su: renderedSubject,
+    });
+    if (bcc) params.set("bcc", bcc);
+    return `https://mail.google.com/mail/?${params.toString()}`;
+  }, [selected, renderedSubject, bcc]);
+
   // ── Actions ──────────────────────────────────────────────────────────────
   const copyHtml = async () => {
-    await navigator.clipboard.writeText(renderedHtml);
+    await copyBrandedEmail(renderedHtml, renderedText);
     setCopiedHtml(true);
     setTimeout(() => setCopiedHtml(false), 1800);
   };
@@ -299,6 +330,29 @@ export default function Outreach() {
     } catch (e) {
       console.error("Failed to log outreach send", e);
     }
+  };
+
+  const openBrandedCompose = async (channel: "default_mail" | "gmail") => {
+    if (!selected?.email) return;
+    const popup = channel === "gmail" ? window.open("", "_blank") : null;
+    let copied = false;
+    try {
+      await copyBrandedEmail(renderedHtml, renderedText);
+      copied = true;
+      toast({ title: "Branded email copied", description: "Paste it into the email body, then send." });
+    } catch (e) {
+      toast({ title: "Opening plain-text fallback", description: "Your browser blocked copying the branded layout.", variant: "destructive" });
+    }
+    void logSend(channel);
+    const href = copied
+      ? (channel === "gmail" ? brandedGmailHref : brandedMailtoHref)
+      : (channel === "gmail" ? gmailHref : mailtoHref);
+    if (channel === "gmail") {
+      if (popup) popup.location.href = href;
+      else window.open(href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    window.location.href = href;
   };
 
   const importCsv = async () => {
