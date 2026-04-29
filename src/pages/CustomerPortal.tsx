@@ -419,6 +419,8 @@ export default function CustomerPortal() {
           }}
         >
           <PACCLogo tone="light" />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <PortalThemeToggle />
           <div style={{ position: "relative" }}>
             <button
               onClick={(e) => {
