@@ -17,6 +17,7 @@ import {
   ArrowLeft, Eye, ChevronDown, UserPlus, Send,
 } from "lucide-react";
 import { renderTemplate, extractVariables } from "@/lib/templateVars";
+import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
 type Person = {
   id: number;
@@ -482,6 +483,7 @@ export default function Outreach() {
           </Button>
         )}
         <div className="flex gap-2 flex-wrap">
+          <EmailActivityLog />
           <Button
             variant="outline"
             onClick={refreshStatuses}
