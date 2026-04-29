@@ -6,6 +6,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+function pipedriveHost(rawDomain: string) {
+  const cleaned = rawDomain
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/\.+$/, "");
+  return cleaned.endsWith(".pipedrive.com") ? cleaned : `${cleaned}.pipedrive.com`;
+}
+
 /**
  * Polls Pipedrive Mailbox for the most recent mail thread that involves
  * a given person (and was sent at/after a given timestamp), and writes
@@ -71,7 +80,7 @@ Deno.serve(async (req) => {
     const { data: sends, error: sendsErr } = await q;
     if (sendsErr) return json({ error: sendsErr.message }, 500);
 
-    const base = `https://${PD_DOMAIN}.pipedrive.com/api/v1`;
+    const base = `https://${pipedriveHost(PD_DOMAIN)}/api/v1`;
     const updates: Array<{ send_id: string; status: string; thread_id: number | null; last_message_at: string | null }> = [];
 
     for (const s of sends ?? []) {
