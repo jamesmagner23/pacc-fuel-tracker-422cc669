@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Loader2, Search, Mail, ExternalLink, Copy, Check, Upload, Settings2, RefreshCw,
-  ArrowLeft, Eye, ChevronDown, UserPlus,
+  ArrowLeft, Eye, ChevronDown, UserPlus, Send,
 } from "lucide-react";
 import { renderTemplate, extractVariables } from "@/lib/templateVars";
 
@@ -153,6 +153,7 @@ export default function Outreach() {
   const [editorOpen, setEditorOpen] = useState(false);
 
   const [copiedHtml, setCopiedHtml] = useState(false);
+  const [sendingGmail, setSendingGmail] = useState(false);
 
   // ── Data loaders ─────────────────────────────────────────────────────────
   const fetchPeople = useCallback(async (term: string) => {
@@ -371,6 +372,34 @@ export default function Outreach() {
       return;
     }
     window.location.href = href;
+  };
+
+  const sendViaGmail = async () => {
+    if (!selected?.email || !activeTemplate) return;
+    setSendingGmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-via-gmail", {
+        body: {
+          to: selected.email,
+          subject: renderedSubject,
+          html: renderedHtml,
+          text: renderedText,
+          bcc: bcc || undefined,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "Email sent", description: `Branded email delivered to ${selected.email} from your Gmail account.` });
+      void logSend("gmail");
+    } catch (e) {
+      toast({
+        title: "Send failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingGmail(false);
+    }
   };
 
   const importCsv = async () => {
@@ -701,9 +730,17 @@ export default function Outreach() {
 
               {/* Desktop send actions */}
               <div className="hidden lg:flex flex-wrap gap-2">
+                <Button disabled={!selected.email || sendingGmail}
+                        onClick={() => void sendViaGmail()}
+                        className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
+                  {sendingGmail
+                    ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</>)
+                    : (<><Send className="h-4 w-4 mr-2" /> Send branded email via Gmail</>)}
+                </Button>
                 <Button disabled={!selected.email}
                         onClick={() => void openBrandedCompose("default_mail")}
-                        className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
+                        variant="outline"
+                        className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   <Mail className="h-4 w-4 mr-2" /> Open in default mail
                 </Button>
                 <Button variant="outline" disabled={!selected.email}
@@ -736,14 +773,17 @@ export default function Outreach() {
       {selected && selected.email && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#6B5240] bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex gap-2">
-            <Button onClick={() => void openBrandedCompose("default_mail")}
+            <Button onClick={() => void sendViaGmail()}
+                    disabled={sendingGmail}
                     className="flex-1 h-12 bg-[#E8461E] hover:bg-[#c93a17] text-white">
-              <Mail className="h-4 w-4 mr-2" /> Send via mail app
+              {sendingGmail
+                ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</>)
+                : (<><Send className="h-4 w-4 mr-2" /> Send via Gmail</>)}
             </Button>
             <Button variant="outline"
-                    onClick={() => void openBrandedCompose("gmail")}
+                    onClick={() => void openBrandedCompose("default_mail")}
                     className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
-              Gmail
+              Mail
             </Button>
           </div>
         </div>
