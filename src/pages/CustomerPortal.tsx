@@ -90,6 +90,10 @@ const lightThemeVars: React.CSSProperties = {
   ["--muted-foreground" as any]: T.textSecondary,
   ["--input" as any]: T.border,
   ["--ring" as any]: T.accent,
+  // Map placeholders / loading states pick up these — keep them cream so
+  // the customer portal doesn't flash a black box while the truck map loads.
+  ["--map-bg" as any]: "#F7F1E4",
+  ["--map-border" as any]: T.border,
 };
 
 const tabs = [
