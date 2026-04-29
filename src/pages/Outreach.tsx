@@ -43,26 +43,12 @@ export default function Outreach() {
     try {
       const { data, error } = await supabase.functions.invoke(
         "pipedrive-people",
-        { method: "GET" as any, body: undefined, ...(term ? {} : {}) } as any
+        { body: { q: term } }
       );
-      // supabase.functions.invoke doesn't pass query params nicely; use fetch directly:
-      const url = new URL(
-        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.functions.supabase.co/pipedrive-people`
-      );
-      if (term) url.searchParams.set("q", term);
-      const session = (await supabase.auth.getSession()).data.session;
-      const res = await fetch(url.toString(), {
-        headers: {
-          Authorization: `Bearer ${session?.access_token ?? ""}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || "Failed to load contacts");
-      setPeople(json.persons ?? []);
-      setBcc(json.bcc ?? null);
-      void data;
-      void error;
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setPeople((data as any)?.persons ?? []);
+      setBcc((data as any)?.bcc ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
       setPeople([]);
