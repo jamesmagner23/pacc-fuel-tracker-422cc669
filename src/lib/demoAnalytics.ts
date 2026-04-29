@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 
 /**
  * Lightweight analytics for the demo client portal.
@@ -50,7 +51,7 @@ export async function logDemoEvent(input: DemoEventInput) {
       user_agent: navigator.userAgent || null,
       path: window.location.pathname,
       search_params: window.location.search || null,
-      metadata: (input.metadata ?? {}) as Record<string, unknown>,
+      metadata: (input.metadata ?? {}) as unknown as Json,
     };
 
     await supabase.from("demo_analytics_events").insert([payload]);
