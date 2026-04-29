@@ -726,8 +726,9 @@ function OverviewTab({
   const topPlants = plantBreakdown.slice(0, 6);
   const topPlant = plantBreakdown[0];
 
-  // Orange + brown palette tuned for white backgrounds (no light cream — would disappear)
-  const PIE_COLORS = ["#E8461E", "#3D2B1A", "#D88B5C", "#6B5240", "#F59E0B", "#8B7355"];
+  // Pie palette comes from the active portal theme so it stays legible
+  // on either cream or deep-brown backgrounds.
+  const PIE_COLORS = portalTokens.pie as unknown as string[];
 
   const kpis = [
     { label: "Total Litres", value: fmtL(totalLitres) },
