@@ -50,6 +50,10 @@ const LIGHT_THEME_VARS: React.CSSProperties = {
   ["--muted-foreground" as any]: "#6B5240",
   ["--input" as any]: "#EDE3D2",
   ["--ring" as any]: "#E8461E",
+  // Map placeholders use these — keep them on the cream palette so the
+  // loading/empty states blend into the page instead of going black.
+  ["--map-bg" as any]: "#F7F1E4",
+  ["--map-border" as any]: "#EDE3D2",
 };
 
 function IntakeLogRow({ log }: { log: any }) {
