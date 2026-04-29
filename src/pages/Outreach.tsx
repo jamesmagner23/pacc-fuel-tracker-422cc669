@@ -101,6 +101,28 @@ export default function Outreach() {
     setTimeout(() => setCopiedHtml(false), 1800);
   };
 
+  const logSend = async (channel: "default_mail" | "gmail") => {
+    if (!selected) return;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+      await supabase.from("outreach_send_log").insert({
+        sent_by: userData.user.id,
+        channel,
+        pipedrive_person_id: selected.id,
+        recipient_name: selected.name,
+        recipient_email: selected.email,
+        organisation: selected.org_name,
+        subject,
+        body,
+        bcc,
+      });
+    } catch (e) {
+      // non-blocking — log only
+      console.error("Failed to log outreach send", e);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 space-y-6 text-[#F5E6D0]">
       <div>
@@ -235,7 +257,7 @@ export default function Outreach() {
                   disabled={!selected.email}
                   className="bg-[#E8461E] hover:bg-[#c93a17] text-white"
                 >
-                  <a href={mailtoHref}>
+                  <a href={mailtoHref} onClick={() => void logSend("default_mail")}>
                     <Mail className="h-4 w-4 mr-2" /> Open in default mail
                   </a>
                 </Button>
@@ -245,7 +267,12 @@ export default function Outreach() {
                   disabled={!selected.email}
                   className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]"
                 >
-                  <a href={gmailHref} target="_blank" rel="noreferrer">
+                  <a
+                    href={gmailHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => void logSend("gmail")}
+                  >
                     <Mail className="h-4 w-4 mr-2" /> Open in Gmail
                   </a>
                 </Button>

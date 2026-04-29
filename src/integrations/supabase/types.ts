@@ -554,6 +554,48 @@ export type Database = {
         }
         Relationships: []
       }
+      outreach_send_log: {
+        Row: {
+          bcc: string | null
+          body: string
+          channel: string
+          created_at: string
+          id: string
+          organisation: string | null
+          pipedrive_person_id: number | null
+          recipient_email: string | null
+          recipient_name: string | null
+          sent_by: string
+          subject: string
+        }
+        Insert: {
+          bcc?: string | null
+          body: string
+          channel: string
+          created_at?: string
+          id?: string
+          organisation?: string | null
+          pipedrive_person_id?: number | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sent_by: string
+          subject: string
+        }
+        Update: {
+          bcc?: string | null
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          organisation?: string | null
+          pipedrive_person_id?: number | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sent_by?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       plant_assignment_audit: {
         Row: {
           changed_at: string
