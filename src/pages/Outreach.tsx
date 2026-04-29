@@ -153,6 +153,7 @@ export default function Outreach() {
   const [editorOpen, setEditorOpen] = useState(false);
 
   const [copiedHtml, setCopiedHtml] = useState(false);
+  const [sendingGmail, setSendingGmail] = useState(false);
 
   // ── Data loaders ─────────────────────────────────────────────────────────
   const fetchPeople = useCallback(async (term: string) => {
