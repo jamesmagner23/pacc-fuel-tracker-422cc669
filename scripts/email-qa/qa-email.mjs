@@ -20,12 +20,19 @@ const RED = (s) => `\x1b[31m${s}\x1b[0m`;
 const GREEN = (s) => `\x1b[32m${s}\x1b[0m`;
 const DIM = (s) => `\x1b[2m${s}\x1b[0m`;
 
-const inputPath = resolve(process.argv[2] || "/mnt/documents/pacc-portal-showcase-email_v3.html");
+const inputPath = resolve(process.argv[2] || "/mnt/documents/pacc-portal-showcase-email_v4.html");
 const previewPath = "/mnt/documents/email-preview.png";
 
 /* ── Expected values ─────────────────────────────────────────────── */
 const EXPECTED = {
-  tourHrefIncludes: ["/portal", "demo=true", "brand=pacc"],
+  tourHrefIncludes: [
+    "/functions/v1/track-email-click",
+    "cta=tour",
+    "campaign=portal-showcase",
+    "%2Fportal",        // url-encoded /portal in the &to= destination
+    "demo%3Dtrue",
+    "brand%3Dpacc",
+  ],
   tourLabelMatches: /tour|demo|explore/i,
   walkthroughPhone: "+61409704327",      // tel: link (no spaces)
   walkthroughPhoneDisplay: "+61 409 704 327",
@@ -34,6 +41,7 @@ const EXPECTED = {
     "hello@paccenergy.com",              // old contact, must be gone
     "Book a 15-min walkthrough",         // old CTA copy
   ],
+  trackedCtas: ["tour", "walkthrough-phone", "walkthrough-email", "footer-phone", "footer-email"],
 };
 
 /* ── Load file ───────────────────────────────────────────────────── */
@@ -73,23 +81,34 @@ if (tourAnchor) {
 }
 
 // 3. Walkthrough contact details
-const telAnchor = anchors.find((a) => a.href.startsWith("tel:"));
-check("Phone (tel:) link exists", !!telAnchor, telAnchor?.href);
-if (telAnchor) {
-  check(
-    `Phone number is ${EXPECTED.walkthroughPhoneDisplay}`,
-    telAnchor.href === `tel:${EXPECTED.walkthroughPhone}`,
-    telAnchor.href
-  );
-}
+// Phone is now wrapped by the tracker — destination is url-encoded inside &to=
+const phoneAnchor = anchors.find((a) =>
+  a.href.includes("cta=walkthrough-phone") &&
+  a.href.includes(encodeURIComponent(`tel:${EXPECTED.walkthroughPhone}`))
+);
+check("Tracked walkthrough-phone link exists", !!phoneAnchor, phoneAnchor?.href);
 check(
   "Phone number rendered with spaces",
   html.includes(EXPECTED.walkthroughPhoneDisplay),
   EXPECTED.walkthroughPhoneDisplay
 );
 
-const mailAnchor = anchors.find((a) => a.href.startsWith(`mailto:${EXPECTED.walkthroughEmail}`));
-check("Walkthrough email link exists", !!mailAnchor, mailAnchor?.href);
+const mailAnchor = anchors.find((a) =>
+  a.href.includes("cta=walkthrough-email") &&
+  a.href.includes(encodeURIComponent(`mailto:${EXPECTED.walkthroughEmail}`))
+);
+check("Tracked walkthrough-email link exists", !!mailAnchor, mailAnchor?.href);
+
+// All five tracked CTA ids must appear at least once
+for (const cta of EXPECTED.trackedCtas) {
+  const present = anchors.some((a) => a.href.includes(`cta=${cta}`));
+  check(`Tracker present for cta="${cta}"`, present);
+}
+
+// Sanity: every tracker link goes through the edge function and carries a campaign
+const trackerAnchors = anchors.filter((a) => a.href.includes("/functions/v1/track-email-click"));
+check("All tracker links carry campaign param", trackerAnchors.every((a) => a.href.includes("campaign=")), `${trackerAnchors.length} tracker anchors`);
+check("All tracker links carry to= destination", trackerAnchors.every((a) => /[?&]to=/.test(a.href)));
 
 // 4. No stale content from earlier versions
 for (const banned of EXPECTED.forbiddenStrings) {
