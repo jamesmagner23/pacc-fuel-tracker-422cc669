@@ -781,7 +781,10 @@ export default function DriverPortal() {
   };
 
   return (
-    <div className={isDemo ? "bg-background text-foreground" : "min-h-screen bg-background text-foreground"}>
+    <div
+      style={LIGHT_THEME_VARS}
+      className={isDemo ? "bg-background text-foreground" : "min-h-screen bg-background text-foreground"}
+    >
       {/* Header — hidden in demo mode since Layout provides navigation */}
       {!isDemo && (
       <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
