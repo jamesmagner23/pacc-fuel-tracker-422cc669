@@ -87,6 +87,20 @@ function parseCSV(text: string): { name: string; email: string; org: string }[] 
   }).filter(r => r.email);
 }
 
+async function copyBrandedEmail(html: string, text: string) {
+  const ClipboardItemCtor = (window as any).ClipboardItem;
+  if (navigator.clipboard?.write && ClipboardItemCtor) {
+    await navigator.clipboard.write([
+      new ClipboardItemCtor({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([text], { type: "text/plain" }),
+      }),
+    ]);
+    return;
+  }
+  await navigator.clipboard.writeText(html || text);
+}
+
 export default function Outreach() {
   const { toast } = useToast();
 
@@ -258,9 +272,26 @@ export default function Outreach() {
     return `https://mail.google.com/mail/?${params.toString()}`;
   }, [selected, renderedSubject, renderedText, bcc]);
 
+  const brandedMailtoHref = useMemo(() => {
+    if (!selected?.email) return "#";
+    const params = new URLSearchParams();
+    params.set("subject", renderedSubject);
+    if (bcc) params.set("bcc", bcc);
+    return `mailto:${encodeURIComponent(selected.email)}?${params.toString().replace(/\+/g, "%20")}`;
+  }, [selected, renderedSubject, bcc]);
+
+  const brandedGmailHref = useMemo(() => {
+    if (!selected?.email) return "#";
+    const params = new URLSearchParams({
+      view: "cm", fs: "1", to: selected.email, su: renderedSubject,
+    });
+    if (bcc) params.set("bcc", bcc);
+    return `https://mail.google.com/mail/?${params.toString()}`;
+  }, [selected, renderedSubject, bcc]);
+
   // ── Actions ──────────────────────────────────────────────────────────────
   const copyHtml = async () => {
-    await navigator.clipboard.writeText(renderedHtml);
+    await copyBrandedEmail(renderedHtml, renderedText);
     setCopiedHtml(true);
     setTimeout(() => setCopiedHtml(false), 1800);
   };
@@ -299,6 +330,29 @@ export default function Outreach() {
     } catch (e) {
       console.error("Failed to log outreach send", e);
     }
+  };
+
+  const openBrandedCompose = async (channel: "default_mail" | "gmail") => {
+    if (!selected?.email) return;
+    const popup = channel === "gmail" ? window.open("", "_blank") : null;
+    let copied = false;
+    try {
+      await copyBrandedEmail(renderedHtml, renderedText);
+      copied = true;
+      toast({ title: "Branded email copied", description: "Paste it into the email body, then send." });
+    } catch (e) {
+      toast({ title: "Opening plain-text fallback", description: "Your browser blocked copying the branded layout.", variant: "destructive" });
+    }
+    void logSend(channel);
+    const href = copied
+      ? (channel === "gmail" ? brandedGmailHref : brandedMailtoHref)
+      : (channel === "gmail" ? gmailHref : mailtoHref);
+    if (channel === "gmail") {
+      if (popup) popup.location.href = href;
+      else window.open(href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    window.location.href = href;
   };
 
   const importCsv = async () => {
@@ -627,17 +681,15 @@ export default function Outreach() {
 
               {/* Desktop send actions */}
               <div className="hidden lg:flex flex-wrap gap-2">
-                <Button asChild disabled={!selected.email}
+                <Button disabled={!selected.email}
+                        onClick={() => void openBrandedCompose("default_mail")}
                         className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
-                  <a href={mailtoHref} onClick={() => void logSend("default_mail")}>
-                    <Mail className="h-4 w-4 mr-2" /> Open in default mail
-                  </a>
+                  <Mail className="h-4 w-4 mr-2" /> Open in default mail
                 </Button>
-                <Button asChild variant="outline" disabled={!selected.email}
+                <Button variant="outline" disabled={!selected.email}
+                        onClick={() => void openBrandedCompose("gmail")}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
-                  <a href={gmailHref} target="_blank" rel="noreferrer" onClick={() => void logSend("gmail")}>
-                    <Mail className="h-4 w-4 mr-2" /> Open in Gmail
-                  </a>
+                  <Mail className="h-4 w-4 mr-2" /> Open in Gmail
                 </Button>
                 <Button variant="outline" onClick={copyHtml}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
@@ -664,17 +716,14 @@ export default function Outreach() {
       {selected && selected.email && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#6B5240] bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex gap-2">
-            <Button asChild
+            <Button onClick={() => void openBrandedCompose("default_mail")}
                     className="flex-1 h-12 bg-[#E8461E] hover:bg-[#c93a17] text-white">
-              <a href={mailtoHref} onClick={() => void logSend("default_mail")}>
-                <Mail className="h-4 w-4 mr-2" /> Send via mail app
-              </a>
+              <Mail className="h-4 w-4 mr-2" /> Send via mail app
             </Button>
-            <Button asChild variant="outline"
+            <Button variant="outline"
+                    onClick={() => void openBrandedCompose("gmail")}
                     className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
-              <a href={gmailHref} target="_blank" rel="noreferrer" onClick={() => void logSend("gmail")}>
-                Gmail
-              </a>
+              Gmail
             </Button>
           </div>
         </div>
