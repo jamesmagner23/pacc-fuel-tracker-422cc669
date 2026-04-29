@@ -789,6 +789,12 @@ export default function Outreach() {
                     ? (<><Check className="h-4 w-4 mr-2" /> HTML copied</>)
                     : (<><Copy className="h-4 w-4 mr-2" /> Copy rendered HTML</>)}
                 </Button>
+                <Button variant="outline" onClick={() => void exportPdf()} disabled={exportingPdf || !renderedHtml}
+                        className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+                  {exportingPdf
+                    ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
+                    : (<><Download className="h-4 w-4 mr-2" /> Export clickable PDF</>)}
+                </Button>
               </div>
             </>
           )}
@@ -819,6 +825,12 @@ export default function Outreach() {
                     onClick={() => void openBrandedCompose("default_mail")}
                     className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
               Mail
+            </Button>
+            <Button variant="outline"
+                    onClick={() => void exportPdf()}
+                    disabled={exportingPdf || !renderedHtml}
+                    className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+              {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             </Button>
           </div>
         </div>
