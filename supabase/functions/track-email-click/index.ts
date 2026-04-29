@@ -12,6 +12,8 @@ const corsHeaders = {
 
 const ALLOWED_PROTOCOLS = ["https:", "http:", "tel:", "mailto:"];
 const FALLBACK_URL = "https://paccenergy.com";
+const PORTAL_SHOWCASE_DEMO_URL =
+  "https://paccenergy.com/portal?demo=true&brand=pacc&source=email";
 
 async function hashIp(ip: string | null): Promise<string | null> {
   if (!ip) return null;
@@ -42,7 +44,11 @@ Deno.serve(async (req) => {
   const campaign =
     (url.searchParams.get("campaign") || "").slice(0, 64) || "unknown";
   const rawTo = url.searchParams.get("to") || "";
-  const destination = isSafeRedirect(rawTo) ? rawTo : FALLBACK_URL;
+  const trackedDestination = isSafeRedirect(rawTo) ? rawTo : FALLBACK_URL;
+  const destination =
+    campaign === "portal-showcase" && cta.startsWith("tour")
+      ? PORTAL_SHOWCASE_DEMO_URL
+      : trackedDestination;
 
   // Fire-and-log: never let a logging failure block the redirect.
   try {
