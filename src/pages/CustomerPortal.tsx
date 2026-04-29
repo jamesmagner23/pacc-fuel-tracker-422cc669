@@ -418,7 +418,7 @@ export default function CustomerPortal() {
             justifyContent: "space-between",
           }}
         >
-          <PACCLogo tone="light" />
+          <PACCLogo tone={portalTheme === "dark" ? "dark" : "light"} />
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <PortalThemeToggle />
           <div style={{ position: "relative" }}>
