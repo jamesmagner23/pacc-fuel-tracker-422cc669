@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_PLANT_TAGS, DEMO_PLANT_ITEM_TAGS, DEMO_PLANT_ITEMS } from "@/data/demoData";
 
 export interface PlantTag {
   id: string;
@@ -16,10 +18,14 @@ export interface PlantItemTag {
 
 /** All tags defined for a client (the reusable library). */
 export function usePlantTags(clientAccountId: number | null | undefined) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["plant-tags", clientAccountId],
+    queryKey: ["plant-tags", clientAccountId, isDemo],
     enabled: !!clientAccountId,
     queryFn: async () => {
+      if (isDemo) {
+        return DEMO_PLANT_TAGS.filter((t) => t.client_account_id === clientAccountId) as PlantTag[];
+      }
       const { data, error } = await supabase
         .from("plant_tags")
         .select("*")
@@ -33,10 +39,17 @@ export function usePlantTags(clientAccountId: number | null | undefined) {
 
 /** All plant_item ↔ tag links for a client. */
 export function usePlantItemTagLinks(clientAccountId: number | null | undefined) {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["plant-item-tags", clientAccountId],
+    queryKey: ["plant-item-tags", clientAccountId, isDemo],
     enabled: !!clientAccountId,
     queryFn: async () => {
+      if (isDemo) {
+        const itemIds = new Set(
+          DEMO_PLANT_ITEMS.filter((p) => p.client_account_id === clientAccountId).map((p) => p.id)
+        );
+        return DEMO_PLANT_ITEM_TAGS.filter((l) => itemIds.has(l.plant_item_id)) as PlantItemTag[];
+      }
       // Pull links via plant_items to scope to this client.
       const { data: items, error: e1 } = await supabase
         .from("plant_items")

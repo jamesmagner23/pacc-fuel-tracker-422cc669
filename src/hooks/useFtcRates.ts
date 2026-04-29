@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "@/hooks/useDemo";
+import { DEMO_FTC_RATES } from "@/data/demoData";
 
 export interface FtcRate {
   id: string;
@@ -11,9 +13,11 @@ export interface FtcRate {
 }
 
 export function useFtcRates() {
+  const isDemo = useDemo();
   return useQuery({
-    queryKey: ["ftc-rates"],
+    queryKey: ["ftc-rates", isDemo],
     queryFn: async () => {
+      if (isDemo) return DEMO_FTC_RATES as FtcRate[];
       const { data, error } = await supabase
         .from("ftc_rates")
         .select("*")
