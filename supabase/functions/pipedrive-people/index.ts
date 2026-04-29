@@ -54,12 +54,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    const url = new URL(req.url);
-    const term = (url.searchParams.get("q") ?? "").trim();
-    const limit = Math.min(
-      Number(url.searchParams.get("limit") ?? "25") || 25,
-      100
-    );
+    let term = "";
+    let limit = 25;
+    if (req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      term = String(body?.q ?? "").trim();
+      limit = Math.min(Number(body?.limit ?? 25) || 25, 100);
+    } else {
+      const url = new URL(req.url);
+      term = (url.searchParams.get("q") ?? "").trim();
+      limit = Math.min(
+        Number(url.searchParams.get("limit") ?? "25") || 25,
+        100
+      );
+    }
 
     const base = `https://${PD_DOMAIN}.pipedrive.com/api/v1`;
 
