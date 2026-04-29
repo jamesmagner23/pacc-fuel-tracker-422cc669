@@ -53,7 +53,7 @@ export async function logDemoEvent(input: DemoEventInput) {
       metadata: (input.metadata ?? {}) as Record<string, unknown>,
     };
 
-    await supabase.from("demo_analytics_events").insert(payload);
+    await supabase.from("demo_analytics_events").insert([payload]);
   } catch {
     /* swallow — analytics must never break the demo */
   }
