@@ -12,9 +12,10 @@
  * Default input: /mnt/documents/pacc-portal-showcase-email_v3.html
  * Output:        /mnt/documents/email-preview.png   (+ exits non-zero on failure)
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { resolve } from "node:path";
+import { tmpdir } from "node:os";
 
 const RED = (s) => `\x1b[31m${s}\x1b[0m`;
 const GREEN = (s) => `\x1b[32m${s}\x1b[0m`;
@@ -22,6 +23,7 @@ const DIM = (s) => `\x1b[2m${s}\x1b[0m`;
 
 const inputPath = resolve(process.argv[2] || "/mnt/documents/pacc-portal-showcase-email_v4.html");
 const previewPath = "/mnt/documents/email-preview.png";
+const previewMobilePath = "/mnt/documents/email-preview-mobile.png";
 
 /* ── Expected values ─────────────────────────────────────────────── */
 const EXPECTED = {
@@ -122,19 +124,36 @@ for (const f of failures)  console.log(`${RED("✗")} ${f.name}`       + (f.deta
 console.log();
 console.log(DIM(`${passes.length} passed, ${failures.length} failed`));
 
-/* ── Render preview PNG ──────────────────────────────────────────── */
-console.log(DIM(`\nRendering preview → ${previewPath}`));
-try {
-  execSync(
-    `nix run nixpkgs#chromium -- --headless=new --disable-gpu --no-sandbox ` +
-    `--hide-scrollbars --window-size=680,3200 --virtual-time-budget=2000 ` +
-    `--screenshot=${previewPath} file://${inputPath}`,
-    { stdio: "pipe", timeout: 120_000 }
-  );
-  console.log(GREEN(`✓ Preview written to ${previewPath}`));
-} catch (err) {
-  console.log(RED(`✗ Preview render failed: ${err.message.split("\n")[0]}`));
-  failures.push({ name: "Preview render", detail: err.message.split("\n")[0] });
+/* ── Render preview PNGs (desktop + mobile) ──────────────────────── */
+// Most prospects open email on a phone first, so we render both widths
+// to confirm the tour + walkthrough buttons stack and remain tappable.
+//
+// Chromium in this sandbox MIME-sniffs file:// .html files as text/plain
+// and renders the source. Workaround: copy the file into /tmp with a
+// fresh .html extension that Chromium recognises via its own sniffer
+// (the original path lives under /mnt/documents which behaves oddly).
+const tmpHtml = `${tmpdir()}/email-qa-${Date.now()}.html`;
+writeFileSync(tmpHtml, html, "utf8");
+const url = `file://${tmpHtml}`;
+
+const renders = [
+  { label: "desktop", out: previewPath,        size: "680,3200" },
+  { label: "mobile",  out: previewMobilePath,  size: "375,4200" }, // iPhone-ish width
+];
+for (const r of renders) {
+  console.log(DIM(`\nRendering ${r.label} preview → ${r.out}`));
+  try {
+    execSync(
+      `nix run nixpkgs#chromium -- --headless=new --disable-gpu --no-sandbox ` +
+      `--hide-scrollbars --window-size=${r.size} --virtual-time-budget=2000 ` +
+      `--screenshot=${r.out} ${url}`,
+      { stdio: "pipe", timeout: 120_000 }
+    );
+    console.log(GREEN(`✓ ${r.label} preview written to ${r.out}`));
+  } catch (err) {
+    console.log(RED(`✗ ${r.label} preview render failed: ${err.message.split("\n")[0]}`));
+    failures.push({ name: `Preview render (${r.label})`, detail: err.message.split("\n")[0] });
+  }
 }
 
 /* ── Exit code ───────────────────────────────────────────────────── */
