@@ -273,7 +273,7 @@ export default function Outreach() {
       await supabase.from("outreach_send_log").insert({
         sent_by: userData.user.id,
         channel,
-        pipedrive_person_id: selected.id,
+        pipedrive_person_id: selected.id > 0 ? selected.id : null,
         recipient_name: selected.name,
         recipient_email: selected.email,
         organisation: selected.org_name,
