@@ -60,7 +60,13 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     if (sessionStorage.getItem("demo_unlocked") === "true") return true;
     try {
       const sp = new URLSearchParams(window.location.search);
-      if (sp.get("demo") === "true" && sp.get("source") === "email") {
+      const isEmailSource =
+        sp.get("source") === "email" ||
+        sp.get("utm_source") === "email" ||
+        sp.get("ref") === "email" ||
+        // Click tracker preserves campaign even when some clients strip params
+        sp.get("campaign") === "portal-showcase";
+      if (sp.get("demo") === "true" && isEmailSource) {
         sessionStorage.setItem("demo_unlocked", "true");
         return true;
       }
