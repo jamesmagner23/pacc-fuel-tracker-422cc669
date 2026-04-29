@@ -17,6 +17,7 @@ import {
   ArrowLeft, Eye, ChevronDown, UserPlus, Send,
 } from "lucide-react";
 import { renderTemplate, extractVariables } from "@/lib/templateVars";
+import { normalizePortalDemoLinks } from "@/lib/outreachLinks";
 import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
 type Person = {
@@ -252,11 +253,11 @@ export default function Outreach() {
     [activeTemplate, vars]
   );
   const renderedText = useMemo(
-    () => activeTemplate ? renderTemplate(activeTemplate.text_body, vars) : "",
+    () => activeTemplate ? normalizePortalDemoLinks(renderTemplate(activeTemplate.text_body, vars)) : "",
     [activeTemplate, vars]
   );
   const renderedHtml = useMemo(
-    () => activeTemplate ? renderTemplate(activeTemplate.html_body, vars) : "",
+    () => activeTemplate ? normalizePortalDemoLinks(renderTemplate(activeTemplate.html_body, vars)) : "",
     [activeTemplate, vars]
   );
 
@@ -858,8 +859,8 @@ function TemplateEditor({
         name: draft.name,
         description: draft.description ?? null,
         subject: draft.subject,
-        html_body: draft.html_body,
-        text_body: draft.text_body,
+        html_body: normalizePortalDemoLinks(draft.html_body),
+        text_body: normalizePortalDemoLinks(draft.text_body),
         variables: inferred,
         default_values: draft.default_values ?? {},
         is_active: draft.is_active ?? true,
