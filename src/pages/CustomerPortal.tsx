@@ -98,9 +98,19 @@ const tabs = [
   "02 Deliveries",
   "03 Projects",
   "04 Plant",
-  "05 Emissions",
+  "05 Analytics",
+  "06 Emissions",
 ] as const;
 type Tab = (typeof tabs)[number];
+
+// Day / Week / Month period toggle for the customer portal.
+type PortalPeriod = "day" | "week" | "month" | "all";
+const PERIOD_DAYS: Record<PortalPeriod, number | null> = {
+  day: 1, week: 7, month: 30, all: null,
+};
+const PERIOD_LABELS: Record<PortalPeriod, string> = {
+  day: "Today", week: "This Week", month: "This Month", all: "All Time",
+};
 
 const CO2_FACTOR = 2.68; // kg CO2e per litre diesel (Australian NGA)
 
@@ -302,6 +312,7 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 // ─── Main component ──────────────────────────────────────────────────
 export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState<Tab>("01 Overview");
+  const [period, setPeriod] = useState<PortalPeriod>("month");
   const isDemo = useDemo();
   const { theme: portalTheme, vars: portalVars, tokens: portalTokens } = usePortalTheme();
   // Sync the mutable T + style objects to the active theme BEFORE this
@@ -392,9 +403,20 @@ export default function CustomerPortal() {
   }, [transactions, lookups]);
 
   const portalFilters = usePortalFilters();
+  // Apply Day/Week/Month period to the raw transactions BEFORE the
+  // chip-style filter bar, so KPIs, charts and the analytics tab all
+  // respect the same time window.
+  const periodTransactions = useMemo(() => {
+    const days = PERIOD_DAYS[period];
+    if (days == null) return transactions;
+    const cutoff = subDays(new Date(), days);
+    cutoff.setHours(0, 0, 0, 0);
+    const cutoffStr = format(cutoff, "yyyy-MM-dd");
+    return transactions.filter((t: any) => (t.date || "") >= cutoffStr);
+  }, [transactions, period]);
   const filteredTransactions = useMemo(
-    () => filterTransactions(transactions, portalFilters.filters, lookups),
-    [transactions, portalFilters.filters, lookups]
+    () => filterTransactions(periodTransactions, portalFilters.filters, lookups),
+    [periodTransactions, portalFilters.filters, lookups]
   );
 
   useEffect(() => {
@@ -645,6 +667,42 @@ export default function CustomerPortal() {
           })}
         </div>
 
+        {/* Day / Week / Month period toggle — applies to Overview, Deliveries,
+            Plant and Analytics tabs. */}
+        {(activeTab === "01 Overview" ||
+          activeTab === "02 Deliveries" ||
+          activeTab === "04 Plant" ||
+          activeTab === "05 Analytics") && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+            <div style={{ display: "inline-flex", border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
+              {(["day", "week", "month", "all"] as PortalPeriod[]).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  style={{
+                    padding: "8px 14px",
+                    fontSize: 11,
+                    fontFamily: T.sansHead,
+                    fontWeight: period === p ? 600 : 500,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    color: period === p ? "#ffffff" : T.textSecondary,
+                    background: period === p ? T.accent : "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {PERIOD_LABELS[p]}
+                </button>
+              ))}
+            </div>
+            <span style={{ ...muted(11), letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Showing {periodTransactions.length.toLocaleString()} deliveries · {PERIOD_LABELS[period]}
+            </span>
+          </div>
+        )}
+
         {/* Shared filter bar — applies to Overview / Deliveries / Plant */}
         {(activeTab === "01 Overview" ||
           activeTab === "02 Deliveries" ||
@@ -687,10 +745,17 @@ export default function CustomerPortal() {
               />
             )}
             {activeTab === "03 Projects" && (
-              <ProjectsTab transactions={transactions} clientAccountId={clientAccountId} />
+              <ProjectsTab transactions={periodTransactions} clientAccountId={clientAccountId} />
             )}
             {activeTab === "04 Plant" && <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />}
-            {activeTab === "05 Emissions" && (
+            {activeTab === "05 Analytics" && (
+              <AnalyticsTab
+                transactions={filteredTransactions}
+                clientAccountId={clientAccountId}
+                periodLabel={PERIOD_LABELS[period]}
+              />
+            )}
+            {activeTab === "06 Emissions" && (
               <EmissionsTab transactions={transactions} companyName={companyName} />
             )}
           </>
