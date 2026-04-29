@@ -14,10 +14,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Loader2, Search, Mail, ExternalLink, Copy, Check, Upload, Settings2, RefreshCw,
-  ArrowLeft, Eye, ChevronDown, UserPlus, Send,
+  ArrowLeft, Eye, ChevronDown, UserPlus, Send, Download,
 } from "lucide-react";
 import { renderTemplate, extractVariables } from "@/lib/templateVars";
 import { normalizePortalDemoLinks } from "@/lib/outreachLinks";
+import { exportEmailHtmlToPdf } from "@/lib/emailPdf";
 import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
 type Person = {
@@ -156,6 +157,7 @@ export default function Outreach() {
 
   const [copiedHtml, setCopiedHtml] = useState(false);
   const [sendingGmail, setSendingGmail] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   // ── Data loaders ─────────────────────────────────────────────────────────
   const fetchPeople = useCallback(async (term: string) => {
@@ -315,6 +317,26 @@ export default function Outreach() {
     await copyBrandedEmail(renderedHtml, renderedText);
     setCopiedHtml(true);
     setTimeout(() => setCopiedHtml(false), 1800);
+  };
+
+  const exportPdf = async () => {
+    if (!activeTemplate || !renderedHtml) return;
+    setExportingPdf(true);
+    try {
+      await exportEmailHtmlToPdf({
+        html: renderedHtml,
+        filename: `${activeTemplate.name}-${selected?.org_name || selected?.name || "campaign"}`,
+      });
+      toast({ title: "PDF exported", description: "Clickable links are preserved in the PDF." });
+    } catch (e) {
+      toast({
+        title: "PDF export failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   const logSend = async (
