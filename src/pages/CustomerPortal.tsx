@@ -48,6 +48,50 @@ const T = {
   badgeCompleted: "#0F8A5E",
 };
 
+// CSS-variable overrides applied to the portal root so any child
+// component (PlantBoard, modals, shadcn primitives, etc.) that reads
+// Tailwind tokens or var(--*) from the global :root automatically
+// picks up the light "showcase email" palette without touching admin.
+const lightThemeVars: React.CSSProperties = {
+  // Surfaces
+  ["--background" as any]: T.bg,
+  ["--surface" as any]: T.surface,
+  ["--surface-raised" as any]: T.surfaceRaised,
+  ["--surface-border" as any]: T.border,
+  ["--surface-hover" as any]: "#F7F1E4",
+  // Accent (unchanged hue, but ensure halo reads on light)
+  ["--accent" as any]: T.accent,
+  ["--accent-hover" as any]: T.accentHover,
+  ["--accent-light" as any]: "rgba(232,70,30,0.10)",
+  ["--accent-text" as any]: T.accent,
+  // Text
+  ["--text-primary" as any]: T.text,
+  ["--text-secondary" as any]: T.textSecondary,
+  ["--text-muted" as any]: T.muted,
+  // Status — darker variants legible on white
+  ["--positive" as any]: "#0F8A5E",
+  ["--positive-bg" as any]: "rgba(15,138,94,0.10)",
+  ["--negative" as any]: "#B91C1C",
+  ["--negative-bg" as any]: "rgba(185,28,28,0.08)",
+  ["--warning" as any]: "#B45309",
+  ["--warning-bg" as any]: "rgba(180,83,9,0.10)",
+  // Borders
+  ["--border" as any]: T.border,
+  ["--border-subtle" as any]: T.borderSubtle,
+  // Shadcn compat
+  ["--foreground" as any]: T.text,
+  ["--card" as any]: T.surface,
+  ["--card-foreground" as any]: T.text,
+  ["--popover" as any]: T.surface,
+  ["--popover-foreground" as any]: T.text,
+  ["--secondary" as any]: "#F7F1E4",
+  ["--secondary-foreground" as any]: T.text,
+  ["--muted" as any]: "#F7F1E4",
+  ["--muted-foreground" as any]: T.textSecondary,
+  ["--input" as any]: T.border,
+  ["--ring" as any]: T.accent,
+};
+
 const tabs = [
   "01 Overview",
   "02 Deliveries",
