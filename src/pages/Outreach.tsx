@@ -325,30 +325,40 @@ export default function Outreach() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 md:p-8 space-y-6 text-[#F5E6D0]">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
+    <div className="text-[#F5E6D0] pb-28 lg:pb-8">
+      <div className="p-4 md:p-8 space-y-6">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className={`${selected ? "hidden md:block" : ""}`}>
           <h1 className="text-2xl md:text-3xl font-semibold">Outreach</h1>
-          <p className="text-sm text-[#C4A882] mt-1">
+          <p className="text-sm text-[#C4A882] mt-1 hidden md:block">
             Send templated emails from your inbox. Pipedrive's Smart BCC logs the thread automatically.
           </p>
         </div>
-        <div className="flex gap-2">
+        {selected && (
+          <Button
+            variant="ghost"
+            onClick={() => setSelected(null)}
+            className="md:hidden text-[#F5E6D0] hover:bg-[#3a2818] -ml-2 h-11"
+          >
+            <ArrowLeft className="h-5 w-5 mr-1" /> Contacts
+          </Button>
+        )}
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
             onClick={refreshStatuses}
             disabled={refreshingStatus}
-            className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]"
+            className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818] h-11 px-3"
           >
             {refreshingStatus
-              ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              : <RefreshCw className="h-4 w-4 mr-2" />}
-            Sync status from Pipedrive
+              ? <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />
+              : <RefreshCw className="h-4 w-4 md:mr-2" />}
+            <span className="hidden md:inline">Sync status from Pipedrive</span>
           </Button>
           <Dialog open={importOpen} onOpenChange={setImportOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
-                <Upload className="h-4 w-4 mr-2" /> Import CSV
+              <Button variant="outline" className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818] h-11 px-3">
+                <Upload className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Import CSV</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#2a1d11] border-[#6B5240] text-[#F5E6D0] max-w-2xl">
@@ -377,23 +387,23 @@ export default function Outreach() {
           <Button
             variant="outline"
             onClick={() => setEditorOpen(true)}
-            className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]"
+            className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818] h-11 px-3"
           >
-            <Settings2 className="h-4 w-4 mr-2" /> Templates
+            <Settings2 className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Templates</span>
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
-        {/* People list */}
-        <div className="rounded-lg border border-[#6B5240] bg-[#2a1d11] p-3 space-y-3">
+        {/* People list — hidden on mobile when a person is selected */}
+        <div className={`rounded-lg border border-[#6B5240] bg-[#2a1d11] p-3 space-y-3 ${selected ? "hidden lg:block" : ""}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#C4A882]" />
             <Input
               placeholder="Search people, email, org…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-9 bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] placeholder:text-[#8a7559]"
+              className="pl-9 h-12 bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] placeholder:text-[#8a7559]"
             />
           </div>
 
@@ -406,7 +416,7 @@ export default function Outreach() {
             <div className="text-sm text-[#ff8866] bg-[#3a1810] border border-[#6b2a1a] rounded p-2">{error}</div>
           )}
 
-          <div className="max-h-[65vh] overflow-y-auto divide-y divide-[#6B5240]/50">
+          <div className="max-h-[calc(100vh-220px)] lg:max-h-[65vh] overflow-y-auto divide-y divide-[#6B5240]/50">
             {people.map((p) => {
               const isSel = selected?.id === p.id;
               const st = p.email ? statuses[p.email.toLowerCase()] : undefined;
@@ -415,7 +425,7 @@ export default function Outreach() {
                 <button
                   key={p.id}
                   onClick={() => setSelected(p)}
-                  className={`w-full text-left py-3 px-2 hover:bg-[#3a2818] rounded transition ${isSel ? "bg-[#3a2818] ring-1 ring-[#E8461E]" : ""}`}
+                  className={`w-full text-left py-4 px-2 min-h-[56px] hover:bg-[#3a2818] active:bg-[#3a2818] rounded transition ${isSel ? "bg-[#3a2818] ring-1 ring-[#E8461E]" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium truncate">{p.name}</span>
@@ -442,8 +452,8 @@ export default function Outreach() {
           </div>
         </div>
 
-        {/* Compose */}
-        <div className="rounded-lg border border-[#6B5240] bg-[#2a1d11] p-4 space-y-4">
+        {/* Compose — hidden on mobile until a person is picked */}
+        <div className={`rounded-lg border border-[#6B5240] bg-[#2a1d11] p-4 space-y-4 ${selected ? "" : "hidden lg:block"}`}>
           {!selected ? (
             <div className="text-sm text-[#C4A882] py-12 text-center">
               Pick a Pipedrive contact on the left to compose, or import a CSV to add new leads.
@@ -467,7 +477,7 @@ export default function Outreach() {
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wide text-[#C4A882]">Template</label>
                 <Select value={templateId ?? ""} onValueChange={setTemplateId}>
-                  <SelectTrigger className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]">
+                  <SelectTrigger className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] h-12">
                     <SelectValue placeholder="Pick a template" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#2a1d11] border-[#6B5240] text-[#F5E6D0]">
@@ -490,7 +500,7 @@ export default function Outreach() {
                           value={vars[key] ?? ""}
                           onChange={(e) => setVars(v => ({ ...v, [key]: e.target.value }))}
                           placeholder={activeTemplate?.default_values?.[key] ?? ""}
-                          className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]"
+                          className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] h-12"
                         />
                       </div>
                     ))}
@@ -502,11 +512,28 @@ export default function Outreach() {
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wide text-[#C4A882]">Subject (rendered)</label>
                 <Input value={renderedSubject} readOnly
-                       className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0]" />
+                       className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] h-12" />
               </div>
 
-              {/* Preview tabs */}
-              <Tabs defaultValue="html">
+              {/* Preview tabs — collapsed by default on mobile */}
+              <details className="lg:hidden group rounded border border-[#6B5240] bg-[#1f150b]">
+                <summary className="list-none cursor-pointer px-3 py-3 flex items-center justify-between text-sm">
+                  <span className="inline-flex items-center gap-2"><Eye className="h-4 w-4" /> Preview email</span>
+                  <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
+                </summary>
+                <div className="p-2 border-t border-[#6B5240]">
+                  <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
+                    <iframe title="Email preview" srcDoc={renderedHtml} className="w-full h-[420px] border-0" />
+                  </div>
+                  {bcc && (
+                    <div className="text-[11px] text-[#C4A882] mt-2">
+                      BCC: <span className="text-[#F5E6D0]">{bcc}</span>
+                    </div>
+                  )}
+                </div>
+              </details>
+
+              <Tabs defaultValue="html" className="hidden lg:block">
                 <div className="flex items-center justify-between">
                   <TabsList className="bg-[#1f150b] border border-[#6B5240]">
                     <TabsTrigger value="html">HTML preview</TabsTrigger>
@@ -529,7 +556,8 @@ export default function Outreach() {
                 </TabsContent>
               </Tabs>
 
-              <div className="flex flex-wrap gap-2">
+              {/* Desktop send actions */}
+              <div className="hidden lg:flex flex-wrap gap-2">
                 <Button asChild disabled={!selected.email}
                         className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
                   <a href={mailtoHref} onClick={() => void logSend("default_mail")}>
@@ -561,6 +589,27 @@ export default function Outreach() {
         templates={templates}
         onChanged={() => void fetchTemplates()}
       />
+      </div>
+
+      {/* Sticky mobile send bar */}
+      {selected && selected.email && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#6B5240] bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="flex gap-2">
+            <Button asChild
+                    className="flex-1 h-12 bg-[#E8461E] hover:bg-[#c93a17] text-white">
+              <a href={mailtoHref} onClick={() => void logSend("default_mail")}>
+                <Mail className="h-4 w-4 mr-2" /> Send via mail app
+              </a>
+            </Button>
+            <Button asChild variant="outline"
+                    className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
+              <a href={gmailHref} target="_blank" rel="noreferrer" onClick={() => void logSend("gmail")}>
+                Gmail
+              </a>
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
