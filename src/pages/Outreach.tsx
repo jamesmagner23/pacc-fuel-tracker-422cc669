@@ -396,7 +396,11 @@ export default function Outreach() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       toast({ title: "Email sent", description: `Branded email delivered to ${selected.email} from your Gmail account.` });
-      void logSend("gmail");
+      void logSend("gmail", {
+        gmail_message_id: (data as any)?.messageId ?? null,
+        gmail_thread_id: (data as any)?.threadId ?? null,
+        send_status: "sent",
+      });
     } catch (e) {
       toast({
         title: "Send failed",
