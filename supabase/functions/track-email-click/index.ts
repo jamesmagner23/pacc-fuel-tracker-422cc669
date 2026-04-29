@@ -15,6 +15,15 @@ const FALLBACK_URL = "https://paccenergy.com";
 const PORTAL_SHOWCASE_DEMO_URL =
   "https://paccenergy.com/portal?demo=true&brand=pacc&source=email";
 
+function isPaccPortalDestination(raw: string) {
+  try {
+    const u = new URL(raw);
+    return /(^|\.)paccenergy\.com$/i.test(u.hostname) && u.pathname === "/portal";
+  } catch {
+    return /paccenergy\.com%2Fportal/i.test(raw) || /paccenergy\.com\/portal/i.test(raw);
+  }
+}
+
 async function hashIp(ip: string | null): Promise<string | null> {
   if (!ip) return null;
   const buf = new TextEncoder().encode(`pacc-cta-salt:${ip}`);
@@ -46,7 +55,8 @@ Deno.serve(async (req) => {
   const rawTo = url.searchParams.get("to") || "";
   const trackedDestination = isSafeRedirect(rawTo) ? rawTo : FALLBACK_URL;
   const destination =
-    campaign === "portal-showcase" && (cta.startsWith("tour") || rawTo.includes("paccenergy.com/portal"))
+    (campaign === "portal-showcase" || isPaccPortalDestination(rawTo)) &&
+    (cta.startsWith("tour") || isPaccPortalDestination(rawTo))
       ? PORTAL_SHOWCASE_DEMO_URL
       : trackedDestination;
 

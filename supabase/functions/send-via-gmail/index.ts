@@ -7,6 +7,21 @@ const corsHeaders = {
 };
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1";
+const PACC_PORTAL_DEMO_URL = "https://paccenergy.com/portal?demo=true&brand=pacc&source=email";
+const ENCODED_PACC_PORTAL_DEMO_URL = encodeURIComponent(PACC_PORTAL_DEMO_URL);
+
+function normalizePortalDemoLinks(content: string) {
+  if (!content) return content;
+  return content
+    .replace(
+      /https%3A%2F%2F(?:www%2E)?paccenergy%2Ecom%2Fportal(?:%3F[^&"'<>\s]*)?/gi,
+      ENCODED_PACC_PORTAL_DEMO_URL,
+    )
+    .replace(
+      /https?:\/\/(?:www\.)?paccenergy\.com\/portal(?:\?[^"'<>\s)]*)?/gi,
+      PACC_PORTAL_DEMO_URL,
+    );
+}
 
 function b64url(str: string) {
   // UTF-8 safe base64url
@@ -95,7 +110,13 @@ Deno.serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
     if (!GOOGLE_MAIL_API_KEY) throw new Error("GOOGLE_MAIL_API_KEY is not configured");
 
-    const mime = buildMime({ to, subject, html: html ?? "", text: text ?? "", bcc });
+    const mime = buildMime({
+      to,
+      subject,
+      html: normalizePortalDemoLinks(html ?? ""),
+      text: normalizePortalDemoLinks(text ?? ""),
+      bcc,
+    });
     const raw = b64url(mime);
 
     const resp = await fetch(`${GATEWAY_URL}/users/me/messages/send`, {
