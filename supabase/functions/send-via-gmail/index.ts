@@ -16,6 +16,18 @@ function b64url(str: string) {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+function encodeHeader(value: string): string {
+  // RFC 2047 encoded-word for non-ASCII headers (e.g. em-dashes in subjects).
+  // Gmail/most clients otherwise mojibake the bytes as latin-1.
+  // eslint-disable-next-line no-control-regex
+  if (/^[\x00-\x7F]*$/.test(value)) return value;
+  const bytes = new TextEncoder().encode(value);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  const b64 = btoa(bin);
+  return `=?UTF-8?B?${b64}?=`;
+}
+
 function buildMime(opts: {
   to: string;
   subject: string;
@@ -28,7 +40,7 @@ function buildMime(opts: {
   const headers = [
     `To: ${opts.to}`,
     opts.bcc ? `Bcc: ${opts.bcc}` : "",
-    `Subject: ${opts.subject}`,
+    `Subject: ${encodeHeader(opts.subject)}`,
     "MIME-Version: 1.0",
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
   ].filter(Boolean).join("\r\n");
