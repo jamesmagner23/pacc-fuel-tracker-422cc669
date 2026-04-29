@@ -108,11 +108,11 @@ function generateTransactions(buyPrices: BuyPrice[]): Transaction[] {
   return txns.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
 }
 
-// ── Buy Prices (last 60 days) ──
+// ── Buy Prices (last 90 days) ──
 function generateBuyPrices(): BuyPrice[] {
   const prices: BuyPrice[] = [];
   let price = 1.42;
-  for (let day = 59; day >= 0; day--) {
+  for (let day = 89; day >= 0; day--) {
     price += (Math.random() - 0.48) * 0.03;
     price = Math.max(1.28, Math.min(1.65, price));
     prices.push({
