@@ -93,15 +93,18 @@ Deno.serve(async (req) => {
     }
 
     const pdRes = await fetch(pdUrl);
-    const pdJson = await pdRes.json();
-    if (!pdRes.ok || pdJson.success === false) {
+    const rawText = await pdRes.text();
+    let pdJson: any = null;
+    try { pdJson = JSON.parse(rawText); } catch { /* not json */ }
+    console.log("Pipedrive call", { url: pdUrl.replace(PD_TOKEN, "***"), status: pdRes.status, ok: pdRes.ok, bodyPreview: rawText.slice(0, 300) });
+    if (!pdRes.ok || !pdJson || pdJson.success === false) {
       return new Response(
         JSON.stringify({
-          error: "Pipedrive request failed",
-          details: pdJson,
+          error: `Pipedrive request failed (status ${pdRes.status})`,
+          details: pdJson ?? rawText.slice(0, 500),
         }),
         {
-          status: 502,
+          status: 200, // return 200 so supabase-js surfaces our message instead of generic non-2xx
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
