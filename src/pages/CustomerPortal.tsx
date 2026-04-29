@@ -418,7 +418,7 @@ export default function CustomerPortal() {
             justifyContent: "space-between",
           }}
         >
-          <PACCLogo />
+          <PACCLogo tone="light" />
           <div style={{ position: "relative" }}>
             <button
               onClick={(e) => {

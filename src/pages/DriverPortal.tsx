@@ -792,7 +792,7 @@ export default function DriverPortal() {
       {/* Header — hidden in demo mode since Layout provides navigation */}
       {!isDemo && (
       <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border">
-        <PACCLogo size="sm" />
+        <PACCLogo size="sm" tone="light" />
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-muted-foreground">Stephan</span>
           <button
