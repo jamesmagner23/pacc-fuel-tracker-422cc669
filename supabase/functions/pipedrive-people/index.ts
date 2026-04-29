@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "npm:@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,11 +7,13 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
+  console.log("pipedrive-people invoked", req.method);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log("entering try block");
     // Verify caller is an authenticated admin
     const authHeader = req.headers.get("Authorization") ?? "";
     const supabase = createClient(
