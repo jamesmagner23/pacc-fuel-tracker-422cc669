@@ -675,7 +675,8 @@ function OverviewTab({
   const topPlants = plantBreakdown.slice(0, 6);
   const topPlant = plantBreakdown[0];
 
-  const PIE_COLORS = ["#E8461E", "#FF6B42", "#F5E6D0", "#C4A882", "#D88B5C", "#8B7355"];
+  // Orange + brown palette tuned for white backgrounds (no light cream — would disappear)
+  const PIE_COLORS = ["#E8461E", "#3D2B1A", "#D88B5C", "#6B5240", "#F59E0B", "#8B7355"];
 
   const kpis = [
     { label: "Total Litres", value: fmtL(totalLitres) },
