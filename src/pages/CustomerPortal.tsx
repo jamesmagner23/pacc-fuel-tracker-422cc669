@@ -728,7 +728,8 @@ function OverviewTab({
 
   // Pie palette comes from the active portal theme so it stays legible
   // on either cream or deep-brown backgrounds.
-  const PIE_COLORS = portalTokens.pie as unknown as string[];
+  const { tokens: pieTokens } = usePortalTheme();
+  const PIE_COLORS = pieTokens.pie as unknown as string[];
 
   const kpis = [
     { label: "Total Litres", value: fmtL(totalLitres) },
