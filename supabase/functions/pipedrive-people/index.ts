@@ -6,6 +6,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+function pipedriveHost(rawDomain: string) {
+  const cleaned = rawDomain
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/\.+$/, "");
+  return cleaned.endsWith(".pipedrive.com") ? cleaned : `${cleaned}.pipedrive.com`;
+}
+
 Deno.serve(async (req) => {
   console.log("pipedrive-people invoked", req.method);
   if (req.method === "OPTIONS") {
@@ -84,7 +93,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const base = `https://${PD_DOMAIN}.pipedrive.com/api/v1`;
+    const host = pipedriveHost(PD_DOMAIN);
+    const base = `https://${host}/api/v1`;
 
     let pdUrl: string;
     if (term.length >= 2) {
@@ -147,7 +157,7 @@ Deno.serve(async (req) => {
           email: emails[0] ?? null,
           org_name: p.organization?.name ?? null,
           owner_name: null,
-          pipedrive_url: `https://${PD_DOMAIN}.pipedrive.com/person/${p.id}`,
+          pipedrive_url: `https://${host}/person/${p.id}`,
         });
       }
     } else {
@@ -163,7 +173,7 @@ Deno.serve(async (req) => {
           email: primaryEmail,
           org_name: p.org_name ?? p.org_id?.name ?? null,
           owner_name: p.owner_name ?? p.owner_id?.name ?? null,
-          pipedrive_url: `https://${PD_DOMAIN}.pipedrive.com/person/${p.id}`,
+          pipedrive_url: `https://${host}/person/${p.id}`,
         });
       }
     }
