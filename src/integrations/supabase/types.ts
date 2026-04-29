@@ -389,6 +389,51 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          default_values: Json
+          description: string | null
+          html_body: string
+          id: string
+          is_active: boolean
+          name: string
+          subject: string
+          text_body: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          default_values?: Json
+          description?: string | null
+          html_body: string
+          id?: string
+          is_active?: boolean
+          name: string
+          subject: string
+          text_body: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          default_values?: Json
+          description?: string | null
+          html_body?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          subject?: string
+          text_body?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: []
+      }
       ftc_rates: {
         Row: {
           created_at: string
@@ -567,6 +612,7 @@ export type Database = {
           recipient_name: string | null
           sent_by: string
           subject: string
+          template_id: string | null
         }
         Insert: {
           bcc?: string | null
@@ -580,6 +626,7 @@ export type Database = {
           recipient_name?: string | null
           sent_by: string
           subject: string
+          template_id?: string | null
         }
         Update: {
           bcc?: string | null
@@ -593,8 +640,55 @@ export type Database = {
           recipient_name?: string | null
           sent_by?: string
           subject?: string
+          template_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "outreach_send_log_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_thread_status: {
+        Row: {
+          details: Json | null
+          id: string
+          last_message_at: string | null
+          last_polled_at: string
+          pipedrive_thread_id: number | null
+          send_id: string
+          status: string
+        }
+        Insert: {
+          details?: Json | null
+          id?: string
+          last_message_at?: string | null
+          last_polled_at?: string
+          pipedrive_thread_id?: number | null
+          send_id: string
+          status?: string
+        }
+        Update: {
+          details?: Json | null
+          id?: string
+          last_message_at?: string | null
+          last_polled_at?: string
+          pipedrive_thread_id?: number | null
+          send_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_thread_status_send_id_fkey"
+            columns: ["send_id"]
+            isOneToOne: true
+            referencedRelation: "outreach_send_log"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plant_assignment_audit: {
         Row: {
