@@ -6,9 +6,11 @@ interface DemoContextValue {
   isDemo: boolean;
   brand: string | null;
   accentColor: string | null;
+  /** True when demo is launched with brand=pacc — keeps PACC visual identity */
+  isPaccBranded: boolean;
 }
 
-const DemoContext = createContext<DemoContextValue>({ isDemo: false, brand: null, accentColor: null });
+const DemoContext = createContext<DemoContextValue>({ isDemo: false, brand: null, accentColor: null, isPaccBranded: false });
 
 /** Map friendly color names to HSL values */
 const COLOR_PRESETS: Record<string, string> = {
@@ -40,8 +42,16 @@ function resolveColor(color: string | null): string | null {
 export function DemoProvider({ children }: { children: React.ReactNode }) {
   const [params] = useSearchParams();
   const isDemo = params.get("demo") === "true";
-  const brand = isDemo ? (params.get("brand") || DEMO_DEFAULT_BRAND) : null;
-  const rawColor = isDemo ? (params.get("color") || DEMO_DEFAULT_COLOR) : null;
+  const rawBrand = isDemo ? params.get("brand") : null;
+  const isPaccBranded = isDemo && (rawBrand?.toLowerCase() === "pacc");
+  // PACC-branded demo keeps the real "PACC" wordmark; otherwise fall back to FuelTrack default
+  const brand = isDemo
+    ? (isPaccBranded ? "PACC" : (rawBrand || DEMO_DEFAULT_BRAND))
+    : null;
+  // PACC-branded demo ignores ?color= overrides so the brown/orange palette is preserved
+  const rawColor = isDemo && !isPaccBranded
+    ? (params.get("color") || DEMO_DEFAULT_COLOR)
+    : null;
 
   const [unlocked, setUnlocked] = useState(() =>
     sessionStorage.getItem("demo_unlocked") === "true"
@@ -57,7 +67,8 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
 
   // Apply neutral theme + accent color in demo mode
   useEffect(() => {
-    if (!isDemo) return;
+    // PACC-branded demo keeps the project's native theme — no overrides
+    if (!isDemo || isPaccBranded) return;
     const root = document.documentElement;
 
     // Override backgrounds to neutral slate (not PACC brown)
@@ -108,11 +119,11 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
       ];
       props.forEach(p => root.style.removeProperty(p));
     };
-  }, [isDemo, accentColor, hexColor]);
+  }, [isDemo, isPaccBranded, accentColor, hexColor]);
 
   const value = useMemo(
-    () => ({ isDemo, brand, accentColor: accentColor || hexColor }),
-    [isDemo, brand, accentColor, hexColor]
+    () => ({ isDemo, brand, accentColor: accentColor || hexColor, isPaccBranded }),
+    [isDemo, brand, accentColor, hexColor, isPaccBranded]
   );
 
   // Show gate if demo mode is active but not yet unlocked

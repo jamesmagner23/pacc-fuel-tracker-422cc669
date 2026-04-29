@@ -37,19 +37,20 @@ const DEMO_TEXT_ACTIVE = "#e8eaf0";
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isDemo, accentColor } = useDemoContext();
+  const { isDemo, accentColor, isPaccBranded } = useDemoContext();
   const [params] = useSearchParams();
   const bannerOffset = 0;
 
-  // Pick color palette based on demo vs production
-  const BG = isDemo ? DEMO_BG : PACC_BG;
-  const BORDER = isDemo ? DEMO_BORDER : PACC_BORDER;
-  const DEFAULT_ACCENT = isDemo ? DEMO_ACCENT : PACC_ACCENT;
-  const TEXT_DIM = isDemo ? DEMO_TEXT_DIM : PACC_TEXT_DIM;
+  // PACC-branded demo keeps the production palette
+  const useDemoPalette = isDemo && !isPaccBranded;
+  const BG = useDemoPalette ? DEMO_BG : PACC_BG;
+  const BORDER = useDemoPalette ? DEMO_BORDER : PACC_BORDER;
+  const DEFAULT_ACCENT = useDemoPalette ? DEMO_ACCENT : PACC_ACCENT;
+  const TEXT_DIM = useDemoPalette ? DEMO_TEXT_DIM : PACC_TEXT_DIM;
   const TEXT_MID = TEXT_DIM;
-  const TEXT_ACTIVE = isDemo ? DEMO_TEXT_ACTIVE : PACC_TEXT_ACTIVE;
+  const TEXT_ACTIVE = useDemoPalette ? DEMO_TEXT_ACTIVE : PACC_TEXT_ACTIVE;
 
-  const ACCENT = accentColor ? `hsl(${accentColor})` : DEFAULT_ACCENT;
+  const ACCENT = (accentColor && useDemoPalette) ? `hsl(${accentColor})` : DEFAULT_ACCENT;
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   return (
