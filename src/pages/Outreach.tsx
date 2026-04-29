@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Loader2, Search, Mail, ExternalLink, Copy, Check, Upload, Settings2, RefreshCw,
-  ArrowLeft, Eye, ChevronDown,
+  ArrowLeft, Eye, ChevronDown, UserPlus,
 } from "lucide-react";
 import { renderTemplate, extractVariables } from "@/lib/templateVars";
 
@@ -117,6 +117,12 @@ export default function Outreach() {
   const [importOpen, setImportOpen] = useState(false);
   const [csvText, setCsvText] = useState("");
   const [importing, setImporting] = useState(false);
+
+  // Manual recipient dialog
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualName, setManualName] = useState("");
+  const [manualEmail, setManualEmail] = useState("");
+  const [manualOrg, setManualOrg] = useState("");
 
   // Template editor dialog
   const [editorOpen, setEditorOpen] = useState(false);
@@ -323,6 +329,27 @@ export default function Outreach() {
     } finally { setImporting(false); }
   };
 
+  const useManualRecipient = () => {
+    const email = manualEmail.trim();
+    const name = manualName.trim();
+    if (!email || !/.+@.+\..+/.test(email)) {
+      toast({ title: "Email required", description: "Enter a valid email address.", variant: "destructive" });
+      return;
+    }
+    // Synthesize a Person — negative id signals "not in Pipedrive"
+    const synthetic: Person = {
+      id: -Date.now(),
+      name: name || email,
+      email,
+      org_name: manualOrg.trim() || null,
+      owner_name: null,
+      pipedrive_url: "",
+    };
+    setSelected(synthetic);
+    setManualOpen(false);
+    setManualName(""); setManualEmail(""); setManualOrg("");
+  };
+
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="text-[#F5E6D0] pb-28 lg:pb-8">
@@ -380,6 +407,48 @@ export default function Outreach() {
                 <Button onClick={importCsv} disabled={importing} className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
                   {importing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Push to Pipedrive
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={manualOpen} onOpenChange={setManualOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818] h-11 px-3">
+                <UserPlus className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Manual recipient</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-[#2a1d11] border-[#6B5240] text-[#F5E6D0] max-w-md">
+              <DialogHeader>
+                <DialogTitle>Send to a one-off recipient</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-[#C4A882]">
+                Type a name and email to send the templated email immediately. The send will be logged here, and
+                Pipedrive's Smart BCC will still capture the thread if you keep it on.
+              </p>
+              <div className="space-y-3">
+                <Input
+                  placeholder="Full name (optional)"
+                  value={manualName}
+                  onChange={(e) => setManualName(e.target.value)}
+                  className="h-12 bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] placeholder:text-[#8a7559]"
+                />
+                <Input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={manualEmail}
+                  onChange={(e) => setManualEmail(e.target.value)}
+                  className="h-12 bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] placeholder:text-[#8a7559]"
+                />
+                <Input
+                  placeholder="Organisation (optional)"
+                  value={manualOrg}
+                  onChange={(e) => setManualOrg(e.target.value)}
+                  className="h-12 bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] placeholder:text-[#8a7559]"
+                />
+              </div>
+              <DialogFooter>
+                <Button onClick={useManualRecipient} className="bg-[#E8461E] hover:bg-[#c93a17] text-white h-12">
+                  Use this recipient
                 </Button>
               </DialogFooter>
             </DialogContent>
