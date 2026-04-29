@@ -302,6 +302,10 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState<Tab>("01 Overview");
   const isDemo = useDemo();
+  const { theme: portalTheme, vars: portalVars, tokens: portalTokens } = usePortalTheme();
+  // Sync the mutable T + style objects to the active theme BEFORE this
+  // render's children evaluate inline T.* references.
+  applyPortalTheme(portalTheme);
   const [params] = useSearchParams();
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
@@ -402,7 +406,7 @@ export default function CustomerPortal() {
   };
 
   return (
-    <div style={{ ...lightThemeVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
+    <div style={{ ...portalVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
       <WelcomeModal />
       {!isDemo && (
         <div
