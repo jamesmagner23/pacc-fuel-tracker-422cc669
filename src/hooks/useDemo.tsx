@@ -57,6 +57,15 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     sessionStorage.getItem("demo_unlocked") === "true"
   );
 
+  // Bypass the lead-capture gate when arriving from an outreach email link.
+  // Recipients should land directly in the demo portal without friction.
+  useEffect(() => {
+    if (isDemo && params.get("source") === "email" && !unlocked) {
+      sessionStorage.setItem("demo_unlocked", "true");
+      setUnlocked(true);
+    }
+  }, [isDemo, params, unlocked]);
+
   const accentColor = useMemo(() => resolveColor(rawColor), [rawColor]);
   const hexColor = useMemo(() => {
     if (!rawColor) return null;
