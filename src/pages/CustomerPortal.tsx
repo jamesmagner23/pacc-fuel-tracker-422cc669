@@ -19,6 +19,7 @@ import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
+import { toast } from "sonner";
 import {
   usePortalFilters,
   filterTransactions,
@@ -2647,17 +2648,43 @@ function AnalyticsTab({
   const totalFtc = perMachine.reduce((s, m) => s + m.ftcClaim, 0);
   const totalDeliveries = perMachine.reduce((s, m) => s + m.deliveries, 0);
 
-  function downloadRecap() {
+  /**
+   * Build the recap PDF in-memory with consistent headers/footers and proper
+   * pagination — long tables now break across pages while reprinting their
+   * column headers, and every page gets the brand band + page-number footer.
+   */
+  function buildRecapPdf() {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
     const M = 40;
+    const TOP_AFTER_HEADER = 60;     // y after the brand band
+    const BOTTOM_LIMIT = H - 50;     // last usable y before footer
+
+    const drawPageChrome = () => {
+      // Top brand band
+      doc.setFillColor(232, 70, 30);
+      doc.rect(0, 0, W, 6, "F");
+      // Top-right small wordmark
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(232, 70, 30);
+      doc.text("ANALYTICS RECAP", W - M, 28, { align: "right" });
+    };
+    const drawFooterAll = () => {
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setDrawColor(237, 227, 210);
+        doc.line(M, H - 36, W - M, H - 36);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(139, 115, 85);
+        doc.text(`${companyName} · ${periodLabel}`, M, H - 22);
+        doc.text(`Page ${i} of ${pageCount}`, W - M, H - 22, { align: "right" });
+      }
+    };
+
+    drawPageChrome();
     let y = 50;
 
-    // Brand band
-    doc.setFillColor(232, 70, 30);
-    doc.rect(0, 0, W, 6, "F");
-
-    // Header
+    // Document title
     doc.setTextColor(61, 43, 26);
     doc.setFont("helvetica", "bold"); doc.setFontSize(20);
     doc.text("Analytics Recap", M, y); y += 22;
@@ -2677,7 +2704,7 @@ function AnalyticsTab({
     kpis.forEach((k, i) => {
       const x = M + i * colW;
       doc.roundedRect(x, y, colW - 8, 56, 4, 4, "S");
-      doc.setFontSize(8); doc.setTextColor(139, 115, 85);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(139, 115, 85);
       doc.text(k.label.toUpperCase(), x + 10, y + 16);
       doc.setFontSize(15); doc.setTextColor(i === 3 ? 232 : 61, i === 3 ? 70 : 43, i === 3 ? 30 : 26);
       doc.setFont("helvetica", "bold");
@@ -2686,66 +2713,110 @@ function AnalyticsTab({
     });
     y += 78;
 
-    // Helper: section
+    // Page-break helper. Reserves `needed` pts; if it would overflow, starts a
+    // new page (with chrome) and resets y. Returns the new y.
+    const ensureSpace = (needed: number): number => {
+      if (y + needed <= BOTTOM_LIMIT) return y;
+      doc.addPage();
+      drawPageChrome();
+      y = TOP_AFTER_HEADER;
+      return y;
+    };
+
+    // Section header (orange tab + title)
     const section = (title: string) => {
+      ensureSpace(28);
       doc.setFillColor(232, 70, 30);
       doc.rect(M, y, 3, 14, "F");
       doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(61, 43, 26);
-      doc.text(title, M + 10, y + 11); y += 22;
+      doc.text(title, M + 10, y + 11);
+      y += 22;
     };
 
-    // Top machines
-    section("Top Machinery");
-    doc.setFontSize(9); doc.setTextColor(139, 115, 85);
-    doc.text("RANK    MACHINE", M, y);
-    doc.text("LITRES",     W - M - 200, y, { align: "right" });
-    doc.text("DELIVERIES", W - M - 110, y, { align: "right" });
-    doc.text("FTC",        W - M, y, { align: "right" });
-    y += 12;
-    doc.setDrawColor(237, 227, 210); doc.line(M, y, W - M, y); y += 6;
-    doc.setTextColor(61, 43, 26); doc.setFontSize(10);
-    perMachine.slice(0, 8).forEach((m, i) => {
-      doc.text(`${i + 1}.`, M, y);
-      const name = `${m.name} (${m.placa})`;
-      doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
-      doc.text(fmtL(m.litres),               W - M - 200, y, { align: "right" });
-      doc.text(m.deliveries.toLocaleString(), W - M - 110, y, { align: "right" });
-      doc.setTextColor(232, 70, 30);
-      doc.text(fmt$(m.ftcClaim),             W - M,       y, { align: "right" });
-      doc.setTextColor(61, 43, 26);
-      y += 16;
-      if (y > 760) { doc.addPage(); y = 60; }
-    });
-    y += 12;
+    // Re-usable column-header drawer for tables. Returns new y.
+    type Col = { header: string; x: number; align?: "left" | "right" };
+    const drawTableHeader = (cols: Col[]) => {
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(139, 115, 85);
+      cols.forEach(c => doc.text(c.header, c.x, y, { align: c.align ?? "left" }));
+      y += 12;
+      doc.setDrawColor(237, 227, 210); doc.line(M, y, W - M, y); y += 6;
+      doc.setTextColor(61, 43, 26); doc.setFontSize(10);
+    };
 
-    // Top projects
-    section("Top Projects");
-    doc.setFontSize(9); doc.setTextColor(139, 115, 85);
-    doc.text("RANK    PROJECT", M, y);
-    doc.text("LITRES",     W - M - 200, y, { align: "right" });
-    doc.text("MACHINES",   W - M - 110, y, { align: "right" });
-    doc.text("FTC",        W - M, y, { align: "right" });
-    y += 12;
-    doc.line(M, y, W - M, y); y += 6;
-    doc.setTextColor(61, 43, 26); doc.setFontSize(10);
-    perProject.slice(0, 8).forEach((p, i) => {
-      doc.text(`${i + 1}.`, M, y);
-      const name = p.site ? `${p.name} — ${p.site}` : p.name;
-      doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
-      doc.text(fmtL(p.litres),                W - M - 200, y, { align: "right" });
-      doc.text(p.machines.toLocaleString(),   W - M - 110, y, { align: "right" });
-      doc.setTextColor(232, 70, 30);
-      doc.text(fmt$(p.ftcClaim),              W - M,       y, { align: "right" });
-      doc.setTextColor(61, 43, 26);
-      y += 16;
-      if (y > 760) { doc.addPage(); y = 60; }
-    });
-    y += 12;
+    // Generic paginated table — reprints column headers when crossing pages.
+    const drawTable = <T,>(
+      sectionTitleText: string,
+      cols: Col[],
+      rows: T[],
+      renderRow: (r: T, i: number) => void,
+      rowHeight = 16,
+    ) => {
+      section(sectionTitleText);
+      drawTableHeader(cols);
+      rows.forEach((r, i) => {
+        if (y + rowHeight > BOTTOM_LIMIT) {
+          doc.addPage();
+          drawPageChrome();
+          y = TOP_AFTER_HEADER;
+          // Reprint section title + headers on the new page so context is preserved.
+          section(`${sectionTitleText} (continued)`);
+          drawTableHeader(cols);
+        }
+        renderRow(r, i);
+        y += rowHeight;
+      });
+      y += 12;
+    };
 
-    // Comparisons
+    // Top machines (full list, paginated)
+    drawTable(
+      "Top Machinery",
+      [
+        { header: "RANK    MACHINE", x: M },
+        { header: "LITRES",          x: W - M - 200, align: "right" },
+        { header: "DELIVERIES",      x: W - M - 110, align: "right" },
+        { header: "FTC",             x: W - M,       align: "right" },
+      ],
+      perMachine,
+      (m, i) => {
+        doc.text(`${i + 1}.`, M, y);
+        const name = `${m.name} (${m.placa})`;
+        doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
+        doc.text(fmtL(m.litres),                W - M - 200, y, { align: "right" });
+        doc.text(m.deliveries.toLocaleString(), W - M - 110, y, { align: "right" });
+        doc.setTextColor(232, 70, 30);
+        doc.text(fmt$(m.ftcClaim),              W - M,       y, { align: "right" });
+        doc.setTextColor(61, 43, 26);
+      },
+    );
+
+    // Top projects (full list, paginated)
+    drawTable(
+      "Top Projects",
+      [
+        { header: "RANK    PROJECT", x: M },
+        { header: "LITRES",          x: W - M - 200, align: "right" },
+        { header: "MACHINES",        x: W - M - 110, align: "right" },
+        { header: "FTC",             x: W - M,       align: "right" },
+      ],
+      perProject,
+      (p, i) => {
+        doc.text(`${i + 1}.`, M, y);
+        const name = p.site ? `${p.name} — ${p.site}` : p.name;
+        doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
+        doc.text(fmtL(p.litres),                W - M - 200, y, { align: "right" });
+        doc.text(p.machines.toLocaleString(),   W - M - 110, y, { align: "right" });
+        doc.setTextColor(232, 70, 30);
+        doc.text(fmt$(p.ftcClaim),              W - M,       y, { align: "right" });
+        doc.setTextColor(61, 43, 26);
+      },
+    );
+
+    // Comparisons — keep entire block on one page (no mid-block break).
     const drawCompare = (title: string, a: any, b: any, rows: { label: string; av: string; bv: string; aWin: boolean }[]) => {
       if (!a || !b) return;
-      if (y > 680) { doc.addPage(); y = 60; }
+      const blockHeight = 22 + 24 + rows.length * 18 + 14;
+      ensureSpace(blockHeight);
       section(title);
       const colW2 = (W - M * 2) / 2 - 6;
       doc.setDrawColor(237, 227, 210);
@@ -2792,16 +2863,103 @@ function AnalyticsTab({
       ]);
     }
 
-    // Footer on each page
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8); doc.setTextColor(139, 115, 85);
-      doc.text(`${companyName} · Analytics Recap · ${periodLabel}`, M, doc.internal.pageSize.getHeight() - 20);
-      doc.text(`Page ${i} of ${pageCount}`, W - M, doc.internal.pageSize.getHeight() - 20, { align: "right" });
+    drawFooterAll();
+    return doc;
+  }
+
+  const pdfFilename = `${companyName.replace(/[^A-Za-z0-9]+/g, "-")}-analytics-${periodLabel.replace(/\s+/g, "-")}.pdf`;
+
+  function downloadRecap() {
+    const doc = buildRecapPdf();
+    doc.save(pdfFilename);
+  }
+
+  // ── Email recap state + handler ────────────────────────────────────────
+  const isDemoMode = useDemo();
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState("");
+  const [emailSubject, setEmailSubject] = useState(
+    `Analytics Recap — ${companyName} · ${periodLabel}`,
+  );
+  const [emailMessage, setEmailMessage] = useState(
+    `Hi team,\n\nAttached is the ${periodLabel.toLowerCase()} analytics recap for ${companyName}, including KPIs, machinery + project leaderboards, and head-to-head comparisons.\n\nLet us know if you'd like a deeper cut.\n\n— PACC Energy`,
+  );
+  const [emailSending, setEmailSending] = useState(false);
+
+  // Keep subject in sync if the period or company changes while panel is closed.
+  useEffect(() => {
+    if (!emailOpen) {
+      setEmailSubject(`Analytics Recap — ${companyName} · ${periodLabel}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyName, periodLabel]);
+
+  async function emailRecap() {
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const list = emailRecipients
+      .split(/[\s,;]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+    const valid = list.filter(e => emailRe.test(e));
+    const invalid = list.filter(e => !emailRe.test(e));
+
+    if (valid.length === 0) {
+      toast.error("Add at least one valid recipient email.");
+      return;
+    }
+    if (invalid.length > 0) {
+      toast.error(`Invalid email${invalid.length > 1 ? "s" : ""}: ${invalid.join(", ")}`);
+      return;
+    }
+    if (!emailSubject.trim()) {
+      toast.error("Subject is required.");
+      return;
     }
 
-    doc.save(`${companyName.replace(/[^A-Za-z0-9]+/g, "-")}-analytics-${periodLabel.replace(/\s+/g, "-")}.pdf`);
+    setEmailSending(true);
+    try {
+      const doc = buildRecapPdf();
+      // jsPDF's "datauristring" returns "data:application/pdf;filename=…;base64,XXXX"
+      const dataUri = doc.output("datauristring", { filename: pdfFilename }) as string;
+      const pdfBase64 = dataUri.includes(",") ? dataUri.split(",")[1] : dataUri;
+
+      const safeMessage = emailMessage
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br/>");
+      const html =
+        `<div style="font-family:Inter,Arial,sans-serif;color:#3A2818;line-height:1.55;">` +
+        `<div style="background:#E8461E;height:6px;border-radius:3px;margin-bottom:20px;"></div>` +
+        `<h1 style="font-size:18px;margin:0 0 12px;color:#3A2818;">Analytics Recap</h1>` +
+        `<p style="margin:0 0 16px;color:#6B5240;font-size:13px;">${companyName} · ${periodLabel}</p>` +
+        `<div style="font-size:13px;">${safeMessage}</div>` +
+        `<p style="margin:24px 0 0;font-size:11px;color:#8B7355;">PDF attached: ${pdfFilename}</p>` +
+        `</div>`;
+
+      const { data, error } = await supabase.functions.invoke("send-recap-pdf", {
+        body: {
+          recipients: valid,
+          subject: emailSubject.trim(),
+          html,
+          text: `${emailMessage}\n\n— PDF attached: ${pdfFilename}`,
+          pdfBase64,
+          pdfFilename,
+        },
+      });
+      if (error) throw error;
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+
+      toast.success(`Recap emailed to ${valid.length} recipient${valid.length > 1 ? "s" : ""}.`);
+      setEmailOpen(false);
+      setEmailRecipients("");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not send email";
+      console.error("emailRecap failed", e);
+      toast.error(msg);
+    } finally {
+      setEmailSending(false);
+    }
   }
 
   return (
@@ -2840,8 +2998,115 @@ function AnalyticsTab({
           >
             ↓ Download recap PDF
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (isDemoMode) {
+                toast.info("Email is disabled in demo mode. Try the download button.");
+                return;
+              }
+              setEmailOpen(o => !o);
+            }}
+            disabled={perMachine.length === 0}
+            title={isDemoMode ? "Disabled in demo mode" : "Email this recap to a list"}
+            style={{
+              background: "transparent", color: T.text,
+              border: `1px solid ${T.border}`,
+              borderRadius: 6, padding: "10px 14px", fontSize: 12, fontWeight: 600,
+              cursor: perMachine.length === 0 ? "not-allowed" : "pointer",
+              opacity: perMachine.length === 0 ? 0.5 : 1,
+              minHeight: 44,
+            }}
+          >
+            ✉ Email recap
+          </button>
         </div>
       </div>
+
+      {/* Email-recap composer */}
+      {emailOpen && !isDemoMode && (
+        <div
+          style={{
+            ...card,
+            borderColor: T.accent,
+            display: "flex", flexDirection: "column", gap: 10,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ ...labelStyle }}>Email recap PDF</div>
+            <span style={{ ...muted(11) }}>
+              The PDF is generated on this device and attached to a single Gmail send.
+            </span>
+          </div>
+
+          <label style={{ ...muted(11), display: "block" }}>Recipients (comma or newline separated)</label>
+          <textarea
+            value={emailRecipients}
+            onChange={(e) => setEmailRecipients(e.target.value)}
+            placeholder="ops@kellyexcavation.com, finance@metrocranes.com"
+            rows={2}
+            style={{
+              background: T.bg, color: T.text, border: `1px solid ${T.border}`,
+              borderRadius: 6, padding: "8px 10px", fontSize: 13, fontFamily: "inherit",
+              resize: "vertical",
+            }}
+          />
+
+          <label style={{ ...muted(11), display: "block" }}>Subject</label>
+          <input
+            type="text"
+            value={emailSubject}
+            onChange={(e) => setEmailSubject(e.target.value)}
+            maxLength={200}
+            style={{
+              background: T.bg, color: T.text, border: `1px solid ${T.border}`,
+              borderRadius: 6, padding: "8px 10px", fontSize: 13, height: 38,
+            }}
+          />
+
+          <label style={{ ...muted(11), display: "block" }}>Message</label>
+          <textarea
+            value={emailMessage}
+            onChange={(e) => setEmailMessage(e.target.value)}
+            rows={5}
+            style={{
+              background: T.bg, color: T.text, border: `1px solid ${T.border}`,
+              borderRadius: 6, padding: "8px 10px", fontSize: 13, fontFamily: "inherit",
+              resize: "vertical",
+            }}
+          />
+
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => setEmailOpen(false)}
+              disabled={emailSending}
+              style={{
+                background: "transparent", color: T.text,
+                border: `1px solid ${T.border}`, borderRadius: 6,
+                padding: "10px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                minHeight: 44,
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void emailRecap()}
+              disabled={emailSending || !emailRecipients.trim()}
+              style={{
+                background: T.accent, color: "#FFFFFF", border: "none",
+                borderRadius: 6, padding: "10px 14px", fontSize: 12, fontWeight: 600,
+                cursor: (emailSending || !emailRecipients.trim()) ? "not-allowed" : "pointer",
+                opacity: (emailSending || !emailRecipients.trim()) ? 0.6 : 1,
+                minHeight: 44,
+              }}
+            >
+              {emailSending ? "Sending…" : "Send email"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Machinery leaderboard ── */}
       <div style={card}>
