@@ -535,6 +535,26 @@ export default function Outreach() {
 
   const pricingErrorCount = Object.keys(pricingErrors).length;
 
+  // When pricing validation fails we replace the live preview with a clear
+  // warning panel so users never see — or screenshot — an invalid quote.
+  const safePreviewHtml = useMemo(() => {
+    if (pricingErrorCount === 0) return previewHtml;
+    const items = Object.entries(pricingErrors)
+      .map(([k, v]) => `<li><strong>${k}</strong>: ${v}</li>`)
+      .join("");
+    return `<!doctype html><html><head><meta charset="utf-8"><style>
+      body{margin:0;font-family:Inter,system-ui,sans-serif;background:#fff5ef;color:#3a1a0d;padding:24px;}
+      .card{max-width:560px;margin:24px auto;border:1px solid #E8461E;border-radius:8px;background:#fff;padding:20px;}
+      h2{margin:0 0 8px;font-size:16px;color:#E8461E;}
+      p{margin:0 0 12px;font-size:13px;}
+      ul{margin:0;padding-left:18px;font-size:12px;line-height:1.5;}
+    </style></head><body><div class="card">
+      <h2>Preview unavailable</h2>
+      <p>${pricingErrorCount} pricing field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before this quote can be previewed, copied, exported or sent.</p>
+      <ul>${items}</ul>
+    </div></body></html>`;
+  }, [previewHtml, pricingErrors, pricingErrorCount]);
+
   const selectedPipedriveUrl = useMemo(() => {
     if (!selected || selected.id <= 0) return null;
     if (pipedriveHost) return `https://${pipedriveHost}/person/${selected.id}`;
