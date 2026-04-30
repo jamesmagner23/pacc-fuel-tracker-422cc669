@@ -543,7 +543,7 @@ export default function Outreach() {
     try {
       await exportEmailHtmlToPdf({
         html: renderedHtml,
-        filename: `${activeTemplate.name}-${selected?.org_name || selected?.name || "campaign"}`,
+        filename: `quote-${selected?.org_name || selected?.name || "customer"}-${new Date().toISOString().slice(0,10)}`,
       });
       toast({ title: "PDF exported", description: "Clickable links are preserved in the PDF." });
     } catch (e) {
