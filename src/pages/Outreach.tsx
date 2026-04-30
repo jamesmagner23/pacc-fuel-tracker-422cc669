@@ -535,6 +535,26 @@ export default function Outreach() {
 
   const pricingErrorCount = Object.keys(pricingErrors).length;
 
+  // When pricing validation fails we replace the live preview with a clear
+  // warning panel so users never see — or screenshot — an invalid quote.
+  const safePreviewHtml = useMemo(() => {
+    if (pricingErrorCount === 0) return previewHtml;
+    const items = Object.entries(pricingErrors)
+      .map(([k, v]) => `<li><strong>${k}</strong>: ${v}</li>`)
+      .join("");
+    return `<!doctype html><html><head><meta charset="utf-8"><style>
+      body{margin:0;font-family:Inter,system-ui,sans-serif;background:#fff5ef;color:#3a1a0d;padding:24px;}
+      .card{max-width:560px;margin:24px auto;border:1px solid #E8461E;border-radius:8px;background:#fff;padding:20px;}
+      h2{margin:0 0 8px;font-size:16px;color:#E8461E;}
+      p{margin:0 0 12px;font-size:13px;}
+      ul{margin:0;padding-left:18px;font-size:12px;line-height:1.5;}
+    </style></head><body><div class="card">
+      <h2>Preview unavailable</h2>
+      <p>${pricingErrorCount} pricing field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before this quote can be previewed, copied, exported or sent.</p>
+      <ul>${items}</ul>
+    </div></body></html>`;
+  }, [previewHtml, pricingErrors, pricingErrorCount]);
+
   const selectedPipedriveUrl = useMemo(() => {
     if (!selected || selected.id <= 0) return null;
     if (pipedriveHost) return `https://${pipedriveHost}/person/${selected.id}`;
@@ -579,6 +599,14 @@ export default function Outreach() {
 
   // ── Actions ──────────────────────────────────────────────────────────────
   const copyHtml = async () => {
+    if (pricingErrorCount > 0) {
+      toast({
+        title: "Fix pricing errors first",
+        description: `${pricingErrorCount} field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before copying.`,
+        variant: "destructive",
+      });
+      return;
+    }
     await copyBrandedEmail(renderedHtml, renderedText);
     setCopiedHtml(true);
     setTimeout(() => setCopiedHtml(false), 1800);
@@ -586,6 +614,14 @@ export default function Outreach() {
 
   const exportPdf = async () => {
     if (!activeTemplate || !renderedHtml) return;
+    if (pricingErrorCount > 0) {
+      toast({
+        title: "Fix pricing errors first",
+        description: `${pricingErrorCount} field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before exporting.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setExportingPdf(true);
     try {
       await exportEmailHtmlToPdf({
@@ -648,6 +684,14 @@ export default function Outreach() {
 
   const openBrandedCompose = async (channel: "default_mail" | "gmail") => {
     if (!selected?.email) return;
+    if (pricingErrorCount > 0) {
+      toast({
+        title: "Fix pricing errors first",
+        description: `${pricingErrorCount} field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before composing.`,
+        variant: "destructive",
+      });
+      return;
+    }
     const popup = channel === "gmail" ? window.open("", "_blank") : null;
     let copied = false;
     try {
@@ -671,6 +715,14 @@ export default function Outreach() {
 
   const sendViaGmail = async () => {
     if (!selected?.email || !activeTemplate) return;
+    if (pricingErrorCount > 0) {
+      toast({
+        title: "Fix pricing errors first",
+        description: `${pricingErrorCount} field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before sending.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setSendingGmail(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-via-gmail", {
@@ -1268,7 +1320,7 @@ export default function Outreach() {
                 </summary>
                 <div className="p-2 border-t border-[#6B5240]">
                   <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
-                    <iframe title="Email preview" srcDoc={previewHtml} className="w-full h-[420px] border-0" />
+                    <iframe title="Email preview" srcDoc={safePreviewHtml} className="w-full h-[420px] border-0" />
                   </div>
                   {bcc && (
                     <div className="text-[11px] text-[#C4A882] mt-2">
@@ -1292,7 +1344,7 @@ export default function Outreach() {
                 </div>
                 <TabsContent value="html" className="mt-3">
                   <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
-                    <iframe title="Email preview" srcDoc={previewHtml} className="w-full h-[600px] border-0" />
+                    <iframe title="Email preview" srcDoc={safePreviewHtml} className="w-full h-[600px] border-0" />
                   </div>
                 </TabsContent>
                 <TabsContent value="text" className="mt-3">
@@ -1325,12 +1377,16 @@ export default function Outreach() {
                   <Mail className="h-4 w-4 mr-2" /> Open in Gmail
                 </Button>
                 <Button variant="outline" onClick={copyHtml}
+                        disabled={pricingErrorCount > 0}
+                        title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   {copiedHtml
                     ? (<><Check className="h-4 w-4 mr-2" /> HTML copied</>)
                     : (<><Copy className="h-4 w-4 mr-2" /> Copy rendered HTML</>)}
                 </Button>
-                <Button variant="outline" onClick={() => void exportPdf()} disabled={exportingPdf || !renderedHtml}
+                <Button variant="outline" onClick={() => void exportPdf()}
+                        disabled={exportingPdf || !renderedHtml || pricingErrorCount > 0}
+                        title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   {exportingPdf
                     ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
@@ -1375,7 +1431,8 @@ export default function Outreach() {
             </Button>
             <Button variant="outline"
                     onClick={() => void exportPdf()}
-                    disabled={exportingPdf || !renderedHtml}
+                    disabled={exportingPdf || !renderedHtml || pricingErrorCount > 0}
+                    title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
                     className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
               {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             </Button>
