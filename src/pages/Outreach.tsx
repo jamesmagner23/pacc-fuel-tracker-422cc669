@@ -1146,11 +1146,11 @@ export default function Outreach() {
                   {/* Estimated weekly cost summary */}
                   {(() => {
                     const weeklyL = parseLitres(vars["volume"] ?? "");
-                    const selected = (["diesel", "ulp", "adblue"] as const).filter(p => productMix[p]);
+                    const selected = ACTIVE_FUELS.slice();
                     if (!weeklyL || selected.length === 0) {
                       return (
                         <div className="rounded border border-[#6B5240] bg-[#120a04] p-3 text-[11px] text-[#C4A882]">
-                          Enter weekly volume and select at least one product to see estimated cost.
+                          Enter weekly volume to see estimated diesel cost.
                         </div>
                       );
                     }
@@ -1162,7 +1162,7 @@ export default function Outreach() {
                       const inc = parseFloat(vars[`${p}_price_inc`] ?? "") || 0;
                       return {
                         key: p,
-                        label: p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel",
+                        label: "Diesel",
                         litres: perProductL,
                         ex: ex * perProductL,
                         inc: inc * perProductL,
