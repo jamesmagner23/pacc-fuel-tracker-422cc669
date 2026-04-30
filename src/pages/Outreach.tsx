@@ -31,6 +31,22 @@ const PRICING_FUEL_KEYS = [
 const ACTIVE_FUELS = ["diesel"] as const;
 type ActiveFuel = typeof ACTIVE_FUELS[number];
 const PRICING_KEYS = new Set<string>([...PRICING_META_KEYS, ...PRICING_FUEL_KEYS, "extra_terms"]);
+const NON_DIESEL_VARIABLES = new Set(["ulp_price", "ulp_price_inc", "adblue_price", "adblue_price_inc"]);
+
+function stripNonDieselPricingHtml(html: string): string {
+  if (!html) return html;
+  return html
+    .replace(/<tr\b[^>]*>[\s\S]*?(?:unleaded|adblue|ulp_price|adblue_price)[\s\S]*?<\/tr>/gi, "")
+    .replace(/<tbody>\s*<\/tbody>/gi, "");
+}
+
+function stripNonDieselPricingText(text: string): string {
+  if (!text) return text;
+  return text
+    .split(/\r?\n/)
+    .filter(line => !/(?:unleaded|adblue|ulp_price|adblue_price)/i.test(line))
+    .join("\n");
+}
 
 function formatGst(ex: string): string {
   const n = parseFloat(ex);
@@ -399,74 +415,23 @@ export default function Outreach() {
     [activeTemplate, vars]
   );
   const renderedText = useMemo(
-    () => activeTemplate ? normalizePortalDemoLinks(renderTemplate(activeTemplate.text_body, vars)) : "",
+    () => activeTemplate ? normalizePortalDemoLinks(stripNonDieselPricingText(renderTemplate(activeTemplate.text_body, vars))) : "",
     [activeTemplate, vars]
   );
   const renderedHtml = useMemo(
-    () => activeTemplate ? normalizePortalDemoLinks(renderTemplate(activeTemplate.html_body, vars)) : "",
+    () => activeTemplate ? normalizePortalDemoLinks(stripNonDieselPricingHtml(renderTemplate(activeTemplate.html_body, vars))) : "",
     [activeTemplate, vars]
   );
-
-  // Build a clear, email-safe pricing breakdown table from the editor inputs.
-  // Returns "" when no fuel rows have any data so we never render an empty table.
-  const pricingBreakdownHtml = useMemo(() => {
-    const rows: { label: string; ex: number; inc: number }[] = [];
-    ACTIVE_FUELS.forEach(p => {
-      const ex  = parseFloat((vars[`${p}_price`]     ?? "").trim());
-      const inc = parseFloat((vars[`${p}_price_inc`] ?? "").trim());
-      if (!Number.isFinite(ex) && !Number.isFinite(inc)) return;
-      rows.push({
-        label: "Diesel",
-        ex:  Number.isFinite(ex)  ? ex  : (Number.isFinite(inc) ? inc / 1.1 : 0),
-        inc: Number.isFinite(inc) ? inc : (Number.isFinite(ex)  ? ex  * 1.1 : 0),
-      });
-    });
-    if (rows.length === 0) return "";
-
-    const fmt = (n: number) => `$${n.toFixed(4)}`;
-    const tr = rows.map(r => `
-      <tr>
-        <td style="padding:10px 12px;border-bottom:1px solid #E8DFD2;font:600 13px/1.4 Inter,Arial,sans-serif;color:#3A2818;">${r.label}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #E8DFD2;font:500 13px/1.4 Inter,Arial,sans-serif;color:#3A2818;text-align:right;font-variant-numeric:tabular-nums;">${fmt(r.ex)} <span style="color:#8B7355;font-size:11px;">/L</span></td>
-        <td style="padding:10px 12px;border-bottom:1px solid #E8DFD2;font:600 13px/1.4 Inter,Arial,sans-serif;color:#E8461E;text-align:right;font-variant-numeric:tabular-nums;">${fmt(r.inc)} <span style="color:#8B7355;font-size:11px;font-weight:500;">/L</span></td>
-      </tr>`).join("");
-
-    return `
-<!-- live-preview pricing breakdown (preview only) -->
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
-       style="border-collapse:collapse;margin:18px 0;border:1px solid #E8DFD2;border-radius:8px;overflow:hidden;background:#FFF9F1;">
-  <thead>
-    <tr style="background:#3A2818;">
-      <th style="padding:10px 12px;text-align:left;font:600 11px/1.2 Inter,Arial,sans-serif;color:#F5E6D0;letter-spacing:.06em;text-transform:uppercase;">Product</th>
-      <th style="padding:10px 12px;text-align:right;font:600 11px/1.2 Inter,Arial,sans-serif;color:#F5E6D0;letter-spacing:.06em;text-transform:uppercase;">Ex-GST $/L</th>
-      <th style="padding:10px 12px;text-align:right;font:600 11px/1.2 Inter,Arial,sans-serif;color:#F5E6D0;letter-spacing:.06em;text-transform:uppercase;">Inc-GST $/L</th>
-    </tr>
-  </thead>
-  <tbody>${tr}</tbody>
-  <tfoot>
-    <tr><td colspan="3" style="padding:8px 12px;background:#F5E6D0;font:500 11px/1.4 Inter,Arial,sans-serif;color:#6B5240;">
-      Inc-GST shown at 10% above Ex-GST. Prices in AUD per litre.
-    </td></tr>
-  </tfoot>
-</table>`;
-  }, [vars]);
-
-  // HTML used inside the live preview iframe — injects the pricing-breakdown
-  // table just before </body> (or appended) so the editor changes are visible
-  // even if the underlying template doesn't render the prices in tabular form.
-  const previewHtml = useMemo(() => {
-    if (!renderedHtml) return "";
-    if (!pricingBreakdownHtml) return renderedHtml;
-    if (/<\/body>/i.test(renderedHtml)) {
-      return renderedHtml.replace(/<\/body>/i, `${pricingBreakdownHtml}</body>`);
-    }
-    return renderedHtml + pricingBreakdownHtml;
-  }, [renderedHtml, pricingBreakdownHtml]);
+  const previewHtml = renderedHtml;
 
   const allVarKeys = useMemo(() => {
     if (!activeTemplate) return [];
-    const declared = activeTemplate.variables ?? [];
-    const inferred = extractVariables(activeTemplate.subject, activeTemplate.text_body, activeTemplate.html_body);
+    const declared = (activeTemplate.variables ?? []).filter(k => !NON_DIESEL_VARIABLES.has(k));
+    const inferred = extractVariables(
+      activeTemplate.subject,
+      stripNonDieselPricingText(activeTemplate.text_body),
+      stripNonDieselPricingHtml(activeTemplate.html_body),
+    ).filter(k => !NON_DIESEL_VARIABLES.has(k));
     return Array.from(new Set([...declared, ...inferred]));
   }, [activeTemplate]);
 
