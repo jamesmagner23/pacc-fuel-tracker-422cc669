@@ -2732,17 +2732,17 @@ function AnalyticsTab({
           <CompareGrid
             a={{ label: aMach.name, sublabel: `${aMach.placa} · ${aMach.type}`,
                  stats: [
-                   { label: "Litres", value: fmtL(aMach.litres) },
-                   { label: "Deliveries", value: aMach.deliveries.toString() },
-                   { label: "Avg / Delivery", value: aMach.deliveries ? fmtL(aMach.litres / aMach.deliveries) : "—" },
-                   { label: "FTC Claim", value: fmt$(aMach.ftcClaim) },
+                   { label: "Litres",         num: aMach.litres,                                              fmt: fmtL,  higherIsBetter: true },
+                   { label: "Deliveries",     num: aMach.deliveries,                                          fmt: (n) => n.toString(), higherIsBetter: true },
+                   { label: "Avg / Delivery", num: aMach.deliveries ? aMach.litres / aMach.deliveries : 0,    fmt: fmtL,  higherIsBetter: true },
+                   { label: "FTC Claim",      num: aMach.ftcClaim,                                            fmt: fmt$,  higherIsBetter: true, accent: true },
                  ] }}
             b={{ label: bMach.name, sublabel: `${bMach.placa} · ${bMach.type}`,
                  stats: [
-                   { label: "Litres", value: fmtL(bMach.litres) },
-                   { label: "Deliveries", value: bMach.deliveries.toString() },
-                   { label: "Avg / Delivery", value: bMach.deliveries ? fmtL(bMach.litres / bMach.deliveries) : "—" },
-                   { label: "FTC Claim", value: fmt$(bMach.ftcClaim) },
+                   { label: "Litres",         num: bMach.litres,                                              fmt: fmtL,  higherIsBetter: true },
+                   { label: "Deliveries",     num: bMach.deliveries,                                          fmt: (n) => n.toString(), higherIsBetter: true },
+                   { label: "Avg / Delivery", num: bMach.deliveries ? bMach.litres / bMach.deliveries : 0,    fmt: fmtL,  higherIsBetter: true },
+                   { label: "FTC Claim",      num: bMach.ftcClaim,                                            fmt: fmt$,  higherIsBetter: true, accent: true },
                  ] }}
           />
         ) : (
@@ -2806,17 +2806,19 @@ function AnalyticsTab({
           <CompareGrid
             a={{ label: aProj.name, sublabel: aProj.site || "—",
                  stats: [
-                   { label: "Litres", value: fmtL(aProj.litres) },
-                   { label: "Deliveries", value: aProj.deliveries.toString() },
-                   { label: "Active Plant", value: aProj.machines.toString() },
-                   { label: "FTC Claim", value: fmt$(aProj.ftcClaim) },
+                   { label: "Litres",         num: aProj.litres,                                              fmt: fmtL,  higherIsBetter: true },
+                   { label: "Deliveries",     num: aProj.deliveries,                                          fmt: (n) => n.toString(), higherIsBetter: true },
+                   { label: "Avg / Delivery", num: aProj.deliveries ? aProj.litres / aProj.deliveries : 0,    fmt: fmtL,  higherIsBetter: true },
+                   { label: "Active Plant",   num: aProj.machines,                                            fmt: (n) => n.toString(), higherIsBetter: true },
+                   { label: "FTC Claim",      num: aProj.ftcClaim,                                            fmt: fmt$,  higherIsBetter: true, accent: true },
                  ] }}
             b={{ label: bProj.name, sublabel: bProj.site || "—",
                  stats: [
-                   { label: "Litres", value: fmtL(bProj.litres) },
-                   { label: "Deliveries", value: bProj.deliveries.toString() },
-                   { label: "Active Plant", value: bProj.machines.toString() },
-                   { label: "FTC Claim", value: fmt$(bProj.ftcClaim) },
+                   { label: "Litres",         num: bProj.litres,                                              fmt: fmtL,  higherIsBetter: true },
+                   { label: "Deliveries",     num: bProj.deliveries,                                          fmt: (n) => n.toString(), higherIsBetter: true },
+                   { label: "Avg / Delivery", num: bProj.deliveries ? bProj.litres / bProj.deliveries : 0,    fmt: fmtL,  higherIsBetter: true },
+                   { label: "Active Plant",   num: bProj.machines,                                            fmt: (n) => n.toString(), higherIsBetter: true },
+                   { label: "FTC Claim",      num: bProj.ftcClaim,                                            fmt: fmt$,  higherIsBetter: true, accent: true },
                  ] }}
           />
         ) : (
