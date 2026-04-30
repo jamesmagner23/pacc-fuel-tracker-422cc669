@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="x-apple-disable-message-reformatting">
-<title>Today's fuel pricing — PACC Energy</title>
+<title>Daily diesel price — PACC Energy</title>
 </head>
 <body style="margin:0;padding:0;background:#ffffff;font-family:'Inter',Helvetica,Arial,sans-serif;color:#3D2B1A;-webkit-font-smoothing:antialiased;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
-    Today's fuel pricing for {{customer_name}} — locked in for 24 hours.
+    Daily diesel price for {{customer_name}} — valid for {{validity}}.
   </div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;">
@@ -30,7 +30,7 @@
                 </div>
               </td>
               <td align="right" valign="middle" style="font-family:'Inter',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:#C4A882;font-weight:500;">
-                Today's Pricing
+                Daily Diesel Price
               </td>
             </tr>
           </table>
@@ -44,11 +44,11 @@
             Quote · {{quote_date}}
           </p>
           <h1 style="margin:0 0 16px 0;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:30px;line-height:1.14;letter-spacing:-0.025em;font-weight:800;color:#3D2B1A;">
-            Today's pricing for<br>{{customer_name}}.
+            Daily diesel price for<br>{{customer_name}}.
           </h1>
           <p style="margin:0;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.65;color:#6B5240;">
-            Below is your live, on-site delivered fuel pricing from PACC Energy.
-            Lock it in by replying or calling us before close of business — markets move daily.
+            Below is today's on-site delivered diesel price from PACC Energy.
+            Reply or call before close of business if you'd like to lock it in.
           </p>
         </td></tr>
 
@@ -97,7 +97,7 @@
         <!-- PRICING BLOCK -->
         <tr><td style="padding:32px 32px 8px 32px;">
           <p style="margin:0 0 12px 0;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#E8461E;font-weight:700;">
-            Today's delivered pricing
+            Daily diesel price
           </p>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FAF5EB;border-left:3px solid #E8461E;">
             <tr><td style="padding:8px 0 0 0;">
@@ -138,7 +138,7 @@
           </table>
           <p style="margin:14px 0 0 0;font-family:'Inter',Helvetica,Arial,sans-serif;font-size:12px;color:#8B7355;">
             Call <a href="https://qvpnfxssfhfxqqkbmahw.supabase.co/functions/v1/track-email-click?cta=pricing-phone&campaign=todays-pricing&to=tel%3A%2B61409704327" style="color:#E8461E;text-decoration:none;font-weight:600;">+61 409 704 327</a>
-            or email <a href="https://qvpnfxssfhfxqqkbmahw.supabase.co/functions/v1/track-email-click?cta=pricing-email&campaign=todays-pricing&to=mailto%3Afuel%40paccvictoria.com%3Fsubject%3DPricing%2520{{quote_date}}" style="color:#E8461E;text-decoration:none;font-weight:600;">fuel@paccvictoria.com</a>.
+            or email <a href="https://qvpnfxssfhfxqqkbmahw.supabase.co/functions/v1/track-email-click?cta=pricing-email&campaign=todays-pricing&to=mailto%3Afuel%40paccvictoria.com%3Fsubject%3DDaily%2520diesel%2520price%2520{{quote_date}}" style="color:#E8461E;text-decoration:none;font-weight:600;">fuel@paccvictoria.com</a>.
           </p>
         </td></tr>
 
