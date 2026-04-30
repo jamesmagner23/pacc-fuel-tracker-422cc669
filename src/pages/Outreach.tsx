@@ -396,7 +396,7 @@ export default function Outreach() {
     return Array.from(new Set([...declared, ...inferred]));
   }, [activeTemplate]);
 
-  // Validation for the pricing/meta fields shown in the "Today's Pricing" panel.
+  // Validation for the pricing/meta fields shown in the "Daily diesel price" panel.
   // Only validates keys that are actually used by the active template.
   const pricingErrors = useMemo(() => {
     const errs: Record<string, string> = {};
