@@ -2645,6 +2645,164 @@ function AnalyticsTab({
 
   const totalLitres = perMachine.reduce((s, m) => s + m.litres, 0);
   const totalFtc = perMachine.reduce((s, m) => s + m.ftcClaim, 0);
+  const totalDeliveries = perMachine.reduce((s, m) => s + m.deliveries, 0);
+
+  function downloadRecap() {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const W = doc.internal.pageSize.getWidth();
+    const M = 40;
+    let y = 50;
+
+    // Brand band
+    doc.setFillColor(232, 70, 30);
+    doc.rect(0, 0, W, 6, "F");
+
+    // Header
+    doc.setTextColor(61, 43, 26);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(20);
+    doc.text("Analytics Recap", M, y); y += 22;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+    doc.setTextColor(107, 82, 64);
+    doc.text(`${companyName} · ${periodLabel} · Generated ${format(new Date(), "d MMM yyyy")}`, M, y); y += 24;
+
+    // KPI strip
+    const kpis = [
+      { label: "Tracked litres",  value: fmtL(totalLitres) },
+      { label: "Deliveries",      value: totalDeliveries.toLocaleString() },
+      { label: "Active machines", value: perMachine.length.toLocaleString() },
+      { label: "FTC claimable",   value: fmt$(totalFtc) },
+    ];
+    const colW = (W - M * 2) / kpis.length;
+    doc.setDrawColor(237, 227, 210);
+    kpis.forEach((k, i) => {
+      const x = M + i * colW;
+      doc.roundedRect(x, y, colW - 8, 56, 4, 4, "S");
+      doc.setFontSize(8); doc.setTextColor(139, 115, 85);
+      doc.text(k.label.toUpperCase(), x + 10, y + 16);
+      doc.setFontSize(15); doc.setTextColor(i === 3 ? 232 : 61, i === 3 ? 70 : 43, i === 3 ? 30 : 26);
+      doc.setFont("helvetica", "bold");
+      doc.text(k.value, x + 10, y + 40);
+      doc.setFont("helvetica", "normal");
+    });
+    y += 78;
+
+    // Helper: section
+    const section = (title: string) => {
+      doc.setFillColor(232, 70, 30);
+      doc.rect(M, y, 3, 14, "F");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(61, 43, 26);
+      doc.text(title, M + 10, y + 11); y += 22;
+    };
+
+    // Top machines
+    section("Top Machinery");
+    doc.setFontSize(9); doc.setTextColor(139, 115, 85);
+    doc.text("RANK    MACHINE", M, y);
+    doc.text("LITRES",     W - M - 200, y, { align: "right" });
+    doc.text("DELIVERIES", W - M - 110, y, { align: "right" });
+    doc.text("FTC",        W - M, y, { align: "right" });
+    y += 12;
+    doc.setDrawColor(237, 227, 210); doc.line(M, y, W - M, y); y += 6;
+    doc.setTextColor(61, 43, 26); doc.setFontSize(10);
+    perMachine.slice(0, 8).forEach((m, i) => {
+      doc.text(`${i + 1}.`, M, y);
+      const name = `${m.name} (${m.placa})`;
+      doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
+      doc.text(fmtL(m.litres),               W - M - 200, y, { align: "right" });
+      doc.text(m.deliveries.toLocaleString(), W - M - 110, y, { align: "right" });
+      doc.setTextColor(232, 70, 30);
+      doc.text(fmt$(m.ftcClaim),             W - M,       y, { align: "right" });
+      doc.setTextColor(61, 43, 26);
+      y += 16;
+      if (y > 760) { doc.addPage(); y = 60; }
+    });
+    y += 12;
+
+    // Top projects
+    section("Top Projects");
+    doc.setFontSize(9); doc.setTextColor(139, 115, 85);
+    doc.text("RANK    PROJECT", M, y);
+    doc.text("LITRES",     W - M - 200, y, { align: "right" });
+    doc.text("MACHINES",   W - M - 110, y, { align: "right" });
+    doc.text("FTC",        W - M, y, { align: "right" });
+    y += 12;
+    doc.line(M, y, W - M, y); y += 6;
+    doc.setTextColor(61, 43, 26); doc.setFontSize(10);
+    perProject.slice(0, 8).forEach((p, i) => {
+      doc.text(`${i + 1}.`, M, y);
+      const name = p.site ? `${p.name} — ${p.site}` : p.name;
+      doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
+      doc.text(fmtL(p.litres),                W - M - 200, y, { align: "right" });
+      doc.text(p.machines.toLocaleString(),   W - M - 110, y, { align: "right" });
+      doc.setTextColor(232, 70, 30);
+      doc.text(fmt$(p.ftcClaim),              W - M,       y, { align: "right" });
+      doc.setTextColor(61, 43, 26);
+      y += 16;
+      if (y > 760) { doc.addPage(); y = 60; }
+    });
+    y += 12;
+
+    // Comparisons
+    const drawCompare = (title: string, a: any, b: any, rows: { label: string; av: string; bv: string; aWin: boolean }[]) => {
+      if (!a || !b) return;
+      if (y > 680) { doc.addPage(); y = 60; }
+      section(title);
+      const colW2 = (W - M * 2) / 2 - 6;
+      doc.setDrawColor(237, 227, 210);
+      doc.roundedRect(M, y, colW2, 24 + rows.length * 18, 4, 4, "S");
+      doc.roundedRect(M + colW2 + 12, y, colW2, 24 + rows.length * 18, 4, 4, "S");
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(61, 43, 26);
+      doc.text(a.name || a.label, M + 8, y + 16);
+      doc.text(b.name || b.label, M + colW2 + 20, y + 16);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+      let ry = y + 36;
+      rows.forEach((r) => {
+        doc.setTextColor(139, 115, 85);
+        doc.text(r.label, M + 8, ry);
+        doc.text(r.label, M + colW2 + 20, ry);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+        doc.setTextColor(r.aWin ? 15 : 61, r.aWin ? 138 : 43, r.aWin ? 94 : 26);
+        doc.text(r.av, M + colW2 - 8, ry, { align: "right" });
+        doc.setTextColor(!r.aWin ? 15 : 61, !r.aWin ? 138 : 43, !r.aWin ? 94 : 26);
+        doc.text(r.bv, M + colW2 * 2 + 4, ry, { align: "right" });
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+        ry += 18;
+      });
+      y = ry + 14;
+    };
+
+    if (perMachine.length >= 2) {
+      const [a, b] = perMachine;
+      drawCompare("Machinery vs Machinery — Top Two", a, b, [
+        { label: "Litres",         av: fmtL(a.litres),                                              bv: fmtL(b.litres),                                              aWin: a.litres > b.litres },
+        { label: "Deliveries",     av: a.deliveries.toString(),                                    bv: b.deliveries.toString(),                                    aWin: a.deliveries > b.deliveries },
+        { label: "Avg / delivery", av: a.deliveries ? fmtL(a.litres / a.deliveries) : "—",         bv: b.deliveries ? fmtL(b.litres / b.deliveries) : "—",         aWin: (a.deliveries ? a.litres / a.deliveries : 0) > (b.deliveries ? b.litres / b.deliveries : 0) },
+        { label: "FTC claim",      av: fmt$(a.ftcClaim),                                           bv: fmt$(b.ftcClaim),                                           aWin: a.ftcClaim > b.ftcClaim },
+      ]);
+    }
+
+    if (perProject.length >= 2) {
+      const [a, b] = perProject;
+      drawCompare("Project vs Project — Top Two", a, b, [
+        { label: "Litres",         av: fmtL(a.litres),                                              bv: fmtL(b.litres),                                              aWin: a.litres > b.litres },
+        { label: "Deliveries",     av: a.deliveries.toString(),                                    bv: b.deliveries.toString(),                                    aWin: a.deliveries > b.deliveries },
+        { label: "Avg / delivery", av: a.deliveries ? fmtL(a.litres / a.deliveries) : "—",         bv: b.deliveries ? fmtL(b.litres / b.deliveries) : "—",         aWin: (a.deliveries ? a.litres / a.deliveries : 0) > (b.deliveries ? b.litres / b.deliveries : 0) },
+        { label: "Active plant",   av: a.machines.toString(),                                      bv: b.machines.toString(),                                      aWin: a.machines > b.machines },
+        { label: "FTC claim",      av: fmt$(a.ftcClaim),                                           bv: fmt$(b.ftcClaim),                                           aWin: a.ftcClaim > b.ftcClaim },
+      ]);
+    }
+
+    // Footer on each page
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8); doc.setTextColor(139, 115, 85);
+      doc.text(`${companyName} · Analytics Recap · ${periodLabel}`, M, doc.internal.pageSize.getHeight() - 20);
+      doc.text(`Page ${i} of ${pageCount}`, W - M, doc.internal.pageSize.getHeight() - 20, { align: "right" });
+    }
+
+    doc.save(`${companyName.replace(/[^A-Za-z0-9]+/g, "-")}-analytics-${periodLabel.replace(/\s+/g, "-")}.pdf`);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
