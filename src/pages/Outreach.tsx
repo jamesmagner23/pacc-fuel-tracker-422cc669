@@ -178,43 +178,6 @@ export default function Outreach() {
   // Variable values for current compose session
   const [vars, setVars] = useState<Record<string, string>>({});
 
-  // Pricing simulator state
-  const [productMix, setProductMix] = useState<{ diesel: boolean; ulp: boolean; adblue: boolean }>({
-    diesel: true, ulp: false, adblue: false,
-  });
-  const [latestBuyPrice, setLatestBuyPrice] = useState<number>(0);
-  const [pricingTiers, setPricingTiers] = useState<PricingTierRow[]>([]);
-  useEffect(() => {
-    (async () => {
-      const [{ data: bp }, { data: tiers }] = await Promise.all([
-        supabase.from("buy_prices").select("price_per_litre").order("price_date", { ascending: false }).limit(1),
-        supabase.from("pricing_tiers").select("tier_name, min_litres, max_litres, margin_percent").order("min_litres"),
-      ]);
-      if (bp?.[0]) setLatestBuyPrice(Number(bp[0].price_per_litre) || 0);
-      if (tiers) setPricingTiers(tiers as PricingTierRow[]);
-    })();
-  }, []);
-
-  const matchedTier = useMemo<PricingTierRow | null>(() => {
-    const weeklyL = parseLitres(vars["volume"] ?? "");
-    if (!weeklyL || pricingTiers.length === 0) return null;
-    return pricingTiers.find(t => weeklyL >= t.min_litres && (t.max_litres == null || weeklyL <= t.max_litres))
-        ?? pricingTiers[pricingTiers.length - 1];
-  }, [vars, pricingTiers]);
-
-  const calcAndApplyPricing = useCallback(() => {
-    if (!latestBuyPrice || !matchedTier) return;
-    const dieselEx = latestBuyPrice * (1 + matchedTier.margin_percent / 100);
-    const next: Record<string, string> = {
-      diesel_price:     dieselEx.toFixed(4),
-      diesel_price_inc: (dieselEx * 1.1).toFixed(4),
-      // Always blank — ULP/AdBlue removed from the template.
-      ulp_price: "", ulp_price_inc: "",
-      adblue_price: "", adblue_price_inc: "",
-    };
-    setVars(v => ({ ...v, ...next }));
-  }, [latestBuyPrice, matchedTier]);
-
   // ── Pricing presets ─────────────────────────────────────────────────────
   type PricingPreset = {
     id: string;
@@ -253,7 +216,7 @@ export default function Outreach() {
       };
       const payload = {
         name,
-        weekly_volume: vars["volume"] ?? null,
+        weekly_volume: null,
         // Diesel-only template: force the mix and ignore ULP/AdBlue inputs.
         product_mix: { diesel: true, ulp: false, adblue: false },
         diesel_price:     num("diesel_price"),
@@ -273,13 +236,12 @@ export default function Outreach() {
     } finally {
       setSavingPreset(false);
     }
-  }, [presetName, vars, productMix, fetchPresets]);
+  }, [presetName, vars, fetchPresets]);
 
   const loadPreset = useCallback((p: PricingPreset) => {
     const fmt = (n: number | null) => (n == null ? "" : Number(n).toFixed(4));
     setVars(v => ({
       ...v,
-      ...(p.weekly_volume != null ? { volume: p.weekly_volume } : {}),
       diesel_price:     fmt(p.diesel_price),
       diesel_price_inc: fmt(p.diesel_price_inc),
       // Diesel-only template — clear any legacy ULP/AdBlue values so they
@@ -289,7 +251,6 @@ export default function Outreach() {
       adblue_price:     "",
       adblue_price_inc: "",
     }));
-    setProductMix({ diesel: true, ulp: false, adblue: false });
   }, []);
 
   const deletePreset = useCallback(async (id: string) => {
