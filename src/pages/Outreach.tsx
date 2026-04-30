@@ -21,6 +21,21 @@ import { normalizePortalDemoLinks } from "@/lib/outreachLinks";
 import { exportEmailHtmlToPdf } from "@/lib/emailPdf";
 import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
+// Keys handled by the dedicated Pricing panel (hidden from generic var grid)
+const PRICING_META_KEYS = ["customer_name", "quote_date", "validity", "volume"] as const;
+const PRICING_FUEL_KEYS = [
+  "diesel_price", "diesel_price_inc",
+  "ulp_price",    "ulp_price_inc",
+  "adblue_price", "adblue_price_inc",
+] as const;
+const PRICING_KEYS = new Set<string>([...PRICING_META_KEYS, ...PRICING_FUEL_KEYS, "extra_terms"]);
+
+function formatGst(ex: string): string {
+  const n = parseFloat(ex);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return (n * 1.1).toFixed(4);
+}
+
 type Person = {
   id: number;
   name: string;
