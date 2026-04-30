@@ -36,6 +36,18 @@ function formatGst(ex: string): string {
   return (n * 1.1).toFixed(4);
 }
 
+// ULP/AdBlue offsets vs Diesel buy price (¢/L). AdBlue is sold per litre too;
+// these are sensible defaults the user can override after auto-fill.
+const PRODUCT_OFFSETS_CPL = { ulp: 8, adblue: -45 } as const;
+
+/** Parse a litre figure that may include commas, "L", or "litres" suffix. */
+function parseLitres(s: string): number {
+  const n = parseFloat(String(s).replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+type PricingTierRow = { min_litres: number; max_litres: number | null; margin_percent: number; tier_name: string };
+
 type Person = {
   id: number;
   name: string;
@@ -151,6 +163,51 @@ export default function Outreach() {
 
   // Variable values for current compose session
   const [vars, setVars] = useState<Record<string, string>>({});
+
+  // Pricing simulator state
+  const [productMix, setProductMix] = useState<{ diesel: boolean; ulp: boolean; adblue: boolean }>({
+    diesel: true, ulp: false, adblue: false,
+  });
+  const [latestBuyPrice, setLatestBuyPrice] = useState<number>(0);
+  const [pricingTiers, setPricingTiers] = useState<PricingTierRow[]>([]);
+  useEffect(() => {
+    (async () => {
+      const [{ data: bp }, { data: tiers }] = await Promise.all([
+        supabase.from("buy_prices").select("price_per_litre").order("price_date", { ascending: false }).limit(1),
+        supabase.from("pricing_tiers").select("tier_name, min_litres, max_litres, margin_percent").order("min_litres"),
+      ]);
+      if (bp?.[0]) setLatestBuyPrice(Number(bp[0].price_per_litre) || 0);
+      if (tiers) setPricingTiers(tiers as PricingTierRow[]);
+    })();
+  }, []);
+
+  const matchedTier = useMemo<PricingTierRow | null>(() => {
+    const weeklyL = parseLitres(vars["volume"] ?? "");
+    if (!weeklyL || pricingTiers.length === 0) return null;
+    return pricingTiers.find(t => weeklyL >= t.min_litres && (t.max_litres == null || weeklyL <= t.max_litres))
+        ?? pricingTiers[pricingTiers.length - 1];
+  }, [vars, pricingTiers]);
+
+  const calcAndApplyPricing = useCallback(() => {
+    if (!latestBuyPrice || !matchedTier) return;
+    const dieselEx = latestBuyPrice * (1 + matchedTier.margin_percent / 100);
+    const next: Record<string, string> = {};
+    if (productMix.diesel) {
+      next.diesel_price = dieselEx.toFixed(4);
+      next.diesel_price_inc = (dieselEx * 1.1).toFixed(4);
+    } else { next.diesel_price = ""; next.diesel_price_inc = ""; }
+    if (productMix.ulp) {
+      const ex = dieselEx + PRODUCT_OFFSETS_CPL.ulp / 100;
+      next.ulp_price = ex.toFixed(4);
+      next.ulp_price_inc = (ex * 1.1).toFixed(4);
+    } else { next.ulp_price = ""; next.ulp_price_inc = ""; }
+    if (productMix.adblue) {
+      const ex = Math.max(0.50, dieselEx + PRODUCT_OFFSETS_CPL.adblue / 100);
+      next.adblue_price = ex.toFixed(4);
+      next.adblue_price_inc = (ex * 1.1).toFixed(4);
+    } else { next.adblue_price = ""; next.adblue_price_inc = ""; }
+    setVars(v => ({ ...v, ...next }));
+  }, [latestBuyPrice, matchedTier, productMix]);
 
   // Send statuses (keyed by recipient_email)
   const [statuses, setStatuses] = useState<Record<string, SendStatus>>({});
@@ -736,6 +793,41 @@ export default function Outreach() {
                         />
                       </div>
                     ))}
+                  </div>
+
+                  {/* Pricing simulator */}
+                  <div className="space-y-2 rounded border border-[#6B5240] bg-[#120a04] p-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">Calculator</span>
+                      <span className="text-[10px] text-[#8B7355]">
+                        Buy: {latestBuyPrice ? `$${latestBuyPrice.toFixed(4)}/L` : "—"}
+                        {matchedTier && ` · ${matchedTier.tier_name} +${matchedTier.margin_percent}%`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {(["diesel", "ulp", "adblue"] as const).map(p => (
+                        <label key={p} className="flex items-center gap-1.5 text-xs text-[#F5E6D0] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={productMix[p]}
+                            onChange={(e) => setProductMix(m => ({ ...m, [p]: e.target.checked }))}
+                            className="accent-[#E8461E] h-4 w-4"
+                          />
+                          {p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel"}
+                        </label>
+                      ))}
+                      <Button
+                        type="button"
+                        onClick={calcAndApplyPricing}
+                        disabled={!latestBuyPrice || !matchedTier}
+                        className="ml-auto h-9 bg-[#E8461E] hover:bg-[#c93a17] text-white text-xs px-3"
+                      >
+                        Calculate from volume
+                      </Button>
+                    </div>
+                    {!matchedTier && (
+                      <div className="text-[10px] text-[#C4A882]">Enter weekly volume above to match a tier.</div>
+                    )}
                   </div>
 
                   {/* Fuel pricing rows */}
