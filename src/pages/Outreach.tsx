@@ -579,6 +579,14 @@ export default function Outreach() {
 
   // ── Actions ──────────────────────────────────────────────────────────────
   const copyHtml = async () => {
+    if (pricingErrorCount > 0) {
+      toast({
+        title: "Fix pricing errors first",
+        description: `${pricingErrorCount} field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before copying.`,
+        variant: "destructive",
+      });
+      return;
+    }
     await copyBrandedEmail(renderedHtml, renderedText);
     setCopiedHtml(true);
     setTimeout(() => setCopiedHtml(false), 1800);
@@ -656,6 +664,14 @@ export default function Outreach() {
 
   const openBrandedCompose = async (channel: "default_mail" | "gmail") => {
     if (!selected?.email) return;
+    if (pricingErrorCount > 0) {
+      toast({
+        title: "Fix pricing errors first",
+        description: `${pricingErrorCount} field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before composing.`,
+        variant: "destructive",
+      });
+      return;
+    }
     const popup = channel === "gmail" ? window.open("", "_blank") : null;
     let copied = false;
     try {
@@ -679,6 +695,14 @@ export default function Outreach() {
 
   const sendViaGmail = async () => {
     if (!selected?.email || !activeTemplate) return;
+    if (pricingErrorCount > 0) {
+      toast({
+        title: "Fix pricing errors first",
+        description: `${pricingErrorCount} field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before sending.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setSendingGmail(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-via-gmail", {
