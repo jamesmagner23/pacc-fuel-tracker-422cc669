@@ -23,11 +23,13 @@ import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
 // Keys handled by the dedicated Pricing panel (hidden from generic var grid)
 const PRICING_META_KEYS = ["customer_name", "quote_date", "validity", "volume"] as const;
+// Diesel-only pricing template. ULP/AdBlue intentionally removed from the UI;
+// the underlying DB columns are preserved for backward compatibility.
 const PRICING_FUEL_KEYS = [
   "diesel_price", "diesel_price_inc",
-  "ulp_price",    "ulp_price_inc",
-  "adblue_price", "adblue_price_inc",
 ] as const;
+const ACTIVE_FUELS = ["diesel"] as const;
+type ActiveFuel = typeof ACTIVE_FUELS[number];
 const PRICING_KEYS = new Set<string>([...PRICING_META_KEYS, ...PRICING_FUEL_KEYS, "extra_terms"]);
 
 function formatGst(ex: string): string {
@@ -35,10 +37,6 @@ function formatGst(ex: string): string {
   if (!Number.isFinite(n) || n <= 0) return "";
   return (n * 1.1).toFixed(4);
 }
-
-// ULP/AdBlue offsets vs Diesel buy price (¢/L). AdBlue is sold per litre too;
-// these are sensible defaults the user can override after auto-fill.
-const PRODUCT_OFFSETS_CPL = { ulp: 8, adblue: -45 } as const;
 
 /** Parse a litre figure that may include commas, "L", or "litres" suffix. */
 function parseLitres(s: string): number {
@@ -191,23 +189,15 @@ export default function Outreach() {
   const calcAndApplyPricing = useCallback(() => {
     if (!latestBuyPrice || !matchedTier) return;
     const dieselEx = latestBuyPrice * (1 + matchedTier.margin_percent / 100);
-    const next: Record<string, string> = {};
-    if (productMix.diesel) {
-      next.diesel_price = dieselEx.toFixed(4);
-      next.diesel_price_inc = (dieselEx * 1.1).toFixed(4);
-    } else { next.diesel_price = ""; next.diesel_price_inc = ""; }
-    if (productMix.ulp) {
-      const ex = dieselEx + PRODUCT_OFFSETS_CPL.ulp / 100;
-      next.ulp_price = ex.toFixed(4);
-      next.ulp_price_inc = (ex * 1.1).toFixed(4);
-    } else { next.ulp_price = ""; next.ulp_price_inc = ""; }
-    if (productMix.adblue) {
-      const ex = Math.max(0.50, dieselEx + PRODUCT_OFFSETS_CPL.adblue / 100);
-      next.adblue_price = ex.toFixed(4);
-      next.adblue_price_inc = (ex * 1.1).toFixed(4);
-    } else { next.adblue_price = ""; next.adblue_price_inc = ""; }
+    const next: Record<string, string> = {
+      diesel_price:     dieselEx.toFixed(4),
+      diesel_price_inc: (dieselEx * 1.1).toFixed(4),
+      // Always blank — ULP/AdBlue removed from the template.
+      ulp_price: "", ulp_price_inc: "",
+      adblue_price: "", adblue_price_inc: "",
+    };
     setVars(v => ({ ...v, ...next }));
-  }, [latestBuyPrice, matchedTier, productMix]);
+  }, [latestBuyPrice, matchedTier]);
 
   // ── Pricing presets ─────────────────────────────────────────────────────
   type PricingPreset = {
@@ -424,12 +414,12 @@ export default function Outreach() {
   // Returns "" when no fuel rows have any data so we never render an empty table.
   const pricingBreakdownHtml = useMemo(() => {
     const rows: { label: string; ex: number; inc: number }[] = [];
-    (["diesel", "ulp", "adblue"] as const).forEach(p => {
+    ACTIVE_FUELS.forEach(p => {
       const ex  = parseFloat((vars[`${p}_price`]     ?? "").trim());
       const inc = parseFloat((vars[`${p}_price_inc`] ?? "").trim());
       if (!Number.isFinite(ex) && !Number.isFinite(inc)) return;
       rows.push({
-        label: p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel",
+        label: "Diesel",
         ex:  Number.isFinite(ex)  ? ex  : (Number.isFinite(inc) ? inc / 1.1 : 0),
         inc: Number.isFinite(inc) ? inc : (Number.isFinite(ex)  ? ex  * 1.1 : 0),
       });
@@ -517,11 +507,11 @@ export default function Outreach() {
       else if (parseLitres(v) <= 0) errs.volume = "Enter a positive litre figure (e.g. 2,500 L).";
     }
 
-    (["diesel", "ulp", "adblue"] as const).forEach(p => {
+    ACTIVE_FUELS.forEach(p => {
       const exKey = `${p}_price`;
       const incKey = `${p}_price_inc`;
       if (!need(exKey) && !need(incKey)) return;
-      if (!productMix[p]) return; // intentionally blank when not in mix
+      // Diesel-only template — always validate.
 
       if (need(exKey)) {
         const raw = val(exKey);
@@ -1083,17 +1073,7 @@ export default function Outreach() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
-                      {(["diesel", "ulp", "adblue"] as const).map(p => (
-                        <label key={p} className="flex items-center gap-1.5 text-xs text-[#F5E6D0] cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={productMix[p]}
-                            onChange={(e) => setProductMix(m => ({ ...m, [p]: e.target.checked }))}
-                            className="accent-[#E8461E] h-4 w-4"
-                          />
-                          {p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel"}
-                        </label>
-                      ))}
+                      <span className="text-xs text-[#F5E6D0]">Diesel only</span>
                       <Button
                         type="button"
                         onClick={calcAndApplyPricing}
@@ -1110,11 +1090,11 @@ export default function Outreach() {
 
                   {/* Fuel pricing rows */}
                   <div className="space-y-2">
-                    {(["diesel", "ulp", "adblue"] as const).map(fuel => {
+                    {ACTIVE_FUELS.map(fuel => {
                       const exKey  = `${fuel}_price`;
                       const incKey = `${fuel}_price_inc`;
                       if (!allVarKeys.includes(exKey) && !allVarKeys.includes(incKey)) return null;
-                      const label = fuel === "ulp" ? "ULP" : fuel === "adblue" ? "AdBlue" : "Diesel";
+                      const label = "Diesel";
                       return (
                         <div key={fuel} className="grid grid-cols-[80px_1fr_1fr_auto] items-end gap-2">
                           <span className="text-xs text-[#F5E6D0] pb-2">{label}</span>
@@ -1166,11 +1146,11 @@ export default function Outreach() {
                   {/* Estimated weekly cost summary */}
                   {(() => {
                     const weeklyL = parseLitres(vars["volume"] ?? "");
-                    const selected = (["diesel", "ulp", "adblue"] as const).filter(p => productMix[p]);
+                    const selected = ACTIVE_FUELS.slice();
                     if (!weeklyL || selected.length === 0) {
                       return (
                         <div className="rounded border border-[#6B5240] bg-[#120a04] p-3 text-[11px] text-[#C4A882]">
-                          Enter weekly volume and select at least one product to see estimated cost.
+                          Enter weekly volume to see estimated diesel cost.
                         </div>
                       );
                     }
@@ -1182,7 +1162,7 @@ export default function Outreach() {
                       const inc = parseFloat(vars[`${p}_price_inc`] ?? "") || 0;
                       return {
                         key: p,
-                        label: p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel",
+                        label: "Diesel",
                         litres: perProductL,
                         ex: ex * perProductL,
                         inc: inc * perProductL,
