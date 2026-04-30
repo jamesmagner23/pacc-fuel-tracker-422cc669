@@ -2511,10 +2511,12 @@ function AnalyticsTab({
   transactions,
   clientAccountId,
   periodLabel,
+  companyName,
 }: {
   transactions: any[];
   clientAccountId: number | null;
   periodLabel: string;
+  companyName: string;
 }) {
   const { data: plantItems = [] } = usePlantItems(clientAccountId);
   const { data: projects = [] } = useProjects(clientAccountId);
