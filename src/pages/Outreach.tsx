@@ -795,6 +795,41 @@ export default function Outreach() {
                     ))}
                   </div>
 
+                  {/* Pricing simulator */}
+                  <div className="space-y-2 rounded border border-[#6B5240] bg-[#120a04] p-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">Calculator</span>
+                      <span className="text-[10px] text-[#8B7355]">
+                        Buy: {latestBuyPrice ? `$${latestBuyPrice.toFixed(4)}/L` : "—"}
+                        {matchedTier && ` · ${matchedTier.tier_name} +${matchedTier.margin_percent}%`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {(["diesel", "ulp", "adblue"] as const).map(p => (
+                        <label key={p} className="flex items-center gap-1.5 text-xs text-[#F5E6D0] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={productMix[p]}
+                            onChange={(e) => setProductMix(m => ({ ...m, [p]: e.target.checked }))}
+                            className="accent-[#E8461E] h-4 w-4"
+                          />
+                          {p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel"}
+                        </label>
+                      ))}
+                      <Button
+                        type="button"
+                        onClick={calcAndApplyPricing}
+                        disabled={!latestBuyPrice || !matchedTier}
+                        className="ml-auto h-9 bg-[#E8461E] hover:bg-[#c93a17] text-white text-xs px-3"
+                      >
+                        Calculate from volume
+                      </Button>
+                    </div>
+                    {!matchedTier && (
+                      <div className="text-[10px] text-[#C4A882]">Enter weekly volume above to match a tier.</div>
+                    )}
+                  </div>
+
                   {/* Fuel pricing rows */}
                   <div className="space-y-2">
                     {(["diesel", "ulp", "adblue"] as const).map(fuel => {
