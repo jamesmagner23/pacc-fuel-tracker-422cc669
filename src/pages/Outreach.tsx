@@ -387,12 +387,12 @@ export default function Outreach() {
 
   const allVarKeys = useMemo(() => {
     if (!activeTemplate) return [];
-    const declared = (activeTemplate.variables ?? []).filter(k => !NON_DIESEL_VARIABLES.has(k));
+    const declared = (activeTemplate.variables ?? []).filter(k => !SUPPRESSED_PRICING_VARIABLES.has(k));
     const inferred = extractVariables(
       activeTemplate.subject,
       stripNonDieselPricingText(activeTemplate.text_body),
       stripNonDieselPricingHtml(activeTemplate.html_body),
-    ).filter(k => !NON_DIESEL_VARIABLES.has(k));
+    ).filter(k => !SUPPRESSED_PRICING_VARIABLES.has(k));
     return Array.from(new Set([...declared, ...inferred]));
   }, [activeTemplate]);
 
@@ -424,12 +424,6 @@ export default function Outreach() {
       else if (v.length > 80) errs.validity = "Keep validity under 80 characters.";
     }
 
-    if (need("volume")) {
-      const v = val("volume");
-      if (!v) errs.volume = "Weekly volume is required.";
-      else if (parseLitres(v) <= 0) errs.volume = "Enter a positive litre figure (e.g. 2,500 L).";
-    }
-
     ACTIVE_FUELS.forEach(p => {
       const exKey = `${p}_price`;
       const incKey = `${p}_price_inc`;
@@ -454,7 +448,7 @@ export default function Outreach() {
     });
 
     return errs;
-  }, [allVarKeys, vars, productMix]);
+  }, [allVarKeys, vars]);
 
   const pricingErrorCount = Object.keys(pricingErrors).length;
 
