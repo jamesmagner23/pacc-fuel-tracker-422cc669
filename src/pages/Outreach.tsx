@@ -23,11 +23,13 @@ import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
 // Keys handled by the dedicated Pricing panel (hidden from generic var grid)
 const PRICING_META_KEYS = ["customer_name", "quote_date", "validity", "volume"] as const;
+// Diesel-only pricing template. ULP/AdBlue intentionally removed from the UI;
+// the underlying DB columns are preserved for backward compatibility.
 const PRICING_FUEL_KEYS = [
   "diesel_price", "diesel_price_inc",
-  "ulp_price",    "ulp_price_inc",
-  "adblue_price", "adblue_price_inc",
 ] as const;
+const ACTIVE_FUELS = ["diesel"] as const;
+type ActiveFuel = typeof ACTIVE_FUELS[number];
 const PRICING_KEYS = new Set<string>([...PRICING_META_KEYS, ...PRICING_FUEL_KEYS, "extra_terms"]);
 
 function formatGst(ex: string): string {
@@ -35,10 +37,6 @@ function formatGst(ex: string): string {
   if (!Number.isFinite(n) || n <= 0) return "";
   return (n * 1.1).toFixed(4);
 }
-
-// ULP/AdBlue offsets vs Diesel buy price (¢/L). AdBlue is sold per litre too;
-// these are sensible defaults the user can override after auto-fill.
-const PRODUCT_OFFSETS_CPL = { ulp: 8, adblue: -45 } as const;
 
 /** Parse a litre figure that may include commas, "L", or "litres" suffix. */
 function parseLitres(s: string): number {
