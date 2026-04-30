@@ -929,8 +929,14 @@ export default function Outreach() {
                               value={vars[exKey] ?? ""}
                               onChange={(e) => setVars(v => ({ ...v, [exKey]: e.target.value }))}
                               placeholder={activeTemplate?.default_values?.[exKey] ?? "0.0000"}
-                              className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] h-11"
+                              aria-invalid={!!pricingErrors[exKey]}
+                              className={`bg-[#120a04] text-[#F5E6D0] h-11 ${
+                                pricingErrors[exKey] ? "border-[#E8461E] focus-visible:ring-[#E8461E]" : "border-[#6B5240]"
+                              }`}
                             />
+                            {pricingErrors[exKey] && (
+                              <span className="block text-[10px] text-[#FFB199]">{pricingErrors[exKey]}</span>
+                            )}
                           </div>
                           <div className="space-y-1">
                             <span className="text-[10px] text-[#C4A882]">Inc-GST $/L</span>
@@ -939,8 +945,14 @@ export default function Outreach() {
                               value={vars[incKey] ?? ""}
                               onChange={(e) => setVars(v => ({ ...v, [incKey]: e.target.value }))}
                               placeholder={activeTemplate?.default_values?.[incKey] ?? "0.0000"}
-                              className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] h-11"
+                              aria-invalid={!!pricingErrors[incKey]}
+                              className={`bg-[#120a04] text-[#F5E6D0] h-11 ${
+                                pricingErrors[incKey] ? "border-[#E8461E] focus-visible:ring-[#E8461E]" : "border-[#6B5240]"
+                              }`}
                             />
+                            {pricingErrors[incKey] && (
+                              <span className="block text-[10px] text-[#FFB199]">{pricingErrors[incKey]}</span>
+                            )}
                           </div>
                           <Button
                             type="button" variant="outline"
