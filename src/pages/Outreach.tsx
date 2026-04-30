@@ -586,6 +586,14 @@ export default function Outreach() {
 
   const exportPdf = async () => {
     if (!activeTemplate || !renderedHtml) return;
+    if (pricingErrorCount > 0) {
+      toast({
+        title: "Fix pricing errors first",
+        description: `${pricingErrorCount} field${pricingErrorCount === 1 ? "" : "s"} need${pricingErrorCount === 1 ? "s" : ""} attention before exporting.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setExportingPdf(true);
     try {
       await exportEmailHtmlToPdf({
