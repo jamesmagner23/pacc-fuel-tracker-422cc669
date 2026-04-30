@@ -2874,6 +2874,94 @@ function AnalyticsTab({
     doc.save(pdfFilename);
   }
 
+  // ── Email recap state + handler ────────────────────────────────────────
+  const isDemoMode = useDemo();
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailRecipients, setEmailRecipients] = useState("");
+  const [emailSubject, setEmailSubject] = useState(
+    `Analytics Recap — ${companyName} · ${periodLabel}`,
+  );
+  const [emailMessage, setEmailMessage] = useState(
+    `Hi team,\n\nAttached is the ${periodLabel.toLowerCase()} analytics recap for ${companyName}, including KPIs, machinery + project leaderboards, and head-to-head comparisons.\n\nLet us know if you'd like a deeper cut.\n\n— PACC Energy`,
+  );
+  const [emailSending, setEmailSending] = useState(false);
+
+  // Keep subject in sync if the period or company changes while panel is closed.
+  useEffect(() => {
+    if (!emailOpen) {
+      setEmailSubject(`Analytics Recap — ${companyName} · ${periodLabel}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyName, periodLabel]);
+
+  async function emailRecap() {
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const list = emailRecipients
+      .split(/[\s,;]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+    const valid = list.filter(e => emailRe.test(e));
+    const invalid = list.filter(e => !emailRe.test(e));
+
+    if (valid.length === 0) {
+      toast.error("Add at least one valid recipient email.");
+      return;
+    }
+    if (invalid.length > 0) {
+      toast.error(`Invalid email${invalid.length > 1 ? "s" : ""}: ${invalid.join(", ")}`);
+      return;
+    }
+    if (!emailSubject.trim()) {
+      toast.error("Subject is required.");
+      return;
+    }
+
+    setEmailSending(true);
+    try {
+      const doc = buildRecapPdf();
+      // jsPDF's "datauristring" returns "data:application/pdf;filename=…;base64,XXXX"
+      const dataUri = doc.output("datauristring", { filename: pdfFilename }) as string;
+      const pdfBase64 = dataUri.includes(",") ? dataUri.split(",")[1] : dataUri;
+
+      const safeMessage = emailMessage
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\n/g, "<br/>");
+      const html =
+        `<div style="font-family:Inter,Arial,sans-serif;color:#3A2818;line-height:1.55;">` +
+        `<div style="background:#E8461E;height:6px;border-radius:3px;margin-bottom:20px;"></div>` +
+        `<h1 style="font-size:18px;margin:0 0 12px;color:#3A2818;">Analytics Recap</h1>` +
+        `<p style="margin:0 0 16px;color:#6B5240;font-size:13px;">${companyName} · ${periodLabel}</p>` +
+        `<div style="font-size:13px;">${safeMessage}</div>` +
+        `<p style="margin:24px 0 0;font-size:11px;color:#8B7355;">PDF attached: ${pdfFilename}</p>` +
+        `</div>`;
+
+      const { data, error } = await supabase.functions.invoke("send-recap-pdf", {
+        body: {
+          recipients: valid,
+          subject: emailSubject.trim(),
+          html,
+          text: `${emailMessage}\n\n— PDF attached: ${pdfFilename}`,
+          pdfBase64,
+          pdfFilename,
+        },
+      });
+      if (error) throw error;
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+
+      toast.success(`Recap emailed to ${valid.length} recipient${valid.length > 1 ? "s" : ""}.`);
+      setEmailOpen(false);
+      setEmailRecipients("");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not send email";
+      console.error("emailRecap failed", e);
+      toast.error(msg);
+    } finally {
+      setEmailSending(false);
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 8 }}>
