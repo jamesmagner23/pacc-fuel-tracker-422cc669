@@ -342,6 +342,68 @@ export default function Outreach() {
     return Array.from(new Set([...declared, ...inferred]));
   }, [activeTemplate]);
 
+  // Validation for the pricing/meta fields shown in the "Today's Pricing" panel.
+  // Only validates keys that are actually used by the active template.
+  const pricingErrors = useMemo(() => {
+    const errs: Record<string, string> = {};
+    if (!allVarKeys.some(k => PRICING_KEYS.has(k))) return errs;
+
+    const need = (k: string) => allVarKeys.includes(k);
+    const val = (k: string) => (vars[k] ?? "").trim();
+
+    if (need("quote_date")) {
+      const v = val("quote_date");
+      if (!v) errs.quote_date = "Quote date is required.";
+      else {
+        const d = new Date(v);
+        if (Number.isNaN(d.getTime())) errs.quote_date = "Use a valid date (e.g. 30 Apr 2026).";
+        else {
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          if (d.getTime() < today.getTime() - 86_400_000) errs.quote_date = "Quote date is in the past.";
+        }
+      }
+    }
+
+    if (need("validity")) {
+      const v = val("validity");
+      if (!v) errs.validity = "Validity is required (e.g. \"7 days\").";
+      else if (v.length > 80) errs.validity = "Keep validity under 80 characters.";
+    }
+
+    if (need("volume")) {
+      const v = val("volume");
+      if (!v) errs.volume = "Weekly volume is required.";
+      else if (parseLitres(v) <= 0) errs.volume = "Enter a positive litre figure (e.g. 2,500 L).";
+    }
+
+    (["diesel", "ulp", "adblue"] as const).forEach(p => {
+      const exKey = `${p}_price`;
+      const incKey = `${p}_price_inc`;
+      if (!need(exKey) && !need(incKey)) return;
+      if (!productMix[p]) return; // intentionally blank when not in mix
+
+      if (need(exKey)) {
+        const raw = val(exKey);
+        const n = parseFloat(raw);
+        if (!raw) errs[exKey] = "Required.";
+        else if (!Number.isFinite(n) || n <= 0) errs[exKey] = "Must be a positive number.";
+        else if (n > 10) errs[exKey] = "Looks too high — enter $/L.";
+      }
+      if (need(incKey)) {
+        const raw = val(incKey);
+        const n = parseFloat(raw);
+        const ex = parseFloat(val(exKey));
+        if (!raw) errs[incKey] = "Required.";
+        else if (!Number.isFinite(n) || n <= 0) errs[incKey] = "Must be a positive number.";
+        else if (Number.isFinite(ex) && n + 0.0001 < ex) errs[incKey] = "Inc-GST cannot be less than ex-GST.";
+      }
+    });
+
+    return errs;
+  }, [allVarKeys, vars, productMix]);
+
+  const pricingErrorCount = Object.keys(pricingErrors).length;
+
   const selectedPipedriveUrl = useMemo(() => {
     if (!selected || selected.id <= 0) return null;
     if (pipedriveHost) return `https://${pipedriveHost}/person/${selected.id}`;
@@ -775,6 +837,20 @@ export default function Outreach() {
                     <span className="text-[10px] text-[#8B7355]">Inc-GST auto-fills at +10%</span>
                   </div>
 
+                  {pricingErrorCount > 0 && (
+                    <div
+                      role="alert"
+                      className="rounded border border-[#E8461E] bg-[#3a1a0d] px-3 py-2 text-xs text-[#FFD9C8]"
+                    >
+                      <div className="font-semibold">
+                        {pricingErrorCount} field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention
+                      </div>
+                      <div className="text-[11px] text-[#F5C9B5] mt-0.5">
+                        Fix the highlighted inputs below before sending.
+                      </div>
+                    </div>
+                  )}
+
                   {/* Meta row */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {PRICING_META_KEYS.filter(k => allVarKeys.includes(k)).map(key => (
@@ -789,8 +865,14 @@ export default function Outreach() {
                           value={vars[key] ?? ""}
                           onChange={(e) => setVars(v => ({ ...v, [key]: e.target.value }))}
                           placeholder={activeTemplate?.default_values?.[key] ?? ""}
-                          className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] h-11"
+                          aria-invalid={!!pricingErrors[key]}
+                          className={`bg-[#120a04] text-[#F5E6D0] h-11 ${
+                            pricingErrors[key] ? "border-[#E8461E] focus-visible:ring-[#E8461E]" : "border-[#6B5240]"
+                          }`}
                         />
+                        {pricingErrors[key] && (
+                          <span className="block text-[10px] text-[#FFB199]">{pricingErrors[key]}</span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -847,8 +929,14 @@ export default function Outreach() {
                               value={vars[exKey] ?? ""}
                               onChange={(e) => setVars(v => ({ ...v, [exKey]: e.target.value }))}
                               placeholder={activeTemplate?.default_values?.[exKey] ?? "0.0000"}
-                              className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] h-11"
+                              aria-invalid={!!pricingErrors[exKey]}
+                              className={`bg-[#120a04] text-[#F5E6D0] h-11 ${
+                                pricingErrors[exKey] ? "border-[#E8461E] focus-visible:ring-[#E8461E]" : "border-[#6B5240]"
+                              }`}
                             />
+                            {pricingErrors[exKey] && (
+                              <span className="block text-[10px] text-[#FFB199]">{pricingErrors[exKey]}</span>
+                            )}
                           </div>
                           <div className="space-y-1">
                             <span className="text-[10px] text-[#C4A882]">Inc-GST $/L</span>
@@ -857,8 +945,14 @@ export default function Outreach() {
                               value={vars[incKey] ?? ""}
                               onChange={(e) => setVars(v => ({ ...v, [incKey]: e.target.value }))}
                               placeholder={activeTemplate?.default_values?.[incKey] ?? "0.0000"}
-                              className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] h-11"
+                              aria-invalid={!!pricingErrors[incKey]}
+                              className={`bg-[#120a04] text-[#F5E6D0] h-11 ${
+                                pricingErrors[incKey] ? "border-[#E8461E] focus-visible:ring-[#E8461E]" : "border-[#6B5240]"
+                              }`}
                             />
+                            {pricingErrors[incKey] && (
+                              <span className="block text-[10px] text-[#FFB199]">{pricingErrors[incKey]}</span>
+                            )}
                           </div>
                           <Button
                             type="button" variant="outline"
@@ -1033,21 +1127,24 @@ export default function Outreach() {
 
               {/* Desktop send actions */}
               <div className="hidden lg:flex flex-wrap gap-2">
-                <Button disabled={!selected.email || sendingGmail}
+                <Button disabled={!selected.email || sendingGmail || pricingErrorCount > 0}
                         onClick={() => void sendViaGmail()}
+                        title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
                         className="bg-[#E8461E] hover:bg-[#c93a17] text-white">
                   {sendingGmail
                     ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</>)
                     : (<><Send className="h-4 w-4 mr-2" /> Send branded email via Gmail</>)}
                 </Button>
-                <Button disabled={!selected.email}
+                <Button disabled={!selected.email || pricingErrorCount > 0}
                         onClick={() => void openBrandedCompose("default_mail")}
                         variant="outline"
+                        title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   <Mail className="h-4 w-4 mr-2" /> Open in default mail
                 </Button>
-                <Button variant="outline" disabled={!selected.email}
+                <Button variant="outline" disabled={!selected.email || pricingErrorCount > 0}
                         onClick={() => void openBrandedCompose("gmail")}
+                        title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   <Mail className="h-4 w-4 mr-2" /> Open in Gmail
                 </Button>
@@ -1081,9 +1178,14 @@ export default function Outreach() {
       {/* Sticky mobile send bar */}
       {selected && selected.email && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#6B5240] bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          {pricingErrorCount > 0 && (
+            <div role="alert" className="mb-2 rounded border border-[#E8461E] bg-[#3a1a0d] px-2 py-1 text-[11px] text-[#FFD9C8]">
+              {pricingErrorCount} pricing field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention — sending disabled.
+            </div>
+          )}
           <div className="flex gap-2">
             <Button onClick={() => void sendViaGmail()}
-                    disabled={sendingGmail}
+                    disabled={sendingGmail || pricingErrorCount > 0}
                     className="flex-1 h-12 bg-[#E8461E] hover:bg-[#c93a17] text-white">
               {sendingGmail
                 ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</>)
@@ -1091,6 +1193,7 @@ export default function Outreach() {
             </Button>
             <Button variant="outline"
                     onClick={() => void openBrandedCompose("default_mail")}
+                    disabled={pricingErrorCount > 0}
                     className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
               Mail
             </Button>
