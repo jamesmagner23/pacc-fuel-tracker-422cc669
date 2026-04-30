@@ -941,7 +941,7 @@ export default function Outreach() {
                   <div className="space-y-2 rounded border border-[#6B5240] bg-[#120a04] p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">Presets</span>
-                      <span className="text-[10px] text-[#8B7355]">Save the current volume + prices for quick reuse</span>
+                      <span className="text-[10px] text-[#8B7355]">Save today's Diesel price for quick reuse</span>
                     </div>
                     <div className="flex gap-2">
                       <Input
@@ -1012,9 +1012,7 @@ export default function Outreach() {
                       <div key={key} className="space-y-1">
                         <span className="text-[11px] text-[#C4A882]">
                           {key === "customer_name" ? "Customer name"
-                            : key === "quote_date" ? "Quote date"
-                            : key === "validity"   ? "Validity"
-                            : "Weekly volume"}
+                            : "Validity"}
                         </span>
                         <Input
                           value={vars[key] ?? ""}
@@ -1030,31 +1028,6 @@ export default function Outreach() {
                         )}
                       </div>
                     ))}
-                  </div>
-
-                  {/* Pricing simulator */}
-                  <div className="space-y-2 rounded border border-[#6B5240] bg-[#120a04] p-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">Calculator</span>
-                      <span className="text-[10px] text-[#8B7355]">
-                        Buy: {latestBuyPrice ? `$${latestBuyPrice.toFixed(4)}/L` : "—"}
-                        {matchedTier && ` · ${matchedTier.tier_name} +${matchedTier.margin_percent}%`}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-xs text-[#F5E6D0]">Diesel only</span>
-                      <Button
-                        type="button"
-                        onClick={calcAndApplyPricing}
-                        disabled={!latestBuyPrice || !matchedTier}
-                        className="ml-auto h-9 bg-[#E8461E] hover:bg-[#c93a17] text-white text-xs px-3"
-                      >
-                        Calculate from volume
-                      </Button>
-                    </div>
-                    {!matchedTier && (
-                      <div className="text-[10px] text-[#C4A882]">Enter weekly volume above to match a tier.</div>
-                    )}
                   </div>
 
                   {/* Fuel pricing rows */}
