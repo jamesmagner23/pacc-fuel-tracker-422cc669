@@ -1205,7 +1205,7 @@ export default function Outreach() {
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   {exportingPdf
                     ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
-                    : (<><Download className="h-4 w-4 mr-2" /> Export clickable PDF</>)}
+                    : (<><Download className="h-4 w-4 mr-2" /> Download PDF quote</>)}
                 </Button>
               </div>
             </>
