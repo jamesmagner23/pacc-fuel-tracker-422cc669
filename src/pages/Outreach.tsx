@@ -414,12 +414,12 @@ export default function Outreach() {
   // Returns "" when no fuel rows have any data so we never render an empty table.
   const pricingBreakdownHtml = useMemo(() => {
     const rows: { label: string; ex: number; inc: number }[] = [];
-    (["diesel", "ulp", "adblue"] as const).forEach(p => {
+    ACTIVE_FUELS.forEach(p => {
       const ex  = parseFloat((vars[`${p}_price`]     ?? "").trim());
       const inc = parseFloat((vars[`${p}_price_inc`] ?? "").trim());
       if (!Number.isFinite(ex) && !Number.isFinite(inc)) return;
       rows.push({
-        label: p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel",
+        label: "Diesel",
         ex:  Number.isFinite(ex)  ? ex  : (Number.isFinite(inc) ? inc / 1.1 : 0),
         inc: Number.isFinite(inc) ? inc : (Number.isFinite(ex)  ? ex  * 1.1 : 0),
       });
