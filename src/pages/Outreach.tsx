@@ -22,7 +22,7 @@ import { exportEmailHtmlToPdf } from "@/lib/emailPdf";
 import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
 // Keys handled by the dedicated Pricing panel (hidden from generic var grid)
-const PRICING_META_KEYS = ["customer_name", "quote_date", "validity", "volume"] as const;
+const PRICING_META_KEYS = ["customer_name", "quote_date", "validity"] as const;
 // Diesel-only pricing template. ULP/AdBlue intentionally removed from the UI;
 // the underlying DB columns are preserved for backward compatibility.
 const PRICING_FUEL_KEYS = [
@@ -32,14 +32,15 @@ const ACTIVE_FUELS = ["diesel"] as const;
 type ActiveFuel = typeof ACTIVE_FUELS[number];
 const PRICING_KEYS = new Set<string>([...PRICING_META_KEYS, ...PRICING_FUEL_KEYS, "extra_terms"]);
 const NON_DIESEL_VARIABLES = new Set(["ulp_price", "ulp_price_inc", "adblue_price", "adblue_price_inc"]);
+const SUPPRESSED_PRICING_VARIABLES = new Set([...NON_DIESEL_VARIABLES, "volume"]);
 
 function stripNonDieselPricingHtml(html: string): string {
   if (!html) return html;
   if (typeof DOMParser === "undefined") return html;
   const doc = new DOMParser().parseFromString(html, "text/html");
-  const hasNonDiesel = (text: string) => /(?:unleaded|adblue|ulp_price|adblue_price)/i.test(text);
-  Array.from(doc.querySelectorAll("tr")).reverse().forEach(row => {
-    if (hasNonDiesel(row.textContent ?? "")) row.remove();
+  const hasRemovedPricing = (text: string) => /(?:unleaded|adblue|ulp_price|adblue_price|indicative volume|weekly volume|estimated weekly cost|weekly total|annual\s*\(?[×x]52|\{\{\s*volume\s*\}\}|per week into metro)/i.test(text);
+  Array.from(doc.querySelectorAll("tr, p, div")).reverse().forEach(el => {
+    if (hasRemovedPricing(el.textContent ?? "")) el.remove();
   });
   Array.from(doc.querySelectorAll("tbody, table")).reverse().forEach(el => {
     if (!el.textContent?.trim()) el.remove();
@@ -51,7 +52,7 @@ function stripNonDieselPricingText(text: string): string {
   if (!text) return text;
   return text
     .split(/\r?\n/)
-    .filter(line => !/(?:unleaded|adblue|ulp_price|adblue_price)/i.test(line))
+    .filter(line => !/(?:unleaded|adblue|ulp_price|adblue_price|indicative volume|weekly volume|estimated weekly cost|weekly total|annual\s*\(?[×x]52|\{\{\s*volume\s*\}\}|per week into metro)/i.test(line))
     .join("\n");
 }
 
@@ -60,14 +61,6 @@ function formatGst(ex: string): string {
   if (!Number.isFinite(n) || n <= 0) return "";
   return (n * 1.1).toFixed(4);
 }
-
-/** Parse a litre figure that may include commas, "L", or "litres" suffix. */
-function parseLitres(s: string): number {
-  const n = parseFloat(String(s).replace(/[^\d.]/g, ""));
-  return Number.isFinite(n) ? n : 0;
-}
-
-type PricingTierRow = { min_litres: number; max_litres: number | null; margin_percent: number; tier_name: string };
 
 type Person = {
   id: number;
