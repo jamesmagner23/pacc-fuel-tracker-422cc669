@@ -543,7 +543,7 @@ export default function Outreach() {
     try {
       await exportEmailHtmlToPdf({
         html: renderedHtml,
-        filename: `${activeTemplate.name}-${selected?.org_name || selected?.name || "campaign"}`,
+        filename: `quote-${selected?.org_name || selected?.name || "customer"}-${new Date().toISOString().slice(0,10)}`,
       });
       toast({ title: "PDF exported", description: "Clickable links are preserved in the PDF." });
     } catch (e) {
@@ -1205,7 +1205,7 @@ export default function Outreach() {
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   {exportingPdf
                     ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
-                    : (<><Download className="h-4 w-4 mr-2" /> Export clickable PDF</>)}
+                    : (<><Download className="h-4 w-4 mr-2" /> Download PDF quote</>)}
                 </Button>
               </div>
             </>
