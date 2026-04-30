@@ -1320,7 +1320,7 @@ export default function Outreach() {
                 </summary>
                 <div className="p-2 border-t border-[#6B5240]">
                   <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
-                    <iframe title="Email preview" srcDoc={previewHtml} className="w-full h-[420px] border-0" />
+                    <iframe title="Email preview" srcDoc={safePreviewHtml} className="w-full h-[420px] border-0" />
                   </div>
                   {bcc && (
                     <div className="text-[11px] text-[#C4A882] mt-2">
@@ -1344,7 +1344,7 @@ export default function Outreach() {
                 </div>
                 <TabsContent value="html" className="mt-3">
                   <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
-                    <iframe title="Email preview" srcDoc={previewHtml} className="w-full h-[600px] border-0" />
+                    <iframe title="Email preview" srcDoc={safePreviewHtml} className="w-full h-[600px] border-0" />
                   </div>
                 </TabsContent>
                 <TabsContent value="text" className="mt-3">
@@ -1377,12 +1377,16 @@ export default function Outreach() {
                   <Mail className="h-4 w-4 mr-2" /> Open in Gmail
                 </Button>
                 <Button variant="outline" onClick={copyHtml}
+                        disabled={pricingErrorCount > 0}
+                        title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   {copiedHtml
                     ? (<><Check className="h-4 w-4 mr-2" /> HTML copied</>)
                     : (<><Copy className="h-4 w-4 mr-2" /> Copy rendered HTML</>)}
                 </Button>
-                <Button variant="outline" onClick={() => void exportPdf()} disabled={exportingPdf || !renderedHtml}
+                <Button variant="outline" onClick={() => void exportPdf()}
+                        disabled={exportingPdf || !renderedHtml || pricingErrorCount > 0}
+                        title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
                         className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
                   {exportingPdf
                     ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
@@ -1427,7 +1431,8 @@ export default function Outreach() {
             </Button>
             <Button variant="outline"
                     onClick={() => void exportPdf()}
-                    disabled={exportingPdf || !renderedHtml}
+                    disabled={exportingPdf || !renderedHtml || pricingErrorCount > 0}
+                    title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
                     className="h-12 px-4 border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818]">
               {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             </Button>
