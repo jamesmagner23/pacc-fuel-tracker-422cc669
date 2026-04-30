@@ -710,12 +710,97 @@ export default function Outreach() {
                 </Select>
               </div>
 
-              {/* Variables */}
-              {allVarKeys.length > 0 && (
+              {/* Pricing panel — only when template uses pricing keys */}
+              {allVarKeys.some(k => PRICING_KEYS.has(k)) && (
+                <div className="space-y-3 rounded-lg border border-[#6B5240] bg-[#1f150b] p-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs uppercase tracking-wide text-[#C4A882]">Today's Pricing</label>
+                    <span className="text-[10px] text-[#8B7355]">Inc-GST auto-fills at +10%</span>
+                  </div>
+
+                  {/* Meta row */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {PRICING_META_KEYS.filter(k => allVarKeys.includes(k)).map(key => (
+                      <div key={key} className="space-y-1">
+                        <span className="text-[11px] text-[#C4A882]">
+                          {key === "customer_name" ? "Customer name"
+                            : key === "quote_date" ? "Quote date"
+                            : key === "validity"   ? "Validity"
+                            : "Weekly volume"}
+                        </span>
+                        <Input
+                          value={vars[key] ?? ""}
+                          onChange={(e) => setVars(v => ({ ...v, [key]: e.target.value }))}
+                          placeholder={activeTemplate?.default_values?.[key] ?? ""}
+                          className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] h-11"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Fuel pricing rows */}
+                  <div className="space-y-2">
+                    {(["diesel", "ulp", "adblue"] as const).map(fuel => {
+                      const exKey  = `${fuel}_price`;
+                      const incKey = `${fuel}_price_inc`;
+                      if (!allVarKeys.includes(exKey) && !allVarKeys.includes(incKey)) return null;
+                      const label = fuel === "ulp" ? "ULP" : fuel === "adblue" ? "AdBlue" : "Diesel";
+                      return (
+                        <div key={fuel} className="grid grid-cols-[80px_1fr_1fr_auto] items-end gap-2">
+                          <span className="text-xs text-[#F5E6D0] pb-2">{label}</span>
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-[#C4A882]">Ex-GST $/L</span>
+                            <Input
+                              type="number" step="0.0001" inputMode="decimal"
+                              value={vars[exKey] ?? ""}
+                              onChange={(e) => setVars(v => ({ ...v, [exKey]: e.target.value }))}
+                              placeholder={activeTemplate?.default_values?.[exKey] ?? "0.0000"}
+                              className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] h-11"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-[#C4A882]">Inc-GST $/L</span>
+                            <Input
+                              type="number" step="0.0001" inputMode="decimal"
+                              value={vars[incKey] ?? ""}
+                              onChange={(e) => setVars(v => ({ ...v, [incKey]: e.target.value }))}
+                              placeholder={activeTemplate?.default_values?.[incKey] ?? "0.0000"}
+                              className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] h-11"
+                            />
+                          </div>
+                          <Button
+                            type="button" variant="outline"
+                            onClick={() => setVars(v => ({ ...v, [incKey]: formatGst(v[exKey] ?? "") }))}
+                            className="h-11 border-[#6B5240] bg-[#2a1d11] text-[#F5E6D0] hover:bg-[#3a2818] text-[10px] px-2"
+                            title="Calculate inc-GST from ex-GST"
+                          >
+                            +10%
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {allVarKeys.includes("extra_terms") && (
+                    <div className="space-y-1">
+                      <span className="text-[11px] text-[#C4A882]">Extra terms (optional)</span>
+                      <Textarea
+                        value={vars["extra_terms"] ?? ""}
+                        onChange={(e) => setVars(v => ({ ...v, extra_terms: e.target.value }))}
+                        placeholder={activeTemplate?.default_values?.["extra_terms"] ?? ""}
+                        className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] min-h-[60px]"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Other variables (anything not handled by the pricing panel) */}
+              {allVarKeys.filter(k => !PRICING_KEYS.has(k)).length > 0 && (
                 <div className="space-y-2">
                   <label className="text-xs uppercase tracking-wide text-[#C4A882]">Variables</label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {allVarKeys.map(key => (
+                    {allVarKeys.filter(k => !PRICING_KEYS.has(k)).map(key => (
                       <div key={key} className="space-y-1">
                         <span className="text-[11px] text-[#C4A882] font-mono">{`{{${key}}}`}</span>
                         <Input
