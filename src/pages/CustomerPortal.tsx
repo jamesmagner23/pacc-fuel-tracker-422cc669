@@ -753,6 +753,7 @@ export default function CustomerPortal() {
                 transactions={filteredTransactions}
                 clientAccountId={clientAccountId}
                 periodLabel={PERIOD_LABELS[period]}
+                companyName={companyName}
               />
             )}
             {activeTab === "06 Emissions" && (
