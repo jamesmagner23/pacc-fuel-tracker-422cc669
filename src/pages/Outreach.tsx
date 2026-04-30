@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,29 @@ const PRICING_FUEL_KEYS = [
 const ACTIVE_FUELS = ["diesel"] as const;
 type ActiveFuel = typeof ACTIVE_FUELS[number];
 const PRICING_KEYS = new Set<string>([...PRICING_META_KEYS, ...PRICING_FUEL_KEYS, "extra_terms"]);
+const NON_DIESEL_VARIABLES = new Set(["ulp_price", "ulp_price_inc", "adblue_price", "adblue_price_inc"]);
+
+function stripNonDieselPricingHtml(html: string): string {
+  if (!html) return html;
+  if (typeof DOMParser === "undefined") return html;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const hasNonDiesel = (text: string) => /(?:unleaded|adblue|ulp_price|adblue_price)/i.test(text);
+  Array.from(doc.querySelectorAll("tr")).reverse().forEach(row => {
+    if (hasNonDiesel(row.textContent ?? "")) row.remove();
+  });
+  Array.from(doc.querySelectorAll("tbody, table")).reverse().forEach(el => {
+    if (!el.textContent?.trim()) el.remove();
+  });
+  return `<!doctype html>\n${doc.documentElement.outerHTML}`;
+}
+
+function stripNonDieselPricingText(text: string): string {
+  if (!text) return text;
+  return text
+    .split(/\r?\n/)
+    .filter(line => !/(?:unleaded|adblue|ulp_price|adblue_price)/i.test(line))
+    .join("\n");
+}
 
 function formatGst(ex: string): string {
   const n = parseFloat(ex);
@@ -399,74 +422,23 @@ export default function Outreach() {
     [activeTemplate, vars]
   );
   const renderedText = useMemo(
-    () => activeTemplate ? normalizePortalDemoLinks(renderTemplate(activeTemplate.text_body, vars)) : "",
+    () => activeTemplate ? normalizePortalDemoLinks(stripNonDieselPricingText(renderTemplate(activeTemplate.text_body, vars))) : "",
     [activeTemplate, vars]
   );
   const renderedHtml = useMemo(
-    () => activeTemplate ? normalizePortalDemoLinks(renderTemplate(activeTemplate.html_body, vars)) : "",
+    () => activeTemplate ? normalizePortalDemoLinks(stripNonDieselPricingHtml(renderTemplate(activeTemplate.html_body, vars))) : "",
     [activeTemplate, vars]
   );
-
-  // Build a clear, email-safe pricing breakdown table from the editor inputs.
-  // Returns "" when no fuel rows have any data so we never render an empty table.
-  const pricingBreakdownHtml = useMemo(() => {
-    const rows: { label: string; ex: number; inc: number }[] = [];
-    ACTIVE_FUELS.forEach(p => {
-      const ex  = parseFloat((vars[`${p}_price`]     ?? "").trim());
-      const inc = parseFloat((vars[`${p}_price_inc`] ?? "").trim());
-      if (!Number.isFinite(ex) && !Number.isFinite(inc)) return;
-      rows.push({
-        label: "Diesel",
-        ex:  Number.isFinite(ex)  ? ex  : (Number.isFinite(inc) ? inc / 1.1 : 0),
-        inc: Number.isFinite(inc) ? inc : (Number.isFinite(ex)  ? ex  * 1.1 : 0),
-      });
-    });
-    if (rows.length === 0) return "";
-
-    const fmt = (n: number) => `$${n.toFixed(4)}`;
-    const tr = rows.map(r => `
-      <tr>
-        <td style="padding:10px 12px;border-bottom:1px solid #E8DFD2;font:600 13px/1.4 Inter,Arial,sans-serif;color:#3A2818;">${r.label}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #E8DFD2;font:500 13px/1.4 Inter,Arial,sans-serif;color:#3A2818;text-align:right;font-variant-numeric:tabular-nums;">${fmt(r.ex)} <span style="color:#8B7355;font-size:11px;">/L</span></td>
-        <td style="padding:10px 12px;border-bottom:1px solid #E8DFD2;font:600 13px/1.4 Inter,Arial,sans-serif;color:#E8461E;text-align:right;font-variant-numeric:tabular-nums;">${fmt(r.inc)} <span style="color:#8B7355;font-size:11px;font-weight:500;">/L</span></td>
-      </tr>`).join("");
-
-    return `
-<!-- live-preview pricing breakdown (preview only) -->
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
-       style="border-collapse:collapse;margin:18px 0;border:1px solid #E8DFD2;border-radius:8px;overflow:hidden;background:#FFF9F1;">
-  <thead>
-    <tr style="background:#3A2818;">
-      <th style="padding:10px 12px;text-align:left;font:600 11px/1.2 Inter,Arial,sans-serif;color:#F5E6D0;letter-spacing:.06em;text-transform:uppercase;">Product</th>
-      <th style="padding:10px 12px;text-align:right;font:600 11px/1.2 Inter,Arial,sans-serif;color:#F5E6D0;letter-spacing:.06em;text-transform:uppercase;">Ex-GST $/L</th>
-      <th style="padding:10px 12px;text-align:right;font:600 11px/1.2 Inter,Arial,sans-serif;color:#F5E6D0;letter-spacing:.06em;text-transform:uppercase;">Inc-GST $/L</th>
-    </tr>
-  </thead>
-  <tbody>${tr}</tbody>
-  <tfoot>
-    <tr><td colspan="3" style="padding:8px 12px;background:#F5E6D0;font:500 11px/1.4 Inter,Arial,sans-serif;color:#6B5240;">
-      Inc-GST shown at 10% above Ex-GST. Prices in AUD per litre.
-    </td></tr>
-  </tfoot>
-</table>`;
-  }, [vars]);
-
-  // HTML used inside the live preview iframe — injects the pricing-breakdown
-  // table just before </body> (or appended) so the editor changes are visible
-  // even if the underlying template doesn't render the prices in tabular form.
-  const previewHtml = useMemo(() => {
-    if (!renderedHtml) return "";
-    if (!pricingBreakdownHtml) return renderedHtml;
-    if (/<\/body>/i.test(renderedHtml)) {
-      return renderedHtml.replace(/<\/body>/i, `${pricingBreakdownHtml}</body>`);
-    }
-    return renderedHtml + pricingBreakdownHtml;
-  }, [renderedHtml, pricingBreakdownHtml]);
+  const previewHtml = renderedHtml;
 
   const allVarKeys = useMemo(() => {
     if (!activeTemplate) return [];
-    const declared = activeTemplate.variables ?? [];
-    const inferred = extractVariables(activeTemplate.subject, activeTemplate.text_body, activeTemplate.html_body);
+    const declared = (activeTemplate.variables ?? []).filter(k => !NON_DIESEL_VARIABLES.has(k));
+    const inferred = extractVariables(
+      activeTemplate.subject,
+      stripNonDieselPricingText(activeTemplate.text_body),
+      stripNonDieselPricingHtml(activeTemplate.html_body),
+    ).filter(k => !NON_DIESEL_VARIABLES.has(k));
     return Array.from(new Set([...declared, ...inferred]));
   }, [activeTemplate]);
 
@@ -1191,82 +1163,6 @@ export default function Outreach() {
                       );
                     })}
                   </div>
-
-                  {/* Estimated weekly cost summary */}
-                  {(() => {
-                    const weeklyL = parseLitres(vars["volume"] ?? "");
-                    const selected = ACTIVE_FUELS.slice();
-                    if (!weeklyL || selected.length === 0) {
-                      return (
-                        <div className="rounded border border-[#6B5240] bg-[#120a04] p-3 text-[11px] text-[#C4A882]">
-                          Enter weekly volume to see estimated diesel cost.
-                        </div>
-                      );
-                    }
-                    const perProductL = weeklyL / selected.length;
-                    const fmt = (n: number) =>
-                      n.toLocaleString("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 2 });
-                    const rows = selected.map(p => {
-                      const ex = parseFloat(vars[`${p}_price`] ?? "") || 0;
-                      const inc = parseFloat(vars[`${p}_price_inc`] ?? "") || 0;
-                      return {
-                        key: p,
-                        label: "Diesel",
-                        litres: perProductL,
-                        ex: ex * perProductL,
-                        inc: inc * perProductL,
-                      };
-                    });
-                    const totals = rows.reduce(
-                      (acc, r) => ({ ex: acc.ex + r.ex, inc: acc.inc + r.inc, gst: acc.gst + (r.inc - r.ex) }),
-                      { ex: 0, inc: 0, gst: 0 }
-                    );
-                    return (
-                      <div className="rounded border border-[#6B5240] bg-[#120a04] p-3 space-y-2">
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">
-                            Estimated weekly cost
-                          </span>
-                          <span className="text-[10px] text-[#8B7355]">
-                            {weeklyL.toLocaleString("en-AU")} L total
-                            {selected.length > 1 && ` · split equally across ${selected.length} products`}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-1 text-xs">
-                          <span className="text-[10px] text-[#C4A882]">Product</span>
-                          <span className="text-[10px] text-[#C4A882] text-right">Litres</span>
-                          <span className="text-[10px] text-[#C4A882] text-right">Ex-GST</span>
-                          <span className="text-[10px] text-[#C4A882] text-right">Inc-GST</span>
-                          {rows.map(r => (
-                            <React.Fragment key={r.key}>
-                              <span className="text-[#F5E6D0]">{r.label}</span>
-                              <span className="text-[#F5E6D0] text-right tabular-nums">
-                                {Math.round(r.litres).toLocaleString("en-AU")}
-                              </span>
-                              <span className="text-[#F5E6D0] text-right tabular-nums">{fmt(r.ex)}</span>
-                              <span className="text-[#F5E6D0] text-right tabular-nums">{fmt(r.inc)}</span>
-                            </React.Fragment>
-                          ))}
-                          <span className="text-[#C4A882] pt-1 border-t border-[#6B5240]">GST</span>
-                          <span className="text-right pt-1 border-t border-[#6B5240]" />
-                          <span className="text-right pt-1 border-t border-[#6B5240]" />
-                          <span className="text-[#F5E6D0] text-right tabular-nums pt-1 border-t border-[#6B5240]">
-                            {fmt(totals.gst)}
-                          </span>
-                          <span className="text-[#F5E6D0] font-semibold">Weekly total</span>
-                          <span className="text-right" />
-                          <span className="text-[#F5E6D0] font-semibold text-right tabular-nums">{fmt(totals.ex)}</span>
-                          <span className="text-[#E8461E] font-semibold text-right tabular-nums">{fmt(totals.inc)}</span>
-                          <span className="text-[10px] text-[#8B7355]">Annual (×52) inc-GST</span>
-                          <span />
-                          <span />
-                          <span className="text-[10px] text-[#C4A882] text-right tabular-nums">
-                            {fmt(totals.inc * 52)}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()}
 
                   {allVarKeys.includes("extra_terms") && (
                     <div className="space-y-1">
