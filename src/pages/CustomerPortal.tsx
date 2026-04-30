@@ -2813,7 +2813,7 @@ function AnalyticsTab({
             Machine-vs-machine and project-vs-project comparisons for {periodLabel.toLowerCase()}.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 16 }}>
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
           <div>
             <div style={labelStyle}>Tracked litres</div>
             <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: T.text }}>
@@ -2826,6 +2826,20 @@ function AnalyticsTab({
               {fmt$(totalFtc)}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={downloadRecap}
+            disabled={perMachine.length === 0}
+            style={{
+              background: T.accent, color: "#FFFFFF", border: "none",
+              borderRadius: 6, padding: "10px 14px", fontSize: 12, fontWeight: 600,
+              cursor: perMachine.length === 0 ? "not-allowed" : "pointer",
+              opacity: perMachine.length === 0 ? 0.5 : 1,
+              minHeight: 44,
+            }}
+          >
+            ↓ Download recap PDF
+          </button>
         </div>
       </div>
 
