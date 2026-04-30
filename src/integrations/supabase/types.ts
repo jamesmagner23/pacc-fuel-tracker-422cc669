@@ -926,6 +926,57 @@ export type Database = {
           },
         ]
       }
+      pricing_presets: {
+        Row: {
+          adblue_price: number | null
+          adblue_price_inc: number | null
+          created_at: string
+          created_by: string | null
+          diesel_price: number | null
+          diesel_price_inc: number | null
+          id: string
+          name: string
+          notes: string | null
+          product_mix: Json
+          ulp_price: number | null
+          ulp_price_inc: number | null
+          updated_at: string
+          weekly_volume: string | null
+        }
+        Insert: {
+          adblue_price?: number | null
+          adblue_price_inc?: number | null
+          created_at?: string
+          created_by?: string | null
+          diesel_price?: number | null
+          diesel_price_inc?: number | null
+          id?: string
+          name: string
+          notes?: string | null
+          product_mix?: Json
+          ulp_price?: number | null
+          ulp_price_inc?: number | null
+          updated_at?: string
+          weekly_volume?: string | null
+        }
+        Update: {
+          adblue_price?: number | null
+          adblue_price_inc?: number | null
+          created_at?: string
+          created_by?: string | null
+          diesel_price?: number | null
+          diesel_price_inc?: number | null
+          id?: string
+          name?: string
+          notes?: string | null
+          product_mix?: Json
+          ulp_price?: number | null
+          ulp_price_inc?: number | null
+          updated_at?: string
+          weekly_volume?: string | null
+        }
+        Relationships: []
+      }
       pricing_tiers: {
         Row: {
           created_at: string | null

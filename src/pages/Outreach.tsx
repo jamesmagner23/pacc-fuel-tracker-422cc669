@@ -209,6 +209,91 @@ export default function Outreach() {
     setVars(v => ({ ...v, ...next }));
   }, [latestBuyPrice, matchedTier, productMix]);
 
+  // ── Pricing presets ─────────────────────────────────────────────────────
+  type PricingPreset = {
+    id: string;
+    name: string;
+    notes: string | null;
+    weekly_volume: string | null;
+    product_mix: { diesel?: boolean; ulp?: boolean; adblue?: boolean } | null;
+    diesel_price: number | null;     diesel_price_inc: number | null;
+    ulp_price: number | null;        ulp_price_inc: number | null;
+    adblue_price: number | null;     adblue_price_inc: number | null;
+    updated_at: string;
+  };
+  const [presets, setPresets] = useState<PricingPreset[]>([]);
+  const [presetName, setPresetName] = useState("");
+  const [savingPreset, setSavingPreset] = useState(false);
+
+  const fetchPresets = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("pricing_presets")
+      .select("id,name,notes,weekly_volume,product_mix,diesel_price,diesel_price_inc,ulp_price,ulp_price_inc,adblue_price,adblue_price_inc,updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(50);
+    if (!error && data) setPresets(data as PricingPreset[]);
+  }, []);
+  useEffect(() => { void fetchPresets(); }, [fetchPresets]);
+
+  const savePreset = useCallback(async () => {
+    const name = presetName.trim();
+    if (!name) return;
+    setSavingPreset(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const num = (k: string) => {
+        const n = parseFloat((vars[k] ?? "").trim());
+        return Number.isFinite(n) ? n : null;
+      };
+      const payload = {
+        name,
+        weekly_volume: vars["volume"] ?? null,
+        product_mix: productMix,
+        diesel_price:     num("diesel_price"),
+        diesel_price_inc: num("diesel_price_inc"),
+        ulp_price:        num("ulp_price"),
+        ulp_price_inc:    num("ulp_price_inc"),
+        adblue_price:     num("adblue_price"),
+        adblue_price_inc: num("adblue_price_inc"),
+        created_by: user?.id ?? null,
+      };
+      const { error } = await supabase.from("pricing_presets").insert(payload);
+      if (error) throw error;
+      setPresetName("");
+      await fetchPresets();
+    } catch (e) {
+      console.error("savePreset failed", e);
+    } finally {
+      setSavingPreset(false);
+    }
+  }, [presetName, vars, productMix, fetchPresets]);
+
+  const loadPreset = useCallback((p: PricingPreset) => {
+    const fmt = (n: number | null) => (n == null ? "" : Number(n).toFixed(4));
+    setVars(v => ({
+      ...v,
+      ...(p.weekly_volume != null ? { volume: p.weekly_volume } : {}),
+      diesel_price:     fmt(p.diesel_price),
+      diesel_price_inc: fmt(p.diesel_price_inc),
+      ulp_price:        fmt(p.ulp_price),
+      ulp_price_inc:    fmt(p.ulp_price_inc),
+      adblue_price:     fmt(p.adblue_price),
+      adblue_price_inc: fmt(p.adblue_price_inc),
+    }));
+    if (p.product_mix) {
+      setProductMix({
+        diesel: !!p.product_mix.diesel,
+        ulp:    !!p.product_mix.ulp,
+        adblue: !!p.product_mix.adblue,
+      });
+    }
+  }, []);
+
+  const deletePreset = useCallback(async (id: string) => {
+    const { error } = await supabase.from("pricing_presets").delete().eq("id", id);
+    if (!error) await fetchPresets();
+  }, [fetchPresets]);
+
   // Send statuses (keyed by recipient_email)
   const [statuses, setStatuses] = useState<Record<string, SendStatus>>({});
   const [refreshingStatus, setRefreshingStatus] = useState(false);
@@ -891,6 +976,61 @@ export default function Outreach() {
                   <div className="flex items-center justify-between">
                     <label className="text-xs uppercase tracking-wide text-[#C4A882]">Today's Pricing</label>
                     <span className="text-[10px] text-[#8B7355]">Inc-GST auto-fills at +10%</span>
+                  </div>
+
+                  {/* Pricing presets */}
+                  <div className="space-y-2 rounded border border-[#6B5240] bg-[#120a04] p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">Presets</span>
+                      <span className="text-[10px] text-[#8B7355]">Save the current volume + prices for quick reuse</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={presetName}
+                        onChange={(e) => setPresetName(e.target.value)}
+                        placeholder='e.g. "Mon Diesel" or "Week 18 Mix"'
+                        maxLength={80}
+                        className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] h-10 text-xs"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => void savePreset()}
+                        disabled={!presetName.trim() || savingPreset}
+                        className="h-10 bg-[#E8461E] hover:bg-[#c93a17] text-white text-xs px-3"
+                      >
+                        {savingPreset ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save preset"}
+                      </Button>
+                    </div>
+                    {presets.length === 0 ? (
+                      <div className="text-[10px] text-[#8B7355]">No saved presets yet.</div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {presets.map(p => (
+                          <div
+                            key={p.id}
+                            className="group inline-flex items-center gap-1 rounded border border-[#6B5240] bg-[#1f150b] pl-2 pr-1 py-1"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => loadPreset(p)}
+                              title={`Load preset · saved ${new Date(p.updated_at).toLocaleDateString("en-AU")}`}
+                              className="text-[11px] text-[#F5E6D0] hover:text-[#FFB199]"
+                            >
+                              {p.name}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void deletePreset(p.id)}
+                              title="Delete preset"
+                              className="text-[10px] text-[#8B7355] hover:text-[#E8461E] px-1"
+                              aria-label={`Delete ${p.name}`}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {pricingErrorCount > 0 && (
