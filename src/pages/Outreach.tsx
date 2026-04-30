@@ -978,6 +978,61 @@ export default function Outreach() {
                     <span className="text-[10px] text-[#8B7355]">Inc-GST auto-fills at +10%</span>
                   </div>
 
+                  {/* Pricing presets */}
+                  <div className="space-y-2 rounded border border-[#6B5240] bg-[#120a04] p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">Presets</span>
+                      <span className="text-[10px] text-[#8B7355]">Save the current volume + prices for quick reuse</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={presetName}
+                        onChange={(e) => setPresetName(e.target.value)}
+                        placeholder='e.g. "Mon Diesel" or "Week 18 Mix"'
+                        maxLength={80}
+                        className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] h-10 text-xs"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => void savePreset()}
+                        disabled={!presetName.trim() || savingPreset}
+                        className="h-10 bg-[#E8461E] hover:bg-[#c93a17] text-white text-xs px-3"
+                      >
+                        {savingPreset ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save preset"}
+                      </Button>
+                    </div>
+                    {presets.length === 0 ? (
+                      <div className="text-[10px] text-[#8B7355]">No saved presets yet.</div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {presets.map(p => (
+                          <div
+                            key={p.id}
+                            className="group inline-flex items-center gap-1 rounded border border-[#6B5240] bg-[#1f150b] pl-2 pr-1 py-1"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => loadPreset(p)}
+                              title={`Load preset · saved ${new Date(p.updated_at).toLocaleDateString("en-AU")}`}
+                              className="text-[11px] text-[#F5E6D0] hover:text-[#FFB199]"
+                            >
+                              {p.name}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void deletePreset(p.id)}
+                              title="Delete preset"
+                              className="text-[10px] text-[#8B7355] hover:text-[#E8461E] px-1"
+                              aria-label={`Delete ${p.name}`}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {pricingErrorCount > 0 && (
                     <div
                       role="alert"
