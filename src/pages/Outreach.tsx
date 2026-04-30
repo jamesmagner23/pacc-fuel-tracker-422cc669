@@ -873,6 +873,82 @@ export default function Outreach() {
                     })}
                   </div>
 
+                  {/* Estimated weekly cost summary */}
+                  {(() => {
+                    const weeklyL = parseLitres(vars["volume"] ?? "");
+                    const selected = (["diesel", "ulp", "adblue"] as const).filter(p => productMix[p]);
+                    if (!weeklyL || selected.length === 0) {
+                      return (
+                        <div className="rounded border border-[#6B5240] bg-[#120a04] p-3 text-[11px] text-[#C4A882]">
+                          Enter weekly volume and select at least one product to see estimated cost.
+                        </div>
+                      );
+                    }
+                    const perProductL = weeklyL / selected.length;
+                    const fmt = (n: number) =>
+                      n.toLocaleString("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 2 });
+                    const rows = selected.map(p => {
+                      const ex = parseFloat(vars[`${p}_price`] ?? "") || 0;
+                      const inc = parseFloat(vars[`${p}_price_inc`] ?? "") || 0;
+                      return {
+                        key: p,
+                        label: p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel",
+                        litres: perProductL,
+                        ex: ex * perProductL,
+                        inc: inc * perProductL,
+                      };
+                    });
+                    const totals = rows.reduce(
+                      (acc, r) => ({ ex: acc.ex + r.ex, inc: acc.inc + r.inc, gst: acc.gst + (r.inc - r.ex) }),
+                      { ex: 0, inc: 0, gst: 0 }
+                    );
+                    return (
+                      <div className="rounded border border-[#6B5240] bg-[#120a04] p-3 space-y-2">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">
+                            Estimated weekly cost
+                          </span>
+                          <span className="text-[10px] text-[#8B7355]">
+                            {weeklyL.toLocaleString("en-AU")} L total
+                            {selected.length > 1 && ` · split equally across ${selected.length} products`}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-1 text-xs">
+                          <span className="text-[10px] text-[#C4A882]">Product</span>
+                          <span className="text-[10px] text-[#C4A882] text-right">Litres</span>
+                          <span className="text-[10px] text-[#C4A882] text-right">Ex-GST</span>
+                          <span className="text-[10px] text-[#C4A882] text-right">Inc-GST</span>
+                          {rows.map(r => (
+                            <React.Fragment key={r.key}>
+                              <span className="text-[#F5E6D0]">{r.label}</span>
+                              <span className="text-[#F5E6D0] text-right tabular-nums">
+                                {Math.round(r.litres).toLocaleString("en-AU")}
+                              </span>
+                              <span className="text-[#F5E6D0] text-right tabular-nums">{fmt(r.ex)}</span>
+                              <span className="text-[#F5E6D0] text-right tabular-nums">{fmt(r.inc)}</span>
+                            </React.Fragment>
+                          ))}
+                          <span className="text-[#C4A882] pt-1 border-t border-[#6B5240]">GST</span>
+                          <span className="text-right pt-1 border-t border-[#6B5240]" />
+                          <span className="text-right pt-1 border-t border-[#6B5240]" />
+                          <span className="text-[#F5E6D0] text-right tabular-nums pt-1 border-t border-[#6B5240]">
+                            {fmt(totals.gst)}
+                          </span>
+                          <span className="text-[#F5E6D0] font-semibold">Weekly total</span>
+                          <span className="text-right" />
+                          <span className="text-[#F5E6D0] font-semibold text-right tabular-nums">{fmt(totals.ex)}</span>
+                          <span className="text-[#E8461E] font-semibold text-right tabular-nums">{fmt(totals.inc)}</span>
+                          <span className="text-[10px] text-[#8B7355]">Annual (×52) inc-GST</span>
+                          <span />
+                          <span />
+                          <span className="text-[10px] text-[#C4A882] text-right tabular-nums">
+                            {fmt(totals.inc * 52)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {allVarKeys.includes("extra_terms") && (
                     <div className="space-y-1">
                       <span className="text-[11px] text-[#C4A882]">Extra terms (optional)</span>
