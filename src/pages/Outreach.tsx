@@ -342,6 +342,68 @@ export default function Outreach() {
     return Array.from(new Set([...declared, ...inferred]));
   }, [activeTemplate]);
 
+  // Validation for the pricing/meta fields shown in the "Today's Pricing" panel.
+  // Only validates keys that are actually used by the active template.
+  const pricingErrors = useMemo(() => {
+    const errs: Record<string, string> = {};
+    if (!allVarKeys.some(k => PRICING_KEYS.has(k))) return errs;
+
+    const need = (k: string) => allVarKeys.includes(k);
+    const val = (k: string) => (vars[k] ?? "").trim();
+
+    if (need("quote_date")) {
+      const v = val("quote_date");
+      if (!v) errs.quote_date = "Quote date is required.";
+      else {
+        const d = new Date(v);
+        if (Number.isNaN(d.getTime())) errs.quote_date = "Use a valid date (e.g. 30 Apr 2026).";
+        else {
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          if (d.getTime() < today.getTime() - 86_400_000) errs.quote_date = "Quote date is in the past.";
+        }
+      }
+    }
+
+    if (need("validity")) {
+      const v = val("validity");
+      if (!v) errs.validity = "Validity is required (e.g. \"7 days\").";
+      else if (v.length > 80) errs.validity = "Keep validity under 80 characters.";
+    }
+
+    if (need("volume")) {
+      const v = val("volume");
+      if (!v) errs.volume = "Weekly volume is required.";
+      else if (parseLitres(v) <= 0) errs.volume = "Enter a positive litre figure (e.g. 2,500 L).";
+    }
+
+    (["diesel", "ulp", "adblue"] as const).forEach(p => {
+      const exKey = `${p}_price`;
+      const incKey = `${p}_price_inc`;
+      if (!need(exKey) && !need(incKey)) return;
+      if (!productMix[p]) return; // intentionally blank when not in mix
+
+      if (need(exKey)) {
+        const raw = val(exKey);
+        const n = parseFloat(raw);
+        if (!raw) errs[exKey] = "Required.";
+        else if (!Number.isFinite(n) || n <= 0) errs[exKey] = "Must be a positive number.";
+        else if (n > 10) errs[exKey] = "Looks too high — enter $/L.";
+      }
+      if (need(incKey)) {
+        const raw = val(incKey);
+        const n = parseFloat(raw);
+        const ex = parseFloat(val(exKey));
+        if (!raw) errs[incKey] = "Required.";
+        else if (!Number.isFinite(n) || n <= 0) errs[incKey] = "Must be a positive number.";
+        else if (Number.isFinite(ex) && n + 0.0001 < ex) errs[incKey] = "Inc-GST cannot be less than ex-GST.";
+      }
+    });
+
+    return errs;
+  }, [allVarKeys, vars, productMix]);
+
+  const pricingErrorCount = Object.keys(pricingErrors).length;
+
   const selectedPipedriveUrl = useMemo(() => {
     if (!selected || selected.id <= 0) return null;
     if (pipedriveHost) return `https://${pipedriveHost}/person/${selected.id}`;
