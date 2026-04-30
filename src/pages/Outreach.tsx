@@ -837,6 +837,20 @@ export default function Outreach() {
                     <span className="text-[10px] text-[#8B7355]">Inc-GST auto-fills at +10%</span>
                   </div>
 
+                  {pricingErrorCount > 0 && (
+                    <div
+                      role="alert"
+                      className="rounded border border-[#E8461E] bg-[#3a1a0d] px-3 py-2 text-xs text-[#FFD9C8]"
+                    >
+                      <div className="font-semibold">
+                        {pricingErrorCount} field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention
+                      </div>
+                      <div className="text-[11px] text-[#F5C9B5] mt-0.5">
+                        Fix the highlighted inputs below before sending.
+                      </div>
+                    </div>
+                  )}
+
                   {/* Meta row */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {PRICING_META_KEYS.filter(k => allVarKeys.includes(k)).map(key => (
@@ -851,8 +865,14 @@ export default function Outreach() {
                           value={vars[key] ?? ""}
                           onChange={(e) => setVars(v => ({ ...v, [key]: e.target.value }))}
                           placeholder={activeTemplate?.default_values?.[key] ?? ""}
-                          className="bg-[#120a04] border-[#6B5240] text-[#F5E6D0] h-11"
+                          aria-invalid={!!pricingErrors[key]}
+                          className={`bg-[#120a04] text-[#F5E6D0] h-11 ${
+                            pricingErrors[key] ? "border-[#E8461E] focus-visible:ring-[#E8461E]" : "border-[#6B5240]"
+                          }`}
                         />
+                        {pricingErrors[key] && (
+                          <span className="block text-[10px] text-[#FFB199]">{pricingErrors[key]}</span>
+                        )}
                       </div>
                     ))}
                   </div>
