@@ -22,7 +22,7 @@ import { exportEmailHtmlToPdf } from "@/lib/emailPdf";
 import EmailActivityLog from "@/components/outreach/EmailActivityLog";
 
 // Keys handled by the dedicated Pricing panel (hidden from generic var grid)
-const PRICING_META_KEYS = ["customer_name", "quote_date", "validity", "volume"] as const;
+const PRICING_META_KEYS = ["customer_name", "quote_date", "validity"] as const;
 // Diesel-only pricing template. ULP/AdBlue intentionally removed from the UI;
 // the underlying DB columns are preserved for backward compatibility.
 const PRICING_FUEL_KEYS = [
@@ -32,14 +32,15 @@ const ACTIVE_FUELS = ["diesel"] as const;
 type ActiveFuel = typeof ACTIVE_FUELS[number];
 const PRICING_KEYS = new Set<string>([...PRICING_META_KEYS, ...PRICING_FUEL_KEYS, "extra_terms"]);
 const NON_DIESEL_VARIABLES = new Set(["ulp_price", "ulp_price_inc", "adblue_price", "adblue_price_inc"]);
+const SUPPRESSED_PRICING_VARIABLES = new Set([...NON_DIESEL_VARIABLES, "volume"]);
 
 function stripNonDieselPricingHtml(html: string): string {
   if (!html) return html;
   if (typeof DOMParser === "undefined") return html;
   const doc = new DOMParser().parseFromString(html, "text/html");
-  const hasNonDiesel = (text: string) => /(?:unleaded|adblue|ulp_price|adblue_price)/i.test(text);
-  Array.from(doc.querySelectorAll("tr")).reverse().forEach(row => {
-    if (hasNonDiesel(row.textContent ?? "")) row.remove();
+  const hasRemovedPricing = (text: string) => /(?:unleaded|adblue|ulp_price|adblue_price|indicative volume|weekly volume|estimated weekly cost|weekly total|annual\s*\(?[×x]52|\{\{\s*volume\s*\}\}|per week into metro)/i.test(text);
+  Array.from(doc.querySelectorAll("tr, p, div")).reverse().forEach(el => {
+    if (hasRemovedPricing(el.textContent ?? "")) el.remove();
   });
   Array.from(doc.querySelectorAll("tbody, table")).reverse().forEach(el => {
     if (!el.textContent?.trim()) el.remove();
@@ -51,7 +52,7 @@ function stripNonDieselPricingText(text: string): string {
   if (!text) return text;
   return text
     .split(/\r?\n/)
-    .filter(line => !/(?:unleaded|adblue|ulp_price|adblue_price)/i.test(line))
+    .filter(line => !/(?:unleaded|adblue|ulp_price|adblue_price|indicative volume|weekly volume|estimated weekly cost|weekly total|annual\s*\(?[×x]52|\{\{\s*volume\s*\}\}|per week into metro)/i.test(line))
     .join("\n");
 }
 
@@ -60,14 +61,6 @@ function formatGst(ex: string): string {
   if (!Number.isFinite(n) || n <= 0) return "";
   return (n * 1.1).toFixed(4);
 }
-
-/** Parse a litre figure that may include commas, "L", or "litres" suffix. */
-function parseLitres(s: string): number {
-  const n = parseFloat(String(s).replace(/[^\d.]/g, ""));
-  return Number.isFinite(n) ? n : 0;
-}
-
-type PricingTierRow = { min_litres: number; max_litres: number | null; margin_percent: number; tier_name: string };
 
 type Person = {
   id: number;
@@ -185,43 +178,6 @@ export default function Outreach() {
   // Variable values for current compose session
   const [vars, setVars] = useState<Record<string, string>>({});
 
-  // Pricing simulator state
-  const [productMix, setProductMix] = useState<{ diesel: boolean; ulp: boolean; adblue: boolean }>({
-    diesel: true, ulp: false, adblue: false,
-  });
-  const [latestBuyPrice, setLatestBuyPrice] = useState<number>(0);
-  const [pricingTiers, setPricingTiers] = useState<PricingTierRow[]>([]);
-  useEffect(() => {
-    (async () => {
-      const [{ data: bp }, { data: tiers }] = await Promise.all([
-        supabase.from("buy_prices").select("price_per_litre").order("price_date", { ascending: false }).limit(1),
-        supabase.from("pricing_tiers").select("tier_name, min_litres, max_litres, margin_percent").order("min_litres"),
-      ]);
-      if (bp?.[0]) setLatestBuyPrice(Number(bp[0].price_per_litre) || 0);
-      if (tiers) setPricingTiers(tiers as PricingTierRow[]);
-    })();
-  }, []);
-
-  const matchedTier = useMemo<PricingTierRow | null>(() => {
-    const weeklyL = parseLitres(vars["volume"] ?? "");
-    if (!weeklyL || pricingTiers.length === 0) return null;
-    return pricingTiers.find(t => weeklyL >= t.min_litres && (t.max_litres == null || weeklyL <= t.max_litres))
-        ?? pricingTiers[pricingTiers.length - 1];
-  }, [vars, pricingTiers]);
-
-  const calcAndApplyPricing = useCallback(() => {
-    if (!latestBuyPrice || !matchedTier) return;
-    const dieselEx = latestBuyPrice * (1 + matchedTier.margin_percent / 100);
-    const next: Record<string, string> = {
-      diesel_price:     dieselEx.toFixed(4),
-      diesel_price_inc: (dieselEx * 1.1).toFixed(4),
-      // Always blank — ULP/AdBlue removed from the template.
-      ulp_price: "", ulp_price_inc: "",
-      adblue_price: "", adblue_price_inc: "",
-    };
-    setVars(v => ({ ...v, ...next }));
-  }, [latestBuyPrice, matchedTier]);
-
   // ── Pricing presets ─────────────────────────────────────────────────────
   type PricingPreset = {
     id: string;
@@ -260,7 +216,7 @@ export default function Outreach() {
       };
       const payload = {
         name,
-        weekly_volume: vars["volume"] ?? null,
+        weekly_volume: null,
         // Diesel-only template: force the mix and ignore ULP/AdBlue inputs.
         product_mix: { diesel: true, ulp: false, adblue: false },
         diesel_price:     num("diesel_price"),
@@ -280,13 +236,12 @@ export default function Outreach() {
     } finally {
       setSavingPreset(false);
     }
-  }, [presetName, vars, productMix, fetchPresets]);
+  }, [presetName, vars, fetchPresets]);
 
   const loadPreset = useCallback((p: PricingPreset) => {
     const fmt = (n: number | null) => (n == null ? "" : Number(n).toFixed(4));
     setVars(v => ({
       ...v,
-      ...(p.weekly_volume != null ? { volume: p.weekly_volume } : {}),
       diesel_price:     fmt(p.diesel_price),
       diesel_price_inc: fmt(p.diesel_price_inc),
       // Diesel-only template — clear any legacy ULP/AdBlue values so they
@@ -296,7 +251,6 @@ export default function Outreach() {
       adblue_price:     "",
       adblue_price_inc: "",
     }));
-    setProductMix({ diesel: true, ulp: false, adblue: false });
   }, []);
 
   const deletePreset = useCallback(async (id: string) => {
@@ -433,12 +387,12 @@ export default function Outreach() {
 
   const allVarKeys = useMemo(() => {
     if (!activeTemplate) return [];
-    const declared = (activeTemplate.variables ?? []).filter(k => !NON_DIESEL_VARIABLES.has(k));
+    const declared = (activeTemplate.variables ?? []).filter(k => !SUPPRESSED_PRICING_VARIABLES.has(k));
     const inferred = extractVariables(
       activeTemplate.subject,
       stripNonDieselPricingText(activeTemplate.text_body),
       stripNonDieselPricingHtml(activeTemplate.html_body),
-    ).filter(k => !NON_DIESEL_VARIABLES.has(k));
+    ).filter(k => !SUPPRESSED_PRICING_VARIABLES.has(k));
     return Array.from(new Set([...declared, ...inferred]));
   }, [activeTemplate]);
 
@@ -470,12 +424,6 @@ export default function Outreach() {
       else if (v.length > 80) errs.validity = "Keep validity under 80 characters.";
     }
 
-    if (need("volume")) {
-      const v = val("volume");
-      if (!v) errs.volume = "Weekly volume is required.";
-      else if (parseLitres(v) <= 0) errs.volume = "Enter a positive litre figure (e.g. 2,500 L).";
-    }
-
     ACTIVE_FUELS.forEach(p => {
       const exKey = `${p}_price`;
       const incKey = `${p}_price_inc`;
@@ -500,7 +448,7 @@ export default function Outreach() {
     });
 
     return errs;
-  }, [allVarKeys, vars, productMix]);
+  }, [allVarKeys, vars]);
 
   const pricingErrorCount = Object.keys(pricingErrors).length;
 
@@ -993,7 +941,7 @@ export default function Outreach() {
                   <div className="space-y-2 rounded border border-[#6B5240] bg-[#120a04] p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">Presets</span>
-                      <span className="text-[10px] text-[#8B7355]">Save the current volume + prices for quick reuse</span>
+                      <span className="text-[10px] text-[#8B7355]">Save today's Diesel price for quick reuse</span>
                     </div>
                     <div className="flex gap-2">
                       <Input
@@ -1065,8 +1013,7 @@ export default function Outreach() {
                         <span className="text-[11px] text-[#C4A882]">
                           {key === "customer_name" ? "Customer name"
                             : key === "quote_date" ? "Quote date"
-                            : key === "validity"   ? "Validity"
-                            : "Weekly volume"}
+                            : "Validity"}
                         </span>
                         <Input
                           value={vars[key] ?? ""}
@@ -1082,31 +1029,6 @@ export default function Outreach() {
                         )}
                       </div>
                     ))}
-                  </div>
-
-                  {/* Pricing simulator */}
-                  <div className="space-y-2 rounded border border-[#6B5240] bg-[#120a04] p-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">Calculator</span>
-                      <span className="text-[10px] text-[#8B7355]">
-                        Buy: {latestBuyPrice ? `$${latestBuyPrice.toFixed(4)}/L` : "—"}
-                        {matchedTier && ` · ${matchedTier.tier_name} +${matchedTier.margin_percent}%`}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-xs text-[#F5E6D0]">Diesel only</span>
-                      <Button
-                        type="button"
-                        onClick={calcAndApplyPricing}
-                        disabled={!latestBuyPrice || !matchedTier}
-                        className="ml-auto h-9 bg-[#E8461E] hover:bg-[#c93a17] text-white text-xs px-3"
-                      >
-                        Calculate from volume
-                      </Button>
-                    </div>
-                    {!matchedTier && (
-                      <div className="text-[10px] text-[#C4A882]">Enter weekly volume above to match a tier.</div>
-                    )}
                   </div>
 
                   {/* Fuel pricing rows */}
