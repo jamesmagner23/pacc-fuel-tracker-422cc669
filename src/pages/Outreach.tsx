@@ -1073,17 +1073,7 @@ export default function Outreach() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
-                      {(["diesel", "ulp", "adblue"] as const).map(p => (
-                        <label key={p} className="flex items-center gap-1.5 text-xs text-[#F5E6D0] cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={productMix[p]}
-                            onChange={(e) => setProductMix(m => ({ ...m, [p]: e.target.checked }))}
-                            className="accent-[#E8461E] h-4 w-4"
-                          />
-                          {p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel"}
-                        </label>
-                      ))}
+                      <span className="text-xs text-[#F5E6D0]">Diesel only</span>
                       <Button
                         type="button"
                         onClick={calcAndApplyPricing}
@@ -1100,11 +1090,11 @@ export default function Outreach() {
 
                   {/* Fuel pricing rows */}
                   <div className="space-y-2">
-                    {(["diesel", "ulp", "adblue"] as const).map(fuel => {
+                    {ACTIVE_FUELS.map(fuel => {
                       const exKey  = `${fuel}_price`;
                       const incKey = `${fuel}_price_inc`;
                       if (!allVarKeys.includes(exKey) && !allVarKeys.includes(incKey)) return null;
-                      const label = fuel === "ulp" ? "ULP" : fuel === "adblue" ? "AdBlue" : "Diesel";
+                      const label = "Diesel";
                       return (
                         <div key={fuel} className="grid grid-cols-[80px_1fr_1fr_auto] items-end gap-2">
                           <span className="text-xs text-[#F5E6D0] pb-2">{label}</span>
