@@ -2647,17 +2647,43 @@ function AnalyticsTab({
   const totalFtc = perMachine.reduce((s, m) => s + m.ftcClaim, 0);
   const totalDeliveries = perMachine.reduce((s, m) => s + m.deliveries, 0);
 
-  function downloadRecap() {
+  /**
+   * Build the recap PDF in-memory with consistent headers/footers and proper
+   * pagination — long tables now break across pages while reprinting their
+   * column headers, and every page gets the brand band + page-number footer.
+   */
+  function buildRecapPdf() {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
     const M = 40;
+    const TOP_AFTER_HEADER = 60;     // y after the brand band
+    const BOTTOM_LIMIT = H - 50;     // last usable y before footer
+
+    const drawPageChrome = () => {
+      // Top brand band
+      doc.setFillColor(232, 70, 30);
+      doc.rect(0, 0, W, 6, "F");
+      // Top-right small wordmark
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(232, 70, 30);
+      doc.text("ANALYTICS RECAP", W - M, 28, { align: "right" });
+    };
+    const drawFooterAll = () => {
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setDrawColor(237, 227, 210);
+        doc.line(M, H - 36, W - M, H - 36);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(139, 115, 85);
+        doc.text(`${companyName} · ${periodLabel}`, M, H - 22);
+        doc.text(`Page ${i} of ${pageCount}`, W - M, H - 22, { align: "right" });
+      }
+    };
+
+    drawPageChrome();
     let y = 50;
 
-    // Brand band
-    doc.setFillColor(232, 70, 30);
-    doc.rect(0, 0, W, 6, "F");
-
-    // Header
+    // Document title
     doc.setTextColor(61, 43, 26);
     doc.setFont("helvetica", "bold"); doc.setFontSize(20);
     doc.text("Analytics Recap", M, y); y += 22;
@@ -2677,7 +2703,7 @@ function AnalyticsTab({
     kpis.forEach((k, i) => {
       const x = M + i * colW;
       doc.roundedRect(x, y, colW - 8, 56, 4, 4, "S");
-      doc.setFontSize(8); doc.setTextColor(139, 115, 85);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(139, 115, 85);
       doc.text(k.label.toUpperCase(), x + 10, y + 16);
       doc.setFontSize(15); doc.setTextColor(i === 3 ? 232 : 61, i === 3 ? 70 : 43, i === 3 ? 30 : 26);
       doc.setFont("helvetica", "bold");
@@ -2686,66 +2712,110 @@ function AnalyticsTab({
     });
     y += 78;
 
-    // Helper: section
+    // Page-break helper. Reserves `needed` pts; if it would overflow, starts a
+    // new page (with chrome) and resets y. Returns the new y.
+    const ensureSpace = (needed: number): number => {
+      if (y + needed <= BOTTOM_LIMIT) return y;
+      doc.addPage();
+      drawPageChrome();
+      y = TOP_AFTER_HEADER;
+      return y;
+    };
+
+    // Section header (orange tab + title)
     const section = (title: string) => {
+      ensureSpace(28);
       doc.setFillColor(232, 70, 30);
       doc.rect(M, y, 3, 14, "F");
       doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(61, 43, 26);
-      doc.text(title, M + 10, y + 11); y += 22;
+      doc.text(title, M + 10, y + 11);
+      y += 22;
     };
 
-    // Top machines
-    section("Top Machinery");
-    doc.setFontSize(9); doc.setTextColor(139, 115, 85);
-    doc.text("RANK    MACHINE", M, y);
-    doc.text("LITRES",     W - M - 200, y, { align: "right" });
-    doc.text("DELIVERIES", W - M - 110, y, { align: "right" });
-    doc.text("FTC",        W - M, y, { align: "right" });
-    y += 12;
-    doc.setDrawColor(237, 227, 210); doc.line(M, y, W - M, y); y += 6;
-    doc.setTextColor(61, 43, 26); doc.setFontSize(10);
-    perMachine.slice(0, 8).forEach((m, i) => {
-      doc.text(`${i + 1}.`, M, y);
-      const name = `${m.name} (${m.placa})`;
-      doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
-      doc.text(fmtL(m.litres),               W - M - 200, y, { align: "right" });
-      doc.text(m.deliveries.toLocaleString(), W - M - 110, y, { align: "right" });
-      doc.setTextColor(232, 70, 30);
-      doc.text(fmt$(m.ftcClaim),             W - M,       y, { align: "right" });
-      doc.setTextColor(61, 43, 26);
-      y += 16;
-      if (y > 760) { doc.addPage(); y = 60; }
-    });
-    y += 12;
+    // Re-usable column-header drawer for tables. Returns new y.
+    type Col = { header: string; x: number; align?: "left" | "right" };
+    const drawTableHeader = (cols: Col[]) => {
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(139, 115, 85);
+      cols.forEach(c => doc.text(c.header, c.x, y, { align: c.align ?? "left" }));
+      y += 12;
+      doc.setDrawColor(237, 227, 210); doc.line(M, y, W - M, y); y += 6;
+      doc.setTextColor(61, 43, 26); doc.setFontSize(10);
+    };
 
-    // Top projects
-    section("Top Projects");
-    doc.setFontSize(9); doc.setTextColor(139, 115, 85);
-    doc.text("RANK    PROJECT", M, y);
-    doc.text("LITRES",     W - M - 200, y, { align: "right" });
-    doc.text("MACHINES",   W - M - 110, y, { align: "right" });
-    doc.text("FTC",        W - M, y, { align: "right" });
-    y += 12;
-    doc.line(M, y, W - M, y); y += 6;
-    doc.setTextColor(61, 43, 26); doc.setFontSize(10);
-    perProject.slice(0, 8).forEach((p, i) => {
-      doc.text(`${i + 1}.`, M, y);
-      const name = p.site ? `${p.name} — ${p.site}` : p.name;
-      doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
-      doc.text(fmtL(p.litres),                W - M - 200, y, { align: "right" });
-      doc.text(p.machines.toLocaleString(),   W - M - 110, y, { align: "right" });
-      doc.setTextColor(232, 70, 30);
-      doc.text(fmt$(p.ftcClaim),              W - M,       y, { align: "right" });
-      doc.setTextColor(61, 43, 26);
-      y += 16;
-      if (y > 760) { doc.addPage(); y = 60; }
-    });
-    y += 12;
+    // Generic paginated table — reprints column headers when crossing pages.
+    const drawTable = <T,>(
+      sectionTitleText: string,
+      cols: Col[],
+      rows: T[],
+      renderRow: (r: T, i: number) => void,
+      rowHeight = 16,
+    ) => {
+      section(sectionTitleText);
+      drawTableHeader(cols);
+      rows.forEach((r, i) => {
+        if (y + rowHeight > BOTTOM_LIMIT) {
+          doc.addPage();
+          drawPageChrome();
+          y = TOP_AFTER_HEADER;
+          // Reprint section title + headers on the new page so context is preserved.
+          section(`${sectionTitleText} (continued)`);
+          drawTableHeader(cols);
+        }
+        renderRow(r, i);
+        y += rowHeight;
+      });
+      y += 12;
+    };
 
-    // Comparisons
+    // Top machines (full list, paginated)
+    drawTable(
+      "Top Machinery",
+      [
+        { header: "RANK    MACHINE", x: M },
+        { header: "LITRES",          x: W - M - 200, align: "right" },
+        { header: "DELIVERIES",      x: W - M - 110, align: "right" },
+        { header: "FTC",             x: W - M,       align: "right" },
+      ],
+      perMachine,
+      (m, i) => {
+        doc.text(`${i + 1}.`, M, y);
+        const name = `${m.name} (${m.placa})`;
+        doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
+        doc.text(fmtL(m.litres),                W - M - 200, y, { align: "right" });
+        doc.text(m.deliveries.toLocaleString(), W - M - 110, y, { align: "right" });
+        doc.setTextColor(232, 70, 30);
+        doc.text(fmt$(m.ftcClaim),              W - M,       y, { align: "right" });
+        doc.setTextColor(61, 43, 26);
+      },
+    );
+
+    // Top projects (full list, paginated)
+    drawTable(
+      "Top Projects",
+      [
+        { header: "RANK    PROJECT", x: M },
+        { header: "LITRES",          x: W - M - 200, align: "right" },
+        { header: "MACHINES",        x: W - M - 110, align: "right" },
+        { header: "FTC",             x: W - M,       align: "right" },
+      ],
+      perProject,
+      (p, i) => {
+        doc.text(`${i + 1}.`, M, y);
+        const name = p.site ? `${p.name} — ${p.site}` : p.name;
+        doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
+        doc.text(fmtL(p.litres),                W - M - 200, y, { align: "right" });
+        doc.text(p.machines.toLocaleString(),   W - M - 110, y, { align: "right" });
+        doc.setTextColor(232, 70, 30);
+        doc.text(fmt$(p.ftcClaim),              W - M,       y, { align: "right" });
+        doc.setTextColor(61, 43, 26);
+      },
+    );
+
+    // Comparisons — keep entire block on one page (no mid-block break).
     const drawCompare = (title: string, a: any, b: any, rows: { label: string; av: string; bv: string; aWin: boolean }[]) => {
       if (!a || !b) return;
-      if (y > 680) { doc.addPage(); y = 60; }
+      const blockHeight = 22 + 24 + rows.length * 18 + 14;
+      ensureSpace(blockHeight);
       section(title);
       const colW2 = (W - M * 2) / 2 - 6;
       doc.setDrawColor(237, 227, 210);
@@ -2792,16 +2862,15 @@ function AnalyticsTab({
       ]);
     }
 
-    // Footer on each page
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8); doc.setTextColor(139, 115, 85);
-      doc.text(`${companyName} · Analytics Recap · ${periodLabel}`, M, doc.internal.pageSize.getHeight() - 20);
-      doc.text(`Page ${i} of ${pageCount}`, W - M, doc.internal.pageSize.getHeight() - 20, { align: "right" });
-    }
+    drawFooterAll();
+    return doc;
+  }
 
-    doc.save(`${companyName.replace(/[^A-Za-z0-9]+/g, "-")}-analytics-${periodLabel.replace(/\s+/g, "-")}.pdf`);
+  const pdfFilename = `${companyName.replace(/[^A-Za-z0-9]+/g, "-")}-analytics-${periodLabel.replace(/\s+/g, "-")}.pdf`;
+
+  function downloadRecap() {
+    const doc = buildRecapPdf();
+    doc.save(pdfFilename);
   }
 
   return (
