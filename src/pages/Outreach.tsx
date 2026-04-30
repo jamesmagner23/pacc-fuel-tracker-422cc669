@@ -507,11 +507,11 @@ export default function Outreach() {
       else if (parseLitres(v) <= 0) errs.volume = "Enter a positive litre figure (e.g. 2,500 L).";
     }
 
-    (["diesel", "ulp", "adblue"] as const).forEach(p => {
+    ACTIVE_FUELS.forEach(p => {
       const exKey = `${p}_price`;
       const incKey = `${p}_price_inc`;
       if (!need(exKey) && !need(incKey)) return;
-      if (!productMix[p]) return; // intentionally blank when not in mix
+      // Diesel-only template — always validate.
 
       if (need(exKey)) {
         const raw = val(exKey);
