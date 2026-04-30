@@ -1012,6 +1012,7 @@ export default function Outreach() {
                       <div key={key} className="space-y-1">
                         <span className="text-[11px] text-[#C4A882]">
                           {key === "customer_name" ? "Customer name"
+                            : key === "quote_date" ? "Quote date"
                             : "Validity"}
                         </span>
                         <Input
