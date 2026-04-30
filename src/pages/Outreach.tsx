@@ -164,6 +164,51 @@ export default function Outreach() {
   // Variable values for current compose session
   const [vars, setVars] = useState<Record<string, string>>({});
 
+  // Pricing simulator state
+  const [productMix, setProductMix] = useState<{ diesel: boolean; ulp: boolean; adblue: boolean }>({
+    diesel: true, ulp: false, adblue: false,
+  });
+  const [latestBuyPrice, setLatestBuyPrice] = useState<number>(0);
+  const [pricingTiers, setPricingTiers] = useState<PricingTierRow[]>([]);
+  useEffect(() => {
+    (async () => {
+      const [{ data: bp }, { data: tiers }] = await Promise.all([
+        supabase.from("buy_prices").select("price_per_litre").order("price_date", { ascending: false }).limit(1),
+        supabase.from("pricing_tiers").select("tier_name, min_litres, max_litres, margin_percent").order("min_litres"),
+      ]);
+      if (bp?.[0]) setLatestBuyPrice(Number(bp[0].price_per_litre) || 0);
+      if (tiers) setPricingTiers(tiers as PricingTierRow[]);
+    })();
+  }, []);
+
+  const matchedTier = useMemo<PricingTierRow | null>(() => {
+    const weeklyL = parseLitres(vars["volume"] ?? "");
+    if (!weeklyL || pricingTiers.length === 0) return null;
+    return pricingTiers.find(t => weeklyL >= t.min_litres && (t.max_litres == null || weeklyL <= t.max_litres))
+        ?? pricingTiers[pricingTiers.length - 1];
+  }, [vars, pricingTiers]);
+
+  const calcAndApplyPricing = useCallback(() => {
+    if (!latestBuyPrice || !matchedTier) return;
+    const dieselEx = latestBuyPrice * (1 + matchedTier.margin_percent / 100);
+    const next: Record<string, string> = {};
+    if (productMix.diesel) {
+      next.diesel_price = dieselEx.toFixed(4);
+      next.diesel_price_inc = (dieselEx * 1.1).toFixed(4);
+    } else { next.diesel_price = ""; next.diesel_price_inc = ""; }
+    if (productMix.ulp) {
+      const ex = dieselEx + PRODUCT_OFFSETS_CPL.ulp / 100;
+      next.ulp_price = ex.toFixed(4);
+      next.ulp_price_inc = (ex * 1.1).toFixed(4);
+    } else { next.ulp_price = ""; next.ulp_price_inc = ""; }
+    if (productMix.adblue) {
+      const ex = Math.max(0.50, dieselEx + PRODUCT_OFFSETS_CPL.adblue / 100);
+      next.adblue_price = ex.toFixed(4);
+      next.adblue_price_inc = (ex * 1.1).toFixed(4);
+    } else { next.adblue_price = ""; next.adblue_price_inc = ""; }
+    setVars(v => ({ ...v, ...next }));
+  }, [latestBuyPrice, matchedTier, productMix]);
+
   // Send statuses (keyed by recipient_email)
   const [statuses, setStatuses] = useState<Record<string, SendStatus>>({});
   const [refreshingStatus, setRefreshingStatus] = useState(false);
