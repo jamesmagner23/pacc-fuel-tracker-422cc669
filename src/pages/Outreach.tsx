@@ -933,7 +933,7 @@ export default function Outreach() {
               {allVarKeys.some(k => PRICING_KEYS.has(k)) && (
                 <div className="space-y-3 rounded-lg border border-[#6B5240] bg-[#1f150b] p-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs uppercase tracking-wide text-[#C4A882]">Today's Pricing</label>
+                    <label className="text-xs uppercase tracking-wide text-[#C4A882]">Daily diesel price</label>
                     <span className="text-[10px] text-[#8B7355]">Inc-GST auto-fills at +10%</span>
                   </div>
 
@@ -941,13 +941,13 @@ export default function Outreach() {
                   <div className="space-y-2 rounded border border-[#6B5240] bg-[#120a04] p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] uppercase tracking-wide text-[#C4A882]">Presets</span>
-                      <span className="text-[10px] text-[#8B7355]">Save today's Diesel price for quick reuse</span>
+                      <span className="text-[10px] text-[#8B7355]">Save the daily Diesel price for quick reuse</span>
                     </div>
                     <div className="flex gap-2">
                       <Input
                         value={presetName}
                         onChange={(e) => setPresetName(e.target.value)}
-                        placeholder='e.g. "Mon Diesel" or "Week 18 Mix"'
+                        placeholder='e.g. "Daily Diesel"'
                         maxLength={80}
                         className="bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] h-10 text-xs"
                       />
