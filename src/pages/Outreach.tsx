@@ -335,6 +335,62 @@ export default function Outreach() {
     [activeTemplate, vars]
   );
 
+  // Build a clear, email-safe pricing breakdown table from the editor inputs.
+  // Returns "" when no fuel rows have any data so we never render an empty table.
+  const pricingBreakdownHtml = useMemo(() => {
+    const rows: { label: string; ex: number; inc: number }[] = [];
+    (["diesel", "ulp", "adblue"] as const).forEach(p => {
+      const ex  = parseFloat((vars[`${p}_price`]     ?? "").trim());
+      const inc = parseFloat((vars[`${p}_price_inc`] ?? "").trim());
+      if (!Number.isFinite(ex) && !Number.isFinite(inc)) return;
+      rows.push({
+        label: p === "ulp" ? "ULP" : p === "adblue" ? "AdBlue" : "Diesel",
+        ex:  Number.isFinite(ex)  ? ex  : (Number.isFinite(inc) ? inc / 1.1 : 0),
+        inc: Number.isFinite(inc) ? inc : (Number.isFinite(ex)  ? ex  * 1.1 : 0),
+      });
+    });
+    if (rows.length === 0) return "";
+
+    const fmt = (n: number) => `$${n.toFixed(4)}`;
+    const tr = rows.map(r => `
+      <tr>
+        <td style="padding:10px 12px;border-bottom:1px solid #E8DFD2;font:600 13px/1.4 Inter,Arial,sans-serif;color:#3A2818;">${r.label}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #E8DFD2;font:500 13px/1.4 Inter,Arial,sans-serif;color:#3A2818;text-align:right;font-variant-numeric:tabular-nums;">${fmt(r.ex)} <span style="color:#8B7355;font-size:11px;">/L</span></td>
+        <td style="padding:10px 12px;border-bottom:1px solid #E8DFD2;font:600 13px/1.4 Inter,Arial,sans-serif;color:#E8461E;text-align:right;font-variant-numeric:tabular-nums;">${fmt(r.inc)} <span style="color:#8B7355;font-size:11px;font-weight:500;">/L</span></td>
+      </tr>`).join("");
+
+    return `
+<!-- live-preview pricing breakdown (preview only) -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
+       style="border-collapse:collapse;margin:18px 0;border:1px solid #E8DFD2;border-radius:8px;overflow:hidden;background:#FFF9F1;">
+  <thead>
+    <tr style="background:#3A2818;">
+      <th style="padding:10px 12px;text-align:left;font:600 11px/1.2 Inter,Arial,sans-serif;color:#F5E6D0;letter-spacing:.06em;text-transform:uppercase;">Product</th>
+      <th style="padding:10px 12px;text-align:right;font:600 11px/1.2 Inter,Arial,sans-serif;color:#F5E6D0;letter-spacing:.06em;text-transform:uppercase;">Ex-GST $/L</th>
+      <th style="padding:10px 12px;text-align:right;font:600 11px/1.2 Inter,Arial,sans-serif;color:#F5E6D0;letter-spacing:.06em;text-transform:uppercase;">Inc-GST $/L</th>
+    </tr>
+  </thead>
+  <tbody>${tr}</tbody>
+  <tfoot>
+    <tr><td colspan="3" style="padding:8px 12px;background:#F5E6D0;font:500 11px/1.4 Inter,Arial,sans-serif;color:#6B5240;">
+      Inc-GST shown at 10% above Ex-GST. Prices in AUD per litre.
+    </td></tr>
+  </tfoot>
+</table>`;
+  }, [vars]);
+
+  // HTML used inside the live preview iframe — injects the pricing-breakdown
+  // table just before </body> (or appended) so the editor changes are visible
+  // even if the underlying template doesn't render the prices in tabular form.
+  const previewHtml = useMemo(() => {
+    if (!renderedHtml) return "";
+    if (!pricingBreakdownHtml) return renderedHtml;
+    if (/<\/body>/i.test(renderedHtml)) {
+      return renderedHtml.replace(/<\/body>/i, `${pricingBreakdownHtml}</body>`);
+    }
+    return renderedHtml + pricingBreakdownHtml;
+  }, [renderedHtml, pricingBreakdownHtml]);
+
   const allVarKeys = useMemo(() => {
     if (!activeTemplate) return [];
     const declared = activeTemplate.variables ?? [];
@@ -1092,7 +1148,7 @@ export default function Outreach() {
                 </summary>
                 <div className="p-2 border-t border-[#6B5240]">
                   <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
-                    <iframe title="Email preview" srcDoc={renderedHtml} className="w-full h-[420px] border-0" />
+                    <iframe title="Email preview" srcDoc={previewHtml} className="w-full h-[420px] border-0" />
                   </div>
                   {bcc && (
                     <div className="text-[11px] text-[#C4A882] mt-2">
@@ -1116,7 +1172,7 @@ export default function Outreach() {
                 </div>
                 <TabsContent value="html" className="mt-3">
                   <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
-                    <iframe title="Email preview" srcDoc={renderedHtml} className="w-full h-[600px] border-0" />
+                    <iframe title="Email preview" srcDoc={previewHtml} className="w-full h-[600px] border-0" />
                   </div>
                 </TabsContent>
                 <TabsContent value="text" className="mt-3">
