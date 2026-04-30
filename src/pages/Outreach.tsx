@@ -35,9 +35,16 @@ const NON_DIESEL_VARIABLES = new Set(["ulp_price", "ulp_price_inc", "adblue_pric
 
 function stripNonDieselPricingHtml(html: string): string {
   if (!html) return html;
-  return html
-    .replace(/<tr\b[^>]*>[\s\S]*?(?:unleaded|adblue|ulp_price|adblue_price)[\s\S]*?<\/tr>/gi, "")
-    .replace(/<tbody>\s*<\/tbody>/gi, "");
+  if (typeof DOMParser === "undefined") return html;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const hasNonDiesel = (text: string) => /(?:unleaded|adblue|ulp_price|adblue_price)/i.test(text);
+  Array.from(doc.querySelectorAll("tr")).reverse().forEach(row => {
+    if (hasNonDiesel(row.textContent ?? "")) row.remove();
+  });
+  Array.from(doc.querySelectorAll("tbody, table")).reverse().forEach(el => {
+    if (!el.textContent?.trim()) el.remove();
+  });
+  return `<!doctype html>\n${doc.documentElement.outerHTML}`;
 }
 
 function stripNonDieselPricingText(text: string): string {
