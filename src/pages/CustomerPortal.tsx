@@ -2829,29 +2829,72 @@ function AnalyticsTab({
   );
 }
 
-function CompareGrid({
-  a, b,
-}: {
-  a: { label: string; sublabel: string; stats: { label: string; value: string }[] };
-  b: { label: string; sublabel: string; stats: { label: string; value: string }[] };
-}) {
+type CompareStat = {
+  label: string;
+  num: number;
+  fmt: (n: number) => string;
+  higherIsBetter?: boolean;
+  accent?: boolean;
+};
+type CompareSide = { label: string; sublabel: string; stats: CompareStat[] };
+
+function CompareGrid({ a, b }: { a: CompareSide; b: CompareSide }) {
+  // Pre-compute per-row winners + deltas
+  const rows = a.stats.map((sa, i) => {
+    const sb = b.stats[i];
+    const delta = sa.num - sb.num;
+    const base = Math.max(Math.abs(sa.num), Math.abs(sb.num));
+    const pct = base > 0 ? (Math.abs(delta) / base) * 100 : 0;
+    const aBetter = sa.higherIsBetter ? sa.num > sb.num : sa.num < sb.num;
+    const bBetter = sa.higherIsBetter ? sb.num > sa.num : sb.num < sa.num;
+    return { sa, sb, delta, pct, aBetter, bBetter, tied: sa.num === sb.num };
+  });
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-      {[a, b].map((side, idx) => (
-        <div key={idx} style={{ border: `1px solid ${T.border}`, borderRadius: 6, padding: "12px 14px", background: T.bg }}>
+      {[
+        { side: a, key: "a" as const },
+        { side: b, key: "b" as const },
+      ].map(({ side, key }) => (
+        <div key={key} style={{ border: `1px solid ${T.border}`, borderRadius: 6, padding: "12px 14px", background: T.bg }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: T.text, fontFamily: T.sansHead, marginBottom: 2 }}>
             {side.label}
           </div>
           <div style={{ ...muted(10), marginBottom: 12 }}>{side.sublabel}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {side.stats.map((s) => (
-              <div key={s.label}>
-                <div style={labelStyle}>{s.label}</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
-                  {s.value}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {side.stats.map((s, i) => {
+              const r = rows[i];
+              const isWinner = key === "a" ? r.aBetter : r.bBetter;
+              const showDelta = !r.tied && r.pct >= 0.5;
+              const sign = key === "a" ? (r.delta > 0 ? "+" : r.delta < 0 ? "−" : "") : (r.delta < 0 ? "+" : r.delta > 0 ? "−" : "");
+              const chipBg   = isWinner ? "rgba(16,185,129,0.15)" : "rgba(232,70,30,0.12)";
+              const chipText = isWinner ? "#10B981" : "#E8461E";
+              return (
+                <div key={s.label} style={{ display: "grid", gridTemplateColumns: "1fr auto", alignItems: "baseline", gap: 8 }}>
+                  <div>
+                    <div style={labelStyle}>{s.label}</div>
+                    <div style={{
+                      fontSize: 18, fontWeight: 700,
+                      color: s.accent ? T.accent : T.text,
+                      fontVariantNumeric: "tabular-nums",
+                    }}>
+                      {s.fmt(s.num)}
+                    </div>
+                  </div>
+                  {showDelta && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: "0.04em",
+                      padding: "3px 6px", borderRadius: 10,
+                      background: chipBg, color: chipText,
+                      fontVariantNumeric: "tabular-nums",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {sign}{r.pct.toFixed(r.pct < 10 ? 1 : 0)}%
+                    </span>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
