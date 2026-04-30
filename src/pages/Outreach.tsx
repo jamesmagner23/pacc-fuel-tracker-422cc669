@@ -189,23 +189,15 @@ export default function Outreach() {
   const calcAndApplyPricing = useCallback(() => {
     if (!latestBuyPrice || !matchedTier) return;
     const dieselEx = latestBuyPrice * (1 + matchedTier.margin_percent / 100);
-    const next: Record<string, string> = {};
-    if (productMix.diesel) {
-      next.diesel_price = dieselEx.toFixed(4);
-      next.diesel_price_inc = (dieselEx * 1.1).toFixed(4);
-    } else { next.diesel_price = ""; next.diesel_price_inc = ""; }
-    if (productMix.ulp) {
-      const ex = dieselEx + PRODUCT_OFFSETS_CPL.ulp / 100;
-      next.ulp_price = ex.toFixed(4);
-      next.ulp_price_inc = (ex * 1.1).toFixed(4);
-    } else { next.ulp_price = ""; next.ulp_price_inc = ""; }
-    if (productMix.adblue) {
-      const ex = Math.max(0.50, dieselEx + PRODUCT_OFFSETS_CPL.adblue / 100);
-      next.adblue_price = ex.toFixed(4);
-      next.adblue_price_inc = (ex * 1.1).toFixed(4);
-    } else { next.adblue_price = ""; next.adblue_price_inc = ""; }
+    const next: Record<string, string> = {
+      diesel_price:     dieselEx.toFixed(4),
+      diesel_price_inc: (dieselEx * 1.1).toFixed(4),
+      // Always blank — ULP/AdBlue removed from the template.
+      ulp_price: "", ulp_price_inc: "",
+      adblue_price: "", adblue_price_inc: "",
+    };
     setVars(v => ({ ...v, ...next }));
-  }, [latestBuyPrice, matchedTier, productMix]);
+  }, [latestBuyPrice, matchedTier]);
 
   // ── Pricing presets ─────────────────────────────────────────────────────
   type PricingPreset = {
