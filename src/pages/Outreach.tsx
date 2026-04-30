@@ -1148,7 +1148,7 @@ export default function Outreach() {
                 </summary>
                 <div className="p-2 border-t border-[#6B5240]">
                   <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
-                    <iframe title="Email preview" srcDoc={renderedHtml} className="w-full h-[420px] border-0" />
+                    <iframe title="Email preview" srcDoc={previewHtml} className="w-full h-[420px] border-0" />
                   </div>
                   {bcc && (
                     <div className="text-[11px] text-[#C4A882] mt-2">
@@ -1172,7 +1172,7 @@ export default function Outreach() {
                 </div>
                 <TabsContent value="html" className="mt-3">
                   <div className="rounded border border-[#6B5240] overflow-hidden bg-white">
-                    <iframe title="Email preview" srcDoc={renderedHtml} className="w-full h-[600px] border-0" />
+                    <iframe title="Email preview" srcDoc={previewHtml} className="w-full h-[600px] border-0" />
                   </div>
                 </TabsContent>
                 <TabsContent value="text" className="mt-3">
