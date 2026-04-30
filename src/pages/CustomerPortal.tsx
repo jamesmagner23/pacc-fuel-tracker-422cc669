@@ -2998,8 +2998,115 @@ function AnalyticsTab({
           >
             ↓ Download recap PDF
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (isDemoMode) {
+                toast.info("Email is disabled in demo mode. Try the download button.");
+                return;
+              }
+              setEmailOpen(o => !o);
+            }}
+            disabled={perMachine.length === 0}
+            title={isDemoMode ? "Disabled in demo mode" : "Email this recap to a list"}
+            style={{
+              background: "transparent", color: T.text,
+              border: `1px solid ${T.border}`,
+              borderRadius: 6, padding: "10px 14px", fontSize: 12, fontWeight: 600,
+              cursor: perMachine.length === 0 ? "not-allowed" : "pointer",
+              opacity: perMachine.length === 0 ? 0.5 : 1,
+              minHeight: 44,
+            }}
+          >
+            ✉ Email recap
+          </button>
         </div>
       </div>
+
+      {/* Email-recap composer */}
+      {emailOpen && !isDemoMode && (
+        <div
+          style={{
+            ...card,
+            borderColor: T.accent,
+            display: "flex", flexDirection: "column", gap: 10,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ ...labelStyle }}>Email recap PDF</div>
+            <span style={{ ...muted(11) }}>
+              The PDF is generated on this device and attached to a single Gmail send.
+            </span>
+          </div>
+
+          <label style={{ ...muted(11), display: "block" }}>Recipients (comma or newline separated)</label>
+          <textarea
+            value={emailRecipients}
+            onChange={(e) => setEmailRecipients(e.target.value)}
+            placeholder="ops@kellyexcavation.com, finance@metrocranes.com"
+            rows={2}
+            style={{
+              background: T.bg, color: T.text, border: `1px solid ${T.border}`,
+              borderRadius: 6, padding: "8px 10px", fontSize: 13, fontFamily: "inherit",
+              resize: "vertical",
+            }}
+          />
+
+          <label style={{ ...muted(11), display: "block" }}>Subject</label>
+          <input
+            type="text"
+            value={emailSubject}
+            onChange={(e) => setEmailSubject(e.target.value)}
+            maxLength={200}
+            style={{
+              background: T.bg, color: T.text, border: `1px solid ${T.border}`,
+              borderRadius: 6, padding: "8px 10px", fontSize: 13, height: 38,
+            }}
+          />
+
+          <label style={{ ...muted(11), display: "block" }}>Message</label>
+          <textarea
+            value={emailMessage}
+            onChange={(e) => setEmailMessage(e.target.value)}
+            rows={5}
+            style={{
+              background: T.bg, color: T.text, border: `1px solid ${T.border}`,
+              borderRadius: 6, padding: "8px 10px", fontSize: 13, fontFamily: "inherit",
+              resize: "vertical",
+            }}
+          />
+
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => setEmailOpen(false)}
+              disabled={emailSending}
+              style={{
+                background: "transparent", color: T.text,
+                border: `1px solid ${T.border}`, borderRadius: 6,
+                padding: "10px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                minHeight: 44,
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void emailRecap()}
+              disabled={emailSending || !emailRecipients.trim()}
+              style={{
+                background: T.accent, color: "#FFFFFF", border: "none",
+                borderRadius: 6, padding: "10px 14px", fontSize: 12, fontWeight: 600,
+                cursor: (emailSending || !emailRecipients.trim()) ? "not-allowed" : "pointer",
+                opacity: (emailSending || !emailRecipients.trim()) ? 0.6 : 1,
+                minHeight: 44,
+              }}
+            >
+              {emailSending ? "Sending…" : "Send email"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Machinery leaderboard ── */}
       <div style={card}>
