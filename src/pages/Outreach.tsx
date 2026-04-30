@@ -238,13 +238,14 @@ export default function Outreach() {
       const payload = {
         name,
         weekly_volume: vars["volume"] ?? null,
-        product_mix: productMix,
+        // Diesel-only template: force the mix and ignore ULP/AdBlue inputs.
+        product_mix: { diesel: true, ulp: false, adblue: false },
         diesel_price:     num("diesel_price"),
         diesel_price_inc: num("diesel_price_inc"),
-        ulp_price:        num("ulp_price"),
-        ulp_price_inc:    num("ulp_price_inc"),
-        adblue_price:     num("adblue_price"),
-        adblue_price_inc: num("adblue_price_inc"),
+        ulp_price:        null,
+        ulp_price_inc:    null,
+        adblue_price:     null,
+        adblue_price_inc: null,
         created_by: user?.id ?? null,
       };
       const { error } = await supabase.from("pricing_presets").insert(payload);
@@ -265,18 +266,14 @@ export default function Outreach() {
       ...(p.weekly_volume != null ? { volume: p.weekly_volume } : {}),
       diesel_price:     fmt(p.diesel_price),
       diesel_price_inc: fmt(p.diesel_price_inc),
-      ulp_price:        fmt(p.ulp_price),
-      ulp_price_inc:    fmt(p.ulp_price_inc),
-      adblue_price:     fmt(p.adblue_price),
-      adblue_price_inc: fmt(p.adblue_price_inc),
+      // Diesel-only template — clear any legacy ULP/AdBlue values so they
+      // can never leak into the rendered email or PDF.
+      ulp_price:        "",
+      ulp_price_inc:    "",
+      adblue_price:     "",
+      adblue_price_inc: "",
     }));
-    if (p.product_mix) {
-      setProductMix({
-        diesel: !!p.product_mix.diesel,
-        ulp:    !!p.product_mix.ulp,
-        adblue: !!p.product_mix.adblue,
-      });
-    }
+    setProductMix({ diesel: true, ulp: false, adblue: false });
   }, []);
 
   const deletePreset = useCallback(async (id: string) => {
