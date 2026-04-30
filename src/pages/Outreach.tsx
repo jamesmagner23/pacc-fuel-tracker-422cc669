@@ -36,6 +36,18 @@ function formatGst(ex: string): string {
   return (n * 1.1).toFixed(4);
 }
 
+// ULP/AdBlue offsets vs Diesel buy price (¢/L). AdBlue is sold per litre too;
+// these are sensible defaults the user can override after auto-fill.
+const PRODUCT_OFFSETS_CPL = { ulp: 8, adblue: -45 } as const;
+
+/** Parse a litre figure that may include commas, "L", or "litres" suffix. */
+function parseLitres(s: string): number {
+  const n = parseFloat(String(s).replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+type PricingTierRow = { min_litres: number; max_litres: number | null; margin_percent: number; tier_name: string };
+
 type Person = {
   id: number;
   name: string;
