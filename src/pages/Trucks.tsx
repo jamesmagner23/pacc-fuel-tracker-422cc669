@@ -9,7 +9,7 @@ import { format, parseISO, subDays } from "date-fns";
  * Add a new entry here when a truck joins the fleet.
  */
 export const FLEET: { name: string; rego: string; capacity: number; make?: string }[] = [
-  { name: "PACC Truck 1", rego: "1PG-9CN", capacity: 8000 },
+  { name: "PACC Truck 1", rego: "", capacity: 8000 },
   { name: "PACC Truck 2", rego: "XX-29BC", capacity: 9500, make: "Isuzu — Capital Fleet SFL tanker (serial 9512, built 01/02/2026)" },
 ];
 
