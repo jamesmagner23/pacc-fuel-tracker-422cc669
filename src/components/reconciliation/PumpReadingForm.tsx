@@ -3,18 +3,20 @@ import { format } from "date-fns";
 import { Check, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import { useSubmitPumpReading, useDriverPumpReadings } from "@/hooks/useReconciliation";
+import { FLEET } from "@/pages/Trucks";
 
 export function PumpReadingForm() {
   const [litres, setLitres] = useState("");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [notes, setNotes] = useState("");
+  const [truck, setTruck] = useState(FLEET[0]?.name || "PACC Truck 1");
   const submitMutation = useSubmitPumpReading();
   const { data: recentReadings = [] } = useDriverPumpReadings(7);
 
   const handleSubmit = () => {
     if (!litres) return;
     submitMutation.mutate(
-      { litres: parseFloat(litres), reading_date: date, notes: notes || undefined },
+      { litres: parseFloat(litres), reading_date: date, notes: notes || undefined, truck },
       {
         onSuccess: () => {
           toast.success(`Pump reading logged for ${date}`);
@@ -36,6 +38,19 @@ export function PumpReadingForm() {
       </div>
 
       <div className="flex flex-col gap-3 mb-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs text-muted-foreground">Truck</label>
+          <select
+            value={truck}
+            onChange={(e) => setTruck(e.target.value)}
+            className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+          >
+            {FLEET.map((t) => (
+              <option key={t.name} value={t.name}>{t.name}{t.rego ? ` (${t.rego})` : ""}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground">Pump #17 Litres</label>
           <input
@@ -88,6 +103,7 @@ export function PumpReadingForm() {
                 <span className="text-sm font-semibold text-foreground">
                   {Number(r.litres).toLocaleString()}L
                 </span>
+                <span className="text-xs text-muted-foreground ml-2">· {r.truck}</span>
                 {r.notes && (
                   <span className="text-xs text-muted-foreground ml-2">{r.notes}</span>
                 )}
