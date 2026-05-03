@@ -525,10 +525,11 @@ function ReportsTab({ weekStart }: { weekStart: Date }) {
   );
 }
 
-function AdminAddPumpReading() {
+function AdminAddPumpReading({ defaultTruck }: { defaultTruck: string }) {
   const [litres, setLitres] = useState("");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [notes, setNotes] = useState("");
+  const [truck, setTruck] = useState(defaultTruck);
   const insertMutation = useAdminInsertPumpReading();
 
   const handleSubmit = () => {
@@ -540,6 +541,7 @@ function AdminAddPumpReading() {
         reading_date: date,
         driver_id: "00000000-0000-0000-0000-000000000000",
         notes: notes ? `[Admin] ${notes}` : "[Admin entry]",
+        truck,
       },
       {
         onSuccess: () => {
@@ -558,7 +560,19 @@ function AdminAddPumpReading() {
         <Plus className="w-4 h-4 text-accent" />
         Add Pump Reading (Admin)
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">Truck</label>
+          <select
+            value={truck}
+            onChange={(e) => setTruck(e.target.value)}
+            className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2 text-sm outline-none focus:border-primary transition-colors"
+          >
+            {FLEET.map((t) => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </select>
+        </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs text-muted-foreground">Litres</label>
           <input
