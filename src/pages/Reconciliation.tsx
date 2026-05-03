@@ -697,6 +697,7 @@ export default function Reconciliation() {
   const [dateStart, setDateStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [dateEnd, setDateEnd] = useState(() => endOfWeek(new Date(), { weekStartsOn: 1 }));
   const [activeTab, setActiveTab] = useState<TabId>("daily");
+  const [truckScope, setTruckScope] = useState<TruckScope>(COMBINED);
 
   const handleRangeChange = (s: Date, e: Date) => { setDateStart(s); setDateEnd(e); };
 
@@ -705,17 +706,22 @@ export default function Reconciliation() {
   const startDate = format(clampedStart, "yyyy-MM-dd");
   const endDate = format(dateEnd, "yyyy-MM-dd");
 
-  const { data: pumpReadings = [] } = usePumpReadings(startDate, endDate);
+  const { data: allPumpReadings = [] } = usePumpReadings(startDate, endDate);
   const { data: transactions = [] } = useTransactions("month"); // Get wide range
   const { data: alerts = [] } = useReconAlerts(startDate, endDate);
   const { data: settings } = useReconSettings();
   const resolveMutation = useResolveAlert();
   const deleteMutation = useDeletePumpReading();
 
-  // Filter transactions to the selected range
-  const rangeTransactions = useMemo(
-    () => transactions.filter((t) => t.date && t.date >= startDate && t.date <= endDate),
-    [transactions, startDate, endDate]
+  // Filter transactions to the selected range, then by truck scope
+  const rangeTransactions = useMemo(() => {
+    const inRange = transactions.filter((t) => t.date && t.date >= startDate && t.date <= endDate);
+    return truckScope === COMBINED ? inRange : inRange.filter((t) => t.estacion === truckScope);
+  }, [transactions, startDate, endDate, truckScope]);
+
+  const pumpReadings = useMemo(
+    () => truckScope === COMBINED ? allPumpReadings : allPumpReadings.filter((p) => p.truck === truckScope),
+    [allPumpReadings, truckScope]
   );
 
   const dailyRows = useMemo(
@@ -736,6 +742,23 @@ export default function Reconciliation() {
       <div className="flex flex-col gap-3">
         <h1 className="text-xl font-bold text-foreground">Fuel Reconciliation</h1>
         <DateRangePicker mode={rangeMode} onModeChange={setRangeMode} startDate={dateStart} endDate={dateEnd} onRangeChange={handleRangeChange} />
+      </div>
+
+      {/* Truck scope tabs */}
+      <div className="flex items-center gap-1 bg-surface border border-surface-border rounded-[10px] p-1 w-fit overflow-x-auto no-scrollbar">
+        {[...FLEET.map((t) => ({ id: t.name, label: t.name })), { id: COMBINED, label: "Combined" }].map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setTruckScope(s.id)}
+            className="px-3 sm:px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap border-none"
+            style={{
+              background: truckScope === s.id ? "var(--accent-light)" : "transparent",
+              color: truckScope === s.id ? "var(--accent)" : "var(--text-secondary)",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
       </div>
 
       <SummaryCards rows={dailyRows} settings={settings} />
@@ -762,6 +785,7 @@ export default function Reconciliation() {
       {activeTab === "pump" && (
         <PumpReadingsTab
           readings={pumpReadings}
+          defaultTruck={truckScope === COMBINED ? (FLEET[0]?.name || "PACC Truck 1") : truckScope}
           onDelete={(id) => deleteMutation.mutate(id, {
             onSuccess: () => toast.success("Pump reading deleted"),
             onError: (err) => toast.error(err.message),
