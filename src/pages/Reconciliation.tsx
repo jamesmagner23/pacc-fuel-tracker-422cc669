@@ -21,8 +21,11 @@ import {
 } from "@/hooks/useReconciliation";
 import { useTransactions } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
+import { FLEET } from "@/pages/Trucks";
 
 type TabId = "daily" | "pump" | "alerts" | "reports" | "settings";
+type TruckScope = string; // truck name or "__combined__"
+const COMBINED: TruckScope = "__combined__";
 
 const STATUS_COLORS = {
   none: "var(--positive)",
