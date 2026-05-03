@@ -4,11 +4,21 @@ import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, useAllTransactions } from "@/hooks/useTransactions";
 import { format, parseISO, subDays } from "date-fns";
 
-const knownCapacities: Record<string, number> = {
-  "PACC Truck 1": 8000,
-  "PACC Truck 2": 5000,
-  "PACC Truck 3": 4000,
-};
+/**
+ * Fleet config — single source of truth for trucks.
+ * Add a new entry here when a truck joins the fleet.
+ */
+export const FLEET: { name: string; rego: string; capacity: number; make?: string }[] = [
+  { name: "PACC Truck 1", rego: "", capacity: 8000 },
+  { name: "PACC Truck 2", rego: "XX-29BC", capacity: 9500, make: "Isuzu — Capital Fleet SFL tanker (serial 9512, built 01/02/2026)" },
+];
+
+const knownCapacities: Record<string, number> = Object.fromEntries(
+  FLEET.map((t) => [t.name, t.capacity])
+);
+const knownRegos: Record<string, string> = Object.fromEntries(
+  FLEET.map((t) => [t.name, t.rego])
+);
 
 function cssVar(name: string, fallback = ""): string {
   if (typeof window === "undefined") return fallback;
@@ -35,10 +45,11 @@ export default function Trucks() {
 
   const trucks = useMemo(() => {
     const fromData = [...new Set(allTxns.map((t) => t.estacion).filter(Boolean))] as string[];
-    return fromData.map((name) => ({
+    const names = [...new Set([...FLEET.map((t) => t.name), ...fromData])];
+    return names.map((name) => ({
       name,
       capacity: knownCapacities[name] || 0,
-      plate: name.replace(/\s+/g, "").toUpperCase(),
+      plate: knownRegos[name] || name.replace(/\s+/g, "").toUpperCase(),
     }));
   }, [allTxns]);
 
@@ -90,7 +101,10 @@ export default function Trucks() {
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="font-semibold text-sm">{truck.name}</div>
-                  {truck.capacity > 0 && <div className="text-xs text-muted-foreground">{truck.capacity.toLocaleString()}L capacity</div>}
+                  <div className="text-xs text-muted-foreground">
+                    {truck.plate}
+                    {truck.capacity > 0 && ` · ${truck.capacity.toLocaleString()}L`}
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] text-muted-foreground">Totaliser</div>
