@@ -21,8 +21,11 @@ import {
 } from "@/hooks/useReconciliation";
 import { useTransactions } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
+import { FLEET } from "@/pages/Trucks";
 
 type TabId = "daily" | "pump" | "alerts" | "reports" | "settings";
+type TruckScope = string; // truck name or "__combined__"
+const COMBINED: TruckScope = "__combined__";
 
 const STATUS_COLORS = {
   none: "var(--positive)",
@@ -522,10 +525,11 @@ function ReportsTab({ weekStart }: { weekStart: Date }) {
   );
 }
 
-function AdminAddPumpReading() {
+function AdminAddPumpReading({ defaultTruck }: { defaultTruck: string }) {
   const [litres, setLitres] = useState("");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [notes, setNotes] = useState("");
+  const [truck, setTruck] = useState(defaultTruck);
   const insertMutation = useAdminInsertPumpReading();
 
   const handleSubmit = () => {
@@ -537,6 +541,7 @@ function AdminAddPumpReading() {
         reading_date: date,
         driver_id: "00000000-0000-0000-0000-000000000000",
         notes: notes ? `[Admin] ${notes}` : "[Admin entry]",
+        truck,
       },
       {
         onSuccess: () => {
@@ -555,7 +560,19 @@ function AdminAddPumpReading() {
         <Plus className="w-4 h-4 text-accent" />
         Add Pump Reading (Admin)
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">Truck</label>
+          <select
+            value={truck}
+            onChange={(e) => setTruck(e.target.value)}
+            className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2 text-sm outline-none focus:border-primary transition-colors"
+          >
+            {FLEET.map((t) => (
+              <option key={t.name} value={t.name}>{t.name}</option>
+            ))}
+          </select>
+        </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs text-muted-foreground">Litres</label>
           <input
@@ -600,12 +617,12 @@ function AdminAddPumpReading() {
   );
 }
 
-function PumpReadingsTab({ readings, onDelete }: { readings: PumpReading[]; onDelete: (id: string) => void }) {
+function PumpReadingsTab({ readings, onDelete, defaultTruck }: { readings: PumpReading[]; onDelete: (id: string) => void; defaultTruck: string }) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
-      <AdminAddPumpReading />
+      <AdminAddPumpReading defaultTruck={defaultTruck} />
 
       {readings.length === 0 ? (
         <div className="card p-8 text-center">
@@ -619,6 +636,7 @@ function PumpReadingsTab({ readings, onDelete }: { readings: PumpReading[]; onDe
               <thead>
                 <tr className="border-b border-surface-border">
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Date</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Truck</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Litres</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Notes</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Action</th>
@@ -630,6 +648,7 @@ function PumpReadingsTab({ readings, onDelete }: { readings: PumpReading[]; onDe
                     <td className="px-4 py-3 font-medium text-foreground">
                       {format(parseISO(r.reading_date), "EEE dd MMM")}
                     </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{r.truck || "—"}</td>
                     <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
                       {Number(r.litres).toLocaleString()}L
                     </td>
@@ -678,6 +697,7 @@ export default function Reconciliation() {
   const [dateStart, setDateStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [dateEnd, setDateEnd] = useState(() => endOfWeek(new Date(), { weekStartsOn: 1 }));
   const [activeTab, setActiveTab] = useState<TabId>("daily");
+  const [truckScope, setTruckScope] = useState<TruckScope>(COMBINED);
 
   const handleRangeChange = (s: Date, e: Date) => { setDateStart(s); setDateEnd(e); };
 
@@ -686,17 +706,22 @@ export default function Reconciliation() {
   const startDate = format(clampedStart, "yyyy-MM-dd");
   const endDate = format(dateEnd, "yyyy-MM-dd");
 
-  const { data: pumpReadings = [] } = usePumpReadings(startDate, endDate);
+  const { data: allPumpReadings = [] } = usePumpReadings(startDate, endDate);
   const { data: transactions = [] } = useTransactions("month"); // Get wide range
   const { data: alerts = [] } = useReconAlerts(startDate, endDate);
   const { data: settings } = useReconSettings();
   const resolveMutation = useResolveAlert();
   const deleteMutation = useDeletePumpReading();
 
-  // Filter transactions to the selected range
-  const rangeTransactions = useMemo(
-    () => transactions.filter((t) => t.date && t.date >= startDate && t.date <= endDate),
-    [transactions, startDate, endDate]
+  // Filter transactions to the selected range, then by truck scope
+  const rangeTransactions = useMemo(() => {
+    const inRange = transactions.filter((t) => t.date && t.date >= startDate && t.date <= endDate);
+    return truckScope === COMBINED ? inRange : inRange.filter((t) => t.estacion === truckScope);
+  }, [transactions, startDate, endDate, truckScope]);
+
+  const pumpReadings = useMemo(
+    () => truckScope === COMBINED ? allPumpReadings : allPumpReadings.filter((p) => p.truck === truckScope),
+    [allPumpReadings, truckScope]
   );
 
   const dailyRows = useMemo(
@@ -717,6 +742,23 @@ export default function Reconciliation() {
       <div className="flex flex-col gap-3">
         <h1 className="text-xl font-bold text-foreground">Fuel Reconciliation</h1>
         <DateRangePicker mode={rangeMode} onModeChange={setRangeMode} startDate={dateStart} endDate={dateEnd} onRangeChange={handleRangeChange} />
+      </div>
+
+      {/* Truck scope tabs */}
+      <div className="flex items-center gap-1 bg-surface border border-surface-border rounded-[10px] p-1 w-fit overflow-x-auto no-scrollbar">
+        {[...FLEET.map((t) => ({ id: t.name, label: t.name })), { id: COMBINED, label: "Combined" }].map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setTruckScope(s.id)}
+            className="px-3 sm:px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap border-none"
+            style={{
+              background: truckScope === s.id ? "var(--accent-light)" : "transparent",
+              color: truckScope === s.id ? "var(--accent)" : "var(--text-secondary)",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
       </div>
 
       <SummaryCards rows={dailyRows} settings={settings} />
@@ -743,6 +785,7 @@ export default function Reconciliation() {
       {activeTab === "pump" && (
         <PumpReadingsTab
           readings={pumpReadings}
+          defaultTruck={truckScope === COMBINED ? (FLEET[0]?.name || "PACC Truck 1") : truckScope}
           onDelete={(id) => deleteMutation.mutate(id, {
             onSuccess: () => toast.success("Pump reading deleted"),
             onError: (err) => toast.error(err.message),

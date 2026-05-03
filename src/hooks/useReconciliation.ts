@@ -11,6 +11,7 @@ export interface PumpReading {
   driver_id: string;
   notes: string | null;
   created_at: string;
+  truck: string;
 }
 
 export interface ReconAlert {
@@ -97,7 +98,7 @@ export function useDriverPumpReadings(days = 7) {
 export function useSubmitPumpReading() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { litres: number; reading_date: string; notes?: string }) => {
+    mutationFn: async (input: { litres: number; reading_date: string; notes?: string; truck?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not logged in");
       const { error } = await supabase.from("pump_readings").insert({
@@ -105,6 +106,7 @@ export function useSubmitPumpReading() {
         litres: input.litres,
         reading_date: input.reading_date,
         notes: input.notes || null,
+        truck: input.truck || "PACC Truck 1",
       } as any);
       if (error) throw error;
     },
@@ -118,12 +120,13 @@ export function useSubmitPumpReading() {
 export function useAdminInsertPumpReading() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { litres: number; reading_date: string; driver_id: string; notes?: string }) => {
+    mutationFn: async (input: { litres: number; reading_date: string; driver_id: string; notes?: string; truck?: string }) => {
       const { error } = await supabase.from("pump_readings").insert({
         driver_id: input.driver_id,
         litres: input.litres,
         reading_date: input.reading_date,
         notes: input.notes || null,
+        truck: input.truck || "PACC Truck 1",
       } as any);
       if (error) throw error;
     },

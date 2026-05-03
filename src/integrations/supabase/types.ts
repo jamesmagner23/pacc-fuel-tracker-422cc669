@@ -1098,6 +1098,7 @@ export type Database = {
           litres: number
           notes: string | null
           reading_date: string
+          truck: string
         }
         Insert: {
           created_at?: string | null
@@ -1106,6 +1107,7 @@ export type Database = {
           litres: number
           notes?: string | null
           reading_date?: string
+          truck?: string
         }
         Update: {
           created_at?: string | null
@@ -1114,6 +1116,7 @@ export type Database = {
           litres?: number
           notes?: string | null
           reading_date?: string
+          truck?: string
         }
         Relationships: []
       }
