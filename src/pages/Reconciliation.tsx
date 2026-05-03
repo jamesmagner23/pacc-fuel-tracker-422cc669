@@ -617,12 +617,12 @@ function AdminAddPumpReading({ defaultTruck }: { defaultTruck: string }) {
   );
 }
 
-function PumpReadingsTab({ readings, onDelete }: { readings: PumpReading[]; onDelete: (id: string) => void }) {
+function PumpReadingsTab({ readings, onDelete, defaultTruck }: { readings: PumpReading[]; onDelete: (id: string) => void; defaultTruck: string }) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
-      <AdminAddPumpReading />
+      <AdminAddPumpReading defaultTruck={defaultTruck} />
 
       {readings.length === 0 ? (
         <div className="card p-8 text-center">
@@ -636,6 +636,7 @@ function PumpReadingsTab({ readings, onDelete }: { readings: PumpReading[]; onDe
               <thead>
                 <tr className="border-b border-surface-border">
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Date</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Truck</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Litres</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Notes</th>
                   <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Action</th>
@@ -647,6 +648,7 @@ function PumpReadingsTab({ readings, onDelete }: { readings: PumpReading[]; onDe
                     <td className="px-4 py-3 font-medium text-foreground">
                       {format(parseISO(r.reading_date), "EEE dd MMM")}
                     </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{r.truck || "—"}</td>
                     <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
                       {Number(r.litres).toLocaleString()}L
                     </td>
