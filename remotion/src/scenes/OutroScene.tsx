@@ -55,7 +55,7 @@ export const OutroScene: React.FC = () => {
           padding: "16px 36px",
           borderRadius: 999,
           background: T.accent,
-          color: T.deepGreen,
+          color: T.cream,
           fontFamily: "Inter, sans-serif",
           fontSize: 18,
           fontWeight: 700,
