@@ -55,39 +55,86 @@ const T = {
 };
 
 /**
- * Re-write T's keys (and the precomputed style objects further down)
- * to match the active portal theme. Called once before each render
- * via a useLayoutEffect-like sync inside CustomerPortal.
+ * Re-write T's keys (and rebuild the precomputed style objects) to match
+ * the active portal theme. Called once before each render.
+ *
+ * IMPORTANT: React freezes objects passed as `style` props in development.
+ * We must therefore *replace* T and every shared style holder with a brand
+ * new literal each call — never mutate the previous object (`Object.assign`
+ * on a frozen target throws "Cannot assign to read only property").
  */
 function applyPortalTheme(theme: PortalTheme) {
   const tk = tokensFor(theme);
-  Object.assign(T, {
-    bg: tk.bg,
-    surface: tk.surface,
-    surfaceRaised: tk.surfaceRaised,
-    border: tk.border,
-    borderSubtle: tk.borderSubtle,
-    accent: tk.accent,
-    accentHover: tk.accentHover,
-    text: tk.text,
-    textSecondary: tk.textSecondary,
-    muted: tk.textMuted,
-    badgePending: tk.badgePending,
-    badgeConfirmed: tk.badgeConfirmed,
-    badgeCompleted: tk.badgeCompleted,
-  });
-  // Rebuild style objects (React freezes the previous ones once they
-  // are passed as a `style` prop in dev, so we cannot mutate in place).
-  card = { ...card, background: T.surface, border: `1px solid ${T.border}` };
-  ghostBtn = { ...ghostBtn, border: `1px solid ${T.border}`, color: T.muted };
+
+  // 1. Replace T's contents with brand-new values. Because T itself is a
+  //    `const` reference (still mutable shape) and is NEVER passed directly
+  //    as a React `style` prop, it is safe to overwrite each key.
+  T.bg = tk.bg;
+  T.surface = tk.surface;
+  T.surfaceRaised = tk.surfaceRaised;
+  T.border = tk.border;
+  T.borderSubtle = tk.borderSubtle;
+  T.accent = tk.accent;
+  T.accentHover = tk.accentHover;
+  T.text = tk.text;
+  T.textSecondary = tk.textSecondary;
+  T.muted = tk.textMuted;
+  T.badgePending = tk.badgePending;
+  T.badgeConfirmed = tk.badgeConfirmed;
+  T.badgeCompleted = tk.badgeCompleted;
+
+  // 2. Build *fresh* style literals from scratch. We do not spread the
+  //    previous (potentially frozen) objects — every property is rewritten.
+  card = {
+    background: T.surface,
+    border: `1px solid ${T.border}`,
+    borderRadius: 8,
+    padding: "16px 18px",
+  };
+  ghostBtn = {
+    background: "transparent",
+    border: `1px solid ${T.border}`,
+    color: T.muted,
+    padding: "9px 16px",
+    fontSize: 12,
+    fontFamily: T.sansHead,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    borderRadius: 4,
+    cursor: "pointer",
+    fontWeight: 500,
+    transition: "all 0.15s",
+  };
   inputStyle = {
-    ...inputStyle,
     background: T.bg,
     border: `1px solid ${T.border}`,
     color: T.text,
+    padding: "10px 12px",
+    fontSize: 13,
+    fontFamily: T.sansBody,
+    borderRadius: 4,
+    outline: "none",
+    width: "100%",
   };
-  labelStyle = { ...labelStyle, color: T.muted };
-  sectionTitle = { ...sectionTitle, color: T.text };
+  labelStyle = {
+    fontSize: 10,
+    fontFamily: T.sansHead,
+    fontWeight: 500,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    color: T.muted,
+    display: "block",
+    marginBottom: 6,
+  };
+  sectionTitle = {
+    fontSize: 18,
+    fontFamily: T.sansHead,
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    color: T.text,
+    margin: 0,
+  };
 }
 
 const tabs = [
