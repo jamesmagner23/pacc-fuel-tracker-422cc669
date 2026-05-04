@@ -7,7 +7,32 @@ const META_NAME = "theme-color";
 
 // Mirror of the dark palette declared in src/index.css.
 // Keep in sync with that file (the branding test enforces parity).
-export const GLOBAL_DARK = {
+type Tokens = {
+  background: string;
+  surface: string;
+  surfaceRaised: string;
+  surfaceBorder: string;
+  surfaceHover: string;
+  accent: string;
+  accentHover: string;
+  accentLight: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  positive: string;
+  positiveBg: string;
+  negative: string;
+  negativeBg: string;
+  warning: string;
+  warningBg: string;
+  border: string;
+  borderSubtle: string;
+  primaryForeground: string;
+  destructive: string;
+  destructiveForeground: string;
+};
+
+export const GLOBAL_DARK: Tokens = {
   background: "#0E1F10",
   surface: "#142A16",
   surfaceRaised: "#1B3520",
@@ -30,10 +55,10 @@ export const GLOBAL_DARK = {
   primaryForeground: "#0E1F10",
   destructive: "#FF6B5E",
   destructiveForeground: "#ffffff",
-} as const;
+};
 
 // Light palette derived from the brand cream/dark-green system.
-export const GLOBAL_LIGHT: typeof GLOBAL_DARK = {
+export const GLOBAL_LIGHT: Tokens = {
   background: "#EFE9DC",
   surface: "#FFFFFF",
   surfaceRaised: "#FFFFFF",
