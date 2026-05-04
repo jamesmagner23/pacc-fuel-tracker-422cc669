@@ -830,6 +830,90 @@ export default function CustomerPortal() {
 // ═══════════════════════════════════════════════════════════════════════
 // 01 OVERVIEW (preserved — no pricing, simplified to spec rules)
 // ═══════════════════════════════════════════════════════════════════════
+function ProfileTab({
+  clientAccountId,
+  companyName,
+  userEmail,
+  onOpenEdit,
+}: {
+  clientAccountId: number | null;
+  companyName: string;
+  userEmail: string;
+  onOpenEdit: () => void;
+}) {
+  const { data: profile, isLoading } = useClientProfile(clientAccountId);
+
+  const billingLine = [
+    profile?.billing_address_line1,
+    profile?.billing_address_line2,
+    [profile?.billing_suburb, profile?.billing_state, profile?.billing_postcode].filter(Boolean).join(" "),
+    profile?.billing_country,
+  ].filter(Boolean).join(", ");
+
+  const Row = ({ label, value }: { label: string; value?: string | null }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "8px 0", borderBottom: "1px solid var(--surface-border, rgba(255,255,255,0.06))" }}>
+      <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted-foreground, #8B8773)" }}>{label}</span>
+      <span style={{ fontSize: 13, color: "var(--foreground, #ECE4D2)", textAlign: "right" }}>{value || "—"}</span>
+    </div>
+  );
+
+  const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div style={{ background: "var(--surface, rgba(255,255,255,0.04))", border: "1px solid var(--surface-border, rgba(255,255,255,0.08))", borderRadius: 10, padding: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--foreground, #ECE4D2)", marginBottom: 8 }}>{title}</div>
+      {children}
+    </div>
+  );
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "var(--foreground, #ECE4D2)" }}>Company profile</h2>
+          <p style={{ fontSize: 12, color: "var(--muted-foreground, #8B8773)", margin: "4px 0 0" }}>Keep your company and contact details up to date.</p>
+        </div>
+        <button onClick={onOpenEdit} style={{ background: "var(--accent, #C8F26A)", color: "#0E1F10", border: "none", borderRadius: 999, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Edit profile</button>
+      </div>
+
+      {isLoading ? (
+        <div style={{ color: "var(--muted-foreground, #8B8773)", fontSize: 13 }}>Loading…</div>
+      ) : (
+        <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+          <Card title="Company">
+            <Row label="Trading name" value={companyName} />
+            <Row label="Legal name" value={profile?.legal_business_name} />
+            <Row label="ABN" value={profile?.abn} />
+            <Row label="Website" value={profile?.website} />
+            <Row label="Login email" value={userEmail} />
+          </Card>
+          <Card title="Billing address">
+            <Row label="Address" value={billingLine} />
+          </Card>
+          <Card title="Primary contact">
+            <Row label="Name" value={profile?.primary_contact_name} />
+            <Row label="Email" value={profile?.primary_contact_email} />
+            <Row label="Phone" value={profile?.primary_contact_phone} />
+          </Card>
+          <Card title="Operations contact">
+            <Row label="Name" value={profile?.ops_contact_name} />
+            <Row label="Email" value={profile?.ops_contact_email} />
+            <Row label="Phone" value={profile?.ops_contact_phone} />
+          </Card>
+          <Card title="Accounts contact">
+            <Row label="Name" value={profile?.accounts_contact_name} />
+            <Row label="Email" value={profile?.accounts_contact_email} />
+            <Row label="Phone" value={profile?.accounts_contact_phone} />
+          </Card>
+          <Card title="Site contact">
+            <Row label="Name" value={profile?.site_contact_name} />
+            <Row label="Email" value={profile?.site_contact_email} />
+            <Row label="Phone" value={profile?.site_contact_phone} />
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OverviewTab({
   transactions,
   demoSuffix,
