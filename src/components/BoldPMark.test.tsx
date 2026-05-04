@@ -7,7 +7,7 @@ function renderSvg(size: number): { html: string; viewBox: string; width: string
   const viewBox = html.match(/viewBox="([^"]+)"/)![1];
   const width = html.match(/width="([^"]+)"/)![1];
   const height = html.match(/height="([^"]+)"/)![1];
-  const rectStr = html.match(/<rect[^/]*\/>/)![0];
+  const rectStr = html.match(/<rect\b[^>]*>/)![0];
   const rect: Record<string, string> = {};
   for (const m of rectStr.matchAll(/(\w+)="([^"]+)"/g)) rect[m[1]] = m[2];
   const pathD = html.match(/<path[^>]*\sd="([^"]+)"/)![1];
