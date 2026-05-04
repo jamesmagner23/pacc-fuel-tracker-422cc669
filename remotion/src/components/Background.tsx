@@ -9,7 +9,7 @@ export const Background: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        background: `radial-gradient(circle at ${x}% ${y}%, ${T.bgSoft} 0%, ${T.bg} 55%, #000 100%)`,
+        background: `radial-gradient(circle at ${x}% ${y}%, ${T.bgSoft} 0%, ${T.bg} 55%, #E8DFC8 100%)`,
       }}
     />
   );
