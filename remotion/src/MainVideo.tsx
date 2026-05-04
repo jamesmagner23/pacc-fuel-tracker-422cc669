@@ -25,7 +25,7 @@ const SCENES: Array<{
     body: "Litres, deliveries, sites and FTC savings — updated as the truck pours.",
     src: "shots/01-overview.png",
     duration: 120,
-    panY: -120,
+    panY: -40,
   },
   {
     step: "02 · Deliveries",
@@ -33,7 +33,7 @@ const SCENES: Array<{
     body: "Filter by site, project, or date. Download a branded PDF docket in one click.",
     src: "shots/02-deliveries.png",
     duration: 120,
-    panY: -160,
+    panY: -40,
   },
   {
     step: "03 · Projects",
@@ -41,7 +41,7 @@ const SCENES: Array<{
     body: "Cost-coded per project with weekly breakdowns and CO₂e attribution.",
     src: "shots/03-projects.png",
     duration: 120,
-    panY: -180,
+    panY: -40,
   },
   {
     step: "04 · Plant",
@@ -49,15 +49,23 @@ const SCENES: Array<{
     body: "Drag-and-drop plant onto projects. Spot a thirsty machine before it costs you.",
     src: "shots/04-plant.png",
     duration: 120,
-    panY: -160,
+    panY: -40,
   },
   {
-    step: "05 · Emissions",
+    step: "05 · Analytics",
+    title: "See who's burning what.",
+    body: "Per-machine leaderboard with live FTC dollars beside every litre. Export the recap, email the recap.",
+    src: "shots/06-analytics.png",
+    duration: 120,
+    panY: -40,
+  },
+  {
+    step: "06 · Emissions",
     title: "ESG + FTC, sorted.",
     body: "Auto-calculated Scope 1 CO₂e and NGER assumptions — plus Fuel Tax Credit savings tallied per litre. Export, file, claim.",
     src: "shots/05-emissions.png",
     duration: 120,
-    panY: -100,
+    panY: -40,
   },
 ];
 
