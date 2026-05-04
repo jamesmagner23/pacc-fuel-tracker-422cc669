@@ -41,7 +41,7 @@ export function PACCLogo({
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
       {showPaccChrome && <BoldPMark size={markSize} bg={markBg} fg={markFg} rounded={6} />}
-      <div style={{ lineHeight: 1 }}>
+      <div style={{ lineHeight: 1, whiteSpace: "nowrap" }}>
         <div
           style={{
             fontFamily: "'Archivo Narrow', 'Archivo', 'Inter', system-ui, sans-serif",

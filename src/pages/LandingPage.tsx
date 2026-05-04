@@ -11,13 +11,13 @@ import truckSiteImg from "@/assets/truck-site.jpg";
 
 function PACCNavLogo() {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <BoldPMark size={30} bg="#1A472A" fg="#C8F26A" rounded={7} />
-      <div style={{ lineHeight: 1 }}>
-        <div style={{ fontFamily: "'Archivo Narrow','Archivo','Inter',sans-serif", fontSize: 18, fontWeight: 800, color: "#ECE4D2", letterSpacing: "0.02em", textTransform: "uppercase" as const, lineHeight: 1 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <BoldPMark size={32} bg="#1A472A" fg="#C8F26A" rounded={8} />
+      <div style={{ lineHeight: 1.1 }}>
+        <div style={{ fontFamily: "'Archivo Narrow','Archivo','Inter',sans-serif", fontSize: 17, fontWeight: 800, color: "#ECE4D2", letterSpacing: "0.02em", textTransform: "uppercase" as const, lineHeight: 1 }}>
           PACC ENERGY
         </div>
-        <div style={{ fontSize: 8, fontWeight: 600, color: "#8B8773", letterSpacing: "0.22em", marginTop: 4, textTransform: "uppercase" as const }}>
+        <div style={{ fontSize: 8, fontWeight: 600, color: "#8B8773", letterSpacing: "0.22em", marginTop: 3, textTransform: "uppercase" as const }}>
           Powered by Progress
         </div>
       </div>
@@ -83,7 +83,7 @@ export default function LandingPage() {
   return (
     <div style={{ background: "#0E1F10", color: "#ECE4D2", minHeight: "100vh" }}>
       {/* ── NAV ── */}
-      <nav className="sticky top-0 z-50" style={{ background: "rgba(14,31,16,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(42,74,46,0.6)" }}>
+      <nav className="sticky top-0 z-50" style={{ background: "rgba(14,31,16,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(42,74,46,0.6)", paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16">
           <PACCNavLogo />
           <div className="hidden md:flex items-center gap-6">
