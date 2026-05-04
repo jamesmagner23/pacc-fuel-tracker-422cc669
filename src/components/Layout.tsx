@@ -261,22 +261,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         <header
           style={{
-            height: 52,
             background: BG,
             borderBottom: `1px solid ${BORDER}`,
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 16px",
+            flexDirection: "column",
             flexShrink: 0,
             position: "sticky",
             top: bannerOffset,
             zIndex: 50,
-            gap: 8,
           }}
         >
-          {/* Mobile header */}
-          <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              height: 52,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 16px",
+              gap: 8,
+              minWidth: 0,
+            }}
+          >
+            {/* Mobile header */}
+            <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
             <button
               onClick={() => setMobileMenuOpen(true)}
               style={{
@@ -292,14 +299,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Menu style={{ width: 16, height: 16 }} />
             </button>
             <PACCLogo size="sm" />
+            </div>
+
+            <div className="hidden md:block" />
+
+            {/* Desktop right cluster */}
+            <div className="hidden md:flex" style={{ alignItems: "center", gap: 8 }}>
+              <SyncButton />
+              <DateRangeToggle />
+              <GlobalThemeToggle compact />
+            </div>
+
+            {/* Mobile right cluster (no date toggle here) */}
+            <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              <SyncButton />
+              <GlobalThemeToggle compact />
+            </div>
           </div>
 
-          <div className="hidden md:block" />
-
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <SyncButton />
+          {/* Mobile second row: date range toggle */}
+          <div
+            className="md:hidden"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              padding: "0 12px 8px",
+              borderTop: `1px solid ${BORDER}`,
+              paddingTop: 8,
+            }}
+          >
             <DateRangeToggle />
-            <GlobalThemeToggle compact />
           </div>
         </header>
 
