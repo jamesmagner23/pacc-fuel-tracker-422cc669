@@ -16,8 +16,12 @@ export default function BuyPriceTab() {
   const upsert = useUpsertBuyPrice();
   const del = useDeleteBuyPrice();
   const { data: todayPrices = [] } = useTodayBuyPrices();
-  const { data: tgpPrices = [] } = useTGPrices("Melbourne", "Diesel", 30);
-  const { data: todayTGP } = useTodayTGP("Melbourne", "Diesel");
+  const TGP_LOCATIONS = ["Melbourne", "Sydney", "Brisbane", "Adelaide", "Perth", "Darwin", "Hobart"] as const;
+  const TGP_PRODUCTS = ["Diesel", "ULP"] as const;
+  const [tgpLocation, setTgpLocation] = useState<string>("Melbourne");
+  const [tgpProduct, setTgpProduct] = useState<string>("Diesel");
+  const { data: tgpPrices = [] } = useTGPrices(tgpLocation, tgpProduct, 30);
+  const { data: todayTGP } = useTodayTGP(tgpLocation, tgpProduct);
   const fetchTGP = useFetchTGP();
   const [refreshingTGP, setRefreshingTGP] = useState(false);
 
