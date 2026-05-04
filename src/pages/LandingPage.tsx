@@ -10,12 +10,26 @@ import truckSiteImg from "@/assets/truck-site.jpg";
 
 function PACCNavLogo() {
   return (
-    <div style={{ lineHeight: 1 }}>
-      <div style={{ fontSize: 22, fontWeight: 800, color: "#ECE4D2", letterSpacing: "-0.03em", textTransform: "uppercase" as const, lineHeight: 1 }}>
-        PACC<span style={{ color: "#C8F26A", fontSize: 14 }}>®</span>
-      </div>
-      <div style={{ fontSize: 8, fontWeight: 500, color: "#C7BFAC", letterSpacing: "0.18em", marginTop: 2, textTransform: "uppercase" as const }}>
-        ENERGY
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <svg width={22} height={26} viewBox="0 0 100 120" aria-hidden="true">
+        {[
+          [1,1,1,1,0],
+          [1,0,0,0,1],
+          [1,0,0,0,1],
+          [1,1,1,1,0],
+          [1,0,0,0,0],
+          [1,0,0,0,0],
+        ].flatMap((row, y) => row.map((on, x) => on ? (
+          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7} fill="#C8F26A" />
+        ) : null))}
+      </svg>
+      <div style={{ lineHeight: 1 }}>
+        <div style={{ fontFamily: "'Archivo Narrow','Archivo','Inter',sans-serif", fontSize: 18, fontWeight: 800, color: "#ECE4D2", letterSpacing: "0.02em", textTransform: "uppercase" as const, lineHeight: 1 }}>
+          PACC ENERGY
+        </div>
+        <div style={{ fontSize: 8, fontWeight: 600, color: "#8B8773", letterSpacing: "0.22em", marginTop: 4, textTransform: "uppercase" as const }}>
+          Powered by Progress
+        </div>
       </div>
     </div>
   );
