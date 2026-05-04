@@ -27,6 +27,7 @@ import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
+import BrandCheck from "./pages/BrandCheck";
 import { DemoBanner } from "./components/DemoBanner";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ function DemoAwareRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/brand-check" element={<BrandCheck />} />
       <Route path="/docket/multi" element={<DeliveryDocket />} />
       <Route path="/docket/:id" element={<DeliveryDocket />} />
       {/* In demo mode, portal/driver get the sidebar Layout */}
