@@ -7,6 +7,7 @@ import { Menu, X, LogOut } from "lucide-react";
 import { PACCLogo } from "./PACCLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemoContext } from "@/hooks/useDemo";
+import { GlobalThemeToggle } from "./GlobalThemeToggle";
 
 const navItems = [
   { to: "/", label: "Overview" },
@@ -298,6 +299,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <SyncButton />
             <DateRangeToggle />
+            <GlobalThemeToggle compact />
           </div>
         </header>
 
