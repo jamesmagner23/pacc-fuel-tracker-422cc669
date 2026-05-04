@@ -15,27 +15,32 @@ export function BoldPMark({
   rounded?: number;
   bleed?: boolean;
 }) {
-  // Bold, solid "P" rendered as a single filled path so the bowl reads
-  // clearly at any size. ViewBox is 100x100.
+  // Dotted "P" mark — halftone style matching the PACC brand reference.
+  // 5-column × 7-row grid. `2` = full dot, `1` = small dot, `0` = empty.
+  const grid: number[][] = [
+    [2, 2, 2, 2, 1], // top of bowl
+    [2, 2, 0, 2, 1],
+    [2, 2, 0, 2, 1],
+    [2, 2, 2, 2, 1], // bottom of bowl
+    [2, 2, 0, 0, 0], // stem only
+    [2, 2, 0, 0, 0],
+    [2, 2, 0, 0, 0],
+  ];
+
+  const cols = 5;
+  const rows = 7;
+  // 100x100 viewBox, with margin so dots have breathing room.
+  const margin = 6;
+  const cellW = (100 - margin * 2) / cols;
+  const cellH = (100 - margin * 2) / rows;
+  const cell = Math.min(cellW, cellH);
+  const gridW = cell * cols;
+  const gridH = cell * rows;
+  const offsetX = (100 - gridW) / 2;
+  const offsetY = (100 - gridH) / 2;
+  const fullR = cell * 0.42;
+  const smallR = cell * 0.22;
   const tileRadius = bleed ? 0 : (rounded * 100) / size;
-  // Path coords: outer P (stem + rounded bowl) minus inner counter (hole).
-  // Uses even-odd fill so the inner subpath cuts a clean hole.
-  const d = [
-    // Outer shape
-    "M 18 14",
-    "H 60",
-    "A 22 22 0 0 1 60 58",
-    "H 38",
-    "V 86",
-    "H 18",
-    "Z",
-    // Inner counter (hole in the bowl)
-    "M 38 30",
-    "H 58",
-    "A 8 8 0 0 1 58 46",
-    "H 38",
-    "Z",
-  ].join(" ");
 
   return (
     <svg
@@ -46,7 +51,14 @@ export function BoldPMark({
       style={{ display: "block", borderRadius: rounded }}
     >
       <rect x="0" y="0" width="100" height="100" rx={tileRadius} fill={bg} />
-      <path d={d} fill={fg} fillRule="evenodd" />
+      {grid.flatMap((row, r) =>
+        row.map((v, c) => {
+          if (!v) return null;
+          const cx = offsetX + cell * (c + 0.5);
+          const cy = offsetY + cell * (r + 0.5);
+          return <circle key={`${r}-${c}`} cx={cx} cy={cy} r={v === 2 ? fullR : smallR} fill={fg} />;
+        })
+      )}
     </svg>
   );
 }
