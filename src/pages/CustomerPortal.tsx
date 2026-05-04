@@ -144,6 +144,7 @@ const tabs = [
   "04 Plant",
   "05 Analytics",
   "06 Emissions",
+  "07 Profile",
 ] as const;
 type Tab = (typeof tabs)[number];
 
