@@ -16,8 +16,12 @@ export default function BuyPriceTab() {
   const upsert = useUpsertBuyPrice();
   const del = useDeleteBuyPrice();
   const { data: todayPrices = [] } = useTodayBuyPrices();
-  const { data: tgpPrices = [] } = useTGPrices("Melbourne", "Diesel", 30);
-  const { data: todayTGP } = useTodayTGP("Melbourne", "Diesel");
+  const TGP_LOCATIONS = ["Melbourne", "Sydney", "Brisbane", "Adelaide", "Perth", "Darwin", "Hobart"] as const;
+  const TGP_PRODUCTS = ["Diesel", "ULP"] as const;
+  const [tgpLocation, setTgpLocation] = useState<string>("Melbourne");
+  const [tgpProduct, setTgpProduct] = useState<string>("Diesel");
+  const { data: tgpPrices = [] } = useTGPrices(tgpLocation, tgpProduct, 30);
+  const { data: todayTGP } = useTodayTGP(tgpLocation, tgpProduct);
   const fetchTGP = useFetchTGP();
   const [refreshingTGP, setRefreshingTGP] = useState(false);
 
@@ -212,8 +216,15 @@ export default function BuyPriceTab() {
         return (
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3.5">
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Terminal Gate Price vs Your Buy Price — Melbourne Diesel (All Ex GST)</div>
-              <button
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Terminal Gate Price vs Your Buy Price — {tgpLocation} {tgpProduct} (All Ex GST)</div>
+              <div className="flex items-center gap-2">
+                <select value={tgpLocation} onChange={(e) => setTgpLocation(e.target.value)} className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1 text-[10px] outline-none">
+                  {TGP_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+                <select value={tgpProduct} onChange={(e) => setTgpProduct(e.target.value)} className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1 text-[10px] outline-none">
+                  {TGP_PRODUCTS.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <button
                 onClick={handleRefreshTGP}
                 disabled={refreshingTGP}
                 className="bg-transparent border border-surface-border rounded-full px-3 py-1 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50"
@@ -221,6 +232,7 @@ export default function BuyPriceTab() {
                 <RefreshCw className={`w-3 h-3 ${refreshingTGP ? "animate-spin" : ""}`} />
                 {refreshingTGP ? "Syncing…" : "Refresh TGP"}
               </button>
+              </div>
             </div>
 
             {tgp ? (
