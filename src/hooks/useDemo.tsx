@@ -1,6 +1,5 @@
-import { createContext, useContext, useMemo, useEffect, useState } from "react";
+import { createContext, useContext, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { DemoGate } from "@/components/DemoGate";
 
 interface DemoContextValue {
   isDemo: boolean;
@@ -58,28 +57,13 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     ? (params.get("color") || DEMO_DEFAULT_COLOR)
     : null;
 
-  // Bypass the lead-capture gate when arriving from an outreach email link.
-  // Recipients should land directly in the demo portal without friction —
-  // compute synchronously so the gate never flashes on first render.
-  const [unlocked, setUnlocked] = useState(() => {
-    if (sessionStorage.getItem("demo_unlocked") === "true") return true;
-    try {
-      const sp = new URLSearchParams(window.location.search);
-      const isEmailSource =
-        sp.get("source") === "email" ||
-        sp.get("utm_source") === "email" ||
-        sp.get("ref") === "email" ||
-        // Click tracker preserves campaign even when some clients strip params
-        sp.get("campaign") === "portal-showcase";
-      if (isEmailSource || (sp.get("demo") === "true" && sp.get("brand") === "pacc")) {
-        sessionStorage.setItem("demo_unlocked", "true");
-        return true;
-      }
-    } catch {
-      /* noop */
+  // Demo gate removed — demo mode loads directly into the portal.
+  // Keep sessionStorage flag set so any legacy checks elsewhere still see it as unlocked.
+  useEffect(() => {
+    if (isDemo) {
+      try { sessionStorage.setItem("demo_unlocked", "true"); } catch { /* noop */ }
     }
-    return false;
-  });
+  }, [isDemo]);
 
   const accentColor = useMemo(() => resolveColor(rawColor), [rawColor]);
   const hexColor = useMemo(() => {
@@ -149,19 +133,6 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     () => ({ isDemo, brand, accentColor: accentColor || hexColor, isPaccBranded }),
     [isDemo, brand, accentColor, hexColor, isPaccBranded]
   );
-
-  // Show gate if demo mode is active but not yet unlocked
-  if (isDemo && !unlocked) {
-    return (
-      <DemoContext.Provider value={value}>
-        <DemoGate
-          brand={brand}
-          color={rawColor}
-          onUnlock={() => setUnlocked(true)}
-        />
-      </DemoContext.Provider>
-    );
-  }
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
 }
