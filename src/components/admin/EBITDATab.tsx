@@ -201,7 +201,7 @@ export default function EBITDATab() {
               className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
               style={{
                 background: period === p.v ? "var(--accent)" : "transparent",
-                color: period === p.v ? "#ffffff" : "var(--text-secondary)",
+                color: period === p.v ? "#0E1F10" : "var(--text-secondary)",
               }}
             >
               {p.l}
