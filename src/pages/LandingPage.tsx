@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone } from "lucide-react";
+import { BoldPMark } from "@/components/BoldPMark";
 import heroImg from "@/assets/hero-construction.jpg";
 import refuelImg from "@/assets/refuelling-closeup.jpg";
 import truckSideImg from "@/assets/truck-side.jpg";
@@ -11,18 +12,7 @@ import truckSiteImg from "@/assets/truck-site.jpg";
 function PACCNavLogo() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <svg width={22} height={26} viewBox="0 0 100 120" aria-hidden="true">
-        {[
-          [1,1,1,1,0],
-          [1,0,0,0,1],
-          [1,0,0,0,1],
-          [1,1,1,1,0],
-          [1,0,0,0,0],
-          [1,0,0,0,0],
-        ].flatMap((row, y) => row.map((on, x) => on ? (
-          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7} fill="#C8F26A" />
-        ) : null))}
-      </svg>
+      <BoldPMark size={30} bg="#1A472A" fg="#C8F26A" rounded={7} />
       <div style={{ lineHeight: 1 }}>
         <div style={{ fontFamily: "'Archivo Narrow','Archivo','Inter',sans-serif", fontSize: 18, fontWeight: 800, color: "#ECE4D2", letterSpacing: "0.02em", textTransform: "uppercase" as const, lineHeight: 1 }}>
           PACC ENERGY
