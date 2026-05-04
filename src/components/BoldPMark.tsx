@@ -19,39 +19,39 @@ export function BoldPMark({
   const tileRadius = bleed ? 0 : (rounded * 100) / size;
 
   // 5 cols × 7 rows P pattern. 1 = dot, 0 = empty.
-  // Shape: stem on cols 0-1 all rows; bowl top row 0 cols 2-3;
-  // right edge col 4 rows 1-2; bowl bottom row 3 cols 2-3.
+  // Single-column stem (col 0) with a 4-wide closed bowl up top.
+  // Symmetric horizontally about the bowl, evenly spaced.
   const grid: number[][] = [
     [1, 1, 1, 1, 0], // row 0 — top of bowl
-    [1, 1, 0, 0, 1], // row 1
-    [1, 1, 0, 0, 1], // row 2
+    [1, 0, 0, 0, 1], // row 1 — bowl sides
+    [1, 0, 0, 0, 1], // row 2 — bowl sides
     [1, 1, 1, 1, 0], // row 3 — bottom of bowl
-    [1, 1, 0, 0, 0], // row 4 — stem
-    [1, 1, 0, 0, 0], // row 5 — stem
-    [1, 1, 0, 0, 0], // row 6 — stem
+    [1, 0, 0, 0, 0], // row 4 — stem
+    [1, 0, 0, 0, 0], // row 5 — stem
+    [1, 0, 0, 0, 0], // row 6 — stem
   ];
 
   const cols = 5;
   const rows = 7;
-  // Layout inside 100×100 viewBox with margin so dots don't kiss the edge.
-  const marginX = 10;
-  const marginY = 8;
-  const stepX = (100 - marginX * 2) / (cols - 1); // 20
-  const stepY = (100 - marginY * 2) / (rows - 1); // 14
-  // Base dot radius — slightly under half a step so dots breathe.
-  const baseR = Math.min(stepX, stepY) * 0.42; // ~5.88
-  // Perspective shrink: leftmost col = 100%, rightmost col = 62%.
-  const minScale = 0.62;
+  // Layout inside 100×100 viewBox. Use equal step on both axes so dots are
+  // perfectly square-spaced; the grid is then centred in the tile.
+  const step = 14;
+  const gridW = step * (cols - 1); // 56
+  const gridH = step * (rows - 1); // 84
+  const offsetX = (100 - gridW) / 2; // 22
+  const offsetY = (100 - gridH) / 2; // 8
+  // Uniform dot radius — symmetry over perspective.
+  const dotR = step * 0.42; // ~5.88
 
   const dots: { cx: number; cy: number; r: number }[] = [];
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (!grid[r][c]) continue;
-      const cx = marginX + c * stepX;
-      const cy = marginY + r * stepY;
-      const t = c / (cols - 1); // 0..1 left→right
-      const scale = 1 - (1 - minScale) * t;
-      dots.push({ cx, cy, r: baseR * scale });
+      dots.push({
+        cx: offsetX + c * step,
+        cy: offsetY + r * step,
+        r: dotR,
+      });
     }
   }
 

@@ -22,23 +22,15 @@ describe("BoldPMark dot-grid regression", () => {
   });
 
   it("renders the expected number of dots for the P glyph", () => {
-    // 5x7 grid: row0=4, r1=3, r2=3, r3=4, r4=2, r5=2, r6=2 = 20
+    // 5x7 grid: row0=4, r1=2, r2=2, r3=4, r4=1, r5=1, r6=1 = 15
     const { circles } = renderSvg(64);
-    expect(circles.length).toBe(20);
+    expect(circles.length).toBe(15);
   });
 
-  it("dots shrink left-to-right (perspective)", () => {
+  it("dots are uniform in size (symmetric)", () => {
     const { circles } = renderSvg(64);
-    const byCol = new Map<number, number>();
-    for (const c of circles) {
-      const prev = byCol.get(c.cx);
-      if (prev !== undefined) expect(c.r).toBeCloseTo(prev, 5);
-      byCol.set(c.cx, c.r);
-    }
-    const cols = [...byCol.entries()].sort((a, b) => a[0] - b[0]);
-    for (let i = 1; i < cols.length; i++) {
-      expect(cols[i][1]).toBeLessThan(cols[i - 1][1]);
-    }
+    const r0 = circles[0].r;
+    for (const c of circles) expect(c.r).toBeCloseTo(r0, 5);
   });
 
   it("geometry is independent of size prop", () => {
