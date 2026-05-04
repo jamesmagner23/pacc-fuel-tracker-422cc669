@@ -97,7 +97,7 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
 
   const kpis = [
     { label: "Total Stops", value: totals.stops, icon: <MapPin className="w-3.5 h-3.5" /> },
-    { label: "Completed", value: totals.completed, icon: <TrendingUp className="w-3.5 h-3.5" style={{ color: "#10B981" }} /> },
+    { label: "Completed", value: totals.completed, icon: <TrendingUp className="w-3.5 h-3.5" style={{ color: "#C8F26A" }} /> },
     { label: "KMs Driven", value: `${Math.round(totals.distanceKm).toLocaleString()}`, icon: <Route className="w-3.5 h-3.5" /> },
     { label: "Drive Hours", value: `${totals.durationHrs.toFixed(1)}`, icon: <Truck className="w-3.5 h-3.5" /> },
     { label: "Routes", value: totals.routes, icon: <BarChart3 className="w-3.5 h-3.5" /> },

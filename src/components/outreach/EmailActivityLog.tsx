@@ -125,11 +125,11 @@ export default function EmailActivityLog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818] h-11 px-3">
+        <Button variant="outline" className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520] h-11 px-3">
           <History className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Activity log</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-[#2a1d11] border-[#2A4A2E] text-[#ECE4D2] max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="bg-[#142A16] border-[#2A4A2E] text-[#ECE4D2] max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-[#C8F26A]" /> Email activity log
@@ -137,21 +137,21 @@ export default function EmailActivityLog() {
         </DialogHeader>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8a7559]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8B8773]" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by recipient, sender, organisation, or subject"
-            className="pl-9 h-11 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8a7559]"
+            className="pl-9 h-11 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
           />
         </div>
 
         <Tabs defaultValue="all" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="bg-[#1f150b] border border-[#2A4A2E]">
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#3a2818] data-[state=active]:text-[#ECE4D2] text-[#C7BFAC]">
+            <TabsTrigger value="all" className="data-[state=active]:bg-[#1B3520] data-[state=active]:text-[#ECE4D2] text-[#C7BFAC]">
               All sends
             </TabsTrigger>
-            <TabsTrigger value="threads" className="data-[state=active]:bg-[#3a2818] data-[state=active]:text-[#ECE4D2] text-[#C7BFAC]">
+            <TabsTrigger value="threads" className="data-[state=active]:bg-[#1B3520] data-[state=active]:text-[#ECE4D2] text-[#C7BFAC]">
               <MessageSquare className="h-3.5 w-3.5 mr-1.5" /> Threads ({threads.length})
             </TabsTrigger>
           </TabsList>
@@ -178,18 +178,18 @@ export default function EmailActivityLog() {
               </thead>
               <tbody>
                 {filtered.map(r => (
-                  <tr key={r.id} className="border-t border-[#3a2818] align-top">
+                  <tr key={r.id} className="border-t border-[#1B3520] align-top">
                     <td className="px-3 py-2 whitespace-nowrap text-[#C7BFAC]">{formatDateTime(r.created_at)}</td>
                     <td className="px-3 py-2">
                       <div className="text-[#ECE4D2]">{r.sender_name || r.sender_email || "—"}</div>
                       {r.sender_name && r.sender_email && (
-                        <div className="text-xs text-[#8a7559]">{r.sender_email}</div>
+                        <div className="text-xs text-[#8B8773]">{r.sender_email}</div>
                       )}
                     </td>
                     <td className="px-3 py-2">
                       <div className="text-[#ECE4D2]">{r.recipient_name || r.recipient_email || "—"}</div>
-                      <div className="text-xs text-[#8a7559]">{r.recipient_email}{r.organisation ? ` · ${r.organisation}` : ""}</div>
-                      {r.bcc && <div className="text-[10px] text-[#8a7559] mt-0.5">BCC: {r.bcc}</div>}
+                      <div className="text-xs text-[#8B8773]">{r.recipient_email}{r.organisation ? ` · ${r.organisation}` : ""}</div>
+                      {r.bcc && <div className="text-[10px] text-[#8B8773] mt-0.5">BCC: {r.bcc}</div>}
                     </td>
                     <td className="px-3 py-2 text-[#ECE4D2] max-w-xs truncate" title={r.subject}>{r.subject}</td>
                     <td className="px-3 py-2">
@@ -197,8 +197,8 @@ export default function EmailActivityLog() {
                         variant="outline"
                         className={
                           r.channel === "gmail"
-                            ? "border-[#2f5a3a] bg-[#1f3a26] text-[#9be3a8]"
-                            : "border-[#2A4A2E] bg-[#3a2818] text-[#C7BFAC]"
+                            ? "border-[#2A4A2E] bg-[#1B3520] text-[#C8F26A]"
+                            : "border-[#2A4A2E] bg-[#1B3520] text-[#C7BFAC]"
                         }
                       >
                         {CHANNEL_LABEL[r.channel] ?? r.channel}
@@ -230,16 +230,16 @@ export default function EmailActivityLog() {
                 No Gmail threads yet. Threads appear once you send branded emails via Gmail.
               </div>
             ) : (
-              <ul className="divide-y divide-[#3a2818]">
+              <ul className="divide-y divide-[#1B3520]">
                 {threads.map(t => {
                   const isOpen = expanded[t.threadId] ?? false;
                   const recipient = t.first.recipient_email || t.first.recipient_name || "—";
                   return (
-                    <li key={t.threadId} className="bg-[#2a1d11]">
+                    <li key={t.threadId} className="bg-[#142A16]">
                       <button
                         type="button"
                         onClick={() => setExpanded(s => ({ ...s, [t.threadId]: !isOpen }))}
-                        className="w-full text-left px-3 py-3 hover:bg-[#3a2818] flex items-start gap-2"
+                        className="w-full text-left px-3 py-3 hover:bg-[#1B3520] flex items-start gap-2"
                       >
                         {isOpen
                           ? <ChevronDown className="h-4 w-4 mt-0.5 text-[#C7BFAC] shrink-0" />
@@ -247,7 +247,7 @@ export default function EmailActivityLog() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-[#ECE4D2] font-medium truncate">{t.first.subject}</span>
-                            <Badge variant="outline" className="border-[#2f5a3a] bg-[#1f3a26] text-[#9be3a8] text-[10px]">
+                            <Badge variant="outline" className="border-[#2A4A2E] bg-[#1B3520] text-[#C8F26A] text-[10px]">
                               {t.items.length} message{t.items.length === 1 ? "" : "s"}
                             </Badge>
                           </div>
@@ -255,7 +255,7 @@ export default function EmailActivityLog() {
                             To {recipient}
                             {t.first.organisation ? ` · ${t.first.organisation}` : ""}
                           </div>
-                          <div className="text-[10px] text-[#8a7559] mt-0.5">
+                          <div className="text-[10px] text-[#8B8773] mt-0.5">
                             Last activity {formatDateTime(t.latest.created_at)}
                           </div>
                         </div>
@@ -270,10 +270,10 @@ export default function EmailActivityLog() {
                       </button>
 
                       {isOpen && (
-                        <ol className="border-t border-[#3a2818] bg-[#1f150b]">
+                        <ol className="border-t border-[#1B3520] bg-[#1f150b]">
                           {t.items.map((m, idx) => (
-                            <li key={m.id} className="px-3 py-2 border-b border-[#3a2818] last:border-b-0 flex gap-3">
-                              <div className="text-[10px] text-[#8a7559] w-6 pt-0.5 shrink-0">#{idx + 1}</div>
+                            <li key={m.id} className="px-3 py-2 border-b border-[#1B3520] last:border-b-0 flex gap-3">
+                              <div className="text-[10px] text-[#8B8773] w-6 pt-0.5 shrink-0">#{idx + 1}</div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-xs text-[#C7BFAC]">
                                   {formatDateTime(m.created_at)}
@@ -284,7 +284,7 @@ export default function EmailActivityLog() {
                                   {m.subject}
                                 </div>
                                 {m.bcc && (
-                                  <div className="text-[10px] text-[#8a7559] mt-0.5">BCC: {m.bcc}</div>
+                                  <div className="text-[10px] text-[#8B8773] mt-0.5">BCC: {m.bcc}</div>
                                 )}
                               </div>
                             </li>
@@ -299,7 +299,7 @@ export default function EmailActivityLog() {
           </TabsContent>
         </Tabs>
 
-        <div className="text-xs text-[#8a7559]">
+        <div className="text-xs text-[#8B8773]">
           Showing latest {rows.length} sends. Only admins can view this log.
         </div>
       </DialogContent>

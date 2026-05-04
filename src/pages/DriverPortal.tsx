@@ -297,9 +297,9 @@ type StopStatus = "scheduled" | "on_route" | "completed" | "failed";
 function StopStatusChip({ status }: { status: StopStatus }) {
   const styles: Record<StopStatus, { bg: string; text: string; label: string }> = {
     scheduled: { bg: "rgba(139,115,85,0.2)", text: "var(--text-secondary, #C7BFAC)", label: "Scheduled" },
-    on_route: { bg: "rgba(59,130,246,0.15)", text: "#60A5FA", label: "On Route" },
-    completed: { bg: "rgba(16,185,129,0.15)", text: "#10B981", label: "Completed" },
-    failed: { bg: "rgba(239,68,68,0.15)", text: "#EF4444", label: "Failed" },
+    on_route: { bg: "rgba(59,130,246,0.15)", text: "#C8F26A", label: "On Route" },
+    completed: { bg: "rgba(16,185,129,0.15)", text: "#C8F26A", label: "Completed" },
+    failed: { bg: "rgba(239,68,68,0.15)", text: "#FF6B5E", label: "Failed" },
   };
   const c = styles[status] || styles.scheduled;
   return (
@@ -621,7 +621,7 @@ function MyDayTab() {
         <div className="flex items-center gap-3">
           <div className="text-right">
             <p className="kpi-label mb-0.5">Completed</p>
-            <p className="text-lg font-bold" style={{ color: "var(--positive, #10B981)" }}>{completedCount} / {stops.length}</p>
+            <p className="text-lg font-bold" style={{ color: "var(--positive, #C8F26A)" }}>{completedCount} / {stops.length}</p>
           </div>
           <button
             onClick={() => setShowAddForm((v) => !v)}
@@ -691,7 +691,7 @@ function MyDayTab() {
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                     style={{
                       background: isCompleted ? "rgba(16,185,129,0.15)" : "rgba(200,242,106,0.15)",
-                      color: isCompleted ? "#10B981" : "var(--accent, #C8F26A)",
+                      color: isCompleted ? "#C8F26A" : "var(--accent, #C8F26A)",
                     }}
                   >
                     {stop.seq}

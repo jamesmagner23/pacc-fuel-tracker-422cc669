@@ -270,9 +270,9 @@ type StopStatus = "scheduled" | "on_route" | "completed" | "failed";
 function StatusChip({ status }: { status: StopStatus }) {
   const colors: Record<StopStatus, { bg: string; text: string; label: string }> = {
     scheduled: { bg: "rgba(139,115,85,0.2)", text: "#C7BFAC", label: "Scheduled" },
-    on_route: { bg: "rgba(59,130,246,0.15)", text: "#60A5FA", label: "On Route" },
-    completed: { bg: "rgba(16,185,129,0.15)", text: "#10B981", label: "Completed" },
-    failed: { bg: "rgba(239,68,68,0.15)", text: "#EF4444", label: "Failed" },
+    on_route: { bg: "rgba(59,130,246,0.15)", text: "#C8F26A", label: "On Route" },
+    completed: { bg: "rgba(16,185,129,0.15)", text: "#C8F26A", label: "Completed" },
+    failed: { bg: "rgba(239,68,68,0.15)", text: "#FF6B5E", label: "Failed" },
   };
   const c = colors[status] || colors.scheduled;
   return (
@@ -543,7 +543,7 @@ export default function Dispatch() {
       <div className="grid grid-cols-3 gap-1">
         {[
           { label: "Total Stops", value: totalStops, icon: <Package className="w-4 h-4" /> },
-          { label: "Completed", value: completedStops, icon: <CheckCircle2 className="w-4 h-4" style={{ color: "#10B981" }} /> },
+          { label: "Completed", value: completedStops, icon: <CheckCircle2 className="w-4 h-4" style={{ color: "#C8F26A" }} /> },
           { label: "Remaining", value: remainingStops, icon: <Clock className="w-4 h-4" style={{ color: tc.accent }} /> },
         ].map((kpi) => (
           <div
@@ -787,7 +787,7 @@ export default function Dispatch() {
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                       style={{
                         background: isCompleted ? "rgba(16,185,129,0.15)" : `${tc.accent}22`,
-                        color: isCompleted ? "#10B981" : tc.accent,
+                        color: isCompleted ? "#C8F26A" : tc.accent,
                       }}
                     >
                       {stop.seq}

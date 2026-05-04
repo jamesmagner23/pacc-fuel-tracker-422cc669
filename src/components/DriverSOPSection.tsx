@@ -68,7 +68,7 @@ function SectionCard({ section }: { section: DBSection }) {
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-3 px-4 text-left transition-colors hover:bg-surface-hover"
-        style={{ minHeight: 52, background: "none", border: "none", cursor: "pointer", color: "var(--text-primary, #f0ebe4)" }}
+        style={{ minHeight: 52, background: "none", border: "none", cursor: "pointer", color: "var(--text-primary, #ECE4D2)" }}
       >
         {open ? <ChevronDown className="w-4 h-4 shrink-0 text-accent" /> : <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />}
         <span className="text-sm font-medium flex-1">{section.title}</span>
@@ -101,7 +101,7 @@ function ClientSiteCard({ site }: { site: DBSite }) {
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-3 px-4 text-left transition-colors hover:bg-surface-hover"
-        style={{ minHeight: 52, background: "none", border: "none", cursor: "pointer", color: "var(--text-primary, #f0ebe4)" }}
+        style={{ minHeight: 52, background: "none", border: "none", cursor: "pointer", color: "var(--text-primary, #ECE4D2)" }}
       >
         {open ? <ChevronDown className="w-4 h-4 shrink-0 text-accent" /> : <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />}
         <div className="flex-1 min-w-0">
@@ -145,7 +145,7 @@ function ClientSiteCard({ site }: { site: DBSite }) {
           {site.notes.length > 0 && (
             <div className="mt-3 p-2.5 rounded-lg" style={{ background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.2)" }}>
               {site.notes.map((note, i) => (
-                <p key={i} className="text-[11px] mb-1 last:mb-0" style={{ color: "#D97706" }}>⚠ {note}</p>
+                <p key={i} className="text-[11px] mb-1 last:mb-0" style={{ color: "#F5C25B" }}>⚠ {note}</p>
               ))}
             </div>
           )}

@@ -31,7 +31,7 @@ const PACC_TEXT_ACTIVE = "#ECE4D2";
 // Neutral demo colors
 const DEMO_BG = "#1a1f2e";
 const DEMO_BORDER = "#3d4459";
-const DEMO_ACCENT = "#3B82F6";
+const DEMO_ACCENT = "#C8F26A";
 const DEMO_TEXT_DIM = "#9ca3b8";
 const DEMO_TEXT_ACTIVE = "#e8eaf0";
 

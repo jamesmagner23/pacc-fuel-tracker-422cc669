@@ -68,7 +68,7 @@ export function PACCLogo({
       : "#C8F26A"
     : accentColor
       ? `hsl(${accentColor})`
-      : "#3B82F6";
+      : "#C8F26A";
 
   const wordmarkColor = tone === "light"
     ? "#0E1F10"
