@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subDays } from "date-fns";
-import { Users, Activity, Trash2, Pencil, LogIn, Download, Eye, X } from "lucide-react";
+import { Users, Activity, Trash2, Pencil, LogIn, Download, Eye, X, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_USERS, DEMO_ACTIVITY } from "@/data/demoData";
@@ -121,6 +121,8 @@ export default function UsersActivityTab() {
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisionResults, setProvisionResults] = useState<any[] | null>(null);
   const qc = useQueryClient();
 
   const admins = users.filter(u => u.role === "admin");
@@ -137,6 +139,34 @@ export default function UsersActivityTab() {
       acc[a.full_name || a.email || a.user_id] = (acc[a.full_name || a.email || a.user_id] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
+
+  const handleProvision = async () => {
+    if (!confirm("Create portal logins (portal@<company>.com / 123456) for every active customer that doesn't have one yet?")) return;
+    setProvisioning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("bulk-provision-portal-users", { body: {} });
+      if (error) throw error;
+      setProvisionResults(data?.results || []);
+      toast.success(`Provisioned ${data?.created ?? 0} of ${data?.total ?? 0} accounts`);
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to provision");
+    } finally {
+      setProvisioning(false);
+    }
+  };
+
+  const downloadCsv = () => {
+    if (!provisionResults?.length) return;
+    const rows = [["company", "email", "password", "status", "error"]];
+    provisionResults.forEach((r) => rows.push([r.company || "", r.email || "", r.password || "", r.status || "", r.error || ""]));
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "portal-logins.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleEdit = (user: UserRow) => {
     setEditingUser(user);
@@ -178,7 +208,25 @@ export default function UsersActivityTab() {
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider">All Users ({users.length})</div>
-          <div className="flex gap-2 text-[10px]">
+          <div className="flex items-center gap-2 text-[10px]">
+            <button
+              onClick={handleProvision}
+              disabled={provisioning}
+              className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 px-3 py-1.5 rounded-md text-[11px] font-medium transition-opacity"
+              title="Create portal@<company>.com logins for all customers without an account"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              {provisioning ? "Provisioning…" : "Provision portal logins"}
+            </button>
+            {provisionResults && (
+              <button
+                onClick={downloadCsv}
+                className="flex items-center gap-1.5 bg-surface-raised border border-surface-border text-foreground hover:bg-muted/40 px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download credentials
+              </button>
+            )}
             <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full">{admins.length} Admin</span>
             <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">{clients.length} Client</span>
             <span className="bg-positive/20 text-positive px-2 py-0.5 rounded-full">{drivers.length} Driver</span>
