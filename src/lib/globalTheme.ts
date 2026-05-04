@@ -88,7 +88,7 @@ export function tokensForGlobal(theme: GlobalTheme) {
 }
 
 /** Mapping from CSS variable name → token key (single source of truth). */
-export const CSS_VAR_MAP: Record<string, keyof typeof GLOBAL_DARK> = {
+export const CSS_VAR_MAP: Record<string, keyof Tokens> = {
   "--background": "background",
   "--surface": "surface",
   "--surface-raised": "surfaceRaised",
