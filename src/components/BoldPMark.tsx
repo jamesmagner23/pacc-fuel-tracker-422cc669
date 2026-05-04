@@ -17,15 +17,18 @@ export function BoldPMark({
 }) {
   const tileRadius = bleed ? 0 : (rounded * 100) / size;
   // Geometry — symmetric bold "P" centered in 100x100 viewBox.
-  // Stem and bowl share the same stroke weight; bowl is a perfect circle.
+  // The mark's bounding box is centered both horizontally and vertically.
+  // Bbox: x ∈ [22, 78] (center 50), y ∈ [20, 80] (center 50).
   const stemW = 22;            // stem thickness
-  const stemX = 26;            // stem left edge
+  const stemX = 22;            // stem left edge
   const stemTop = 20;
   const stemBottom = 80;
-  const bowlCx = stemX + stemW + 12; // 60
-  const bowlCy = 38;            // centered in upper half
   const bowlOuterR = 22;
-  const bowlInnerR = 9;         // counter — keeps stroke weight = stemW/2 ≈ 11 (close)
+  const bowlInnerR = 9;
+  // Horizontal: bbox = [stemX, bowlCx + bowlOuterR]; center at 50 → bowlCx = 56.
+  const bowlCx = 100 - stemX - bowlOuterR; // 56
+  // Vertical: bowl top aligns with stemTop; bbox = [stemTop, stemBottom], center 50.
+  const bowlCy = stemTop + bowlOuterR;     // 42
 
   return (
     <svg
