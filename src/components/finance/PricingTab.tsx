@@ -290,7 +290,9 @@ export default function PricingTab() {
         sell_price_per_litre: avgSellPrice,
         total_ex_gst: grandTotalEx,
         total_inc_gst: grandTotalInc,
-        notes: notes || null,
+        notes: selectedSupplier
+          ? `Supplier: ${selectedSupplier}${notes ? ` · ${notes}` : ""}`
+          : (notes || null),
         valid_until: format(addDays(new Date(), 1), "yyyy-MM-dd"),
         line_items: lineItemsData,
       } as any);
