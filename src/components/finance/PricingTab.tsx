@@ -4,6 +4,7 @@ import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil,
 import jsPDF from "jspdf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBuyPrices, useTodayBuyPrice, useTodayBuyPrices } from "@/hooks/useBuyPrices";
+import { useTodayTGP } from "@/hooks/useTGPrices";
 import {
   usePricingTiers,
   useUpsertTier,
@@ -56,6 +57,11 @@ export default function PricingTab() {
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { data: todayPricesAll = [] } = useTodayBuyPrices();
   const { data: todayBuyPrice } = useTodayBuyPrice();
+  const TGP_LOCATIONS = ["Melbourne", "Sydney", "Brisbane", "Adelaide", "Perth", "Darwin", "Hobart"] as const;
+  const TGP_PRODUCTS = ["Diesel", "ULP"] as const;
+  const [tgpLocation, setTgpLocation] = useState<string>("Melbourne");
+  const [tgpProduct, setTgpProduct] = useState<string>("Diesel");
+  const { data: todayTGP } = useTodayTGP(tgpLocation, tgpProduct);
   const { data: tiers = [], isLoading: tiersLoading } = usePricingTiers();
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
   const { data: clients = [] } = useQuery({
