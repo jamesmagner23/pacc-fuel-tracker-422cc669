@@ -101,7 +101,7 @@ export default function LandingPage() {
             <button
               onClick={() => navigate("/login")}
               className="px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all"
-              style={{ background: "#C8F26A", color: "#fff", border: "none" }}
+              style={{ background: "#C8F26A", color: "#0E1F10", border: "none" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "#B6E254"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "#C8F26A"; }}
             >
@@ -136,7 +136,7 @@ export default function LandingPage() {
               <a
                 href="#contact"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all"
-                style={{ background: "#C8F26A", color: "#fff", boxShadow: "0 8px 32px rgba(200,242,106,0.3)" }}
+                style={{ background: "#C8F26A", color: "#0E1F10", boxShadow: "0 8px 32px rgba(200,242,106,0.3)" }}
               >
                 Request a Quote <ChevronRight className="w-4 h-4" />
               </a>
@@ -280,7 +280,7 @@ export default function LandingPage() {
             <button
               onClick={() => navigate("/?demo=true")}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold cursor-pointer transition-all"
-              style={{ background: "#C8F26A", color: "#fff", boxShadow: "0 8px 32px rgba(200,242,106,0.3)" }}
+              style={{ background: "#C8F26A", color: "#0E1F10", boxShadow: "0 8px 32px rgba(200,242,106,0.3)" }}
             >
               <Eye className="w-4 h-4" /> See a Live Demo
             </button>
@@ -379,7 +379,7 @@ export default function LandingPage() {
             <a
               href="mailto:fuel@paccvictoria.com"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all"
-              style={{ background: "#C8F26A", color: "#fff", boxShadow: "0 8px 32px rgba(200,242,106,0.3)" }}
+              style={{ background: "#C8F26A", color: "#0E1F10", boxShadow: "0 8px 32px rgba(200,242,106,0.3)" }}
             >
               <Mail className="w-4 h-4" /> fuel@paccvictoria.com
             </a>
