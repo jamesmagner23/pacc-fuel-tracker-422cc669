@@ -252,8 +252,8 @@ export default function EBITDATab() {
                 <ReferenceLine y={0} stroke="var(--surface-border)" />
                 {/* Revenue alongside stacked costs for easy comparison */}
                 <Bar dataKey="revenue" name="Revenue" fill={accent} radius={[3, 3, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="cogs" name="COGS (Fuel)" stackId="cost" fill="#6b4423" radius={[0, 0, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="opex" name="OpEx" stackId="cost" fill="#3d2817" stroke="#6b4423" strokeWidth={1} radius={[3, 3, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="cogs" name="COGS (Fuel)" stackId="cost" fill="#3F6B36" radius={[0, 0, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="opex" name="OpEx" stackId="cost" fill="#1B3520" stroke="#3F6B36" strokeWidth={1} radius={[3, 3, 0, 0]} maxBarSize={28} />
                 <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke="#C8F26A" strokeWidth={2.5} dot={{ r: 3, fill: "#C8F26A" }} />
               </ComposedChart>
             </ResponsiveContainer>

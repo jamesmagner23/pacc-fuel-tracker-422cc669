@@ -51,7 +51,7 @@ const T = {
   sansBody: "'Inter', system-ui, sans-serif",
   badgePending: "#8B8773",
   badgeConfirmed: "#C8F26A",
-  badgeCompleted: "#0F8A5E",
+  badgeCompleted: "#3F6B36",
 };
 
 /**
@@ -2292,7 +2292,7 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, gap: 12, flexWrap: "wrap" }}>
           {msg ? (
-            <div style={{ fontSize: 12, color: msg.type === "ok" ? T.badgeCompleted : "#c0392b", fontFamily: T.sansBody }}>
+            <div style={{ fontSize: 12, color: msg.type === "ok" ? T.badgeCompleted : "#FF6B5E", fontFamily: T.sansBody }}>
               {msg.text}
             </div>
           ) : <span />}

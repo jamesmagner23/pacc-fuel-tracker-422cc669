@@ -56,10 +56,10 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
 
   const mapBg = cssVar("--map-bg", "#0A1A0C");
   const mapBorder = cssVar("--map-border", "#1A301D");
-  const accent = cssVar("--accent", "#FF4D1C");
+  const accent = cssVar("--accent", "#C8F26A");
   const textMuted = cssVar("--text-muted", "#8B8773");
   const textSecondary = cssVar("--text-secondary", "#C7BFAC");
-  const textPrimary = cssVar("--text-primary", "#F2EDE6");
+  const textPrimary = cssVar("--text-primary", "#ECE4D2");
 
   useEffect(() => {
     if (mapRef.current && mapReady) {

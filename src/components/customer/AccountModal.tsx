@@ -320,9 +320,9 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
                       style={{
                         ...input,
                         borderColor: abnIssue
-                          ? "#e0593c"
+                          ? "#FF6B5E"
                           : abnValid
-                          ? "#3a7d4a"
+                          ? "#3F6B36"
                           : T.border,
                         fontVariantNumeric: "tabular-nums",
                         letterSpacing: "0.05em",
@@ -349,9 +349,9 @@ export function AccountModal({ open, onClose, clientAccountId, companyName, user
                         fontSize: 11,
                         marginTop: 4,
                         color: abnIssue
-                          ? "#e0593c"
+                          ? "#FF6B5E"
                           : abnValid
-                          ? "#7bbf8b"
+                          ? "#C8F26A"
                           : T.muted,
                       }}
                     >
