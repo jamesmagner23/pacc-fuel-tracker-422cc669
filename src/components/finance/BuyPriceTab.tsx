@@ -216,8 +216,15 @@ export default function BuyPriceTab() {
         return (
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3.5">
-              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Terminal Gate Price vs Your Buy Price — Melbourne Diesel (All Ex GST)</div>
-              <button
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Terminal Gate Price vs Your Buy Price — {tgpLocation} {tgpProduct} (All Ex GST)</div>
+              <div className="flex items-center gap-2">
+                <select value={tgpLocation} onChange={(e) => setTgpLocation(e.target.value)} className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1 text-[10px] outline-none">
+                  {TGP_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+                <select value={tgpProduct} onChange={(e) => setTgpProduct(e.target.value)} className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1 text-[10px] outline-none">
+                  {TGP_PRODUCTS.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+                <button
                 onClick={handleRefreshTGP}
                 disabled={refreshingTGP}
                 className="bg-transparent border border-surface-border rounded-full px-3 py-1 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50"
