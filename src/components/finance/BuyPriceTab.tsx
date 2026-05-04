@@ -408,7 +408,10 @@ export default function BuyPriceTab() {
                 <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderBottom: i < prices.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
                   <div>
                     <div className="text-[13px] text-foreground font-medium">{format(parseISO(p.price_date), "EEE dd MMM yyyy")}</div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">{p.supplier}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70" />
+                      {p.supplier}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="text-right">
