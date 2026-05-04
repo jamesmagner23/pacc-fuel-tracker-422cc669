@@ -58,7 +58,7 @@ export const ScreenCard: React.FC<Props> = ({
       <div
         style={{
           height: 36,
-          background: "#0A1610",
+          background: "#EFE7D2",
           borderBottom: `1px solid ${T.border}`,
           display: "flex",
           alignItems: "center",
