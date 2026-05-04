@@ -117,8 +117,8 @@ export const FtcScene: React.FC = () => {
             gap: 14,
             padding: "12px 20px",
             borderRadius: 999,
-            background: "rgba(200,242,106,0.08)",
-            border: `1px solid rgba(200,242,106,0.25)`,
+            background: "rgba(63,122,54,0.08)",
+            border: `1px solid rgba(63,122,54,0.25)`,
             marginBottom: 28,
           }}
         >
