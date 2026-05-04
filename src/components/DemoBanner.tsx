@@ -11,7 +11,7 @@ export function DemoBanner() {
   if (!isDemo) return null;
 
   const bgColor = isPaccBranded
-    ? "#E8461E"
+    ? "#C8F26A"
     : (accentColor ? `hsl(${accentColor})` : "#3B82F6");
 
   return (

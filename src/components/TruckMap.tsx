@@ -54,11 +54,11 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const route = data?.route;
   const hasLocation = !!(driver?.lat && driver?.lng);
 
-  const mapBg = cssVar("--map-bg", "#1A1009");
-  const mapBorder = cssVar("--map-border", "#2E1C0C");
+  const mapBg = cssVar("--map-bg", "#0A1A0C");
+  const mapBorder = cssVar("--map-border", "#1A301D");
   const accent = cssVar("--accent", "#FF4D1C");
-  const textMuted = cssVar("--text-muted", "#8B7355");
-  const textSecondary = cssVar("--text-secondary", "#C4A882");
+  const textMuted = cssVar("--text-muted", "#8B8773");
+  const textSecondary = cssVar("--text-secondary", "#C7BFAC");
   const textPrimary = cssVar("--text-primary", "#F2EDE6");
 
   useEffect(() => {

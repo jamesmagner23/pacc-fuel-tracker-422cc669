@@ -92,8 +92,8 @@ export function useDragReorder<T>({ items, onReorder, canDrag }: UseDragReorderO
     const isOver = overIndex === index && dragIndex !== index;
     return {
       opacity: isDragging ? 0.4 : 1,
-      borderTop: isOver && dragIndex !== null && index < dragIndex ? "2px solid var(--accent, #f04a1a)" : undefined,
-      borderBottom: isOver && dragIndex !== null && index > dragIndex ? "2px solid var(--accent, #f04a1a)" : undefined,
+      borderTop: isOver && dragIndex !== null && index < dragIndex ? "2px solid var(--accent, #C8F26A)" : undefined,
+      borderBottom: isOver && dragIndex !== null && index > dragIndex ? "2px solid var(--accent, #C8F26A)" : undefined,
       cursor: isDragging ? "grabbing" : "grab",
       transition: "border-color 0.15s ease",
     };

@@ -6,10 +6,10 @@ import type { PortalFilters } from "@/hooks/usePortalFilters";
 const T = {
   surface: "#FFFFFF",
   border: "#EDE3D2",
-  text: "#3D2B1A",
-  textSecondary: "#6B5240",
-  muted: "#8B7355",
-  accent: "#E8461E",
+  text: "#0E1F10",
+  textSecondary: "#2A4A2E",
+  muted: "#8B8773",
+  accent: "#C8F26A",
   warn: "#B45309",
   sansHead: "'Inter', system-ui, sans-serif",
 };

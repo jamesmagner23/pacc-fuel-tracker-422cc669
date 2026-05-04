@@ -3,14 +3,14 @@ import { LayoutDashboard, Truck, Layers, Wrench, Leaf, X, ChevronRight, ChevronL
 
 // Light "showcase email" palette — matches CustomerPortal root.
 const T = {
-  bg: "#FAF6EF",
+  bg: "#EFE9DC",
   surface: "#FFFFFF",
   surfaceRaised: "#FFFFFF",
   border: "#EDE3D2",
-  accent: "#E8461E",
-  text: "#3D2B1A",
-  textSecondary: "#6B5240",
-  muted: "#8B7355",
+  accent: "#C8F26A",
+  text: "#0E1F10",
+  textSecondary: "#2A4A2E",
+  muted: "#8B8773",
   sansHead: "'Inter', system-ui, sans-serif",
 };
 
@@ -127,7 +127,7 @@ export function WelcomeModal() {
             width: 48,
             height: 48,
             borderRadius: 10,
-            background: "rgba(232,70,30,0.15)",
+            background: "rgba(200,242,106,0.15)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

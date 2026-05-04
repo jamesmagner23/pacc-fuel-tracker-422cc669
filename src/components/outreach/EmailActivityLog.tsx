@@ -125,14 +125,14 @@ export default function EmailActivityLog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="border-[#6B5240] text-[#F5E6D0] hover:bg-[#3a2818] h-11 px-3">
+        <Button variant="outline" className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818] h-11 px-3">
           <History className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Activity log</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-[#2a1d11] border-[#6B5240] text-[#F5E6D0] max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="bg-[#2a1d11] border-[#2A4A2E] text-[#ECE4D2] max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-[#E8461E]" /> Email activity log
+            <Mail className="h-5 w-5 text-[#C8F26A]" /> Email activity log
           </DialogTitle>
         </DialogHeader>
 
@@ -142,32 +142,32 @@ export default function EmailActivityLog() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by recipient, sender, organisation, or subject"
-            className="pl-9 h-11 bg-[#1f150b] border-[#6B5240] text-[#F5E6D0] placeholder:text-[#8a7559]"
+            className="pl-9 h-11 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8a7559]"
           />
         </div>
 
         <Tabs defaultValue="all" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="bg-[#1f150b] border border-[#6B5240]">
-            <TabsTrigger value="all" className="data-[state=active]:bg-[#3a2818] data-[state=active]:text-[#F5E6D0] text-[#C4A882]">
+          <TabsList className="bg-[#1f150b] border border-[#2A4A2E]">
+            <TabsTrigger value="all" className="data-[state=active]:bg-[#3a2818] data-[state=active]:text-[#ECE4D2] text-[#C7BFAC]">
               All sends
             </TabsTrigger>
-            <TabsTrigger value="threads" className="data-[state=active]:bg-[#3a2818] data-[state=active]:text-[#F5E6D0] text-[#C4A882]">
+            <TabsTrigger value="threads" className="data-[state=active]:bg-[#3a2818] data-[state=active]:text-[#ECE4D2] text-[#C7BFAC]">
               <MessageSquare className="h-3.5 w-3.5 mr-1.5" /> Threads ({threads.length})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all" className="flex-1 overflow-auto rounded border border-[#6B5240] mt-2">
+          <TabsContent value="all" className="flex-1 overflow-auto rounded border border-[#2A4A2E] mt-2">
             {loading ? (
-            <div className="flex items-center justify-center py-12 text-[#C4A882]">
+            <div className="flex items-center justify-center py-12 text-[#C7BFAC]">
               <Loader2 className="h-5 w-5 mr-2 animate-spin" /> Loading activity…
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-12 text-[#C4A882] text-sm">
+            <div className="text-center py-12 text-[#C7BFAC] text-sm">
               No emails sent yet.
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-[#1f150b] text-[#C4A882] text-xs uppercase tracking-wide sticky top-0">
+              <thead className="bg-[#1f150b] text-[#C7BFAC] text-xs uppercase tracking-wide sticky top-0">
                 <tr>
                   <th className="text-left px-3 py-2">When</th>
                   <th className="text-left px-3 py-2">Sender</th>
@@ -179,26 +179,26 @@ export default function EmailActivityLog() {
               <tbody>
                 {filtered.map(r => (
                   <tr key={r.id} className="border-t border-[#3a2818] align-top">
-                    <td className="px-3 py-2 whitespace-nowrap text-[#C4A882]">{formatDateTime(r.created_at)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-[#C7BFAC]">{formatDateTime(r.created_at)}</td>
                     <td className="px-3 py-2">
-                      <div className="text-[#F5E6D0]">{r.sender_name || r.sender_email || "—"}</div>
+                      <div className="text-[#ECE4D2]">{r.sender_name || r.sender_email || "—"}</div>
                       {r.sender_name && r.sender_email && (
                         <div className="text-xs text-[#8a7559]">{r.sender_email}</div>
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      <div className="text-[#F5E6D0]">{r.recipient_name || r.recipient_email || "—"}</div>
+                      <div className="text-[#ECE4D2]">{r.recipient_name || r.recipient_email || "—"}</div>
                       <div className="text-xs text-[#8a7559]">{r.recipient_email}{r.organisation ? ` · ${r.organisation}` : ""}</div>
                       {r.bcc && <div className="text-[10px] text-[#8a7559] mt-0.5">BCC: {r.bcc}</div>}
                     </td>
-                    <td className="px-3 py-2 text-[#F5E6D0] max-w-xs truncate" title={r.subject}>{r.subject}</td>
+                    <td className="px-3 py-2 text-[#ECE4D2] max-w-xs truncate" title={r.subject}>{r.subject}</td>
                     <td className="px-3 py-2">
                       <Badge
                         variant="outline"
                         className={
                           r.channel === "gmail"
                             ? "border-[#2f5a3a] bg-[#1f3a26] text-[#9be3a8]"
-                            : "border-[#6B5240] bg-[#3a2818] text-[#C4A882]"
+                            : "border-[#2A4A2E] bg-[#3a2818] text-[#C7BFAC]"
                         }
                       >
                         {CHANNEL_LABEL[r.channel] ?? r.channel}
@@ -207,7 +207,7 @@ export default function EmailActivityLog() {
                         <a
                           href={`https://mail.google.com/mail/u/0/#sent/${r.gmail_thread_id}`}
                           target="_blank" rel="noopener noreferrer"
-                          className="block text-[10px] mt-1 text-[#E8461E] hover:underline"
+                          className="block text-[10px] mt-1 text-[#C8F26A] hover:underline"
                         >
                           View in Gmail
                         </a>
@@ -220,13 +220,13 @@ export default function EmailActivityLog() {
             )}
           </TabsContent>
 
-          <TabsContent value="threads" className="flex-1 overflow-auto rounded border border-[#6B5240] mt-2">
+          <TabsContent value="threads" className="flex-1 overflow-auto rounded border border-[#2A4A2E] mt-2">
             {loading ? (
-              <div className="flex items-center justify-center py-12 text-[#C4A882]">
+              <div className="flex items-center justify-center py-12 text-[#C7BFAC]">
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" /> Loading threads…
               </div>
             ) : threads.length === 0 ? (
-              <div className="text-center py-12 text-[#C4A882] text-sm">
+              <div className="text-center py-12 text-[#C7BFAC] text-sm">
                 No Gmail threads yet. Threads appear once you send branded emails via Gmail.
               </div>
             ) : (
@@ -242,16 +242,16 @@ export default function EmailActivityLog() {
                         className="w-full text-left px-3 py-3 hover:bg-[#3a2818] flex items-start gap-2"
                       >
                         {isOpen
-                          ? <ChevronDown className="h-4 w-4 mt-0.5 text-[#C4A882] shrink-0" />
-                          : <ChevronRight className="h-4 w-4 mt-0.5 text-[#C4A882] shrink-0" />}
+                          ? <ChevronDown className="h-4 w-4 mt-0.5 text-[#C7BFAC] shrink-0" />
+                          : <ChevronRight className="h-4 w-4 mt-0.5 text-[#C7BFAC] shrink-0" />}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[#F5E6D0] font-medium truncate">{t.first.subject}</span>
+                            <span className="text-[#ECE4D2] font-medium truncate">{t.first.subject}</span>
                             <Badge variant="outline" className="border-[#2f5a3a] bg-[#1f3a26] text-[#9be3a8] text-[10px]">
                               {t.items.length} message{t.items.length === 1 ? "" : "s"}
                             </Badge>
                           </div>
-                          <div className="text-xs text-[#C4A882] mt-1">
+                          <div className="text-xs text-[#C7BFAC] mt-1">
                             To {recipient}
                             {t.first.organisation ? ` · ${t.first.organisation}` : ""}
                           </div>
@@ -263,7 +263,7 @@ export default function EmailActivityLog() {
                           href={`https://mail.google.com/mail/u/0/#sent/${t.threadId}`}
                           target="_blank" rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="text-[10px] text-[#E8461E] hover:underline shrink-0 mt-1"
+                          className="text-[10px] text-[#C8F26A] hover:underline shrink-0 mt-1"
                         >
                           Open in Gmail
                         </a>
@@ -275,12 +275,12 @@ export default function EmailActivityLog() {
                             <li key={m.id} className="px-3 py-2 border-b border-[#3a2818] last:border-b-0 flex gap-3">
                               <div className="text-[10px] text-[#8a7559] w-6 pt-0.5 shrink-0">#{idx + 1}</div>
                               <div className="flex-1 min-w-0">
-                                <div className="text-xs text-[#C4A882]">
+                                <div className="text-xs text-[#C7BFAC]">
                                   {formatDateTime(m.created_at)}
                                   <span className="mx-1">·</span>
-                                  <span className="text-[#F5E6D0]">{m.sender_name || m.sender_email || "—"}</span>
+                                  <span className="text-[#ECE4D2]">{m.sender_name || m.sender_email || "—"}</span>
                                 </div>
-                                <div className="text-sm text-[#F5E6D0] mt-0.5 truncate" title={m.subject}>
+                                <div className="text-sm text-[#ECE4D2] mt-0.5 truncate" title={m.subject}>
                                   {m.subject}
                                 </div>
                                 {m.bcc && (

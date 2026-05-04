@@ -47,11 +47,11 @@ export default function CustomerDetail() {
   if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
   if (!customerName) return <div className="p-8 text-muted-foreground">Customer not found.</div>;
 
-  const surface = cssVar("--surface", "#4A3525");
-  const border = cssVar("--surface-border", "#6B5240");
-  const textPrimary = cssVar("--text-primary", "#F5E6D0");
-  const textSecondary = cssVar("--text-secondary", "#C4A882");
-  const accent = cssVar("--accent", "#E8461E");
+  const surface = cssVar("--surface", "#142A16");
+  const border = cssVar("--surface-border", "#2A4A2E");
+  const textPrimary = cssVar("--text-primary", "#ECE4D2");
+  const textSecondary = cssVar("--text-secondary", "#C7BFAC");
+  const accent = cssVar("--accent", "#C8F26A");
 
   const tooltipStyle = { backgroundColor: surface, border: `1px solid ${border}`, borderRadius: "8px", fontSize: 12 };
   const tooltipLabelStyle = { color: textPrimary };

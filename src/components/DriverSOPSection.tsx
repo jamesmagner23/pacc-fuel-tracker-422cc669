@@ -77,11 +77,11 @@ function SectionCard({ section }: { section: DBSection }) {
         <div className="px-4 pb-4 pt-1 border-t border-surface-border">
           {section.subsections.map((sub, i) => (
             <div key={i} className="mt-3 first:mt-0">
-              <div className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--accent, #f04a1a)" }}>
+              <div className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "var(--accent, #C8F26A)" }}>
                 {sub.title}
               </div>
               {sub.content.map((line, j) => (
-                <p key={j} className="text-xs leading-relaxed mb-1 last:mb-0" style={{ color: "var(--text-secondary, #C4A882)" }}>
+                <p key={j} className="text-xs leading-relaxed mb-1 last:mb-0" style={{ color: "var(--text-secondary, #C7BFAC)" }}>
                   {line}
                 </p>
               ))}
@@ -106,7 +106,7 @@ function ClientSiteCard({ site }: { site: DBSite }) {
         {open ? <ChevronDown className="w-4 h-4 shrink-0 text-accent" /> : <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />}
         <div className="flex-1 min-w-0">
           <span className="text-sm font-medium block truncate">{site.client}</span>
-          <span className="text-[11px] block truncate" style={{ color: "var(--text-muted, #8B7355)" }}>{site.site}</span>
+          <span className="text-[11px] block truncate" style={{ color: "var(--text-muted, #8B8773)" }}>{site.site}</span>
         </div>
       </button>
       {open && (
@@ -205,7 +205,7 @@ export function DriverSOPSection() {
       </div>
 
       {/* Toggle */}
-      <div className="flex gap-1 p-1 rounded-lg" style={{ background: "var(--surface, #1e1008)", border: "1px solid var(--surface-border)" }}>
+      <div className="flex gap-1 p-1 rounded-lg" style={{ background: "var(--surface, #142A16)", border: "1px solid var(--surface-border)" }}>
         {[
           { key: "procedures" as const, label: "Procedures" },
           { key: "sites" as const, label: "Client Sites" },
@@ -215,8 +215,8 @@ export function DriverSOPSection() {
             onClick={() => setActiveView(tab.key)}
             className="flex-1 text-xs font-medium py-2.5 rounded-md transition-colors"
             style={{
-              background: activeView === tab.key ? "var(--accent, #f04a1a)" : "transparent",
-              color: activeView === tab.key ? "#fff" : "var(--text-secondary, #C4A882)",
+              background: activeView === tab.key ? "var(--accent, #C8F26A)" : "transparent",
+              color: activeView === tab.key ? "#fff" : "var(--text-secondary, #C7BFAC)",
               border: "none",
               cursor: "pointer",
               minHeight: 44,

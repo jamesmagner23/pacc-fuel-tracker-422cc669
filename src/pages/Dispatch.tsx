@@ -60,13 +60,13 @@ function cssVar(name: string, fallback = ""): string {
 }
 
 function useThemeColors() {
-  const surface = cssVar("--surface", "#4A3525");
-  const border = cssVar("--surface-border", "#6B5240");
-  const textPrimary = cssVar("--text-primary", "#F5E6D0");
-  const textSecondary = cssVar("--text-secondary", "#C4A882");
-  const textMuted = cssVar("--text-muted", "#8B7355");
-  const accent = cssVar("--accent", "#E8461E");
-  const surfaceHover = cssVar("--surface-hover", "#5A4535");
+  const surface = cssVar("--surface", "#142A16");
+  const border = cssVar("--surface-border", "#2A4A2E");
+  const textPrimary = cssVar("--text-primary", "#ECE4D2");
+  const textSecondary = cssVar("--text-secondary", "#C7BFAC");
+  const textMuted = cssVar("--text-muted", "#8B8773");
+  const accent = cssVar("--accent", "#C8F26A");
+  const surfaceHover = cssVar("--surface-hover", "#1F3A24");
   return { surface, border, textPrimary, textSecondary, textMuted, accent, surfaceHover };
 }
 
@@ -269,7 +269,7 @@ type StopStatus = "scheduled" | "on_route" | "completed" | "failed";
 
 function StatusChip({ status }: { status: StopStatus }) {
   const colors: Record<StopStatus, { bg: string; text: string; label: string }> = {
-    scheduled: { bg: "rgba(139,115,85,0.2)", text: "#C4A882", label: "Scheduled" },
+    scheduled: { bg: "rgba(139,115,85,0.2)", text: "#C7BFAC", label: "Scheduled" },
     on_route: { bg: "rgba(59,130,246,0.15)", text: "#60A5FA", label: "On Route" },
     completed: { bg: "rgba(16,185,129,0.15)", text: "#10B981", label: "Completed" },
     failed: { bg: "rgba(239,68,68,0.15)", text: "#EF4444", label: "Failed" },

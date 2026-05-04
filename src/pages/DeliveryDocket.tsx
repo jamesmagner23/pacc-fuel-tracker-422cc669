@@ -221,9 +221,9 @@ export default function DeliveryDocket() {
               ) : (
                 <>
                   <div style={{ fontSize: 24, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
-                    PACC<span style={{ color: "#E8461E", fontSize: 15 }}>®</span>
+                    PACC<span style={{ color: "#C8F26A", fontSize: 15 }}>®</span>
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 500, color: "#C4A882", letterSpacing: "0.15em", marginTop: 2 }}>
+                  <div style={{ fontSize: 9, fontWeight: 500, color: "#C7BFAC", letterSpacing: "0.15em", marginTop: 2 }}>
                     FUEL
                   </div>
                 </>

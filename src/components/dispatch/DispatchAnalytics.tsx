@@ -36,12 +36,12 @@ type Period = "week" | "month";
 export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
   const [period, setPeriod] = useState<Period>("week");
 
-  const surface = cssVar("--surface", "#4A3525");
-  const border = cssVar("--surface-border", "#6B5240");
-  const textPrimary = cssVar("--text-primary", "#F5E6D0");
-  const textSecondary = cssVar("--text-secondary", "#C4A882");
-  const textMuted = cssVar("--text-muted", "#8B7355");
-  const accent = cssVar("--accent", "#E8461E");
+  const surface = cssVar("--surface", "#142A16");
+  const border = cssVar("--surface-border", "#2A4A2E");
+  const textPrimary = cssVar("--text-primary", "#ECE4D2");
+  const textSecondary = cssVar("--text-secondary", "#C7BFAC");
+  const textMuted = cssVar("--text-muted", "#8B8773");
+  const accent = cssVar("--accent", "#C8F26A");
 
   const dates = useMemo(() => {
     let start: Date, end: Date;
@@ -195,7 +195,7 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
                     labelStyle={{ color: textSecondary, fontSize: 10 }}
                   />
                   <Bar dataKey="stops" name="Stops" fill={accent} radius={[4, 4, 0, 0]} maxBarSize={24} />
-                  <Bar dataKey="km" name="KMs" fill="#E8461E" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                  <Bar dataKey="km" name="KMs" fill="#C8F26A" radius={[4, 4, 0, 0]} maxBarSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

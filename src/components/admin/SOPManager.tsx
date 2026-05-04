@@ -314,8 +314,8 @@ export default function SOPManager() {
           <button key={tab.key} onClick={() => setActiveView(tab.key)}
             className="flex-1 text-xs font-medium py-2 rounded-md transition-colors"
             style={{
-              background: activeView === tab.key ? "var(--accent, #f04a1a)" : "transparent",
-              color: activeView === tab.key ? "#fff" : "var(--text-secondary, #C4A882)",
+              background: activeView === tab.key ? "var(--accent, #C8F26A)" : "transparent",
+              color: activeView === tab.key ? "#fff" : "var(--text-secondary, #C7BFAC)",
               border: "none", cursor: "pointer",
             }}>
             {tab.label}
