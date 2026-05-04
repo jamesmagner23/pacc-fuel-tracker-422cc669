@@ -76,22 +76,18 @@ function applyPortalTheme(theme: PortalTheme) {
     badgeConfirmed: tk.badgeConfirmed,
     badgeCompleted: tk.badgeCompleted,
   });
-  // Refresh style objects that snapshotted T at module load.
-  Object.assign(card as Record<string, unknown>, {
-    background: T.surface,
-    border: `1px solid ${T.border}`,
-  });
-  Object.assign(ghostBtn as Record<string, unknown>, {
-    border: `1px solid ${T.border}`,
-    color: T.muted,
-  });
-  Object.assign(inputStyle as Record<string, unknown>, {
+  // Rebuild style objects (React freezes the previous ones once they
+  // are passed as a `style` prop in dev, so we cannot mutate in place).
+  card = { ...card, background: T.surface, border: `1px solid ${T.border}` };
+  ghostBtn = { ...ghostBtn, border: `1px solid ${T.border}`, color: T.muted };
+  inputStyle = {
+    ...inputStyle,
     background: T.bg,
     border: `1px solid ${T.border}`,
     color: T.text,
-  });
-  Object.assign(labelStyle as Record<string, unknown>, { color: T.muted });
-  Object.assign(sectionTitle as Record<string, unknown>, { color: T.text });
+  };
+  labelStyle = { ...labelStyle, color: T.muted };
+  sectionTitle = { ...sectionTitle, color: T.text };
 }
 
 const tabs = [
@@ -215,14 +211,14 @@ function useDeliveryRequests(clientAccountId: number | null) {
 }
 
 // ─── Reusable styles ─────────────────────────────────────────────────
-const card: React.CSSProperties = {
+let card: React.CSSProperties = {
   background: T.surface,
   border: `1px solid ${T.border}`,
   borderRadius: 8,
   padding: "16px 18px",
 };
 
-const ghostBtn: React.CSSProperties = {
+let ghostBtn: React.CSSProperties = {
   background: "transparent",
   border: `1px solid ${T.border}`,
   color: T.muted,
@@ -237,7 +233,7 @@ const ghostBtn: React.CSSProperties = {
   transition: "all 0.15s",
 };
 
-const inputStyle: React.CSSProperties = {
+let inputStyle: React.CSSProperties = {
   background: T.bg,
   border: `1px solid ${T.border}`,
   color: T.text,
@@ -249,7 +245,7 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
 };
 
-const labelStyle: React.CSSProperties = {
+let labelStyle: React.CSSProperties = {
   fontSize: 10,
   fontFamily: T.sansHead,
   fontWeight: 500,
@@ -260,7 +256,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 6,
 };
 
-const sectionTitle: React.CSSProperties = {
+let sectionTitle: React.CSSProperties = {
   fontSize: 18,
   fontFamily: T.sansHead,
   fontWeight: 600,
