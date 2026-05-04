@@ -14,6 +14,9 @@ export interface BuyPrice {
 }
 
 // Fetch all buy prices ordered by date desc
+export const SUPPLIERS = ["Pacific", "Ampol"] as const;
+export type SupplierName = typeof SUPPLIERS[number] | string;
+
 export function useBuyPrices(days = 365) {
   const isDemo = useDemo();
   const start = format(subDays(new Date(), days), "yyyy-MM-dd");
@@ -27,27 +30,56 @@ export function useBuyPrices(days = 365) {
         .from("buy_prices")
         .select("*")
         .gte("price_date", start)
-        .order("price_date", { ascending: false });
+        .order("price_date", { ascending: false })
+        .order("supplier", { ascending: true });
       if (error) throw error;
       return (data || []) as BuyPrice[];
     },
   });
 }
 
-// Fetch today's buy price
-export function useTodayBuyPrice() {
+// Fetch today's buy price for a specific supplier (defaults to Pacific)
+export function useTodayBuyPrice(supplier: string = "Pacific") {
   const isDemo = useDemo();
   const today = format(new Date(), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["buy-price-today", today, isDemo],
+    queryKey: ["buy-price-today", today, supplier, isDemo],
     queryFn: async () => {
       if (isDemo) {
         const prices = getDemoData().buyPrices;
-        return prices.find(p => p.price_date === today) || prices[0] || null;
+        return prices.find(p => p.price_date === today && p.supplier === supplier)
+          || prices.find(p => p.price_date === today)
+          || null;
       }
-      const { data, error } = await supabase.from("buy_prices").select("*").eq("price_date", today).single();
-      if (error && error.code !== "PGRST116") throw error;
+      const { data, error } = await supabase
+        .from("buy_prices")
+        .select("*")
+        .eq("price_date", today)
+        .eq("supplier", supplier)
+        .maybeSingle();
+      if (error) throw error;
       return data as BuyPrice | null;
+    },
+  });
+}
+
+// Fetch today's prices for all suppliers
+export function useTodayBuyPrices() {
+  const isDemo = useDemo();
+  const today = format(new Date(), "yyyy-MM-dd");
+  return useQuery({
+    queryKey: ["buy-prices-today-all", today, isDemo],
+    queryFn: async () => {
+      if (isDemo) {
+        return getDemoData().buyPrices.filter(p => p.price_date === today);
+      }
+      const { data, error } = await supabase
+        .from("buy_prices")
+        .select("*")
+        .eq("price_date", today)
+        .order("price_per_litre", { ascending: true });
+      if (error) throw error;
+      return (data || []) as BuyPrice[];
     },
   });
 }
@@ -59,7 +91,7 @@ export function useUpsertBuyPrice() {
     mutationFn: async (entry: { price_date: string; price_per_litre: number; supplier?: string; notes?: string }) => {
       const { data, error } = await supabase
         .from("buy_prices")
-        .upsert({ ...entry, supplier: entry.supplier || "Pacific" }, { onConflict: "price_date" })
+        .upsert({ ...entry, supplier: entry.supplier || "Pacific" }, { onConflict: "price_date,supplier" })
         .select()
         .single();
       if (error) throw error;
@@ -68,6 +100,7 @@ export function useUpsertBuyPrice() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["buy-prices"] });
       qc.invalidateQueries({ queryKey: ["buy-price-today"] });
+      qc.invalidateQueries({ queryKey: ["buy-prices-today-all"] });
     },
   });
 }

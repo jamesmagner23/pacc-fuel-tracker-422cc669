@@ -3,7 +3,7 @@ import { format, parseISO, addDays } from "date-fns";
 import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil, Copy, CheckSquare, Square, X } from "lucide-react";
 import jsPDF from "jspdf";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useBuyPrices, useTodayBuyPrice } from "@/hooks/useBuyPrices";
+import { useBuyPrices, useTodayBuyPrice, useTodayBuyPrices } from "@/hooks/useBuyPrices";
 import {
   usePricingTiers,
   useUpsertTier,
@@ -54,6 +54,7 @@ export default function PricingTab() {
   const isDemo = useDemo();
   const queryClient = useQueryClient();
   const { data: buyPrices = [] } = useBuyPrices(30);
+  const { data: todayPricesAll = [] } = useTodayBuyPrices();
   const { data: todayBuyPrice } = useTodayBuyPrice();
   const { data: tiers = [], isLoading: tiersLoading } = usePricingTiers();
   const { data: quotes = [], isLoading: quotesLoading } = useQuotes();
@@ -80,8 +81,23 @@ export default function PricingTab() {
   const deleteTier = useDeleteTier();
   const updateQuoteStatus = useUpdateQuoteStatus();
 
-  const latestBuyPrice = todayBuyPrice?.price_per_litre || 0;
-  const hasTodayPrice = !!todayBuyPrice;
+  // Supplier picker — defaults to today's cheapest supplier
+  const sortedToday = useMemo(
+    () => [...todayPricesAll].sort((a, b) => a.price_per_litre - b.price_per_litre),
+    [todayPricesAll]
+  );
+  const cheapestToday = sortedToday[0] || null;
+  const dearestToday = sortedToday[sortedToday.length - 1] || null;
+  const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selectedSupplier && cheapestToday) setSelectedSupplier(cheapestToday.supplier);
+  }, [cheapestToday, selectedSupplier]);
+  const selectedTodayPrice = sortedToday.find(p => p.supplier === selectedSupplier) || cheapestToday || todayBuyPrice;
+  const latestBuyPrice = selectedTodayPrice?.price_per_litre || todayBuyPrice?.price_per_litre || 0;
+  const hasTodayPrice = sortedToday.length > 0 || !!todayBuyPrice;
+  const supplierDelta = cheapestToday && dearestToday && cheapestToday.id !== dearestToday.id
+    ? dearestToday.price_per_litre - cheapestToday.price_per_litre
+    : null;
 
   const [showTierConfig, setShowTierConfig] = useState(false);
   const [name, setName] = useState("");
@@ -274,7 +290,9 @@ export default function PricingTab() {
         sell_price_per_litre: avgSellPrice,
         total_ex_gst: grandTotalEx,
         total_inc_gst: grandTotalInc,
-        notes: notes || null,
+        notes: selectedSupplier
+          ? `Supplier: ${selectedSupplier}${notes ? ` · ${notes}` : ""}`
+          : (notes || null),
         valid_until: format(addDays(new Date(), 1), "yyyy-MM-dd"),
         line_items: lineItemsData,
       } as any);
@@ -444,16 +462,51 @@ export default function PricingTab() {
     <div className="flex flex-col gap-4">
       {/* Buy price */}
       <div className={`bg-surface border rounded-[10px] p-4 sm:p-5 ${hasTodayPrice ? "border-surface-border" : "border-destructive/50"}`}>
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Today's Buy Price (Base)</div>
-        {hasTodayPrice ? (
-          <div className="text-2xl sm:text-3xl font-light text-foreground tracking-tighter tabular-nums">
-            ${latestBuyPrice.toFixed(4)}
-            <span className="text-sm text-muted-foreground">/L</span>
-          </div>
-        ) : (
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Quote Base — Buy Price</div>
+          {supplierDelta !== null && cheapestToday && (
+            <div className="text-[10px] text-positive font-medium tabular-nums">
+              {cheapestToday.supplier} cheaper by ${supplierDelta.toFixed(4)}/L
+            </div>
+          )}
+        </div>
+        {!hasTodayPrice ? (
           <div className="text-sm text-destructive font-medium">
             No price entered for today — quotes cannot be created until today's buy price is set in the Buy Price tab.
           </div>
+        ) : (
+          <>
+            {sortedToday.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {sortedToday.map((p) => {
+                  const active = selectedSupplier === p.supplier;
+                  const isCheap = cheapestToday && p.id === cheapestToday.id && sortedToday.length > 1;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedSupplier(p.supplier)}
+                      className={`text-[11px] px-3 py-1.5 rounded-full border cursor-pointer transition-colors flex items-center gap-1.5 ${
+                        active
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-transparent text-muted-foreground border-surface-border hover:border-foreground/30"
+                      }`}
+                    >
+                      <span>{p.supplier}</span>
+                      <span className="tabular-nums opacity-80">${p.price_per_litre.toFixed(4)}</span>
+                      {isCheap && <span className={`text-[9px] uppercase tracking-wider ${active ? "text-primary-foreground/90" : "text-positive"}`}>Best</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="text-2xl sm:text-3xl font-light text-foreground tracking-tighter tabular-nums">
+              ${latestBuyPrice.toFixed(4)}
+              <span className="text-sm text-muted-foreground">/L</span>
+              {selectedTodayPrice && (
+                <span className="text-xs text-muted-foreground ml-2">· {selectedTodayPrice.supplier}</span>
+              )}
+            </div>
+          </>
         )}
       </div>
 

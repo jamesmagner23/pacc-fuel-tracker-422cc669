@@ -45,7 +45,7 @@ export type Database = {
           notes: string | null
           price_date: string
           price_per_litre: number
-          supplier: string | null
+          supplier: string
         }
         Insert: {
           created_at?: string | null
@@ -53,7 +53,7 @@ export type Database = {
           notes?: string | null
           price_date: string
           price_per_litre: number
-          supplier?: string | null
+          supplier?: string
         }
         Update: {
           created_at?: string | null
@@ -61,7 +61,7 @@ export type Database = {
           notes?: string | null
           price_date?: string
           price_per_litre?: number
-          supplier?: string | null
+          supplier?: string
         }
         Relationships: []
       }
