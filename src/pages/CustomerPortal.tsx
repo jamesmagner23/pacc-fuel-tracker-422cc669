@@ -693,7 +693,19 @@ export default function CustomerPortal() {
             return (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                ref={(el) => {
+                  if (el && active) {
+                    el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+                  }
+                }}
+                onClick={(e) => {
+                  setActiveTab(tab);
+                  (e.currentTarget as HTMLButtonElement).scrollIntoView({
+                    behavior: "smooth",
+                    inline: "center",
+                    block: "nearest",
+                  });
+                }}
                 style={{
                   padding: "12px 14px",
                   fontSize: 11,
