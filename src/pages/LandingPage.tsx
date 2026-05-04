@@ -83,7 +83,7 @@ export default function LandingPage() {
   return (
     <div style={{ background: "#0E1F10", color: "#ECE4D2", minHeight: "100vh" }}>
       {/* ── NAV ── */}
-      <nav className="sticky top-0 z-50" style={{ background: "rgba(61,43,26,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(107,82,64,0.4)" }}>
+      <nav className="sticky top-0 z-50" style={{ background: "rgba(14,31,16,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(42,74,46,0.6)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16">
           <PACCNavLogo />
           <div className="hidden md:flex items-center gap-6">
@@ -96,7 +96,7 @@ export default function LandingPage() {
             <button
               onClick={() => navigate("/?demo=true")}
               className="px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5"
-              style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(107,82,64,0.5)" }}
+              style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.14)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.08)"; }}
             >
@@ -119,7 +119,7 @@ export default function LandingPage() {
       <section className="relative overflow-hidden" style={{ minHeight: "min(85vh, 700px)" }}>
         <div className="absolute inset-0">
           <img src={truckOnsiteImg} alt="PACC Energy fuel tanker delivering diesel to a Melbourne construction site" width={1920} height={1080} className="w-full h-full object-cover" />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(61,43,26,0.7) 0%, rgba(61,43,26,0.5) 40%, rgba(61,43,26,0.85) 100%)" }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(14,31,16,0.55) 0%, rgba(14,31,16,0.35) 40%, rgba(14,31,16,0.85) 100%)" }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 flex flex-col justify-center" style={{ minHeight: "min(85vh, 700px)" }}>
           <div className="max-w-2xl">
@@ -147,7 +147,7 @@ export default function LandingPage() {
               <a
                 href="mailto:fuel@paccvictoria.com"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all"
-                style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(107,82,64,0.5)" }}
+                style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
               >
                 <Mail className="w-4 h-4" /> fuel@paccvictoria.com
               </a>
@@ -390,7 +390,7 @@ export default function LandingPage() {
             <button
               onClick={() => navigate("/login")}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-medium cursor-pointer transition-all"
-              style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(107,82,64,0.5)" }}
+              style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
             >
               Client Portal Login <ChevronRight className="w-4 h-4" />
             </button>
