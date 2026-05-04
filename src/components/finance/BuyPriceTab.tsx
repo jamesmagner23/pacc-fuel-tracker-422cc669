@@ -2,7 +2,7 @@ import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { TrendingUp, TrendingDown, Trash2, RefreshCw } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice } from "@/hooks/useBuyPrices";
+import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice, useTodayBuyPrices, SUPPLIERS } from "@/hooks/useBuyPrices";
 import { useTGPrices, useTodayTGP, useFetchTGP } from "@/hooks/useTGPrices";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ export default function BuyPriceTab() {
   const { data: prices = [], isLoading } = useBuyPrices(365);
   const upsert = useUpsertBuyPrice();
   const del = useDeleteBuyPrice();
+  const { data: todayPrices = [] } = useTodayBuyPrices();
   const { data: tgpPrices = [] } = useTGPrices("Melbourne", "Diesel", 30);
   const { data: todayTGP } = useTodayTGP("Melbourne", "Diesel");
   const fetchTGP = useFetchTGP();
@@ -57,18 +58,21 @@ export default function BuyPriceTab() {
 
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [price, setPrice] = useState("");
+  const [supplier, setSupplier] = useState<string>(SUPPLIERS[0]);
+  const [customSupplier, setCustomSupplier] = useState("");
   const [bulkText, setBulkText] = useState("");
   const [showBulk, setShowBulk] = useState(false);
 
   const handleSave = async () => {
     const p = parseFloat(price);
-    if (!date || isNaN(p) || p <= 0) {
+    const sup = supplier === "__custom" ? customSupplier.trim() : supplier;
+    if (!date || isNaN(p) || p <= 0 || !sup) {
       toast.error("Enter a valid date and price");
       return;
     }
     try {
-      await upsert.mutateAsync({ price_date: date, price_per_litre: p });
-      toast.success(`Saved $${p.toFixed(4)}/L for ${format(parseISO(date), "dd MMM yyyy")}`);
+      await upsert.mutateAsync({ price_date: date, price_per_litre: p, supplier: sup });
+      toast.success(`Saved ${sup} $${p.toFixed(4)}/L for ${format(parseISO(date), "dd MMM yyyy")}`);
       setPrice("");
     } catch {
       toast.error("Failed to save");
@@ -77,6 +81,7 @@ export default function BuyPriceTab() {
 
   const handleBulkSave = async () => {
     const lines = bulkText.trim().split("\n").filter(Boolean);
+    const sup = supplier === "__custom" ? customSupplier.trim() || "Pacific" : supplier;
     let saved = 0;
     for (const line of lines) {
       const parts = line.split(",").map((s) => s.trim());
@@ -85,11 +90,11 @@ export default function BuyPriceTab() {
       const parsed = parseFloat(p);
       if (!d || isNaN(parsed)) continue;
       try {
-        await upsert.mutateAsync({ price_date: d, price_per_litre: parsed });
+        await upsert.mutateAsync({ price_date: d, price_per_litre: parsed, supplier: sup });
         saved++;
       } catch { /* skip */ }
     }
-    toast.success(`Saved ${saved} entries`);
+    toast.success(`Saved ${saved} ${sup} entries`);
     setBulkText("");
     setShowBulk(false);
   };
@@ -99,17 +104,31 @@ export default function BuyPriceTab() {
     price: p.price_per_litre,
   }));
 
-  const latest = prices[0];
-  const prev = prices[1];
+  // "latest" still used downstream for TGP comparison: pick the cheapest today price (or most recent fallback)
+  const cheapestToday = todayPrices.length > 0
+    ? [...todayPrices].sort((a, b) => a.price_per_litre - b.price_per_litre)[0]
+    : null;
+  const latest = cheapestToday || prices[0];
+  const prev = prices.find(p => p.price_date < (latest?.price_date || ""));
   const priceChange = latest && prev ? latest.price_per_litre - prev.price_per_litre : null;
   const avgPrice = prices.length > 0 ? prices.reduce((s, p) => s + p.price_per_litre, 0) / prices.length : 0;
+
+  // Today's supplier comparison
+  const todaySorted = [...todayPrices].sort((a, b) => a.price_per_litre - b.price_per_litre);
+  const cheapest = todaySorted[0];
+  const dearest = todaySorted[todaySorted.length - 1];
+  const todayDelta = cheapest && dearest && cheapest.id !== dearest.id
+    ? dearest.price_per_litre - cheapest.price_per_litre
+    : null;
 
   return (
     <div className="flex flex-col gap-4">
       {latest && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Today's Buy Price — Pacific</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">
+              {cheapest ? `Today's Best Buy — ${cheapest.supplier}` : `Last Buy — ${latest.supplier}`}
+            </div>
             <div className="text-3xl sm:text-[44px] font-light text-foreground tracking-tighter tabular-nums">
               ${latest.price_per_litre.toFixed(4)}
               <span className="text-base sm:text-lg text-muted-foreground">/L</span>
@@ -127,6 +146,40 @@ export default function BuyPriceTab() {
           <div className="sm:text-right">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg</div>
             <div className="text-lg sm:text-xl font-medium text-muted-foreground tabular-nums">${avgPrice.toFixed(4)}/L</div>
+          </div>
+        </div>
+      )}
+
+      {/* Today's supplier comparison */}
+      {todayPrices.length > 0 && (
+        <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Today's Supplier Comparison (Ex GST)</div>
+            {todayDelta !== null && (
+              <div className="text-[11px] text-positive font-medium tabular-nums">
+                Best is ${todayDelta.toFixed(4)}/L cheaper
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {todaySorted.map((p) => {
+              const isBest = cheapest && p.id === cheapest.id && todaySorted.length > 1;
+              return (
+                <div key={p.id} className={`rounded-lg border p-3 ${isBest ? "border-positive/40 bg-positive/5" : "border-surface-border"}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="text-[12px] text-foreground font-medium">{p.supplier}</div>
+                    {isBest && <div className="text-[9px] uppercase tracking-wider text-positive font-semibold">Best</div>}
+                  </div>
+                  <div className="text-xl font-semibold text-foreground tabular-nums mt-1">${p.price_per_litre.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                </div>
+              );
+            })}
+            {SUPPLIERS.filter(s => !todaySorted.some(p => p.supplier === s)).map((s) => (
+              <div key={s} className="rounded-lg border border-dashed border-surface-border p-3 opacity-60">
+                <div className="text-[12px] text-muted-foreground">{s}</div>
+                <div className="text-[11px] text-muted-foreground mt-1">No price today</div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -295,6 +348,19 @@ export default function BuyPriceTab() {
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Quick Entry</div>
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end flex-wrap">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] text-muted-foreground">Supplier</label>
+            <select value={supplier} onChange={(e) => setSupplier(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-36">
+              {SUPPLIERS.map((s) => <option key={s} value={s}>{s}</option>)}
+              <option value="__custom">Other…</option>
+            </select>
+          </div>
+          {supplier === "__custom" && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] text-muted-foreground">Supplier name</label>
+              <input value={customSupplier} onChange={(e) => setCustomSupplier(e.target.value)} placeholder="e.g. Shell" className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-36" />
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] text-muted-foreground">Date</label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-40" />
