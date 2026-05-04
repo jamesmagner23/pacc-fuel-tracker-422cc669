@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Archivo:wght@600;700;800;900&family=Archivo+Narrow:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,41 +6,43 @@
 
 @layer base {
   :root {
-    --background: #3D2B1A;
-    --surface: #4A3525;
-    --surface-raised: #56402E;
-    --surface-border: #6B5240;
-    --surface-hover: #5A4535;
+    /* PACC ENERGY — Powered by Progress
+       Dark green ground, lime green accent, cream type. */
+    --background: #0E1F10;          /* deep forest */
+    --surface: #142A16;
+    --surface-raised: #1B3520;
+    --surface-border: #2A4A2E;
+    --surface-hover: #1F3A24;
 
-    --accent: #E8461E;
-    --accent-hover: #D13A14;
-    --accent-light: rgba(232,70,30,0.15);
-    --accent-text: #FF6B42;
+    --accent: #C8F26A;              /* lime */
+    --accent-hover: #B6E254;
+    --accent-light: rgba(200,242,106,0.14);
+    --accent-text: #C8F26A;
 
-    --text-primary: #F5E6D0;
-    --text-secondary: #C4A882;
-    --text-muted: #8B7355;
+    --text-primary: #ECE4D2;        /* warm cream */
+    --text-secondary: #C7BFAC;
+    --text-muted: #8B8773;
 
-    --positive: #10B981;
-    --positive-bg: rgba(16,185,129,0.12);
-    --negative: #EF4444;
-    --negative-bg: rgba(239,68,68,0.12);
-    --warning: #F59E0B;
-    --warning-bg: rgba(245,158,11,0.12);
+    --positive: #C8F26A;
+    --positive-bg: rgba(200,242,106,0.14);
+    --negative: #FF6B5E;
+    --negative-bg: rgba(255,107,94,0.14);
+    --warning: #F5C25B;
+    --warning-bg: rgba(245,194,91,0.14);
 
-    --border: #6B5240;
-    --border-subtle: #56402E;
+    --border: #2A4A2E;
+    --border-subtle: #1F3A24;
     --radius: 10px;
     --radius-sm: 6px;
 
     /* Map-specific dark */
-    --map-bg: #1A1009;
-    --map-border: #2E1C0C;
+    --map-bg: #0A1A0C;
+    --map-border: #1A301D;
 
     /* Shadcn compat */
     --foreground: var(--text-primary);
     --primary: var(--accent);
-    --primary-foreground: #ffffff;
+    --primary-foreground: #0E1F10; /* lime button → dark text */
     --card: var(--surface);
     --card-foreground: var(--text-primary);
     --popover: var(--surface-raised);
@@ -49,7 +51,7 @@
     --secondary-foreground: var(--text-primary);
     --muted: var(--surface-border);
     --muted-foreground: var(--text-secondary);
-    --destructive: #EF4444;
+    --destructive: #FF6B5E;
     --destructive-foreground: #ffffff;
     --ring: var(--accent);
     --input: var(--surface-border);
@@ -83,10 +85,14 @@
     overscroll-behavior-y: none;
   }
 
-  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.025em; color: var(--text-primary); }
-  h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; color: var(--text-primary); }
-  h3 { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; color: var(--text-primary); }
-  h4 { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Archivo Narrow', 'Archivo', 'Inter', system-ui, sans-serif;
+    text-transform: uppercase;
+  }
+  h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; color: var(--text-primary); }
+  h2 { font-size: 19px; font-weight: 800; letter-spacing: 0; color: var(--text-primary); }
+  h3 { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; color: var(--text-primary); }
+  h4 { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; color: var(--text-primary); }
 
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -162,15 +168,16 @@
 
   .btn-primary {
     background: var(--accent);
-    color: #ffffff;
+    color: #0E1F10;
     border: none;
     border-radius: 20px;
     padding: 7px 16px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: background 0.15s;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
   .btn-primary:hover { background: var(--accent-hover); }
 
