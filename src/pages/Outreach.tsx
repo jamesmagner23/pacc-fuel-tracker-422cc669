@@ -93,9 +93,9 @@ type SendStatus = {
 };
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  pending: { label: "Pending sync", color: "bg-[#3a2818] text-[#C7BFAC] border-[#2A4A2E]" },
-  none: { label: "Not in Pipedrive yet", color: "bg-[#3a2818] text-[#C7BFAC] border-[#2A4A2E]" },
-  logged: { label: "Logged in Pipedrive", color: "bg-[#1f3a26] text-[#9be3a8] border-[#2f5a3a]" },
+  pending: { label: "Pending sync", color: "bg-[#1B3520] text-[#C7BFAC] border-[#2A4A2E]" },
+  none: { label: "Not in Pipedrive yet", color: "bg-[#1B3520] text-[#C7BFAC] border-[#2A4A2E]" },
+  logged: { label: "Logged in Pipedrive", color: "bg-[#1B3520] text-[#C8F26A] border-[#2A4A2E]" },
   replied: { label: "Replied", color: "bg-[#3a2a14] text-[#ffb37a] border-[#C8F26A]" },
 };
 
@@ -460,7 +460,7 @@ export default function Outreach() {
       .map(([k, v]) => `<li><strong>${k}</strong>: ${v}</li>`)
       .join("");
     return `<!doctype html><html><head><meta charset="utf-8"><style>
-      body{margin:0;font-family:Inter,system-ui,sans-serif;background:#fff5ef;color:#3a1a0d;padding:24px;}
+      body{margin:0;font-family:Inter,system-ui,sans-serif;background:#EFE9DC;color:#0E1F10;padding:24px;}
       .card{max-width:560px;margin:24px auto;border:1px solid #C8F26A;border-radius:8px;background:#fff;padding:20px;}
       h2{margin:0 0 8px;font-size:16px;color:#C8F26A;}
       p{margin:0 0 12px;font-size:13px;}
@@ -734,7 +734,7 @@ export default function Outreach() {
           <Button
             variant="ghost"
             onClick={() => setSelected(null)}
-            className="md:hidden text-[#ECE4D2] hover:bg-[#3a2818] -ml-2 h-11"
+            className="md:hidden text-[#ECE4D2] hover:bg-[#1B3520] -ml-2 h-11"
           >
             <ArrowLeft className="h-5 w-5 mr-1" /> Contacts
           </Button>
@@ -745,7 +745,7 @@ export default function Outreach() {
             variant="outline"
             onClick={refreshStatuses}
             disabled={refreshingStatus}
-            className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818] h-11 px-3"
+            className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520] h-11 px-3"
           >
             {refreshingStatus
               ? <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />
@@ -754,11 +754,11 @@ export default function Outreach() {
           </Button>
           <Dialog open={importOpen} onOpenChange={setImportOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818] h-11 px-3">
+              <Button variant="outline" className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520] h-11 px-3">
                 <Upload className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Import CSV</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#2a1d11] border-[#2A4A2E] text-[#ECE4D2] max-w-2xl">
+            <DialogContent className="bg-[#142A16] border-[#2A4A2E] text-[#ECE4D2] max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Import recipients into Pipedrive</DialogTitle>
               </DialogHeader>
@@ -783,11 +783,11 @@ export default function Outreach() {
           </Dialog>
           <Dialog open={manualOpen} onOpenChange={setManualOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818] h-11 px-3">
+              <Button variant="outline" className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520] h-11 px-3">
                 <UserPlus className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Manual recipient</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#2a1d11] border-[#2A4A2E] text-[#ECE4D2] max-w-md">
+            <DialogContent className="bg-[#142A16] border-[#2A4A2E] text-[#ECE4D2] max-w-md">
               <DialogHeader>
                 <DialogTitle>Send to a one-off recipient</DialogTitle>
               </DialogHeader>
@@ -800,20 +800,20 @@ export default function Outreach() {
                   placeholder="Full name (optional)"
                   value={manualName}
                   onChange={(e) => setManualName(e.target.value)}
-                  className="h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8a7559]"
+                  className="h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
                 />
                 <Input
                   type="email"
                   placeholder="email@example.com"
                   value={manualEmail}
                   onChange={(e) => setManualEmail(e.target.value)}
-                  className="h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8a7559]"
+                  className="h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
                 />
                 <Input
                   placeholder="Organisation (optional)"
                   value={manualOrg}
                   onChange={(e) => setManualOrg(e.target.value)}
-                  className="h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8a7559]"
+                  className="h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
                 />
               </div>
               <DialogFooter>
@@ -826,7 +826,7 @@ export default function Outreach() {
           <Button
             variant="outline"
             onClick={() => setEditorOpen(true)}
-            className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818] h-11 px-3"
+            className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520] h-11 px-3"
           >
             <Settings2 className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Templates</span>
           </Button>
@@ -835,14 +835,14 @@ export default function Outreach() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
         {/* People list — hidden on mobile when a person is selected */}
-        <div className={`rounded-lg border border-[#2A4A2E] bg-[#2a1d11] p-3 space-y-3 ${selected ? "hidden lg:block" : ""}`}>
+        <div className={`rounded-lg border border-[#2A4A2E] bg-[#142A16] p-3 space-y-3 ${selected ? "hidden lg:block" : ""}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#C7BFAC]" />
             <Input
               placeholder="Search people, email, org…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-9 h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8a7559]"
+              className="pl-9 h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
             />
           </div>
 
@@ -852,7 +852,7 @@ export default function Outreach() {
             </div>
           )}
           {error && (
-            <div className="text-sm text-[#ff8866] bg-[#3a1810] border border-[#6b2a1a] rounded p-2">{error}</div>
+            <div className="text-sm text-[#FF6B5E] bg-[#3a2418] border border-[#FF6B5E] rounded p-2">{error}</div>
           )}
 
           <div className="max-h-[calc(100vh-220px)] lg:max-h-[65vh] overflow-y-auto divide-y divide-[#2A4A2E]/50">
@@ -864,12 +864,12 @@ export default function Outreach() {
                 <button
                   key={p.id}
                   onClick={() => setSelected(p)}
-                  className={`w-full text-left py-4 px-2 min-h-[56px] hover:bg-[#3a2818] active:bg-[#3a2818] rounded transition ${isSel ? "bg-[#3a2818] ring-1 ring-[#C8F26A]" : ""}`}
+                  className={`w-full text-left py-4 px-2 min-h-[56px] hover:bg-[#1B3520] active:bg-[#1B3520] rounded transition ${isSel ? "bg-[#1B3520] ring-1 ring-[#C8F26A]" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium truncate">{p.name}</span>
                     {!p.email && (
-                      <Badge variant="outline" className="text-[10px] border-[#8a7559] text-[#C7BFAC]">no email</Badge>
+                      <Badge variant="outline" className="text-[10px] border-[#8B8773] text-[#C7BFAC]">no email</Badge>
                     )}
                   </div>
                   <div className="text-xs text-[#C7BFAC] truncate">
@@ -892,7 +892,7 @@ export default function Outreach() {
         </div>
 
         {/* Compose — hidden on mobile until a person is picked */}
-        <div className={`rounded-lg border border-[#2A4A2E] bg-[#2a1d11] p-4 space-y-4 ${selected ? "" : "hidden lg:block"}`}>
+        <div className={`rounded-lg border border-[#2A4A2E] bg-[#142A16] p-4 space-y-4 ${selected ? "" : "hidden lg:block"}`}>
           {!selected ? (
             <div className="text-sm text-[#C7BFAC] py-12 text-center">
               Pick a Pipedrive contact on the left to compose, or import a CSV to add new leads.
@@ -921,7 +921,7 @@ export default function Outreach() {
                   <SelectTrigger className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] h-12">
                     <SelectValue placeholder="Pick a template" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#2a1d11] border-[#2A4A2E] text-[#ECE4D2]">
+                  <SelectContent className="bg-[#142A16] border-[#2A4A2E] text-[#ECE4D2]">
                     {templates.map(t => (
                       <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                     ))}
@@ -973,7 +973,7 @@ export default function Outreach() {
                               type="button"
                               onClick={() => loadPreset(p)}
                               title={`Load preset · saved ${new Date(p.updated_at).toLocaleDateString("en-AU")}`}
-                              className="text-[11px] text-[#ECE4D2] hover:text-[#FFB199]"
+                              className="text-[11px] text-[#ECE4D2] hover:text-[#FF6B5E]"
                             >
                               {p.name}
                             </button>
@@ -995,12 +995,12 @@ export default function Outreach() {
                   {pricingErrorCount > 0 && (
                     <div
                       role="alert"
-                      className="rounded border border-[#C8F26A] bg-[#3a1a0d] px-3 py-2 text-xs text-[#FFD9C8]"
+                      className="rounded border border-[#C8F26A] bg-[#0E1F10] px-3 py-2 text-xs text-[#FFD9C8]"
                     >
                       <div className="font-semibold">
                         {pricingErrorCount} field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention
                       </div>
-                      <div className="text-[11px] text-[#F5C9B5] mt-0.5">
+                      <div className="text-[11px] text-[#F5C25B] mt-0.5">
                         Fix the highlighted inputs below before sending.
                       </div>
                     </div>
@@ -1025,7 +1025,7 @@ export default function Outreach() {
                           }`}
                         />
                         {pricingErrors[key] && (
-                          <span className="block text-[10px] text-[#FFB199]">{pricingErrors[key]}</span>
+                          <span className="block text-[10px] text-[#FF6B5E]">{pricingErrors[key]}</span>
                         )}
                       </div>
                     ))}
@@ -1054,7 +1054,7 @@ export default function Outreach() {
                               }`}
                             />
                             {pricingErrors[exKey] && (
-                              <span className="block text-[10px] text-[#FFB199]">{pricingErrors[exKey]}</span>
+                              <span className="block text-[10px] text-[#FF6B5E]">{pricingErrors[exKey]}</span>
                             )}
                           </div>
                           <div className="space-y-1">
@@ -1070,13 +1070,13 @@ export default function Outreach() {
                               }`}
                             />
                             {pricingErrors[incKey] && (
-                              <span className="block text-[10px] text-[#FFB199]">{pricingErrors[incKey]}</span>
+                              <span className="block text-[10px] text-[#FF6B5E]">{pricingErrors[incKey]}</span>
                             )}
                           </div>
                           <Button
                             type="button" variant="outline"
                             onClick={() => setVars(v => ({ ...v, [incKey]: formatGst(v[exKey] ?? "") }))}
-                            className="h-11 border-[#2A4A2E] bg-[#2a1d11] text-[#ECE4D2] hover:bg-[#3a2818] text-[10px] px-2"
+                            className="h-11 border-[#2A4A2E] bg-[#142A16] text-[#ECE4D2] hover:bg-[#1B3520] text-[10px] px-2"
                             title="Calculate inc-GST from ex-GST"
                           >
                             +10%
@@ -1182,19 +1182,19 @@ export default function Outreach() {
                         onClick={() => void openBrandedCompose("default_mail")}
                         variant="outline"
                         title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
-                        className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818]">
+                        className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520]">
                   <Mail className="h-4 w-4 mr-2" /> Open in default mail
                 </Button>
                 <Button variant="outline" disabled={!selected.email || pricingErrorCount > 0}
                         onClick={() => void openBrandedCompose("gmail")}
                         title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
-                        className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818]">
+                        className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520]">
                   <Mail className="h-4 w-4 mr-2" /> Open in Gmail
                 </Button>
                 <Button variant="outline" onClick={copyHtml}
                         disabled={pricingErrorCount > 0}
                         title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
-                        className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818]">
+                        className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520]">
                   {copiedHtml
                     ? (<><Check className="h-4 w-4 mr-2" /> HTML copied</>)
                     : (<><Copy className="h-4 w-4 mr-2" /> Copy rendered HTML</>)}
@@ -1202,7 +1202,7 @@ export default function Outreach() {
                 <Button variant="outline" onClick={() => void exportPdf()}
                         disabled={exportingPdf || !renderedHtml || pricingErrorCount > 0}
                         title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
-                        className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818]">
+                        className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520]">
                   {exportingPdf
                     ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
                     : (<><Download className="h-4 w-4 mr-2" /> Download PDF quote</>)}
@@ -1226,7 +1226,7 @@ export default function Outreach() {
       {selected && selected.email && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#2A4A2E] bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           {pricingErrorCount > 0 && (
-            <div role="alert" className="mb-2 rounded border border-[#C8F26A] bg-[#3a1a0d] px-2 py-1 text-[11px] text-[#FFD9C8]">
+            <div role="alert" className="mb-2 rounded border border-[#C8F26A] bg-[#0E1F10] px-2 py-1 text-[11px] text-[#FFD9C8]">
               {pricingErrorCount} pricing field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention — sending disabled.
             </div>
           )}
@@ -1241,14 +1241,14 @@ export default function Outreach() {
             <Button variant="outline"
                     onClick={() => void openBrandedCompose("default_mail")}
                     disabled={pricingErrorCount > 0}
-                    className="h-12 px-4 border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818]">
+                    className="h-12 px-4 border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520]">
               Mail
             </Button>
             <Button variant="outline"
                     onClick={() => void exportPdf()}
                     disabled={exportingPdf || !renderedHtml || pricingErrorCount > 0}
                     title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
-                    className="h-12 px-4 border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818]">
+                    className="h-12 px-4 border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520]">
               {exportingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             </Button>
           </div>
@@ -1356,7 +1356,7 @@ function TemplateEditor({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#2a1d11] border-[#2A4A2E] text-[#ECE4D2] max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-[#142A16] border-[#2A4A2E] text-[#ECE4D2] max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Email templates</DialogTitle>
         </DialogHeader>
@@ -1369,10 +1369,10 @@ function TemplateEditor({
             <div className="divide-y divide-[#2A4A2E]/50">
               {templates.map(t => (
                 <button key={t.id} onClick={() => startEdit(t)}
-                        className="w-full text-left py-3 px-2 hover:bg-[#3a2818] rounded">
+                        className="w-full text-left py-3 px-2 hover:bg-[#1B3520] rounded">
                   <div className="font-medium">{t.name}</div>
                   <div className="text-xs text-[#C7BFAC] truncate">{t.subject}</div>
-                  <div className="text-[11px] text-[#8a7559] mt-1">
+                  <div className="text-[11px] text-[#8B8773] mt-1">
                     Variables: {(t.variables ?? []).join(", ") || "—"}
                   </div>
                 </button>
@@ -1416,13 +1416,13 @@ function TemplateEditor({
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => void exportDraftPdf()} disabled={exportingDraftPdf || !draft.html_body}
-                      className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818]">
+                      className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520]">
                 {exportingDraftPdf
                   ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting…</>)
                   : (<><Download className="h-4 w-4 mr-2" /> Export PDF</>)}
               </Button>
               <Button variant="outline" onClick={() => { setEditingId(null); setDraft({}); }}
-                      className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#3a2818]">Cancel</Button>
+                      className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520]">Cancel</Button>
               <Button onClick={save} disabled={saving} className="bg-[#C8F26A] hover:bg-[#c93a17] text-white">
                 {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Save template

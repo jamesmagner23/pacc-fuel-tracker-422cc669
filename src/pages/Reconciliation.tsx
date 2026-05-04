@@ -34,7 +34,7 @@ const STATUS_COLORS = {
 };
 
 // Sign-based colors: positive variance (fuel unaccounted) = bad, negative (all delivered) = good
-const varianceColor = (v: number) => v > 0 ? "var(--negative, #EF4444)" : v < 0 ? "var(--positive, #10B981)" : "var(--muted-foreground)";
+const varianceColor = (v: number) => v > 0 ? "var(--negative, #FF6B5E)" : v < 0 ? "var(--positive, #C8F26A)" : "var(--muted-foreground)";
 
 const STATUS_LABELS = {
   none: "OK",

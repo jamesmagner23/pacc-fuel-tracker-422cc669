@@ -359,9 +359,9 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: isStaleLocation ? accent : "#10B981",
+              background: isStaleLocation ? accent : "#C8F26A",
               display: "inline-block",
-              boxShadow: isStaleLocation ? `0 0 6px ${accent}` : "0 0 6px #10B981",
+              boxShadow: isStaleLocation ? `0 0 6px ${accent}` : "0 0 6px #C8F26A",
             }}
           />
           <span style={{ fontSize: 10, color: textSecondary, fontWeight: 500 }}>

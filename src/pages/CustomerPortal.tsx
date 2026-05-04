@@ -2929,9 +2929,9 @@ function AnalyticsTab({
         .replace(/>/g, "&gt;")
         .replace(/\n/g, "<br/>");
       const html =
-        `<div style="font-family:Inter,Arial,sans-serif;color:#3A2818;line-height:1.55;">` +
+        `<div style="font-family:Inter,Arial,sans-serif;color:#1B3520;line-height:1.55;">` +
         `<div style="background:#C8F26A;height:6px;border-radius:3px;margin-bottom:20px;"></div>` +
-        `<h1 style="font-size:18px;margin:0 0 12px;color:#3A2818;">Analytics Recap</h1>` +
+        `<h1 style="font-size:18px;margin:0 0 12px;color:#1B3520;">Analytics Recap</h1>` +
         `<p style="margin:0 0 16px;color:#2A4A2E;font-size:13px;">${companyName} · ${periodLabel}</p>` +
         `<div style="font-size:13px;">${safeMessage}</div>` +
         `<p style="margin:24px 0 0;font-size:11px;color:#8B8773;">PDF attached: ${pdfFilename}</p>` +
@@ -3308,7 +3308,7 @@ function CompareGrid({ a, b }: { a: CompareSide; b: CompareSide }) {
               const showDelta = !r.tied && r.pct >= 0.5;
               const sign = key === "a" ? (r.delta > 0 ? "+" : r.delta < 0 ? "−" : "") : (r.delta < 0 ? "+" : r.delta > 0 ? "−" : "");
               const chipBg   = isWinner ? "rgba(16,185,129,0.15)" : "rgba(200,242,106,0.12)";
-              const chipText = isWinner ? "#10B981" : "#C8F26A";
+              const chipText = isWinner ? "#C8F26A" : "#C8F26A";
               return (
                 <div key={s.label} style={{ display: "grid", gridTemplateColumns: "1fr auto", alignItems: "baseline", gap: 8 }}>
                   <div>

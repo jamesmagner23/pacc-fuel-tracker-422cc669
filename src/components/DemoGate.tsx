@@ -45,7 +45,7 @@ export function DemoGate({ brand, color, onUnlock }: DemoGateProps) {
   };
 
   const displayBrand = brand || "FuelTrack";
-  const ACCENT = "#3B82F6"; // neutral blue
+  const ACCENT = "#C8F26A"; // neutral blue
 
   return (
     <div
@@ -104,7 +104,7 @@ export function DemoGate({ brand, color, onUnlock }: DemoGateProps) {
           ))}
 
           {error && (
-            <p className="text-xs text-center" style={{ color: "#EF4444" }}>
+            <p className="text-xs text-center" style={{ color: "#FF6B5E" }}>
               {error}
             </p>
           )}

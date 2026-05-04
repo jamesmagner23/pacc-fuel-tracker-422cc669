@@ -157,7 +157,7 @@ export default function Login() {
                 style={{
                   background: "rgba(200,242,106,0.08)",
                   border: "1px solid rgba(200,242,106,0.15)",
-                  color: "#D4C4A8",
+                  color: "#C7BFAC",
                 }}
               >
                 <span style={{ color: "#C8F26A" }}>{f.icon}</span>

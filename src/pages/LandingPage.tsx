@@ -226,7 +226,7 @@ export default function LandingPage() {
               {["Experienced, site-ready drivers", "Flexible delivery times", "Minimal disruption to your work", "Competitive, transparent pricing"].map((item) => (
                 <li key={item} className="flex items-center gap-2.5 text-sm" style={{ color: "#ECE4D2" }}>
                   <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "rgba(16,185,129,0.12)" }}>
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#C8F26A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
                   {item}
                 </li>

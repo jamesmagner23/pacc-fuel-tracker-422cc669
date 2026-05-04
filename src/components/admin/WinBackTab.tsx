@@ -77,8 +77,8 @@ export default function WinBackTab() {
   }, [allTxns, clientAccounts, search]);
 
   const urgencyColors = {
-    warning: { bg: "rgba(245,158,11,0.12)", text: "#F59E0B", label: "30–60 days" },
-    danger: { bg: "rgba(239,68,68,0.12)", text: "#EF4444", label: "60–90 days" },
+    warning: { bg: "rgba(245,158,11,0.12)", text: "#F5C25B", label: "30–60 days" },
+    danger: { bg: "rgba(239,68,68,0.12)", text: "#FF6B5E", label: "60–90 days" },
     critical: { bg: "rgba(220,38,38,0.2)", text: "#DC2626", label: "90+ days" },
   };
 
@@ -106,8 +106,8 @@ export default function WinBackTab() {
 
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: "30–60 days", count: lapsedCustomers.filter((c) => c.urgency === "warning").length, color: "#F59E0B" },
-          { label: "60–90 days", count: lapsedCustomers.filter((c) => c.urgency === "danger").length, color: "#EF4444" },
+          { label: "30–60 days", count: lapsedCustomers.filter((c) => c.urgency === "warning").length, color: "#F5C25B" },
+          { label: "60–90 days", count: lapsedCustomers.filter((c) => c.urgency === "danger").length, color: "#FF6B5E" },
           { label: "90+ days", count: lapsedCustomers.filter((c) => c.urgency === "critical").length, color: "#DC2626" },
         ].map((s) => (
           <div key={s.label} className="p-3 rounded-lg text-center glass-card">
