@@ -512,6 +512,36 @@ export default function PricingTab() {
                 <span className="text-xs text-muted-foreground ml-2">· {selectedTodayPrice.supplier}</span>
               )}
             </div>
+            {/* TGP delta */}
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-surface-border">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">TGP Benchmark</span>
+                <select value={tgpLocation} onChange={(e) => setTgpLocation(e.target.value)} className="bg-[hsl(var(--muted))] border border-surface-border rounded-full text-foreground px-2.5 py-1 text-[10px] outline-none">
+                  {TGP_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+                <select value={tgpProduct} onChange={(e) => setTgpProduct(e.target.value)} className="bg-[hsl(var(--muted))] border border-surface-border rounded-full text-foreground px-2.5 py-1 text-[10px] outline-none">
+                  {TGP_PRODUCTS.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              {todayTGP ? (() => {
+                const tgpEx = Number(todayTGP.price_per_litre) / (1 + GST_RATE);
+                const delta = latestBuyPrice - tgpEx;
+                const pct = tgpEx > 0 ? (delta / tgpEx) * 100 : 0;
+                const good = delta <= 0;
+                return (
+                  <div className="text-[11px] tabular-nums">
+                    <span className="text-muted-foreground">TGP ex GST </span>
+                    <span className="text-foreground font-medium">${tgpEx.toFixed(4)}/L</span>
+                    <span className={`ml-2 font-semibold ${good ? "text-positive" : "text-destructive"}`}>
+                      {delta >= 0 ? "+" : ""}${delta.toFixed(4)} ({pct >= 0 ? "+" : ""}{pct.toFixed(1)}%)
+                    </span>
+                    <span className="text-muted-foreground"> {good ? "below" : "above"} TGP</span>
+                  </div>
+                );
+              })() : (
+                <span className="text-[11px] text-muted-foreground">No TGP for today — refresh in Buy Price tab.</span>
+              )}
+            </div>
           </>
         )}
       </div>
