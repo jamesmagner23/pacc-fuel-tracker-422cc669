@@ -7,6 +7,7 @@ import { Background } from "./components/Background";
 import { IntroScene } from "./scenes/IntroScene";
 import { PortalScene } from "./scenes/PortalScene";
 import { OutroScene } from "./scenes/OutroScene";
+import { FtcScene } from "./scenes/FtcScene";
 
 loadFont("normal", { weights: ["400", "700", "800"], subsets: ["latin"] });
 
