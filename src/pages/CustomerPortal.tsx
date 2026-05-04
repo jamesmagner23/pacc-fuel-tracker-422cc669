@@ -77,21 +77,21 @@ function applyPortalTheme(theme: PortalTheme) {
     badgeCompleted: tk.badgeCompleted,
   });
   // Refresh style objects that snapshotted T at module load.
-  Object.assign(card, {
+  Object.assign(card as Record<string, unknown>, {
     background: T.surface,
     border: `1px solid ${T.border}`,
   });
-  Object.assign(ghostBtn, {
+  Object.assign(ghostBtn as Record<string, unknown>, {
     border: `1px solid ${T.border}`,
     color: T.muted,
   });
-  Object.assign(inputStyle, {
+  Object.assign(inputStyle as Record<string, unknown>, {
     background: T.bg,
     border: `1px solid ${T.border}`,
     color: T.text,
   });
-  Object.assign(labelStyle, { color: T.muted });
-  Object.assign(sectionTitle, { color: T.text });
+  Object.assign(labelStyle as Record<string, unknown>, { color: T.muted });
+  Object.assign(sectionTitle as Record<string, unknown>, { color: T.text });
 }
 
 const tabs = [
