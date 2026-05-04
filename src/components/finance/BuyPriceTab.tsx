@@ -232,6 +232,7 @@ export default function BuyPriceTab() {
                 <RefreshCw className={`w-3 h-3 ${refreshingTGP ? "animate-spin" : ""}`} />
                 {refreshingTGP ? "Syncing…" : "Refresh TGP"}
               </button>
+              </div>
             </div>
 
             {tgp ? (
