@@ -42,6 +42,7 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
   const textSecondary = cssVar("--text-secondary", "#C7BFAC");
   const textMuted = cssVar("--text-muted", "#8B8773");
   const accent = cssVar("--accent", "#C8F26A");
+  const warning = cssVar("--warning", "#F5C25B");
 
   const dates = useMemo(() => {
     let start: Date, end: Date;
@@ -125,7 +126,7 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
                 className="px-3 py-1.5 sm:py-1 rounded-md text-[10px] font-medium uppercase tracking-wider transition-colors"
                 style={{
                   background: period === p ? accent : "transparent",
-                  color: period === p ? "#fff" : textSecondary,
+                  color: period === p ? "#0E1F10" : textSecondary,
                   border: "none",
                   cursor: "pointer",
                 }}
@@ -195,7 +196,7 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
                     labelStyle={{ color: textSecondary, fontSize: 10 }}
                   />
                   <Bar dataKey="stops" name="Stops" fill={accent} radius={[4, 4, 0, 0]} maxBarSize={24} />
-                  <Bar dataKey="km" name="KMs" fill="#C8F26A" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                  <Bar dataKey="km" name="KMs" fill={warning} radius={[4, 4, 0, 0]} maxBarSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
