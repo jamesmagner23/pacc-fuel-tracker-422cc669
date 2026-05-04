@@ -15,19 +15,27 @@ export function BoldPMark({
   rounded?: number;
   bleed?: boolean;
 }) {
-  // 100x100 viewBox; same geometry as public/icon-*.png generator.
-  // Stem on left, bowl on top half with cut-out, matching favicon.
-  const pad = bleed ? 10 : 14;
-  const inner = 100 - pad * 2;
-  const stemW = inner * 0.22;
-  const bowlH = inner * 0.58;
-  const x0 = pad;
-  const y0 = pad;
-  const x1 = pad + inner;
-  const bx1 = x1;
-  const by1 = y0 + bowlH;
-  const holePadX = stemW + inner * 0.06;
-  const holePadY = bowlH * 0.22;
+  // Bold, solid "P" rendered as a single filled path so the bowl reads
+  // clearly at any size. ViewBox is 100x100.
+  const tileRadius = bleed ? 0 : (rounded * 100) / size;
+  // Path coords: outer P (stem + rounded bowl) minus inner counter (hole).
+  // Uses even-odd fill so the inner subpath cuts a clean hole.
+  const d = [
+    // Outer shape
+    "M 18 14",
+    "H 60",
+    "A 22 22 0 0 1 60 58",
+    "H 38",
+    "V 86",
+    "H 18",
+    "Z",
+    // Inner counter (hole in the bowl)
+    "M 38 30",
+    "H 58",
+    "A 8 8 0 0 1 58 46",
+    "H 38",
+    "Z",
+  ].join(" ");
 
   return (
     <svg
@@ -37,16 +45,8 @@ export function BoldPMark({
       aria-hidden="true"
       style={{ display: "block", borderRadius: rounded }}
     >
-      <rect x="0" y="0" width="100" height="100" rx={rounded * (100 / size)} fill={bg} />
-      <rect x={x0} y={y0} width={stemW} height={inner} fill={fg} />
-      <ellipse cx={(x0 + bx1) / 2} cy={(y0 + by1) / 2} rx={(bx1 - x0) / 2} ry={(by1 - y0) / 2} fill={fg} />
-      <ellipse
-        cx={(x0 + holePadX + bx1 - holePadY) / 2}
-        cy={(y0 + holePadY + by1 - holePadY) / 2}
-        rx={(bx1 - holePadY - (x0 + holePadX)) / 2}
-        ry={(by1 - holePadY - (y0 + holePadY)) / 2}
-        fill={bg}
-      />
+      <rect x="0" y="0" width="100" height="100" rx={tileRadius} fill={bg} />
+      <path d={d} fill={fg} fillRule="evenodd" />
     </svg>
   );
 }
