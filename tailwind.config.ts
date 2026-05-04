@@ -22,7 +22,7 @@ export default {
           hover: "var(--accent-hover)",
           light: "var(--accent-light)",
           text: "var(--accent-text)",
-          foreground: "#ffffff",
+          foreground: "var(--primary-foreground, #0E1F10)",
         },
         primary: {
           DEFAULT: "var(--accent)",
@@ -50,13 +50,13 @@ export default {
           foreground: "var(--muted-foreground)",
         },
         destructive: {
-          DEFAULT: "var(--destructive, #EF4444)",
+          DEFAULT: "var(--destructive, #FF6B5E)",
           foreground: "var(--destructive-foreground, #ffffff)",
         },
 
-        positive: "var(--positive, #10B981)",
-        negative: "var(--negative, #EF4444)",
-        warning: "var(--warning, #F59E0B)",
+        positive: "var(--positive, #C8F26A)",
+        negative: "var(--negative, #FF6B5E)",
+        warning: "var(--warning, #F5C25B)",
 
         border: "var(--border)",
         "border-subtle": "var(--border-subtle)",
