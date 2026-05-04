@@ -119,6 +119,14 @@ export const MainVideo: React.FC = () => {
           </>
         ))}
 
+        <TransitionSeries.Sequence durationInFrames={140}>
+          <FtcScene />
+        </TransitionSeries.Sequence>
+        <TransitionSeries.Transition
+          presentation={fade()}
+          timing={linearTiming({ durationInFrames: TRANSITION })}
+        />
+
         <TransitionSeries.Sequence durationInFrames={100}>
           <OutroScene />
         </TransitionSeries.Sequence>
