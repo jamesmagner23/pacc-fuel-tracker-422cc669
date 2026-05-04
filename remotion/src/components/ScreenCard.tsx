@@ -49,7 +49,7 @@ export const ScreenCard: React.FC<Props> = ({
         overflow: "hidden",
         background: T.bgSoft,
         border: `1px solid ${T.border}`,
-        boxShadow: `0 40px 120px rgba(0,0,0,0.55), 0 0 0 1px rgba(200,242,106,0.10)`,
+        boxShadow: `0 30px 80px rgba(26,71,42,0.18), 0 0 0 1px rgba(26,71,42,0.08)`,
         transform: `translateY(${lift}px)`,
         opacity: opacity * exit,
       }}
