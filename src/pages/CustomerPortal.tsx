@@ -804,6 +804,14 @@ export default function CustomerPortal() {
             {activeTab === "06 Emissions" && (
               <EmissionsTab transactions={transactions} companyName={companyName} />
             )}
+            {activeTab === "07 Profile" && (
+              <ProfileTab
+                clientAccountId={clientAccountId}
+                companyName={companyName}
+                userEmail={userEmail}
+                onOpenEdit={() => setAccountOpen(true)}
+              />
+            )}
           </>
         )}
       </div>
