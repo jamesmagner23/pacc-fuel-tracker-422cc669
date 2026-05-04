@@ -6,30 +6,45 @@ import { Droplets, Truck, Shield } from "lucide-react";
 
 function PACCLogoLarge() {
   return (
-    <div style={{ lineHeight: 1 }}>
-      <div
-        style={{
-          fontSize: 48,
-          fontWeight: 800,
-          color: "#ECE4D2",
-          letterSpacing: "-0.03em",
-          textTransform: "uppercase",
-          lineHeight: 1,
-        }}
-      >
-        PACC<span style={{ color: "#C8F26A", fontSize: 28 }}>®</span>
-      </div>
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 500,
-          color: "#C7BFAC",
-          letterSpacing: "0.2em",
-          marginTop: 4,
-          textTransform: "uppercase",
-        }}
-      >
-        ENERGY
+    <div style={{ lineHeight: 1, display: "flex", alignItems: "center", gap: 16 }}>
+      <svg width={56} height={68} viewBox="0 0 100 120" aria-hidden="true">
+        {[
+          [1,1,1,1,0],
+          [1,0,0,0,1],
+          [1,0,0,0,1],
+          [1,1,1,1,0],
+          [1,0,0,0,0],
+          [1,0,0,0,0],
+        ].flatMap((row, y) => row.map((on, x) => on ? (
+          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7} fill="#C8F26A" />
+        ) : null))}
+      </svg>
+      <div>
+        <div
+          style={{
+            fontFamily: "'Archivo Narrow', 'Archivo', 'Inter', sans-serif",
+            fontSize: 44,
+            fontWeight: 800,
+            color: "#ECE4D2",
+            letterSpacing: "0.01em",
+            textTransform: "uppercase",
+            lineHeight: 0.95,
+          }}
+        >
+          PACC<br/>ENERGY
+        </div>
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            color: "#8B8773",
+            letterSpacing: "0.28em",
+            marginTop: 8,
+            textTransform: "uppercase",
+          }}
+        >
+          Powered by Progress
+        </div>
       </div>
     </div>
   );
@@ -157,7 +172,7 @@ export default function Login() {
             className="mt-10 w-full max-w-[320px] py-3 rounded-xl text-sm font-semibold cursor-pointer transition-all"
             style={{
               background: "#C8F26A",
-              color: "#ECE4D2",
+              color: "#0E1F10",
               border: "none",
               boxShadow: "0 8px 32px rgba(200,242,106,0.3)",
             }}
