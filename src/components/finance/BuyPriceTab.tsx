@@ -350,7 +350,7 @@ export default function BuyPriceTab() {
                   cursor={{ stroke: "rgba(196,168,130,0.2)" }}
                 />
                 {avgPrice > 0 && <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground) / 0.4)" strokeWidth={1} />}
-                <Line type="monotone" dataKey="price" stroke="hsl(25, 95%, 53%)" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "hsl(25, 95%, 53%)" }} />
+                <Line type="monotone" dataKey="price" stroke="var(--accent)" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "var(--accent)" }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
