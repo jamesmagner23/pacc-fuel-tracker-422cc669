@@ -49,7 +49,7 @@ export const ScreenCard: React.FC<Props> = ({
         overflow: "hidden",
         background: T.bgSoft,
         border: `1px solid ${T.border}`,
-        boxShadow: `0 40px 120px rgba(0,0,0,0.55), 0 0 0 1px rgba(240,74,26,0.08)`,
+        boxShadow: `0 40px 120px rgba(0,0,0,0.55), 0 0 0 1px rgba(200,242,106,0.10)`,
         transform: `translateY(${lift}px)`,
         opacity: opacity * exit,
       }}
@@ -58,7 +58,7 @@ export const ScreenCard: React.FC<Props> = ({
       <div
         style={{
           height: 36,
-          background: "#0f0703",
+          background: "#0A1610",
           borderBottom: `1px solid ${T.border}`,
           display: "flex",
           alignItems: "center",

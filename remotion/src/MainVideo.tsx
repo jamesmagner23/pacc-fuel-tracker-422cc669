@@ -52,8 +52,8 @@ const SCENES: Array<{
   },
   {
     step: "06 · Emissions",
-    title: "ESG-ready, today.",
-    body: "Auto-calculated Scope 1 CO₂e and NGER assumptions. Export, file, done.",
+    title: "ESG + FTC, sorted.",
+    body: "Auto-calculated Scope 1 CO₂e and NGER assumptions — plus Fuel Tax Credit savings tallied per litre. Export, file, claim.",
     src: "shots/05-emissions.png",
     duration: 130,
     panY: -100,
