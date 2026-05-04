@@ -208,7 +208,25 @@ export default function UsersActivityTab() {
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider">All Users ({users.length})</div>
-          <div className="flex gap-2 text-[10px]">
+          <div className="flex items-center gap-2 text-[10px]">
+            <button
+              onClick={handleProvision}
+              disabled={provisioning}
+              className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 px-3 py-1.5 rounded-md text-[11px] font-medium transition-opacity"
+              title="Create portal@<company>.com logins for all customers without an account"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              {provisioning ? "Provisioning…" : "Provision portal logins"}
+            </button>
+            {provisionResults && (
+              <button
+                onClick={downloadCsv}
+                className="flex items-center gap-1.5 bg-surface-raised border border-surface-border text-foreground hover:bg-muted/40 px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download credentials
+              </button>
+            )}
             <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full">{admins.length} Admin</span>
             <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">{clients.length} Client</span>
             <span className="bg-positive/20 text-positive px-2 py-0.5 rounded-full">{drivers.length} Driver</span>
