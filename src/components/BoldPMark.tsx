@@ -23,10 +23,12 @@ export function BoldPMark({
   const stemX = 22;            // stem left edge
   const stemTop = 20;
   const stemBottom = 80;
-  const bowlCx = stemX + stemW + 12; // 56
-  const bowlCy = stemTop + 18;       // 38 — bowl centered in upper half of bbox
   const bowlOuterR = 22;
   const bowlInnerR = 9;
+  // Horizontal: bbox = [stemX, bowlCx + bowlOuterR]; center at 50 → bowlCx = 56.
+  const bowlCx = 100 - stemX - bowlOuterR; // 56
+  // Vertical: bowl top aligns with stemTop; bbox = [stemTop, stemBottom], center 50.
+  const bowlCy = stemTop + bowlOuterR;     // 42
 
   return (
     <svg
