@@ -695,14 +695,14 @@ export default function CustomerPortal() {
                 key={tab}
                 ref={(el) => {
                   if (el && active) {
-                    el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+                    el.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
                   }
                 }}
                 onClick={(e) => {
                   setActiveTab(tab);
                   (e.currentTarget as HTMLButtonElement).scrollIntoView({
                     behavior: "smooth",
-                    inline: "center",
+                    inline: "nearest",
                     block: "nearest",
                   });
                 }}
