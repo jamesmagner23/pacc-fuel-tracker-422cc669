@@ -9,13 +9,13 @@ import { abnError, formatAbn, stripAbn } from "@/lib/abn";
 
 // Light "showcase email" palette — matches CustomerPortal root.
 const T = {
-  bg: "#FAF6EF",
+  bg: "#EFE9DC",
   card: "#FFFFFF",
   border: "#EDE3D2",
-  text: "#3D2B1A",
-  muted: "#8B7355",
-  subtle: "#6B5240",
-  accent: "#E8461E",
+  text: "#0E1F10",
+  muted: "#8B8773",
+  subtle: "#2A4A2E",
+  accent: "#C8F26A",
   sansHead: "Inter, system-ui, sans-serif",
   sansBody: "Inter, system-ui, sans-serif",
 };

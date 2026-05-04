@@ -22,11 +22,11 @@ const navItems = [
 ];
 
 // PACC brand colors (used when NOT in demo)
-const PACC_BG = "#3D2B1A";
-const PACC_BORDER = "#6B5240";
-const PACC_ACCENT = "#E8461E";
-const PACC_TEXT_DIM = "#C4A882";
-const PACC_TEXT_ACTIVE = "#F5E6D0";
+const PACC_BG = "#0E1F10";
+const PACC_BORDER = "#2A4A2E";
+const PACC_ACCENT = "#C8F26A";
+const PACC_TEXT_DIM = "#C7BFAC";
+const PACC_TEXT_ACTIVE = "#ECE4D2";
 
 // Neutral demo colors
 const DEMO_BG = "#1a1f2e";

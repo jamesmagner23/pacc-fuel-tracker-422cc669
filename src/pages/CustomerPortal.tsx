@@ -37,20 +37,20 @@ import { PortalThemeToggle } from "@/components/portal/PortalThemeToggle";
 // whenever the user toggles light/dark, so all module-scoped style
 // objects (card, labelStyle, ...) that reference T see the new palette.
 const T = {
-  bg: "#FAF6EF",
+  bg: "#EFE9DC",
   surface: "#FFFFFF",
   surfaceRaised: "#FFFFFF",
   border: "#EDE3D2",
   borderSubtle: "#F1E8D8",
-  accent: "#E8461E",
-  accentHover: "#D13A14",
-  text: "#3D2B1A",
-  textSecondary: "#6B5240",
-  muted: "#8B7355",
+  accent: "#C8F26A",
+  accentHover: "#B6E254",
+  text: "#0E1F10",
+  textSecondary: "#2A4A2E",
+  muted: "#8B8773",
   sansHead: "'Inter', system-ui, sans-serif",
   sansBody: "'Inter', system-ui, sans-serif",
-  badgePending: "#8B7355",
-  badgeConfirmed: "#E8461E",
+  badgePending: "#8B8773",
+  badgeConfirmed: "#C8F26A",
   badgeCompleted: "#0F8A5E",
 };
 
@@ -2930,11 +2930,11 @@ function AnalyticsTab({
         .replace(/\n/g, "<br/>");
       const html =
         `<div style="font-family:Inter,Arial,sans-serif;color:#3A2818;line-height:1.55;">` +
-        `<div style="background:#E8461E;height:6px;border-radius:3px;margin-bottom:20px;"></div>` +
+        `<div style="background:#C8F26A;height:6px;border-radius:3px;margin-bottom:20px;"></div>` +
         `<h1 style="font-size:18px;margin:0 0 12px;color:#3A2818;">Analytics Recap</h1>` +
-        `<p style="margin:0 0 16px;color:#6B5240;font-size:13px;">${companyName} · ${periodLabel}</p>` +
+        `<p style="margin:0 0 16px;color:#2A4A2E;font-size:13px;">${companyName} · ${periodLabel}</p>` +
         `<div style="font-size:13px;">${safeMessage}</div>` +
-        `<p style="margin:24px 0 0;font-size:11px;color:#8B7355;">PDF attached: ${pdfFilename}</p>` +
+        `<p style="margin:24px 0 0;font-size:11px;color:#8B8773;">PDF attached: ${pdfFilename}</p>` +
         `</div>`;
 
       const { data, error } = await supabase.functions.invoke("send-recap-pdf", {
@@ -3307,8 +3307,8 @@ function CompareGrid({ a, b }: { a: CompareSide; b: CompareSide }) {
               const isWinner = key === "a" ? r.aBetter : r.bBetter;
               const showDelta = !r.tied && r.pct >= 0.5;
               const sign = key === "a" ? (r.delta > 0 ? "+" : r.delta < 0 ? "−" : "") : (r.delta < 0 ? "+" : r.delta > 0 ? "−" : "");
-              const chipBg   = isWinner ? "rgba(16,185,129,0.15)" : "rgba(232,70,30,0.12)";
-              const chipText = isWinner ? "#10B981" : "#E8461E";
+              const chipBg   = isWinner ? "rgba(16,185,129,0.15)" : "rgba(200,242,106,0.12)";
+              const chipText = isWinner ? "#10B981" : "#C8F26A";
               return (
                 <div key={s.label} style={{ display: "grid", gridTemplateColumns: "1fr auto", alignItems: "baseline", gap: 8 }}>
                   <div>

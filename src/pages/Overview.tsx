@@ -18,13 +18,13 @@ function cssVar(name: string, fallback = ""): string {
 
 function useThemeColors() {
   // Re-read on every render so demo overrides are picked up
-  const surface = cssVar("--surface", "#4A3525");
-  const border = cssVar("--surface-border", "#6B5240");
-  const textPrimary = cssVar("--text-primary", "#F5E6D0");
-  const textSecondary = cssVar("--text-secondary", "#C4A882");
-  const textMuted = cssVar("--text-muted", "#8B7355");
-  const accent = cssVar("--accent", "#E8461E");
-  const surfaceHover = cssVar("--surface-hover", "#5A4535");
+  const surface = cssVar("--surface", "#142A16");
+  const border = cssVar("--surface-border", "#2A4A2E");
+  const textPrimary = cssVar("--text-primary", "#ECE4D2");
+  const textSecondary = cssVar("--text-secondary", "#C7BFAC");
+  const textMuted = cssVar("--text-muted", "#8B8773");
+  const accent = cssVar("--accent", "#C8F26A");
+  const surfaceHover = cssVar("--surface-hover", "#1F3A24");
   return { surface, border, textPrimary, textSecondary, textMuted, accent, surfaceHover };
 }
 
@@ -34,7 +34,7 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
   const tc = useThemeColors();
 
   // Brand-aligned palette: orange spectrum + cream tones for the dark warm-brown theme
-  const PIE_COLORS = ["#E8461E", "#FF6B42", "#F5E6D0", "#C4A882", "#D88B5C", "#8B7355"];
+  const PIE_COLORS = ["#C8F26A", "#C8F26A", "#ECE4D2", "#C7BFAC", "#3F6B36", "#8B8773"];
 
   return (
     <div style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12, padding: "20px 24px" }}>

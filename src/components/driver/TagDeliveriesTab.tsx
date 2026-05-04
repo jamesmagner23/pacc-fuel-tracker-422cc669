@@ -92,7 +92,7 @@ export function TagDeliveriesTab() {
         <div
           className="flex gap-1 p-1 rounded-md"
           style={{
-            background: "var(--surface, #1e1008)",
+            background: "var(--surface, #142A16)",
             border: "1px solid var(--surface-border)",
           }}
         >
@@ -108,8 +108,8 @@ export function TagDeliveriesTab() {
               className="text-xs font-medium px-3 py-1.5 rounded transition-colors"
               style={{
                 background:
-                  filter === k ? "var(--accent, #f04a1a)" : "transparent",
-                color: filter === k ? "#fff" : "var(--text-secondary, #C4A882)",
+                  filter === k ? "var(--accent, #C8F26A)" : "transparent",
+                color: filter === k ? "#fff" : "var(--text-secondary, #C7BFAC)",
                 border: "none",
                 cursor: "pointer",
                 minHeight: 36,
@@ -192,7 +192,7 @@ export function TagDeliveriesTab() {
                     }
                     className="text-[11px] font-bold uppercase tracking-wider rounded px-3 py-2"
                     style={{
-                      background: "var(--accent, #f04a1a)",
+                      background: "var(--accent, #C8F26A)",
                       color: "#fff",
                       border: "none",
                       cursor: "pointer",

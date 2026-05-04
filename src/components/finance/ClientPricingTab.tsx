@@ -584,7 +584,7 @@ export default function ClientPricingTab() {
                     return item ? `${item.fullName} · ${item.tiers} tier${item.tiers !== 1 ? "s" : ""}` : _l;
                   }}
                 />
-                <Bar dataKey="margin" radius={[4, 4, 0, 0]} maxBarSize={60} fill="#E8461E">
+                <Bar dataKey="margin" radius={[4, 4, 0, 0]} maxBarSize={60} fill="#C8F26A">
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

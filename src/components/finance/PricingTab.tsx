@@ -316,7 +316,7 @@ export default function PricingTab() {
     let y = 0;
 
     // Header — brand dark brown with cream/orange
-    doc.setFillColor(61, 43, 26); // #3D2B1A
+    doc.setFillColor(61, 43, 26); // #0E1F10
     doc.rect(0, 0, w, 42, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(245, 230, 208); // cream
     doc.text("PACC", margin, 26);

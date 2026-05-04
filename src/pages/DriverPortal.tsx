@@ -296,7 +296,7 @@ type StopStatus = "scheduled" | "on_route" | "completed" | "failed";
 
 function StopStatusChip({ status }: { status: StopStatus }) {
   const styles: Record<StopStatus, { bg: string; text: string; label: string }> = {
-    scheduled: { bg: "rgba(139,115,85,0.2)", text: "var(--text-secondary, #C4A882)", label: "Scheduled" },
+    scheduled: { bg: "rgba(139,115,85,0.2)", text: "var(--text-secondary, #C7BFAC)", label: "Scheduled" },
     on_route: { bg: "rgba(59,130,246,0.15)", text: "#60A5FA", label: "On Route" },
     completed: { bg: "rgba(16,185,129,0.15)", text: "#10B981", label: "Completed" },
     failed: { bg: "rgba(239,68,68,0.15)", text: "#EF4444", label: "Failed" },
@@ -627,7 +627,7 @@ function MyDayTab() {
             onClick={() => setShowAddForm((v) => !v)}
             className="flex items-center gap-1.5 rounded-lg transition-colors shrink-0"
             style={{
-              background: "var(--accent, #f04a1a)",
+              background: "var(--accent, #C8F26A)",
               color: "#fff",
               border: "none",
               cursor: "pointer",
@@ -690,8 +690,8 @@ function MyDayTab() {
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                     style={{
-                      background: isCompleted ? "rgba(16,185,129,0.15)" : "rgba(240,74,26,0.15)",
-                      color: isCompleted ? "#10B981" : "var(--accent, #f04a1a)",
+                      background: isCompleted ? "rgba(16,185,129,0.15)" : "rgba(200,242,106,0.15)",
+                      color: isCompleted ? "#10B981" : "var(--accent, #C8F26A)",
                     }}
                   >
                     {stop.seq}
@@ -779,7 +779,7 @@ export default function DriverPortal() {
         </div>
 
         {/* Tab switcher */}
-        <div className="flex gap-1 p-1 rounded-lg" style={{ background: "var(--surface, #1e1008)", border: "1px solid var(--surface-border)" }}>
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: "var(--surface, #142A16)", border: "1px solid var(--surface-border)" }}>
           {[
             { key: "dashboard" as const, label: "Dashboard" },
             { key: "myday" as const, label: "My Day" },
@@ -791,8 +791,8 @@ export default function DriverPortal() {
               onClick={() => setActiveTab(tab.key)}
               className="flex-1 text-xs font-medium py-2.5 rounded-md transition-colors"
               style={{
-                background: activeTab === tab.key ? "var(--accent, #f04a1a)" : "transparent",
-                color: activeTab === tab.key ? "#fff" : "var(--text-secondary, #C4A882)",
+                background: activeTab === tab.key ? "var(--accent, #C8F26A)" : "transparent",
+                color: activeTab === tab.key ? "#fff" : "var(--text-secondary, #C7BFAC)",
                 border: "none",
                 cursor: "pointer",
                 minHeight: 44,

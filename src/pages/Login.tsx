@@ -6,30 +6,45 @@ import { Droplets, Truck, Shield } from "lucide-react";
 
 function PACCLogoLarge() {
   return (
-    <div style={{ lineHeight: 1 }}>
-      <div
-        style={{
-          fontSize: 48,
-          fontWeight: 800,
-          color: "#F5E6D0",
-          letterSpacing: "-0.03em",
-          textTransform: "uppercase",
-          lineHeight: 1,
-        }}
-      >
-        PACC<span style={{ color: "#E8461E", fontSize: 28 }}>®</span>
-      </div>
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 500,
-          color: "#C4A882",
-          letterSpacing: "0.2em",
-          marginTop: 4,
-          textTransform: "uppercase",
-        }}
-      >
-        ENERGY
+    <div style={{ lineHeight: 1, display: "flex", alignItems: "center", gap: 16 }}>
+      <svg width={56} height={68} viewBox="0 0 100 120" aria-hidden="true">
+        {[
+          [1,1,1,1,0],
+          [1,0,0,0,1],
+          [1,0,0,0,1],
+          [1,1,1,1,0],
+          [1,0,0,0,0],
+          [1,0,0,0,0],
+        ].flatMap((row, y) => row.map((on, x) => on ? (
+          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7} fill="#C8F26A" />
+        ) : null))}
+      </svg>
+      <div>
+        <div
+          style={{
+            fontFamily: "'Archivo Narrow', 'Archivo', 'Inter', sans-serif",
+            fontSize: 44,
+            fontWeight: 800,
+            color: "#ECE4D2",
+            letterSpacing: "0.01em",
+            textTransform: "uppercase",
+            lineHeight: 0.95,
+          }}
+        >
+          PACC<br/>ENERGY
+        </div>
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            color: "#8B8773",
+            letterSpacing: "0.28em",
+            marginTop: 8,
+            textTransform: "uppercase",
+          }}
+        >
+          Powered by Progress
+        </div>
       </div>
     </div>
   );
@@ -111,7 +126,7 @@ export default function Login() {
           <div
             className="relative mb-8"
             style={{
-              filter: "drop-shadow(0 0 60px rgba(232,70,30,0.15))",
+              filter: "drop-shadow(0 0 60px rgba(200,242,106,0.15))",
             }}
           >
             <PACCLogoLarge />
@@ -140,12 +155,12 @@ export default function Login() {
                 key={f.label}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium"
                 style={{
-                  background: "rgba(232,70,30,0.08)",
-                  border: "1px solid rgba(232,70,30,0.15)",
+                  background: "rgba(200,242,106,0.08)",
+                  border: "1px solid rgba(200,242,106,0.15)",
                   color: "#D4C4A8",
                 }}
               >
-                <span style={{ color: "#E8461E" }}>{f.icon}</span>
+                <span style={{ color: "#C8F26A" }}>{f.icon}</span>
                 {f.label}
               </div>
             ))}
@@ -156,13 +171,13 @@ export default function Login() {
             onClick={() => setShowForm(true)}
             className="mt-10 w-full max-w-[320px] py-3 rounded-xl text-sm font-semibold cursor-pointer transition-all"
             style={{
-              background: "#E8461E",
-              color: "#F5E6D0",
+              background: "#C8F26A",
+              color: "#0E1F10",
               border: "none",
-              boxShadow: "0 8px 32px rgba(232,70,30,0.3)",
+              boxShadow: "0 8px 32px rgba(200,242,106,0.3)",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(232,70,30,0.4)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(232,70,30,0.3)"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(200,242,106,0.4)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(200,242,106,0.3)"; }}
           >
             Sign In
           </button>

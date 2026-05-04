@@ -72,7 +72,7 @@ export const DEMO_PLANT_ITEMS: PlantItem[] = [
   { id: "pi-k-tipper",  client_account_id: 1, placa: "1KE-3JT",   name: "3-Tonne Tipper",                 equipment_type: "Heavy Vehicle",  serial_number: null,         description: null, photo_url: null, service_notes: null, is_active: true, ftc_rate_id: "ftc-heavy",  manufacturer: "Isuzu",    model: "NPR 75-190", size: "3t", tank_size_litres: 100, colour: "#5e8a3a", created_at: ts(80), updated_at: ts(5) },
   { id: "pi-k-hilux1",  client_account_id: 1, placa: "1KX-7AR",   name: "Toyota Hilux Work Ute (Crew 1)", equipment_type: "Light Vehicle",  serial_number: null,         description: null, photo_url: null, service_notes: null, is_active: true, ftc_rate_id: "ftc-light",  manufacturer: "Toyota",   model: "Hilux SR",  size: "ute", tank_size_litres: 80, colour: "#ffffff", created_at: ts(80), updated_at: ts(5) },
   { id: "pi-k-hilux2",  client_account_id: 1, placa: "1KX-9PB",   name: "Toyota Hilux Work Ute (Crew 2)", equipment_type: "Light Vehicle",  serial_number: null,         description: null, photo_url: null, service_notes: null, is_active: true, ftc_rate_id: "ftc-light",  manufacturer: "Toyota",   model: "Hilux SR",  size: "ute", tank_size_litres: 80, colour: "#dddddd", created_at: ts(80), updated_at: ts(5) },
-  { id: "pi-k-tank",    client_account_id: 1, placa: "YT-001",    name: "Yard Tank YT-001 (10,000L)",     equipment_type: "Static Tank",    serial_number: "YT-001",     description: null, photo_url: null, service_notes: "Bunded — yard refuel", is_active: true, ftc_rate_id: "ftc-offroad", manufacturer: null, model: null, size: "10,000L", tank_size_litres: 10000, colour: "#3d2b1a", created_at: ts(80), updated_at: ts(5) },
+  { id: "pi-k-tank",    client_account_id: 1, placa: "YT-001",    name: "Yard Tank YT-001 (10,000L)",     equipment_type: "Static Tank",    serial_number: "YT-001",     description: null, photo_url: null, service_notes: "Bunded — yard refuel", is_active: true, ftc_rate_id: "ftc-offroad", manufacturer: null, model: null, size: "10,000L", tank_size_litres: 10000, colour: "#0E1F10", created_at: ts(80), updated_at: ts(5) },
 
   // ── Metro Cranes fleet ──
   { id: "pi-m-tc1",   client_account_id: 2, placa: "TC-A1",      name: "Tower Crane #1 (Liebherr 280EC-H)", equipment_type: "Tower Crane",    serial_number: "LBH-280-001", description: null, photo_url: null, service_notes: null, is_active: true, ftc_rate_id: "ftc-genset",  manufacturer: "Liebherr", model: "280EC-H 12", size: "280t/m", tank_size_litres: 200, colour: "#e85d1e", created_at: ts(70), updated_at: ts(5) },
@@ -106,7 +106,7 @@ export const DEMO_PROJECT_ASSIGNMENTS: ProjectAssignment[] = [
 export const DEMO_PLANT_TAGS: PlantTag[] = [
   { id: "tag-priority", client_account_id: 1, name: "High-priority",  colour: "#e85d1e" },
   { id: "tag-service",  client_account_id: 1, name: "Service due",    colour: "#c0392b" },
-  { id: "tag-yard",     client_account_id: 1, name: "Yard refuel",    colour: "#3d2b1a" },
+  { id: "tag-yard",     client_account_id: 1, name: "Yard refuel",    colour: "#0E1F10" },
   { id: "tag-jib",      client_account_id: 2, name: "Jib lift ready", colour: "#e85d1e" },
   { id: "tag-night",    client_account_id: 2, name: "Night shift",    colour: "#0f8a5e" },
 ];
