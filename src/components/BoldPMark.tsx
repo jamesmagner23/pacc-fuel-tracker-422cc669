@@ -15,32 +15,17 @@ export function BoldPMark({
   rounded?: number;
   bleed?: boolean;
 }) {
-  // Dotted "P" mark — halftone style matching the PACC brand reference.
-  // 5-column × 7-row grid. `2` = full dot, `1` = small dot, `0` = empty.
-  const grid: number[][] = [
-    [2, 2, 2, 2, 1], // top of bowl
-    [2, 2, 0, 2, 1],
-    [2, 2, 0, 2, 1],
-    [2, 2, 2, 2, 1], // bottom of bowl
-    [2, 2, 0, 0, 0], // stem only
-    [2, 2, 0, 0, 0],
-    [2, 2, 0, 0, 0],
-  ];
-
-  const cols = 5;
-  const rows = 7;
-  // 100x100 viewBox, with margin so dots have breathing room.
-  const margin = 6;
-  const cellW = (100 - margin * 2) / cols;
-  const cellH = (100 - margin * 2) / rows;
-  const cell = Math.min(cellW, cellH);
-  const gridW = cell * cols;
-  const gridH = cell * rows;
-  const offsetX = (100 - gridW) / 2;
-  const offsetY = (100 - gridH) / 2;
-  const fullR = cell * 0.42;
-  const smallR = cell * 0.22;
   const tileRadius = bleed ? 0 : (rounded * 100) / size;
+  // Geometry — symmetric bold "P" centered in 100x100 viewBox.
+  // Stem and bowl share the same stroke weight; bowl is a perfect circle.
+  const stemW = 22;            // stem thickness
+  const stemX = 26;            // stem left edge
+  const stemTop = 20;
+  const stemBottom = 80;
+  const bowlCx = stemX + stemW + 12; // 60
+  const bowlCy = 38;            // centered in upper half
+  const bowlOuterR = 22;
+  const bowlInnerR = 9;         // counter — keeps stroke weight = stemW/2 ≈ 11 (close)
 
   return (
     <svg
@@ -51,14 +36,23 @@ export function BoldPMark({
       style={{ display: "block", borderRadius: rounded }}
     >
       <rect x="0" y="0" width="100" height="100" rx={tileRadius} fill={bg} />
-      {grid.flatMap((row, r) =>
-        row.map((v, c) => {
-          if (!v) return null;
-          const cx = offsetX + cell * (c + 0.5);
-          const cy = offsetY + cell * (r + 0.5);
-          return <circle key={`${r}-${c}`} cx={cx} cy={cy} r={v === 2 ? fullR : smallR} fill={fg} />;
-        })
-      )}
+      <path
+        fill={fg}
+        fillRule="evenodd"
+        d={`
+          M ${stemX} ${stemTop}
+          H ${bowlCx}
+          A ${bowlOuterR} ${bowlOuterR} 0 1 1 ${bowlCx} ${bowlCy + bowlOuterR}
+          H ${stemX + stemW}
+          V ${stemBottom}
+          H ${stemX}
+          Z
+          M ${bowlCx} ${bowlCy - bowlInnerR}
+          a ${bowlInnerR} ${bowlInnerR} 0 1 0 0 ${bowlInnerR * 2}
+          a ${bowlInnerR} ${bowlInnerR} 0 1 0 0 ${-bowlInnerR * 2}
+          Z
+        `}
+      />
     </svg>
   );
 }
