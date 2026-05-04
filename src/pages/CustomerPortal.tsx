@@ -360,7 +360,11 @@ export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState<Tab>("01 Overview");
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const isDemo = useDemo();
-  const { theme: portalTheme, vars: portalVars, tokens: portalTokens } = usePortalTheme();
+  const { theme: storedPortalTheme, vars: storedPortalVars, tokens: storedPortalTokens } = usePortalTheme();
+  // Demo mode is locked to light theme so the marketing/demo experience is consistent.
+  const portalTheme: PortalTheme = isDemo ? "light" : storedPortalTheme;
+  const portalVars = isDemo ? themeVarsFor("light") : storedPortalVars;
+  const portalTokens = isDemo ? tokensFor("light") : storedPortalTokens;
   // Sync the mutable T + style objects to the active theme BEFORE this
   // render's children evaluate inline T.* references.
   applyPortalTheme(portalTheme);
