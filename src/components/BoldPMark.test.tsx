@@ -2,19 +2,18 @@ import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BoldPMark } from "./BoldPMark";
 
-function renderSvg(size: number): { html: string; viewBox: string; width: string; height: string; rect: Record<string, string>; pathD: string } {
+function renderSvg(size: number) {
   const html = renderToStaticMarkup(<BoldPMark size={size} />);
   const viewBox = html.match(/viewBox="([^"]+)"/)![1];
   const width = html.match(/width="([^"]+)"/)![1];
   const height = html.match(/height="([^"]+)"/)![1];
-  const rectStr = html.match(/<rect\b[^>]*>/)![0];
-  const rect: Record<string, string> = {};
-  for (const m of rectStr.matchAll(/(\w+)="([^"]+)"/g)) rect[m[1]] = m[2];
-  const pathD = html.match(/<path[^>]*\sd="([^"]+)"/)![1];
-  return { html, viewBox, width, height, rect, pathD };
+  const circles = [...html.matchAll(/<circle\s+cx="([\d.]+)"\s+cy="([\d.]+)"\s+r="([\d.]+)"/g)].map(
+    (m) => ({ cx: +m[1], cy: +m[2], r: +m[3] }),
+  );
+  return { html, viewBox, width, height, circles };
 }
 
-describe("BoldPMark visual regression", () => {
+describe("BoldPMark dot-grid regression", () => {
   it.each([16, 24, 28, 32, 48, 64, 128])("renders square at size=%i with 100x100 viewBox", (size) => {
     const s = renderSvg(size);
     expect(s.width).toBe(String(size));
@@ -22,52 +21,29 @@ describe("BoldPMark visual regression", () => {
     expect(s.viewBox).toBe("0 0 100 100");
   });
 
-  it("background tile fills the full viewBox", () => {
-    const { rect } = renderSvg(64);
-    expect(rect.x).toBe("0");
-    expect(rect.y).toBe("0");
-    expect(rect.width).toBe("100");
-    expect(rect.height).toBe("100");
+  it("renders the expected number of dots for the P glyph", () => {
+    // 5x7 grid: row0=4, r1=3, r2=3, r3=4, r4=2, r5=2, r6=2 = 20
+    const { circles } = renderSvg(64);
+    expect(circles.length).toBe(20);
   });
 
-  it("P bounding box is centered in the viewBox (horizontal + vertical)", () => {
-    const { pathD } = renderSvg(64);
-    const outer = pathD.split("Z")[0]!;
-    const xs: number[] = [];
-    const ys: number[] = [];
-    const cmdRe = /([MHVA])\s*([-\d.\s]+?)(?=[A-Za-z]|$)/g;
-    let m: RegExpExecArray | null;
-    while ((m = cmdRe.exec(outer))) {
-      const cmd = m[1];
-      const args = m[2].trim().split(/\s+/).map(Number);
-      if (cmd === "M") { xs.push(args[0]); ys.push(args[1]); }
-      else if (cmd === "H") { xs.push(args[args.length - 1]); }
-      else if (cmd === "V") { ys.push(args[args.length - 1]); }
-      else if (cmd === "A") {
-        // rx ry rot laf sf x y
-        const rx = args[0];
-        xs.push(args[5]); ys.push(args[6]);
-        xs.push(args[5] + rx); // bowl bulges +rx beyond endpoint
-      }
+  it("dots shrink left-to-right (perspective)", () => {
+    const { circles } = renderSvg(64);
+    const byCol = new Map<number, number>();
+    for (const c of circles) {
+      const prev = byCol.get(c.cx);
+      if (prev !== undefined) expect(c.r).toBeCloseTo(prev, 5);
+      byCol.set(c.cx, c.r);
     }
-    const minX = Math.min(...xs), maxX = Math.max(...xs);
-    const minY = Math.min(...ys), maxY = Math.max(...ys);
-    expect(minX + maxX).toBeCloseTo(100, 1);
-    expect(minY + maxY).toBeCloseTo(100, 1);
-  });
-
-  it("bowl counter is a perfect circle with mirrored sweeps", () => {
-    const { pathD } = renderSvg(64);
-    const arcs = [...pathD.matchAll(/a\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+0\s+1\s+0\s+0\s+(-?\d+(?:\.\d+)?)/g)];
-    expect(arcs.length).toBe(2);
-    for (const a of arcs) {
-      expect(Number(a[1])).toBe(Number(a[2]));
-      expect(Math.abs(Number(a[3]))).toBeCloseTo(2 * Number(a[1]), 5);
+    const cols = [...byCol.entries()].sort((a, b) => a[0] - b[0]);
+    for (let i = 1; i < cols.length; i++) {
+      expect(cols[i][1]).toBeLessThan(cols[i - 1][1]);
     }
-    expect(Number(arcs[0][3])).toBe(-Number(arcs[1][3]));
   });
 
   it("geometry is independent of size prop", () => {
-    expect(renderSvg(24).pathD).toBe(renderSvg(128).pathD);
+    const a = renderSvg(24).circles;
+    const b = renderSvg(128).circles;
+    expect(a).toEqual(b);
   });
 });
