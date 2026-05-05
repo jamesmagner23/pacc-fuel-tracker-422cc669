@@ -11,7 +11,7 @@ import { logActivity } from "@/hooks/useActivityLog";
 import { logDemoEvent } from "@/lib/demoAnalytics";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { usePlantItems } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
@@ -19,7 +19,7 @@ import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { useClientProfile } from "@/hooks/useClientProfile";
-import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
+import { User as UserIcon, ChevronDown, LogOut, Filter } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePortalFilters,
@@ -669,7 +669,19 @@ export default function CustomerPortal() {
       <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 40px" }}>
         {/* Page heading */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 28, fontFamily: T.sansHead, fontWeight: 700, letterSpacing: "0.02em", margin: 0, textTransform: "uppercase" }}>
+          <h1
+            style={{
+              fontSize: "clamp(20px, 6vw, 28px)",
+              lineHeight: 1.05,
+              fontFamily: T.sansHead,
+              fontWeight: 700,
+              letterSpacing: "0.01em",
+              margin: 0,
+              textTransform: "uppercase",
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+            }}
+          >
             {companyName}
           </h1>
           <p style={{ ...muted(12), margin: "4px 0 0", letterSpacing: "0.04em" }}>
@@ -765,22 +777,65 @@ export default function CustomerPortal() {
           </div>
         )}
 
-        {/* Shared filter bar — applies to Overview / Deliveries / Plant */}
+        {/* Shared filter bar — collapsed by default to save space.
+            Active filter count surfaces as a pill on the summary row. */}
         {(activeTab === "01 Overview" ||
           activeTab === "02 Deliveries" ||
           activeTab === "04 Plant") && (
-          <div style={{ marginBottom: 16 }}>
-            <PortalFilterBar
-              filters={portalFilters.filters}
-              onTypes={portalFilters.setTypes}
-              onProjects={portalFilters.setProjects}
-              onTags={portalFilters.setTags}
-              onReset={portalFilters.reset}
-              availableTypes={availableTypes}
-              availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
-              availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
-            />
-          </div>
+          <details style={{ marginBottom: 16 }}>
+            <summary
+              style={{
+                listStyle: "none",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 10px",
+                border: `1px solid ${T.border}`,
+                borderRadius: 999,
+                background: T.surface,
+                fontSize: 11,
+                fontFamily: T.sansHead,
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: T.textSecondary,
+              }}
+            >
+              <Filter size={12} />
+              Filters
+              {(portalFilters.filters.types.length +
+                portalFilters.filters.projects.length +
+                portalFilters.filters.tags.length) > 0 && (
+                <span
+                  style={{
+                    background: T.accent,
+                    color: "#0E1F10",
+                    borderRadius: 999,
+                    padding: "1px 7px",
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {portalFilters.filters.types.length +
+                    portalFilters.filters.projects.length +
+                    portalFilters.filters.tags.length}
+                </span>
+              )}
+            </summary>
+            <div style={{ marginTop: 8 }}>
+              <PortalFilterBar
+                filters={portalFilters.filters}
+                onTypes={portalFilters.setTypes}
+                onProjects={portalFilters.setProjects}
+                onTags={portalFilters.setTags}
+                onReset={portalFilters.reset}
+                availableTypes={availableTypes}
+                availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
+                availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
+              />
+            </div>
+          </details>
         )}
 
         {isLoading && activeTab !== "04 Plant" ? (
@@ -968,112 +1023,105 @@ function OverviewTab({
   const topPlants = plantBreakdown.slice(0, 6);
   const topPlant = plantBreakdown[0];
 
-  // Pie palette comes from the active portal theme so it stays legible
-  // on either cream or deep-brown backgrounds.
-  const { tokens: pieTokens } = usePortalTheme();
-  const PIE_COLORS = pieTokens.pie as unknown as string[];
-
-  const kpis = [
-    { label: "Total Litres", value: fmtL(totalLitres) },
-    { label: "Deliveries", value: transactions.length.toLocaleString() },
-    { label: "Sites", value: sites.size.toString() },
-    {
-      label: "Est. FTC Savings",
-      value: ftcSavings > 0 ? `$${Math.round(ftcSavings).toLocaleString()}` : "—",
-    },
-  ];
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-        {kpis.map((k) => (
-          <div key={k.label} style={card}>
-            <div style={labelStyle}>{k.label}</div>
-            <div style={{ fontSize: 24, fontFamily: T.sansHead, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
-              {k.value}
-            </div>
-          </div>
-        ))}
+      {/* Hero — Litres used (visual focal point) */}
+      <div
+        style={{
+          ...card,
+          background: `linear-gradient(135deg, ${T.accent}1a, ${T.accent}05)`,
+          borderColor: `${T.accent}55`,
+          padding: 20,
+        }}
+      >
+        <div style={{ ...labelStyle, marginBottom: 6 }}>Litres Used</div>
+        <div
+          style={{
+            fontSize: "clamp(40px, 13vw, 64px)",
+            lineHeight: 1,
+            fontFamily: T.sansHead,
+            fontWeight: 800,
+            color: T.text,
+            fontVariantNumeric: "tabular-nums",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {fmtL(totalLitres)}
+        </div>
+        <div style={{ ...muted(12), marginTop: 6 }}>
+          {transactions.length.toLocaleString()} deliveries · {sites.size} sites
+        </div>
       </div>
+
+      {/* FTC savings — second visual headline */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+        <div style={card}>
+          <div style={labelStyle}>Est. FTC Savings</div>
+          <div
+            style={{
+              fontSize: 28,
+              fontFamily: T.sansHead,
+              fontWeight: 700,
+              color: ftcSavings > 0 ? T.accent : T.muted,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {ftcSavings > 0 ? `$${Math.round(ftcSavings).toLocaleString()}` : "—"}
+          </div>
+          <div style={{ ...muted(11), marginTop: 4 }}>Off-road rate × volume</div>
+        </div>
+        <div style={card}>
+          <div style={labelStyle}>Top Plant</div>
+          <div
+            style={{
+              fontSize: 16,
+              fontFamily: T.sansHead,
+              fontWeight: 700,
+              color: T.text,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {topPlant?.name || "—"}
+          </div>
+          <div style={{ fontSize: 22, fontFamily: T.sansHead, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+            {topPlant ? fmtL(topPlant.litres) : "—"}
+          </div>
+        </div>
+      </div>
+
+      {/* Highest-using plant — horizontal bar chart */}
+      {topPlants.length > 0 && (
+        <div style={card}>
+          <div style={{ ...labelStyle, marginBottom: 4 }}>Top Plant by Volume</div>
+          <div style={{ ...muted(11), marginBottom: 10 }}>Litres per plate / plant this period</div>
+          <div style={{ width: "100%", height: Math.max(140, topPlants.length * 32) }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topPlants} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
+                <XAxis type="number" hide />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={110}
+                  tick={{ fill: T.textSecondary, fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  cursor={{ fill: `${T.accent}11` }}
+                  contentStyle={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, fontSize: 12 }}
+                  formatter={(v: any) => fmtL(Number(v))}
+                />
+                <Bar dataKey="litres" fill={T.accent} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Live truck location */}
       <TruckMap height={260} showStops={true} />
-
-      {/* Plant analytics — donut + top plant */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
-        <div style={card}>
-          <div style={{ ...labelStyle, marginBottom: 4 }}>Plant Fuel Usage</div>
-          <div style={{ ...muted(11), marginBottom: 12 }}>Volume share by plate / plant</div>
-          {topPlants.length === 0 ? (
-            <p style={muted(13)}>No plant data yet.</p>
-          ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ width: 160, height: 160, flexShrink: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={topPlants}
-                      dataKey="litres"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={70}
-                      innerRadius={38}
-                      strokeWidth={0}
-                    >
-                      {topPlants.map((_, i) => (
-                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, fontSize: 12 }}
-                      formatter={(v: any) => fmtL(Number(v))}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ flex: 1, minWidth: 140, display: "flex", flexDirection: "column", gap: 6 }}>
-                {topPlants.map((p, i) => (
-                  <div key={p.name} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
-                    <span style={{ color: T.textSecondary, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                    <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{fmtL(p.litres)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div style={card}>
-          <div style={{ ...labelStyle, marginBottom: 4 }}>Highest Plant User</div>
-          <div style={{ ...muted(11), marginBottom: 16 }}>Top fuel consumer this period</div>
-          {topPlant ? (
-            <>
-              <div style={{ fontSize: 18, fontWeight: 700, color: T.text, fontFamily: T.sansHead, marginBottom: 4 }}>
-                {topPlant.name}
-              </div>
-              <div style={{ fontSize: 32, fontWeight: 700, color: T.accent, fontFamily: T.sansHead, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.01em" }}>
-                {fmtL(topPlant.litres)}
-              </div>
-              <div style={{ ...muted(11), marginTop: 4 }}>
-                {totalLitres > 0 ? `${((topPlant.litres / totalLitres) * 100).toFixed(1)}% of total volume` : ""}
-              </div>
-              {plantBreakdown.length > 1 && (
-                <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
-                  <div style={{ ...labelStyle, marginBottom: 8 }}>Runner-up</div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                    <span style={{ color: T.textSecondary }}>{plantBreakdown[1].name}</span>
-                    <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{fmtL(plantBreakdown[1].litres)}</span>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <p style={muted(13)}>No plant data yet.</p>
-          )}
-        </div>
-      </div>
 
       <div style={card}>
         <div style={{ ...labelStyle, marginBottom: 12 }}>Recent Deliveries</div>
