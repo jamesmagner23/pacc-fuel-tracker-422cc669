@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTGPrices } from "@/hooks/useTGPrices";
 import { supabase } from "@/integrations/supabase/client";
 import { useDateRange } from "@/hooks/useDateRange";
-import { DateRangeToggle } from "@/components/DateRangeToggle";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, BarChart, Bar, Cell
@@ -376,10 +375,6 @@ export default function MarketIntelligence() {
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
             Melbourne · Australia · {fmtDate(TODAY).toUpperCase()}
           </div>
-        </div>
-        {/* Date toggle lives in the global header — no duplicate here */}
-        <div className="hidden">
-          <DateRangeToggle />
         </div>
       </div>
 

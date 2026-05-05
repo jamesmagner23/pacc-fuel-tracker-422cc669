@@ -39,7 +39,7 @@ export function SyncButton() {
         gap: 6,
         borderRadius: 20,
         background: "var(--accent)",
-        color: "#ffffff",
+        color: "var(--primary-foreground)",
         fontWeight: 600,
         border: "none",
         cursor: syncing ? "not-allowed" : "pointer",
