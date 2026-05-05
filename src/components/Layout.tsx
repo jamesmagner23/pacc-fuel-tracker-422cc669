@@ -14,8 +14,7 @@ const navItems = [
   { to: "/customers", label: "Customers" },
   { to: "/finance", label: "Finance" },
   { to: "/dispatch", label: "Dispatch" },
-  { to: "/admin/tag-deliveries", label: "Tag Deliveries" },
-  { to: "/admin/outreach", label: "Outreach" },
+  { to: "/trucks", label: "Trucks" },
   { to: "/portal", label: "Client Portal", demoOnly: true },
   { to: "/driver", label: "Driver Portal", demoOnly: true },
   
