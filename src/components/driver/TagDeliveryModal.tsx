@@ -65,6 +65,9 @@ export function TagDeliveryModal({
     project_label: string;
   } | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  // When the preview reports siblings will be backfilled, the user picks
+  // whether to tag just this delivery or all matching ones.
+  const [scope, setScope] = useState<"single" | "all">("all");
 
   const upsert = useUpsertTransactionOverride();
   const upsertProject = useUpsertProject();
@@ -84,6 +87,7 @@ export function TagDeliveryModal({
     setNewProjectStart("");
     setNewProjectEnd("");
     setPreview(null);
+    setScope("all");
   }, [open, transaction, currentOverride]);
 
   const sortedPlant = useMemo(
@@ -190,6 +194,7 @@ export function TagDeliveryModal({
         transaction_id: Number(transaction.id),
         plant_item_id: plantItemId === NONE || !plantItemId ? null : plantItemId,
         project_id: finalProjectId,
+        single: scope === "single",
       });
       onOpenChange(false);
     } catch {
