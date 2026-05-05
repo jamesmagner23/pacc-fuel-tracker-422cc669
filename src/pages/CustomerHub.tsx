@@ -908,9 +908,10 @@ function ProjectsTab({
 
           {selectedProject.notes && <p className="text-sm text-muted-foreground">{selectedProject.notes}</p>}
 
-          {/* Date range pills */}
-          <div className="flex flex-wrap gap-1.5">
+          {/* Date range pills — first option mirrors the top-nav toggle */}
+          <div className="flex flex-wrap items-center gap-1.5">
             {([
+              { k: "nav", l: `Follow nav · ${rangeLabel}` },
               { k: "7d", l: "7 days" },
               { k: "30d", l: "30 days" },
               { k: "month", l: "This month" },
