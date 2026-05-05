@@ -41,8 +41,9 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
   const textPrimary = cssVar("--text-primary", "#ECE4D2");
   const textSecondary = cssVar("--text-secondary", "#C7BFAC");
   const textMuted = cssVar("--text-muted", "#8B8773");
-  const accent = cssVar("--accent", "#C8F26A");
-  const warning = cssVar("--warning", "#F5C25B");
+  // Brand-aligned chart palette — replaces the previous brown/grey look
+  const accent = "#f04a1a";   // brand red-orange (Stops)
+  const warning = "#3FB6B0";  // teal (KMs) — clear contrast against orange
 
   const dates = useMemo(() => {
     let start: Date, end: Date;
@@ -126,7 +127,7 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
                 className="px-3 py-1.5 sm:py-1 rounded-md text-[10px] font-medium uppercase tracking-wider transition-colors"
                 style={{
                   background: period === p ? accent : "transparent",
-                  color: period === p ? "#0E1F10" : textSecondary,
+                  color: period === p ? "#FFFFFF" : textSecondary,
                   border: "none",
                   cursor: "pointer",
                 }}
