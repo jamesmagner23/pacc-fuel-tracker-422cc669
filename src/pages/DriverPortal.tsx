@@ -114,6 +114,7 @@ function FuelIntakeForm() {
   const [preview, setPreview] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [bowserPrice, setBowserPrice] = useState("");
+  const [odometerKm, setOdometerKm] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -165,6 +166,7 @@ function FuelIntakeForm() {
         litres_entered: parseFloat(litres),
         photo_path: photoPath,
         bowser_retail_price: bowserPrice ? parseFloat(bowserPrice) : null,
+        odometer_km: odometerKm ? parseFloat(odometerKm) : null,
         notes: notes || null,
       } as any);
       if (error) throw error;
@@ -177,6 +179,7 @@ function FuelIntakeForm() {
       setPreview(null);
       setNotes("");
       setBowserPrice("");
+      setOdometerKm("");
       queryClient.invalidateQueries({ queryKey: ["fuel-intake-today"] });
     },
     onError: (err: Error) => {
