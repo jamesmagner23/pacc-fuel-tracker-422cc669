@@ -20,6 +20,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContai
 import { format, parseISO, subDays, startOfMonth, startOfYear, startOfWeek, addDays } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { SpeedSolValue } from "@/components/SpeedSolValue";
+import { useDateRange } from "@/hooks/useDateRange";
 
 export default function CustomerHub() {
   const { name } = useParams<{ name: string }>();
