@@ -802,6 +802,7 @@ function ProjectsTab({
                       <th className="pb-2 pr-3">Date</th>
                       <th className="pb-2 pr-3">Equipment</th>
                       <th className="pb-2 pr-3">Location</th>
+                      <th className="pb-2 pr-3">Why counted?</th>
                       <th className="pb-2 pr-3 text-right">Litres</th>
                       <th className="pb-2 text-right">Total</th>
                     </tr>
@@ -811,15 +812,46 @@ function ProjectsTab({
                       .slice()
                       .sort((a: any, b: any) => (b.fecha || "").localeCompare(a.fecha || ""))
                       .slice(0, 25)
-                      .map((t: any) => (
-                        <tr key={t.id} className="border-b border-border/50">
-                          <td className="py-2 pr-3 whitespace-nowrap">{format(parseISO(t.fecha), "dd MMM HH:mm")}</td>
-                          <td className="py-2 pr-3">{t.placa || "—"}</td>
-                          <td className="py-2 pr-3">{t.ciudad || t.estacion || "—"}</td>
-                          <td className="py-2 pr-3 text-right">{(t.cantidad || 0).toLocaleString()}L</td>
-                          <td className="py-2 text-right">${(t.dinero_total || 0).toLocaleString()}</td>
-                        </tr>
-                      ))}
+                      .map((t: any) => {
+                        const ov = ovById[t.id];
+                        let reasonLabel = "Equipment match";
+                        let reasonDetail = `Plate ${t.placa || "—"} is assigned to this project on the Plant Assignment Board.`;
+                        let tone: "primary" | "accent" | "muted" = "muted";
+                        if (ov?.project_id === selected) {
+                          reasonLabel = "Tagged to project";
+                          reasonDetail = `Manually tagged to this project from Tag Deliveries${ov.notes ? ` — “${ov.notes}”` : ""}.`;
+                          tone = "primary";
+                        } else if (ov?.plant_item_id) {
+                          const item = equipment.find((e: any) => e.enriched?.id === ov.plant_item_id);
+                          const itemName = item?.enriched?.name || item?.placa || "an item";
+                          reasonLabel = "Tagged to equipment";
+                          reasonDetail = `Manually tagged to ${itemName}, which is assigned to this project.`;
+                          tone = "accent";
+                        }
+                        const toneClass =
+                          tone === "primary"
+                            ? "bg-primary/15 text-primary border-primary/30"
+                            : tone === "accent"
+                            ? "bg-accent/15 text-accent border-accent/30"
+                            : "bg-secondary/40 text-foreground border-border";
+                        return (
+                          <tr key={t.id} className="border-b border-border/50">
+                            <td className="py-2 pr-3 whitespace-nowrap">{format(parseISO(t.fecha), "dd MMM HH:mm")}</td>
+                            <td className="py-2 pr-3">{t.placa || "—"}</td>
+                            <td className="py-2 pr-3">{t.ciudad || t.estacion || "—"}</td>
+                            <td className="py-2 pr-3">
+                              <span
+                                title={reasonDetail}
+                                className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded-full border ${toneClass}`}
+                              >
+                                {reasonLabel}
+                              </span>
+                            </td>
+                            <td className="py-2 pr-3 text-right">{(t.cantidad || 0).toLocaleString()}L</td>
+                            <td className="py-2 text-right">${(t.dinero_total || 0).toLocaleString()}</td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
