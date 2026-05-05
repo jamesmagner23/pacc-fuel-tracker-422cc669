@@ -41,8 +41,9 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
   const textPrimary = cssVar("--text-primary", "#ECE4D2");
   const textSecondary = cssVar("--text-secondary", "#C7BFAC");
   const textMuted = cssVar("--text-muted", "#8B8773");
-  const accent = cssVar("--accent", "#C8F26A");
-  const warning = cssVar("--warning", "#F5C25B");
+  // Brand-aligned chart palette — replaces the previous brown/grey look
+  const stopsColor = "#f04a1a"; // brand red-orange
+  const kmsColor = "#3FB6B0";   // teal for clear contrast against orange
 
   const dates = useMemo(() => {
     let start: Date, end: Date;
