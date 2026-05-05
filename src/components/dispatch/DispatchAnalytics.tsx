@@ -127,7 +127,7 @@ export function DispatchAnalytics({ selectedDate }: { selectedDate: Date }) {
                 className="px-3 py-1.5 sm:py-1 rounded-md text-[10px] font-medium uppercase tracking-wider transition-colors"
                 style={{
                   background: period === p ? accent : "transparent",
-                  color: period === p ? "#0E1F10" : textSecondary,
+                  color: period === p ? "#FFFFFF" : textSecondary,
                   border: "none",
                   cursor: "pointer",
                 }}
