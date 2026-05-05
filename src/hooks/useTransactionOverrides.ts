@@ -74,11 +74,13 @@ export function useUpsertTransactionOverride() {
       plant_item_id?: string | null;
       project_id?: string | null;
       notes?: string | null;
+      /** When true, tag only this delivery — never auto-backfill siblings sharing the placa. */
+      single?: boolean;
     }): Promise<TagFeedback> => {
       // Pre-check: block tagging if the target plant item shares a rego with
       // another active plant item. This prevents bad auto-backfill and forces
       // an admin to resolve the conflict first.
-      if (input.plant_item_id) {
+      if (input.plant_item_id && !input.single) {
         const { data: check, error: checkErr } = await supabase.rpc(
           "check_plant_rego_conflict",
           { _plant_item_id: input.plant_item_id }
@@ -94,7 +96,8 @@ export function useUpsertTransactionOverride() {
         }
       }
 
-      const { data, error } = await supabase.rpc("tag_transaction_with_feedback", {
+      const rpcName = input.single ? "tag_transaction_single" : "tag_transaction_with_feedback";
+      const { data, error } = await supabase.rpc(rpcName as any, {
         _transaction_id: input.transaction_id,
         _plant_item_id: input.plant_item_id ?? null,
         _project_id: input.project_id ?? null,
@@ -156,6 +159,33 @@ export function useUpsertTransactionOverride() {
       }
       toast({ title: "Save failed", description: e.message, variant: "destructive" });
     },
+  });
+}
+
+/**
+ * Clears every auto-backfilled override (notes = 'Auto-tagged by placa match')
+ * pointing at a given plant item. Manual tags are preserved.
+ */
+export function useClearAutoBackfillForPlant() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (plant_item_id: string) => {
+      const { data, error } = await supabase.rpc("clear_auto_backfill_for_plant", {
+        _plant_item_id: plant_item_id,
+      });
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+    onSuccess: (count) => {
+      qc.invalidateQueries({ queryKey: ["transaction-overrides"] });
+      qc.invalidateQueries({ queryKey: ["customer-tx-overrides"] });
+      toast({
+        title: count > 0 ? `Cleared ${count} auto-tagged deliver${count === 1 ? "y" : "ies"}` : "Nothing to clear",
+        description: count > 0 ? "Manual tags were preserved." : undefined,
+      });
+    },
+    onError: (e: any) =>
+      toast({ title: "Clear failed", description: e.message, variant: "destructive" }),
   });
 }
 

@@ -65,6 +65,9 @@ export function TagDeliveryModal({
     project_label: string;
   } | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  // When the preview reports siblings will be backfilled, the user picks
+  // whether to tag just this delivery or all matching ones.
+  const [scope, setScope] = useState<"single" | "all">("all");
 
   const upsert = useUpsertTransactionOverride();
   const upsertProject = useUpsertProject();
@@ -84,6 +87,7 @@ export function TagDeliveryModal({
     setNewProjectStart("");
     setNewProjectEnd("");
     setPreview(null);
+    setScope("all");
   }, [open, transaction, currentOverride]);
 
   const sortedPlant = useMemo(
@@ -190,6 +194,7 @@ export function TagDeliveryModal({
         transaction_id: Number(transaction.id),
         plant_item_id: plantItemId === NONE || !plantItemId ? null : plantItemId,
         project_id: finalProjectId,
+        single: scope === "single",
       });
       onOpenChange(false);
     } catch {
@@ -249,13 +254,42 @@ export function TagDeliveryModal({
                 </div>
               </div>
             ) : preview.backfill_count > 0 ? (
-              <div className="text-xs p-3 rounded border border-primary/40 bg-primary/10 text-foreground">
+              <div className="text-xs p-3 rounded border border-primary/40 bg-primary/10 text-foreground space-y-2">
                 <p className="m-0">
-                  This will also <strong>auto-backfill {preview.backfill_count}</strong>{" "}
-                  matching deliver{preview.backfill_count === 1 ? "y" : "ies"} with rego{" "}
-                  <strong>{preview.placa}</strong> to{" "}
-                  <strong>{preview.plant_item_name}</strong>.
+                  Rego <strong>{preview.placa}</strong> appears on{" "}
+                  <strong>{preview.backfill_count + 1}</strong> deliver
+                  {preview.backfill_count === 0 ? "y" : "ies"}. How should we tag
+                  them to <strong>{preview.plant_item_name}</strong>?
                 </p>
+                <div className="grid gap-1.5">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tag-scope"
+                      className="mt-0.5"
+                      checked={scope === "single"}
+                      onChange={() => setScope("single")}
+                    />
+                    <span>
+                      <strong>Just this one</strong> — leave the other{" "}
+                      {preview.backfill_count} untagged. Use this when a shared
+                      job code is split between multiple machines.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tag-scope"
+                      className="mt-0.5"
+                      checked={scope === "all"}
+                      onChange={() => setScope("all")}
+                    />
+                    <span>
+                      <strong>All {preview.backfill_count + 1}</strong> with this
+                      rego — auto-tag the matching deliveries too.
+                    </span>
+                  </label>
+                </div>
               </div>
             ) : preview.plant_item_name ? (
               <p className="text-xs text-muted-foreground">
