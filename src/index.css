@@ -269,3 +269,22 @@
     margin: 2mm;
   }
 }
+
+/* SpeedSol UI lock — defence-in-depth guard.
+   Any element marked [data-speedsol-locked="true"] is the single source of
+   truth from the SpeedSol SCA WEB sync. The UI must never allow editing or
+   re-sourcing of these values (litres, prices, totals).
+   Hardens against accidental contentEditable / nested form controls. */
+[data-speedsol-locked="true"] {
+  -webkit-user-modify: read-only !important;
+  user-select: text;
+  pointer-events: auto;
+}
+[data-speedsol-locked="true"] input,
+[data-speedsol-locked="true"] textarea,
+[data-speedsol-locked="true"] [contenteditable="true"] {
+  pointer-events: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  -webkit-user-modify: read-only !important;
+}
