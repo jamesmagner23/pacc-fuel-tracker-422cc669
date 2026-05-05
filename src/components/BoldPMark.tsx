@@ -18,20 +18,20 @@ export function BoldPMark({
 }) {
   const tileRadius = bleed ? 0 : (rounded * 100) / size;
 
-  // 5 cols × 7 rows P pattern. 1 = dot, 0 = empty.
-  // Single-column stem (col 0) with a 4-wide closed bowl up top.
-  // Symmetric horizontally about the bowl, evenly spaced.
+  // 7 cols × 7 rows P pattern (P glyph in cols 1–5, with empty cols 0 & 6
+  // for symmetric horizontal padding that matches vertical padding).
+  // 1 = dot, 0 = empty.
   const grid: number[][] = [
-    [1, 1, 1, 1, 0], // row 0 — top of bowl
-    [1, 0, 0, 0, 1], // row 1 — bowl sides
-    [1, 0, 0, 0, 1], // row 2 — bowl sides
-    [1, 1, 1, 1, 0], // row 3 — bottom of bowl
-    [1, 0, 0, 0, 0], // row 4 — stem
-    [1, 0, 0, 0, 0], // row 5 — stem
-    [1, 0, 0, 0, 0], // row 6 — stem
+    [0, 1, 1, 1, 1, 0, 0], // row 0 — top of bowl
+    [0, 1, 0, 0, 0, 1, 0], // row 1 — bowl sides
+    [0, 1, 0, 0, 0, 1, 0], // row 2 — bowl sides
+    [0, 1, 1, 1, 1, 0, 0], // row 3 — bottom of bowl
+    [0, 1, 0, 0, 0, 0, 0], // row 4 — stem
+    [0, 1, 0, 0, 0, 0, 0], // row 5 — stem
+    [0, 1, 0, 0, 0, 0, 0], // row 6 — stem
   ];
 
-  const cols = 5;
+  const cols = 7;
   const rows = 7;
   // Layout inside 100×100 viewBox. Use equal step on both axes so dots are
   // perfectly square-spaced; the grid is then centred in the tile.
