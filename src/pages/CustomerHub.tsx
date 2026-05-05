@@ -534,38 +534,84 @@ function ProjectsTab({
     return <div className="glass-card p-6 text-sm text-muted-foreground">Link a client account first to manage projects.</div>;
   }
 
-  const projectStats = (projectId: string) => {
-    const assignedItemIds = assignments.filter((a) => a.project_id === projectId).map((a) => a.plant_item_id);
-    const assignedPlacas = equipment
-      .filter((e) => e.enriched && assignedItemIds.includes(e.enriched.id))
-      .map((e) => e.placa);
-    // Map of transaction_id → override for fast lookup
-    const ovById: Record<number, any> = {};
-    overrides.forEach((o: any) => { ovById[o.transaction_id] = o; });
-    // Project gets any txn that EITHER has an override pointing at this
-    // project, OR (no override) belongs to an assigned placa.
-    const projectTxns = txns.filter((t: any) => {
-      const ov = ovById[t.id];
-      if (ov) {
-        if (ov.project_id) return ov.project_id === projectId;
-        // Override pins a plant item — count if that item is assigned here
-        if (ov.plant_item_id) {
-          return assignments.some(
-            (a) => a.project_id === projectId && a.plant_item_id === ov.plant_item_id
-          );
-        }
-        return false;
-      }
-      return assignedPlacas.includes(t.placa);
+  // Date range for the selected project drill-down
+  const [rangeKey, setRangeKey] = useState<"7d" | "30d" | "month" | "ytd" | "all">("all");
+  const rangeStart = useMemo(() => {
+    const now = new Date();
+    if (rangeKey === "7d") return subDays(now, 7);
+    if (rangeKey === "30d") return subDays(now, 30);
+    if (rangeKey === "month") return startOfMonth(now);
+    if (rangeKey === "ytd") return startOfYear(now);
+    return null;
+  }, [rangeKey]);
+
+  // Build a map: project_id → { itemIds, placas } from BOTH assignments and overrides
+  const projectMembership = useMemo(() => {
+    const map: Record<string, { itemIds: Set<string>; placas: Set<string> }> = {};
+    const ensure = (pid: string) => {
+      if (!map[pid]) map[pid] = { itemIds: new Set(), placas: new Set() };
+      return map[pid];
+    };
+    assignments.forEach((a: any) => {
+      const m = ensure(a.project_id);
+      m.itemIds.add(a.plant_item_id);
+      const eq = equipment.find((e: any) => e.enriched?.id === a.plant_item_id);
+      if (eq?.placa) m.placas.add(eq.placa);
     });
+    // Overrides that pin a plant_item to a project also imply membership
+    overrides.forEach((o: any) => {
+      if (!o.project_id) return;
+      const m = ensure(o.project_id);
+      if (o.plant_item_id) {
+        m.itemIds.add(o.plant_item_id);
+        const eq = equipment.find((e: any) => e.enriched?.id === o.plant_item_id);
+        if (eq?.placa) m.placas.add(eq.placa);
+      }
+    });
+    return map;
+  }, [assignments, overrides, equipment]);
+
+  const filterByRange = (list: any[]) =>
+    rangeStart ? list.filter((t) => t.fecha && parseISO(t.fecha) >= rangeStart) : list;
+
+  const ovById: Record<number, any> = useMemo(() => {
+    const o: Record<number, any> = {};
+    overrides.forEach((x: any) => { o[x.transaction_id] = x; });
+    return o;
+  }, [overrides]);
+
+  const getProjectTxns = (projectId: string) => {
+    const m = projectMembership[projectId] || { itemIds: new Set(), placas: new Set() };
+    return filterByRange(
+      txns.filter((t: any) => {
+        const ov = ovById[t.id];
+        if (ov) {
+          if (ov.project_id) return ov.project_id === projectId;
+          if (ov.plant_item_id) return m.itemIds.has(ov.plant_item_id);
+          return false;
+        }
+        return t.placa && m.placas.has(t.placa);
+      })
+    );
+  };
+
+  const projectStats = (projectId: string) => {
+    const m = projectMembership[projectId] || { itemIds: new Set(), placas: new Set() };
+    const projectTxns = getProjectTxns(projectId);
     return {
-      itemCount: assignedItemIds.length,
+      itemCount: m.itemIds.size,
       litres: projectTxns.reduce((s, t) => s + (t.cantidad || 0), 0),
       deliveries: projectTxns.length,
     };
   };
 
   const selectedProject = projects.find((p) => p.id === selected);
+  const selectedTxns = selected ? getProjectTxns(selected) : [];
+  const selectedMembership = selected ? projectMembership[selected] : null;
+  const selectedItems = selected
+    ? equipment.filter((e: any) => e.enriched && selectedMembership?.itemIds.has(e.enriched.id))
+    : [];
+  const selectedRevenue = selectedTxns.reduce((s, t) => s + (t.dinero_total || 0), 0);
 
   return (
     <div className="space-y-4">
