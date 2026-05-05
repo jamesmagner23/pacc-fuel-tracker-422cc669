@@ -669,7 +669,19 @@ export default function CustomerPortal() {
       <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 40px" }}>
         {/* Page heading */}
         <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 28, fontFamily: T.sansHead, fontWeight: 700, letterSpacing: "0.02em", margin: 0, textTransform: "uppercase" }}>
+          <h1
+            style={{
+              fontSize: "clamp(20px, 6vw, 28px)",
+              lineHeight: 1.05,
+              fontFamily: T.sansHead,
+              fontWeight: 700,
+              letterSpacing: "0.01em",
+              margin: 0,
+              textTransform: "uppercase",
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+            }}
+          >
             {companyName}
           </h1>
           <p style={{ ...muted(12), margin: "4px 0 0", letterSpacing: "0.04em" }}>
