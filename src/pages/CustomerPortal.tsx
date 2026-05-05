@@ -11,7 +11,7 @@ import { logActivity } from "@/hooks/useActivityLog";
 import { logDemoEvent } from "@/lib/demoAnalytics";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { usePlantItems } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
