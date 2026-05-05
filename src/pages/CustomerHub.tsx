@@ -492,6 +492,23 @@ function ProjectsTab({
   const [selected, setSelected] = useState<string | null>(null);
   const del = useDeleteProject();
 
+  // Pull transaction-level overrides (from the Tag Deliveries page) so a
+  // delivery tagged directly to a project counts even if its placa isn't on
+  // the plant board.
+  const txnIds = useMemo(() => txns.map((t: any) => t.id), [txns]);
+  const { data: overrides = [] } = useQuery({
+    queryKey: ["customer-tx-overrides", clientAccountId, txnIds.length],
+    enabled: txnIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transaction_overrides")
+        .select("transaction_id, project_id, plant_item_id")
+        .in("transaction_id", txnIds);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   if (!clientAccountId) {
     return <div className="glass-card p-6 text-sm text-muted-foreground">Link a client account first to manage projects.</div>;
   }
@@ -501,7 +518,25 @@ function ProjectsTab({
     const assignedPlacas = equipment
       .filter((e) => e.enriched && assignedItemIds.includes(e.enriched.id))
       .map((e) => e.placa);
-    const projectTxns = txns.filter((t) => assignedPlacas.includes(t.placa));
+    // Map of transaction_id → override for fast lookup
+    const ovById: Record<number, any> = {};
+    overrides.forEach((o: any) => { ovById[o.transaction_id] = o; });
+    // Project gets any txn that EITHER has an override pointing at this
+    // project, OR (no override) belongs to an assigned placa.
+    const projectTxns = txns.filter((t: any) => {
+      const ov = ovById[t.id];
+      if (ov) {
+        if (ov.project_id) return ov.project_id === projectId;
+        // Override pins a plant item — count if that item is assigned here
+        if (ov.plant_item_id) {
+          return assignments.some(
+            (a) => a.project_id === projectId && a.plant_item_id === ov.plant_item_id
+          );
+        }
+        return false;
+      }
+      return assignedPlacas.includes(t.placa);
+    });
     return {
       itemCount: assignedItemIds.length,
       litres: projectTxns.reduce((s, t) => s + (t.cantidad || 0), 0),
