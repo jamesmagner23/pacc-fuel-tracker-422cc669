@@ -18,23 +18,24 @@ export function BoldPMark({
 }) {
   const tileRadius = bleed ? 0 : (rounded * 100) / size;
 
-  // 7 cols × 7 rows P pattern (P glyph in cols 1–5, with empty cols 0 & 6
-  // for symmetric horizontal padding that matches vertical padding).
-  // 1 = dot, 0 = empty.
+  // Square 5×5 P glyph — square bbox guarantees equal padding on all four
+  // sides. 1 = dot, 0 = empty.
   const grid: number[][] = [
-    [0, 1, 1, 1, 1, 0, 0], // row 0 — top of bowl
-    [0, 1, 0, 0, 0, 1, 0], // row 1 — bowl sides
-    [0, 1, 0, 0, 0, 1, 0], // row 2 — bowl sides
-    [0, 1, 1, 1, 1, 0, 0], // row 3 — bottom of bowl
-    [0, 1, 0, 0, 0, 0, 0], // row 4 — stem
-    [0, 1, 0, 0, 0, 0, 0], // row 5 — stem
-    [0, 1, 0, 0, 0, 0, 0], // row 6 — stem
+    [1, 1, 1, 1, 0], // row 0 — top of bowl
+    [1, 0, 0, 0, 1], // row 1 — bowl side
+    [1, 1, 1, 1, 0], // row 2 — bottom of bowl
+    [1, 0, 0, 0, 0], // row 3 — stem
+    [1, 0, 0, 0, 0], // row 4 — stem
   ];
 
-  const cols = 7;
-  const rows = 7;
-  const step = 14;
-  const dotR = step * 0.42; // ~5.88
+  const cols = 5;
+  const rows = 5;
+  // Choose step so the glyph's outer dot-edges leave a uniform `pad` on
+  // every side of the 100-unit tile.
+  // glyphSpan + 2*dotR + 2*pad = 100, where glyphSpan = (n-1)*step and dotR = 0.42*step.
+  const pad = 12;
+  const step = (100 - 2 * pad) / ((cols - 1) + 2 * 0.42); // ≈ 15.7
+  const dotR = step * 0.42;
 
   // Compute glyph bounding box from filled cells so we can center it
   // inside the tile — gives equal padding on all four sides.
