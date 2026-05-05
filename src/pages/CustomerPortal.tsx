@@ -32,6 +32,7 @@ import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
 import { usePortalTheme, tokensFor, themeVarsFor, type PortalTheme } from "@/lib/portalTheme";
 import { PortalThemeToggle } from "@/components/portal/PortalThemeToggle";
+import { brandAccentVars, isValidHex } from "@/lib/brandTheme";
 
 // ─── Theme tokens — light "showcase email" palette ──────────────────
 // Mutable holder. Properties get re-assigned by applyPortalTheme() below
@@ -206,12 +207,15 @@ function useCustomerProfile() {
       if (data?.client_account_id) {
         const { data: ca } = await supabase
           .from("client_accounts")
-          .select("company_name, speedsol_names")
+          .select("company_name, speedsol_names, logo_url, brand_accent, branding_enabled")
           .eq("id", data.client_account_id)
           .single();
         if (ca) {
           companyName = ca.company_name;
           speedsolNames = ca.speedsol_names || [];
+          (data as any).logo_url = ca.logo_url;
+          (data as any).brand_accent = ca.brand_accent;
+          (data as any).branding_enabled = ca.branding_enabled;
         }
       }
       return { ...data, companyName, speedsolNames, email: user.email || "" };
@@ -376,6 +380,15 @@ export default function CustomerPortal() {
   const companyName = profile?.companyName || "Your Account";
   const clientAccountId = profile?.client_account_id || null;
   const userEmail = (profile as any)?.email || "";
+
+  // Customer branding: only kicks in when admin has uploaded + enabled it.
+  const brandLogoUrl: string | null = (profile as any)?.logo_url || null;
+  const brandAccent: string | null = (profile as any)?.brand_accent || null;
+  const brandingEnabled: boolean = !!(profile as any)?.branding_enabled;
+  const showCustomerBrand = !isDemo && brandingEnabled && !!brandLogoUrl;
+  const brandVars = (showCustomerBrand && isValidHex(brandAccent))
+    ? brandAccentVars(brandAccent, portalTokens.surface)
+    : {};
   const [accountOpen, setAccountOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -499,7 +512,7 @@ export default function CustomerPortal() {
   };
 
   return (
-    <div style={{ ...portalVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
+    <div style={{ ...portalVars, ...brandVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
       {/* Hide the welcome/onboarding modal in demo mode — recipients want to explore, not be onboarded. */}
       {!isDemo && <WelcomeModal />}
       {!isDemo && (
@@ -512,7 +525,18 @@ export default function CustomerPortal() {
             justifyContent: "space-between",
           }}
         >
-          <PACCLogo tone={portalTheme === "dark" ? "dark" : "light"} />
+          {showCustomerBrand ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <img
+                src={brandLogoUrl!}
+                alt={companyName}
+                style={{ height: 36, maxWidth: 160, objectFit: "contain" }}
+              />
+              <span style={{ fontSize: 12, color: T.muted }}>powered by PACC</span>
+            </div>
+          ) : (
+            <PACCLogo tone={portalTheme === "dark" ? "dark" : "light"} />
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <PortalThemeToggle />
           <div style={{ position: "relative" }}>

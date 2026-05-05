@@ -68,6 +68,8 @@ export type Database = {
       client_accounts: {
         Row: {
           auth_user_id: string | null
+          brand_accent: string | null
+          branding_enabled: boolean
           company_name: string
           contact_email: string
           contact_name: string | null
@@ -75,12 +77,15 @@ export type Database = {
           created_at: string | null
           id: number
           is_active: boolean | null
+          logo_url: string | null
           speedsol_name: string | null
           speedsol_names: string[] | null
           updated_at: string | null
         }
         Insert: {
           auth_user_id?: string | null
+          brand_accent?: string | null
+          branding_enabled?: boolean
           company_name: string
           contact_email: string
           contact_name?: string | null
@@ -88,12 +93,15 @@ export type Database = {
           created_at?: string | null
           id?: never
           is_active?: boolean | null
+          logo_url?: string | null
           speedsol_name?: string | null
           speedsol_names?: string[] | null
           updated_at?: string | null
         }
         Update: {
           auth_user_id?: string | null
+          brand_accent?: string | null
+          branding_enabled?: boolean
           company_name?: string
           contact_email?: string
           contact_name?: string | null
@@ -101,6 +109,7 @@ export type Database = {
           created_at?: string | null
           id?: never
           is_active?: boolean | null
+          logo_url?: string | null
           speedsol_name?: string | null
           speedsol_names?: string[] | null
           updated_at?: string | null
