@@ -18,6 +18,7 @@ import { ProjectModal } from "@/components/customer/ProjectModal";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { format, parseISO, subDays, startOfMonth, startOfYear } from "date-fns";
+import { SpeedSolValue } from "@/components/SpeedSolValue";
 import { toast } from "@/hooks/use-toast";
 
 export default function CustomerHub() {
