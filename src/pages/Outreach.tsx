@@ -771,10 +771,10 @@ export default function Outreach() {
                 onChange={(e) => setCsvText(e.target.value)}
                 rows={10}
                 placeholder={"name,email,org\nJane Smith,jane@acme.com,Acme Pty Ltd"}
-                className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] font-mono text-xs"
+                className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] font-mono text-xs"
               />
               <DialogFooter>
-                <Button onClick={importCsv} disabled={importing} className="bg-[#C8F26A] hover:bg-[#c93a17] text-white">
+                <Button onClick={importCsv} disabled={importing} className="bg-[#C8F26A] hover:bg-[#B6E254] text-[#0E1F10] font-medium">
                   {importing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Push to Pipedrive
                 </Button>
@@ -800,24 +800,24 @@ export default function Outreach() {
                   placeholder="Full name (optional)"
                   value={manualName}
                   onChange={(e) => setManualName(e.target.value)}
-                  className="h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
+                  className="h-12 bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
                 />
                 <Input
                   type="email"
                   placeholder="email@example.com"
                   value={manualEmail}
                   onChange={(e) => setManualEmail(e.target.value)}
-                  className="h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
+                  className="h-12 bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
                 />
                 <Input
                   placeholder="Organisation (optional)"
                   value={manualOrg}
                   onChange={(e) => setManualOrg(e.target.value)}
-                  className="h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
+                  className="h-12 bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
                 />
               </div>
               <DialogFooter>
-                <Button onClick={useManualRecipient} className="bg-[#C8F26A] hover:bg-[#c93a17] text-white h-12">
+                <Button onClick={useManualRecipient} className="bg-[#C8F26A] hover:bg-[#B6E254] text-[#0E1F10] font-medium h-12">
                   Use this recipient
                 </Button>
               </DialogFooter>
@@ -842,7 +842,7 @@ export default function Outreach() {
               placeholder="Search people, email, org…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-9 h-12 bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
+              className="pl-9 h-12 bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] placeholder:text-[#8B8773]"
             />
           </div>
 
@@ -918,7 +918,7 @@ export default function Outreach() {
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wide text-[#C7BFAC]">Template</label>
                 <Select value={templateId ?? ""} onValueChange={setTemplateId}>
-                  <SelectTrigger className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] h-12">
+                  <SelectTrigger className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] h-12">
                     <SelectValue placeholder="Pick a template" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#142A16] border-[#2A4A2E] text-[#ECE4D2]">
@@ -931,7 +931,7 @@ export default function Outreach() {
 
               {/* Pricing panel — only when template uses pricing keys */}
               {allVarKeys.some(k => PRICING_KEYS.has(k)) && (
-                <div className="space-y-3 rounded-lg border border-[#2A4A2E] bg-[#1f150b] p-3">
+                <div className="space-y-3 rounded-lg border border-[#2A4A2E] bg-[#0E1F10] p-3">
                   <div className="flex items-center justify-between">
                     <label className="text-xs uppercase tracking-wide text-[#C7BFAC]">Daily diesel price</label>
                     <span className="text-[10px] text-[#8B8773]">Inc-GST auto-fills at +10%</span>
@@ -949,13 +949,13 @@ export default function Outreach() {
                         onChange={(e) => setPresetName(e.target.value)}
                         placeholder='e.g. "Daily Diesel"'
                         maxLength={80}
-                        className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] h-10 text-xs"
+                        className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] h-10 text-xs"
                       />
                       <Button
                         type="button"
                         onClick={() => void savePreset()}
                         disabled={!presetName.trim() || savingPreset}
-                        className="h-10 bg-[#C8F26A] hover:bg-[#c93a17] text-white text-xs px-3"
+                        className="h-10 bg-[#C8F26A] hover:bg-[#B6E254] text-[#0E1F10] font-medium text-xs px-3"
                       >
                         {savingPreset ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save preset"}
                       </Button>
@@ -967,13 +967,13 @@ export default function Outreach() {
                         {presets.map(p => (
                           <div
                             key={p.id}
-                            className="group inline-flex items-center gap-1 rounded border border-[#2A4A2E] bg-[#1f150b] pl-2 pr-1 py-1"
+                            className="group inline-flex items-center gap-1 rounded border border-[#2A4A2E] bg-[#0E1F10] pl-2 pr-1 py-1"
                           >
                             <button
                               type="button"
                               onClick={() => loadPreset(p)}
                               title={`Load preset · saved ${new Date(p.updated_at).toLocaleDateString("en-AU")}`}
-                              className="text-[11px] text-[#ECE4D2] hover:text-[#FF6B5E]"
+                              className="text-[11px] text-[#ECE4D2] hover:text-[#C8F26A]"
                             >
                               {p.name}
                             </button>
@@ -995,12 +995,12 @@ export default function Outreach() {
                   {pricingErrorCount > 0 && (
                     <div
                       role="alert"
-                      className="rounded border border-[#C8F26A] bg-[#0E1F10] px-3 py-2 text-xs text-[#FFD9C8]"
+                      className="rounded border border-[#F5C25B]/60 bg-[#F5C25B]/10 px-3 py-2 text-xs text-[#F5C25B]"
                     >
                       <div className="font-semibold">
                         {pricingErrorCount} field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention
                       </div>
-                      <div className="text-[11px] text-[#F5C25B] mt-0.5">
+                      <div className="text-[11px] text-[#F5C25B]/80 mt-0.5">
                         Fix the highlighted inputs below before sending.
                       </div>
                     </div>
@@ -1021,7 +1021,7 @@ export default function Outreach() {
                           placeholder={activeTemplate?.default_values?.[key] ?? ""}
                           aria-invalid={!!pricingErrors[key]}
                           className={`bg-[#0E1F10] text-[#ECE4D2] h-11 ${
-                            pricingErrors[key] ? "border-[#C8F26A] focus-visible:ring-[#C8F26A]" : "border-[#2A4A2E]"
+                            pricingErrors[key] ? "border-[#FF6B5E] focus-visible:ring-[#FF6B5E]" : "border-[#2A4A2E]"
                           }`}
                         />
                         {pricingErrors[key] && (
@@ -1050,7 +1050,7 @@ export default function Outreach() {
                               placeholder={activeTemplate?.default_values?.[exKey] ?? "0.0000"}
                               aria-invalid={!!pricingErrors[exKey]}
                               className={`bg-[#0E1F10] text-[#ECE4D2] h-11 ${
-                                pricingErrors[exKey] ? "border-[#C8F26A] focus-visible:ring-[#C8F26A]" : "border-[#2A4A2E]"
+                                pricingErrors[exKey] ? "border-[#FF6B5E] focus-visible:ring-[#FF6B5E]" : "border-[#2A4A2E]"
                               }`}
                             />
                             {pricingErrors[exKey] && (
@@ -1066,7 +1066,7 @@ export default function Outreach() {
                               placeholder={activeTemplate?.default_values?.[incKey] ?? "0.0000"}
                               aria-invalid={!!pricingErrors[incKey]}
                               className={`bg-[#0E1F10] text-[#ECE4D2] h-11 ${
-                                pricingErrors[incKey] ? "border-[#C8F26A] focus-visible:ring-[#C8F26A]" : "border-[#2A4A2E]"
+                                pricingErrors[incKey] ? "border-[#FF6B5E] focus-visible:ring-[#FF6B5E]" : "border-[#2A4A2E]"
                               }`}
                             />
                             {pricingErrors[incKey] && (
@@ -1112,7 +1112,7 @@ export default function Outreach() {
                           value={vars[key] ?? ""}
                           onChange={(e) => setVars(v => ({ ...v, [key]: e.target.value }))}
                           placeholder={activeTemplate?.default_values?.[key] ?? ""}
-                          className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] h-12"
+                          className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] h-12"
                         />
                       </div>
                     ))}
@@ -1124,11 +1124,11 @@ export default function Outreach() {
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wide text-[#C7BFAC]">Subject (rendered)</label>
                 <Input value={renderedSubject} readOnly
-                       className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] h-12" />
+                       className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] h-12" />
               </div>
 
               {/* Preview tabs — collapsed by default on mobile */}
-              <details className="lg:hidden group rounded border border-[#2A4A2E] bg-[#1f150b]">
+              <details className="lg:hidden group rounded border border-[#2A4A2E] bg-[#0E1F10]">
                 <summary className="list-none cursor-pointer px-3 py-3 flex items-center justify-between text-sm">
                   <span className="inline-flex items-center gap-2"><Eye className="h-4 w-4" /> Preview email</span>
                   <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
@@ -1147,7 +1147,7 @@ export default function Outreach() {
 
               <Tabs defaultValue="html" className="hidden lg:block">
                 <div className="flex items-center justify-between">
-                  <TabsList className="bg-[#1f150b] border border-[#2A4A2E]">
+                  <TabsList className="bg-[#0E1F10] border border-[#2A4A2E]">
                     <TabsTrigger value="html">HTML preview</TabsTrigger>
                     <TabsTrigger value="text">Plain-text body</TabsTrigger>
                   </TabsList>
@@ -1164,7 +1164,7 @@ export default function Outreach() {
                 </TabsContent>
                 <TabsContent value="text" className="mt-3">
                   <Textarea value={renderedText} readOnly rows={20}
-                            className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] font-mono text-xs" />
+                            className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] font-mono text-xs" />
                 </TabsContent>
               </Tabs>
 
@@ -1173,7 +1173,7 @@ export default function Outreach() {
                 <Button disabled={!selected.email || sendingGmail || pricingErrorCount > 0}
                         onClick={() => void sendViaGmail()}
                         title={pricingErrorCount > 0 ? "Fix pricing/meta validation errors first" : undefined}
-                        className="bg-[#C8F26A] hover:bg-[#c93a17] text-white">
+                        className="bg-[#C8F26A] hover:bg-[#B6E254] text-[#0E1F10] font-medium">
                   {sendingGmail
                     ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</>)
                     : (<><Send className="h-4 w-4 mr-2" /> Send branded email via Gmail</>)}
@@ -1233,7 +1233,7 @@ export default function Outreach() {
           <div className="flex gap-2">
             <Button onClick={() => void sendViaGmail()}
                     disabled={sendingGmail || pricingErrorCount > 0}
-                    className="flex-1 h-12 bg-[#C8F26A] hover:bg-[#c93a17] text-white">
+                    className="flex-1 h-12 bg-[#C8F26A] hover:bg-[#B6E254] text-[#0E1F10] font-medium">
               {sendingGmail
                 ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending…</>)
                 : (<><Send className="h-4 w-4 mr-2" /> Send via Gmail</>)}
@@ -1364,7 +1364,7 @@ function TemplateEditor({
         {!editingId ? (
           <div className="space-y-3">
             <div className="flex justify-end">
-              <Button onClick={startNew} className="bg-[#C8F26A] hover:bg-[#c93a17] text-white">+ New template</Button>
+              <Button onClick={startNew} className="bg-[#C8F26A] hover:bg-[#B6E254] text-[#0E1F10] font-medium">+ New template</Button>
             </div>
             <div className="divide-y divide-[#2A4A2E]/50">
               {templates.map(t => (
@@ -1388,28 +1388,28 @@ function TemplateEditor({
               <div className="space-y-1">
                 <label className="text-xs uppercase text-[#C7BFAC]">Name</label>
                 <Input value={draft.name ?? ""} onChange={(e) => setDraft(d => ({ ...d, name: e.target.value }))}
-                       className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2]" />
+                       className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2]" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs uppercase text-[#C7BFAC]">Description</label>
                 <Input value={draft.description ?? ""} onChange={(e) => setDraft(d => ({ ...d, description: e.target.value }))}
-                       className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2]" />
+                       className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2]" />
               </div>
             </div>
             <div className="space-y-1">
               <label className="text-xs uppercase text-[#C7BFAC]">Subject</label>
               <Input value={draft.subject ?? ""} onChange={(e) => setDraft(d => ({ ...d, subject: e.target.value }))}
-                     className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2]" />
+                     className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2]" />
             </div>
             <div className="space-y-1">
               <label className="text-xs uppercase text-[#C7BFAC]">Plain-text body</label>
               <Textarea rows={8} value={draft.text_body ?? ""} onChange={(e) => setDraft(d => ({ ...d, text_body: e.target.value }))}
-                        className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] font-mono text-xs" />
+                        className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] font-mono text-xs" />
             </div>
             <div className="space-y-1">
               <label className="text-xs uppercase text-[#C7BFAC]">HTML body</label>
               <Textarea rows={12} value={draft.html_body ?? ""} onChange={(e) => setDraft(d => ({ ...d, html_body: e.target.value }))}
-                        className="bg-[#1f150b] border-[#2A4A2E] text-[#ECE4D2] font-mono text-xs" />
+                        className="bg-[#0E1F10] border-[#2A4A2E] text-[#ECE4D2] font-mono text-xs" />
             </div>
             <div className="text-xs text-[#C7BFAC]">
               Detected variables: {inferred.length > 0 ? inferred.map(v => <code key={v} className="text-[#ECE4D2] mr-2">{`{{${v}}}`}</code>) : "—"}
@@ -1423,7 +1423,7 @@ function TemplateEditor({
               </Button>
               <Button variant="outline" onClick={() => { setEditingId(null); setDraft({}); }}
                       className="border-[#2A4A2E] text-[#ECE4D2] hover:bg-[#1B3520]">Cancel</Button>
-              <Button onClick={save} disabled={saving} className="bg-[#C8F26A] hover:bg-[#c93a17] text-white">
+              <Button onClick={save} disabled={saving} className="bg-[#C8F26A] hover:bg-[#B6E254] text-[#0E1F10] font-medium">
                 {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Save template
               </Button>
