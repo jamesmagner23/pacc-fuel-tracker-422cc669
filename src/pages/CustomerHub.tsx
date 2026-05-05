@@ -705,6 +705,126 @@ function ProjectsTab({
           </div>
 
           {selectedProject.notes && <p className="text-sm text-muted-foreground">{selectedProject.notes}</p>}
+
+          {/* Date range pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {([
+              { k: "7d", l: "7 days" },
+              { k: "30d", l: "30 days" },
+              { k: "month", l: "This month" },
+              { k: "ytd", l: "YTD" },
+              { k: "all", l: "All time" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.k}
+                onClick={() => setRangeKey(opt.k)}
+                className={`px-2.5 py-1 text-[11px] rounded-full border transition-colors ${
+                  rangeKey === opt.k
+                    ? "border-primary bg-primary/15 text-foreground"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.l}
+              </button>
+            ))}
+          </div>
+
+          {/* KPI tiles */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-lg border border-border bg-secondary/30 p-3">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Equipment</div>
+              <div className="text-lg font-bold mt-0.5">{selectedItems.length}</div>
+            </div>
+            <div className="rounded-lg border border-border bg-secondary/30 p-3">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Deliveries</div>
+              <div className="text-lg font-bold mt-0.5">{selectedTxns.length}</div>
+            </div>
+            <div className="rounded-lg border border-border bg-secondary/30 p-3">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Litres</div>
+              <div className="text-lg font-bold mt-0.5">{selectedTxns.reduce((s, t) => s + (t.cantidad || 0), 0).toLocaleString()}L</div>
+            </div>
+            <div className="rounded-lg border border-border bg-secondary/30 p-3">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Revenue</div>
+              <div className="text-lg font-bold mt-0.5">${selectedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+            </div>
+          </div>
+
+          {/* Equipment on project */}
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Equipment on this project ({selectedItems.length})
+            </h3>
+            {selectedItems.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No equipment assigned yet. Assign items in the Plant Assignment Board above, or tag deliveries directly to this project.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {selectedItems.map((e: any) => {
+                  const itemTxns = selectedTxns.filter((t: any) => {
+                    const ov = ovById[t.id];
+                    if (ov?.plant_item_id) return ov.plant_item_id === e.enriched.id;
+                    return t.placa === e.placa;
+                  });
+                  const itemLitres = itemTxns.reduce((s: number, t: any) => s + (t.cantidad || 0), 0);
+                  return (
+                    <div key={e.enriched.id} className="rounded-lg border border-border bg-secondary/20 p-3">
+                      <div className="font-medium text-sm truncate">{e.enriched.name || e.placa}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        {e.enriched.display_asset_id || e.placa}
+                        {e.enriched.equipment_type && <> · {e.enriched.equipment_type}</>}
+                      </div>
+                      <div className="mt-2 flex items-end justify-between">
+                        <div className="text-base font-bold">{itemLitres.toLocaleString()}L</div>
+                        <div className="text-[10px] text-muted-foreground">{itemTxns.length} fills</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Recent deliveries on project */}
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+              Deliveries ({selectedTxns.length})
+            </h3>
+            {selectedTxns.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No deliveries in this period. Tag deliveries to this project from Tag Deliveries, or assign equipment in the Plant Assignment Board.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-left text-muted-foreground border-b border-border">
+                      <th className="pb-2 pr-3">Date</th>
+                      <th className="pb-2 pr-3">Equipment</th>
+                      <th className="pb-2 pr-3">Location</th>
+                      <th className="pb-2 pr-3 text-right">Litres</th>
+                      <th className="pb-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedTxns
+                      .slice()
+                      .sort((a: any, b: any) => (b.fecha || "").localeCompare(a.fecha || ""))
+                      .slice(0, 25)
+                      .map((t: any) => (
+                        <tr key={t.id} className="border-b border-border/50">
+                          <td className="py-2 pr-3 whitespace-nowrap">{format(parseISO(t.fecha), "dd MMM HH:mm")}</td>
+                          <td className="py-2 pr-3">{t.placa || "—"}</td>
+                          <td className="py-2 pr-3">{t.ciudad || t.estacion || "—"}</td>
+                          <td className="py-2 pr-3 text-right">{(t.cantidad || 0).toLocaleString()}L</td>
+                          <td className="py-2 text-right">${(t.dinero_total || 0).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
