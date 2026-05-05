@@ -17,7 +17,7 @@ import { PlantItemModal } from "@/components/customer/PlantItemModal";
 import { ProjectModal } from "@/components/customer/ProjectModal";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { format, parseISO, subDays, startOfMonth, startOfYear, startOfWeek, addDays, differenceInCalendarDays } from "date-fns";
+import { format, parseISO, subDays, startOfMonth, startOfYear, startOfWeek, addDays } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { SpeedSolValue } from "@/components/SpeedSolValue";
 
