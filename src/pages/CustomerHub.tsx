@@ -131,7 +131,7 @@ export default function CustomerHub() {
             <TabsTrigger
               key={t.v}
               value={t.v}
-              className="px-3 sm:px-4 py-2.5 text-[12px] sm:text-[13px] rounded-none border-b-2 border-transparent bg-transparent text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none whitespace-nowrap shrink-0"
+              className="px-3 sm:px-4 py-2.5 text-[12px] sm:text-[13px] rounded-none border-b-2 border-transparent bg-transparent text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:!text-foreground data-[state=active]:shadow-none whitespace-nowrap shrink-0"
             >
               {t.l}
             </TabsTrigger>
