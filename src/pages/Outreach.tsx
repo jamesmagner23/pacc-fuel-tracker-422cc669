@@ -1021,7 +1021,7 @@ export default function Outreach() {
                           placeholder={activeTemplate?.default_values?.[key] ?? ""}
                           aria-invalid={!!pricingErrors[key]}
                           className={`bg-[#0E1F10] text-[#ECE4D2] h-11 ${
-                            pricingErrors[key] ? "border-[#C8F26A] focus-visible:ring-[#C8F26A]" : "border-[#2A4A2E]"
+                            pricingErrors[key] ? "border-[#FF6B5E] focus-visible:ring-[#FF6B5E]" : "border-[#2A4A2E]"
                           }`}
                         />
                         {pricingErrors[key] && (
@@ -1050,7 +1050,7 @@ export default function Outreach() {
                               placeholder={activeTemplate?.default_values?.[exKey] ?? "0.0000"}
                               aria-invalid={!!pricingErrors[exKey]}
                               className={`bg-[#0E1F10] text-[#ECE4D2] h-11 ${
-                                pricingErrors[exKey] ? "border-[#C8F26A] focus-visible:ring-[#C8F26A]" : "border-[#2A4A2E]"
+                                pricingErrors[exKey] ? "border-[#FF6B5E] focus-visible:ring-[#FF6B5E]" : "border-[#2A4A2E]"
                               }`}
                             />
                             {pricingErrors[exKey] && (
@@ -1066,7 +1066,7 @@ export default function Outreach() {
                               placeholder={activeTemplate?.default_values?.[incKey] ?? "0.0000"}
                               aria-invalid={!!pricingErrors[incKey]}
                               className={`bg-[#0E1F10] text-[#ECE4D2] h-11 ${
-                                pricingErrors[incKey] ? "border-[#C8F26A] focus-visible:ring-[#C8F26A]" : "border-[#2A4A2E]"
+                                pricingErrors[incKey] ? "border-[#FF6B5E] focus-visible:ring-[#FF6B5E]" : "border-[#2A4A2E]"
                               }`}
                             />
                             {pricingErrors[incKey] && (
