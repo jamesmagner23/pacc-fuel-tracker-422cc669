@@ -313,22 +313,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <GlobalThemeToggle compact />
             </div>
 
-            {/* Mobile right cluster (no date toggle here) */}
-            <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            {/* Mobile right cluster */}
+            <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
               <SyncButton />
               <GlobalThemeToggle compact />
             </div>
           </div>
 
-          {/* Mobile second row: date range toggle */}
+          {/* Mobile second row: one date range toggle, full-width and touch-friendly */}
           <div
             className="md:hidden"
             style={{
               display: "flex",
               justifyContent: "center",
-              padding: "0 12px 8px",
+              padding: "8px 12px 10px",
               borderTop: `1px solid ${BORDER}`,
-              paddingTop: 8,
             }}
           >
             <DateRangeToggle />
