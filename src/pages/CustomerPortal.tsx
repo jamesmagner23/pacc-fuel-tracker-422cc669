@@ -380,6 +380,15 @@ export default function CustomerPortal() {
   const companyName = profile?.companyName || "Your Account";
   const clientAccountId = profile?.client_account_id || null;
   const userEmail = (profile as any)?.email || "";
+
+  // Customer branding: only kicks in when admin has uploaded + enabled it.
+  const brandLogoUrl: string | null = (profile as any)?.logo_url || null;
+  const brandAccent: string | null = (profile as any)?.brand_accent || null;
+  const brandingEnabled: boolean = !!(profile as any)?.branding_enabled;
+  const showCustomerBrand = !isDemo && brandingEnabled && !!brandLogoUrl;
+  const brandVars = (showCustomerBrand && isValidHex(brandAccent))
+    ? brandAccentVars(brandAccent, portalTokens.surface)
+    : {};
   const [accountOpen, setAccountOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -503,7 +512,7 @@ export default function CustomerPortal() {
   };
 
   return (
-    <div style={{ ...portalVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
+    <div style={{ ...portalVars, ...brandVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
       {/* Hide the welcome/onboarding modal in demo mode — recipients want to explore, not be onboarded. */}
       {!isDemo && <WelcomeModal />}
       {!isDemo && (
@@ -516,7 +525,18 @@ export default function CustomerPortal() {
             justifyContent: "space-between",
           }}
         >
-          <PACCLogo tone={portalTheme === "dark" ? "dark" : "light"} />
+          {showCustomerBrand ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <img
+                src={brandLogoUrl!}
+                alt={companyName}
+                style={{ height: 36, maxWidth: 160, objectFit: "contain" }}
+              />
+              <span style={{ fontSize: 12, color: T.muted }}>powered by PACC</span>
+            </div>
+          ) : (
+            <PACCLogo tone={portalTheme === "dark" ? "dark" : "light"} />
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <PortalThemeToggle />
           <div style={{ position: "relative" }}>
