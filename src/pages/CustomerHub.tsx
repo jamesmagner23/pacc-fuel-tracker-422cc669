@@ -657,11 +657,13 @@ function AnalyticsTab({
   equipment,
   projects,
   assignments,
+  overrides,
 }: {
   txns: any[];
   equipment: any[];
   projects: Project[];
   assignments: any[];
+  overrides: Record<number, { project_id: string | null; plant_item_id: string | null }>;
 }) {
   const accent = "var(--accent)";
   const muted = "var(--text-secondary)";
@@ -676,10 +678,21 @@ function AnalyticsTab({
       projects.map((p) => {
         const ids = assignments.filter((a) => a.project_id === p.id).map((a) => a.plant_item_id);
         const placas = equipment.filter((e) => e.enriched && ids.includes(e.enriched.id)).map((e) => e.placa);
-        const litres = txns.filter((t) => placas.includes(t.placa)).reduce((s, t) => s + (t.cantidad || 0), 0);
+        const litres = txns.reduce((s, t) => {
+          const ov = overrides[t.id];
+          // Manual override wins
+          if (ov) {
+            if (ov.project_id === p.id) return s + (t.cantidad || 0);
+            if (ov.plant_item_id && ids.includes(ov.plant_item_id)) return s + (t.cantidad || 0);
+            return s;
+          }
+          // Fall back to placa-based inheritance
+          if (placas.includes(t.placa)) return s + (t.cantidad || 0);
+          return s;
+        }, 0);
         return { name: p.name, litres };
       }),
-    [projects, assignments, equipment, txns]
+    [projects, assignments, equipment, txns, overrides]
   );
 
   const dailyChart = useMemo(() => {
