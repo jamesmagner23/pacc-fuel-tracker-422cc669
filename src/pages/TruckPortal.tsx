@@ -577,9 +577,9 @@ function SalesPanel({ truck }: { truck: Truck }) {
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h3 className="text-sm font-semibold">Sales Performance</h3>
-        <div className="max-w-[320px] w-full sm:w-auto">
+      <div className="flex items-center gap-3 flex-wrap">
+        <h3 className="text-sm font-semibold mr-auto">Sales Performance</h3>
+        <div className="w-full sm:w-auto sm:min-w-[280px]">
           <DateRangeToggle />
         </div>
       </div>
