@@ -686,6 +686,7 @@ function ProjectsTab({
   const [selected, setSelected] = useState<string | null>(null);
   const del = useDeleteProject();
   const clearBackfill = useClearAutoBackfillForPlant();
+  const { range: globalRange } = useDateRange();
 
   // Pull transaction-level overrides (from the Tag Deliveries page) so a
   // delivery tagged directly to a project counts even if its placa isn't on
@@ -708,16 +709,43 @@ function ProjectsTab({
     return <div className="glass-card p-6 text-sm text-muted-foreground">Link a client account first to manage projects.</div>;
   }
 
-  // Date range for the selected project drill-down
-  const [rangeKey, setRangeKey] = useState<"7d" | "30d" | "month" | "ytd" | "all">("all");
-  const rangeStart = useMemo(() => {
+  // Date range for the selected project drill-down. "nav" follows the
+  // global Today/Week/Month toggle in the top nav so all of the project's
+  // KPIs, trend chart, and period-over-period table align with the rest
+  // of the app.
+  const [rangeKey, setRangeKey] = useState<"nav" | "7d" | "30d" | "month" | "ytd" | "all">("nav");
+  const { rangeStart, rangeEnd, prevStart, prevEnd, rangeLabel } = useMemo(() => {
     const now = new Date();
-    if (rangeKey === "7d") return subDays(now, 7);
-    if (rangeKey === "30d") return subDays(now, 30);
-    if (rangeKey === "month") return startOfMonth(now);
-    if (rangeKey === "ytd") return startOfYear(now);
-    return null;
-  }, [rangeKey]);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let start: Date | null = null;
+    let end: Date = now;
+    let label = "All time";
+    if (rangeKey === "nav") {
+      if (globalRange === "today") {
+        start = startOfToday;
+        label = "Today";
+      } else if (globalRange === "week") {
+        start = startOfWeek(now, { weekStartsOn: 1 });
+        label = "This week";
+      } else {
+        // 'month' (default) and 'custom' fall back to last 30 days
+        start = subDays(startOfToday, 30);
+        label = "Last 30 days";
+      }
+    } else if (rangeKey === "7d") { start = subDays(startOfToday, 7); label = "7 days"; }
+    else if (rangeKey === "30d") { start = subDays(startOfToday, 30); label = "30 days"; }
+    else if (rangeKey === "month") { start = startOfMonth(now); label = "This month"; }
+    else if (rangeKey === "ytd") { start = startOfYear(now); label = "YTD"; }
+
+    let pStart: Date | null = null;
+    let pEnd: Date | null = null;
+    if (start) {
+      const ms = end.getTime() - start.getTime();
+      pEnd = start;
+      pStart = new Date(start.getTime() - ms);
+    }
+    return { rangeStart: start, rangeEnd: end, prevStart: pStart, prevEnd: pEnd, rangeLabel: label };
+  }, [rangeKey, globalRange]);
 
   // Build a map: project_id → { itemIds, placas } from BOTH assignments and overrides
   const projectMembership = useMemo(() => {
