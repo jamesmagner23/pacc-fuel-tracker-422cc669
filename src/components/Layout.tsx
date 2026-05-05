@@ -22,12 +22,12 @@ const navItems = [
   { to: "/admin", label: "Admin" },
 ];
 
-// PACC brand colors (used when NOT in demo)
-const PACC_BG = "#0E1F10";
-const PACC_BORDER = "#2A4A2E";
-const PACC_ACCENT = "#C8F26A";
-const PACC_TEXT_DIM = "#C7BFAC";
-const PACC_TEXT_ACTIVE = "#ECE4D2";
+// PACC brand colors fall back to CSS theme tokens so light/dark flips work.
+const PACC_BG = "var(--background)";
+const PACC_BORDER = "var(--border)";
+const PACC_ACCENT = "var(--accent)";
+const PACC_TEXT_DIM = "var(--text-secondary)";
+const PACC_TEXT_ACTIVE = "var(--text-primary)";
 
 // Neutral demo colors
 const DEMO_BG = "#1a1f2e";
@@ -53,6 +53,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const TEXT_ACTIVE = useDemoPalette ? DEMO_TEXT_ACTIVE : PACC_TEXT_ACTIVE;
 
   const ACCENT = (accentColor && useDemoPalette) ? `hsl(${accentColor})` : DEFAULT_ACCENT;
+  // For inline-style backgrounds that need an alpha overlay we can't use a
+  // CSS var directly inside `${ACCENT}11`. Use accent-light token instead.
+  const ACCENT_OVERLAY = useDemoPalette ? `${ACCENT}11` : "var(--accent-light)";
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   return (
@@ -205,7 +208,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     padding: "18px 24px",
                     textDecoration: "none",
                     borderBottom: `1px solid ${BORDER}`,
-                    background: isActive ? `${ACCENT}11` : "transparent",
+                    background: isActive ? ACCENT_OVERLAY : "transparent",
                   }}
                 >
                   <span
