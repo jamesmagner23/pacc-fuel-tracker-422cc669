@@ -16,7 +16,7 @@ function PACCLogoLarge() {
           [1,0,0,0,0],
           [1,0,0,0,0],
         ].flatMap((row, y) => row.map((on, x) => on ? (
-          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7} fill="#C8F26A" />
+          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7} fill="var(--accent)" />
         ) : null))}
       </svg>
       <div>
@@ -25,7 +25,7 @@ function PACCLogoLarge() {
             fontFamily: "'Archivo Narrow', 'Archivo', 'Inter', sans-serif",
             fontSize: 44,
             fontWeight: 800,
-            color: "#ECE4D2",
+            color: "var(--text-primary)",
             letterSpacing: "0.01em",
             textTransform: "uppercase",
             lineHeight: 0.95,
@@ -37,7 +37,7 @@ function PACCLogoLarge() {
           style={{
             fontSize: 10,
             fontWeight: 600,
-            color: "#8B8773",
+            color: "var(--text-muted)",
             letterSpacing: "0.28em",
             marginTop: 8,
             textTransform: "uppercase",
