@@ -96,7 +96,7 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending sync", color: "bg-surface-raised text-muted-foreground border-surface-border" },
   none: { label: "Not in Pipedrive yet", color: "bg-surface-raised text-muted-foreground border-surface-border" },
   logged: { label: "Logged in Pipedrive", color: "bg-surface-raised text-accent border-surface-border" },
-  replied: { label: "Replied", color: "bg-[color:var(--warning-bg)] text-warning border-[#C8F26A]" },
+  replied: { label: "Replied", color: "bg-[color:var(--warning-bg)] text-warning border-accent" },
 };
 
 function parseCSV(text: string): { name: string; email: string; org: string }[] {
@@ -1226,7 +1226,7 @@ export default function Outreach() {
       {selected && selected.email && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-surface-border bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           {pricingErrorCount > 0 && (
-            <div role="alert" className="mb-2 rounded border border-[#C8F26A] bg-background px-2 py-1 text-[11px] text-[#FFD9C8]">
+            <div role="alert" className="mb-2 rounded border border-accent bg-background px-2 py-1 text-[11px] text-foreground">
               {pricingErrorCount} pricing field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention — sending disabled.
             </div>
           )}
