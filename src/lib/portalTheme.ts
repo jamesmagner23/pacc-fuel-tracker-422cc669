@@ -30,7 +30,8 @@ export const LIGHT_TOKENS = {
   secondary: "#F4EEDF",
   mapBg: "#F4EEDF",
   // Pie palette tuned for cream
-  pie: ["#3F6B36", "#0E1F10", "#C8F26A", "#6B7565", "#B45309", "#8B8773"],
+  // Harmonious sage/olive tonal palette with one warm accent
+  pie: ["#5C8A4E", "#A7C77A", "#D8B36A", "#7A9A8B", "#C28A5A", "#B8AE92"],
   badgePending: "#6B7565",
   badgeConfirmed: "#3F6B36",
   badgeCompleted: "#0E1F10",
@@ -58,7 +59,7 @@ export const DARK_TOKENS = {
   warningBg: "rgba(245,194,91,0.15)",
   secondary: "#1B3520",
   mapBg: "#0A1A0C",
-  pie: ["#C8F26A", "#ECE4D2", "#F5C25B", "#3F6B36", "#8B8773", "#FF6B5E"],
+  pie: ["#C8F26A", "#9BC36A", "#ECE4D2", "#7A9A6B", "#F5C25B", "#C7BFAC"],
   badgePending: "#8B8773",
   badgeConfirmed: "#C8F26A",
   badgeCompleted: "#C8F26A",
