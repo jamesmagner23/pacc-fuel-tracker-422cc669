@@ -208,7 +208,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     padding: "18px 24px",
                     textDecoration: "none",
                     borderBottom: `1px solid ${BORDER}`,
-                    background: isActive ? `${ACCENT}11` : "transparent",
+                    background: isActive ? ACCENT_OVERLAY : "transparent",
                   }}
                 >
                   <span
