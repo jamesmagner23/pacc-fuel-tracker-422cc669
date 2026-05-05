@@ -1031,8 +1031,14 @@ function ProjectsTab({
           {selectedTxns.length > 0 && (
             <ProjectTrends
               projectTxns={selectedTxns}
+              allTimeProjectTxns={selected ? getProjectTxnsAllTime(selected) : []}
               equipmentItems={selectedItems}
               ovById={ovById}
+              periodStart={rangeStart}
+              periodEnd={rangeEnd}
+              prevStart={prevStart}
+              prevEnd={prevEnd}
+              periodLabel={rangeLabel}
             />
           )}
 
