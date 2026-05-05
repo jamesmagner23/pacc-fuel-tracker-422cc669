@@ -314,7 +314,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Mobile right cluster */}
-            <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <div className="flex md:hidden" style={{ alignItems: "center", gap: 8, flexShrink: 0 }}>
               <SyncButton />
               <GlobalThemeToggle compact />
             </div>
@@ -322,9 +322,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Mobile second row: one date range toggle, full-width and touch-friendly */}
           <div
-            className="md:hidden"
+            className="flex md:hidden"
             style={{
-              display: "flex",
               justifyContent: "center",
               padding: "8px 12px 10px",
               borderTop: `1px solid ${BORDER}`,
