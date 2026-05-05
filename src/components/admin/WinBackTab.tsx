@@ -77,9 +77,9 @@ export default function WinBackTab() {
   }, [allTxns, clientAccounts, search]);
 
   const urgencyColors = {
-    warning: { bg: "rgba(245,158,11,0.12)", text: "#F5C25B", label: "30–60 days" },
-    danger: { bg: "rgba(239,68,68,0.12)", text: "#FF6B5E", label: "60–90 days" },
-    critical: { bg: "rgba(220,38,38,0.2)", text: "#FF6B5E", label: "90+ days" },
+    warning: { bg: "var(--warning-bg)", text: "var(--warning)", label: "30–60 days" },
+    danger: { bg: "var(--negative-bg)", text: "var(--negative)", label: "60–90 days" },
+    critical: { bg: "var(--negative-bg)", text: "var(--negative)", label: "90+ days" },
   };
 
   if (loadingAll) {
@@ -106,9 +106,9 @@ export default function WinBackTab() {
 
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: "30–60 days", count: lapsedCustomers.filter((c) => c.urgency === "warning").length, color: "#F5C25B" },
-          { label: "60–90 days", count: lapsedCustomers.filter((c) => c.urgency === "danger").length, color: "#FF6B5E" },
-          { label: "90+ days", count: lapsedCustomers.filter((c) => c.urgency === "critical").length, color: "#FF6B5E" },
+          { label: "30–60 days", count: lapsedCustomers.filter((c) => c.urgency === "warning").length, color: "var(--warning)" },
+          { label: "60–90 days", count: lapsedCustomers.filter((c) => c.urgency === "danger").length, color: "var(--negative)" },
+          { label: "90+ days", count: lapsedCustomers.filter((c) => c.urgency === "critical").length, color: "var(--negative)" },
         ].map((s) => (
           <div key={s.label} className="p-3 rounded-lg text-center glass-card">
             <div className="text-lg sm:text-xl font-bold" style={{ color: s.color }}>{s.count}</div>
