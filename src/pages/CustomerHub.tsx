@@ -20,6 +20,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContai
 import { format, parseISO, subDays, startOfMonth, startOfYear } from "date-fns";
 import { SpeedSolValue } from "@/components/SpeedSolValue";
 import { toast } from "@/hooks/use-toast";
+import { BrandingPanel } from "@/components/customer/BrandingPanel";
 
 export default function CustomerHub() {
   const { name } = useParams<{ name: string }>();
@@ -126,6 +127,18 @@ export default function CustomerHub() {
           </p>
         )}
       </div>
+
+      {account && (
+        <BrandingPanel
+          account={{
+            id: account.id,
+            company_name: account.company_name,
+            logo_url: (account as any).logo_url ?? null,
+            brand_accent: (account as any).brand_accent ?? null,
+            branding_enabled: (account as any).branding_enabled ?? false,
+          }}
+        />
+      )}
 
       <Tabs defaultValue="overview">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
