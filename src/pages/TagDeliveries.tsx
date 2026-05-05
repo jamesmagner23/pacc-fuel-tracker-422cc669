@@ -27,16 +27,18 @@ import { useProjects } from "@/hooks/useProjects";
 type FilterMode = "all" | "untagged" | "tagged";
 
 function useRecentTransactions(days: number) {
-  const fromDate = format(subDays(new Date(), days), "yyyy-MM-dd");
+  const isAll = days <= 0;
+  const fromDate = isAll ? null : format(subDays(new Date(), days), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["admin-recent-transactions", fromDate],
+    queryKey: ["admin-recent-transactions", fromDate ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("transactions")
         .select("id, fecha, date, nombre_cliente1, placa, cantidad, factura, estacion, ppu, dinero_total")
-        .gte("fecha", `${fromDate}T00:00:00`)
         .order("fecha", { ascending: false })
-        .limit(2000);
+        .limit(isAll ? 10000 : 2000);
+      if (fromDate) q = q.gte("fecha", `${fromDate}T00:00:00`);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
