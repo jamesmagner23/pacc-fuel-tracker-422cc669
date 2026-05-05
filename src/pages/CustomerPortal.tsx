@@ -32,6 +32,7 @@ import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
 import { usePortalTheme, tokensFor, themeVarsFor, type PortalTheme } from "@/lib/portalTheme";
 import { PortalThemeToggle } from "@/components/portal/PortalThemeToggle";
+import { brandAccentVars, isValidHex } from "@/lib/brandTheme";
 
 // ─── Theme tokens — light "showcase email" palette ──────────────────
 // Mutable holder. Properties get re-assigned by applyPortalTheme() below
@@ -206,12 +207,15 @@ function useCustomerProfile() {
       if (data?.client_account_id) {
         const { data: ca } = await supabase
           .from("client_accounts")
-          .select("company_name, speedsol_names")
+          .select("company_name, speedsol_names, logo_url, brand_accent, branding_enabled")
           .eq("id", data.client_account_id)
           .single();
         if (ca) {
           companyName = ca.company_name;
           speedsolNames = ca.speedsol_names || [];
+          (data as any).logo_url = ca.logo_url;
+          (data as any).brand_accent = ca.brand_accent;
+          (data as any).branding_enabled = ca.branding_enabled;
         }
       }
       return { ...data, companyName, speedsolNames, email: user.email || "" };
