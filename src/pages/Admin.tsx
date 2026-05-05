@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Gauge, Users, Shield, TrendingUp, UserMinus, MousePointerClick } from "lucide-react";
+import { LayoutDashboard, Gauge, Users, Shield, TrendingUp, UserMinus, MousePointerClick, Mail } from "lucide-react";
 import Reconciliation from "./Reconciliation";
 import SOPManager from "@/components/admin/SOPManager";
 import AdminOverview from "@/components/admin/AdminOverview";
@@ -7,8 +7,9 @@ import UsersActivityTab from "@/components/admin/UsersActivityTab";
 import EBITDATab from "@/components/admin/EBITDATab";
 import WinBackTab from "@/components/admin/WinBackTab";
 import EmailClicksTab from "@/components/admin/EmailClicksTab";
+import Outreach from "./Outreach";
 
-type TabId = "overview" | "reconciliation" | "users" | "sops" | "ebitda" | "winback" | "email-clicks";
+type TabId = "overview" | "reconciliation" | "users" | "sops" | "ebitda" | "winback" | "email-clicks" | "outreach";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
@@ -21,6 +22,7 @@ export default function Admin() {
     { id: "ebitda", label: "EBITDA", icon: <TrendingUp className="w-3.5 h-3.5" /> },
     { id: "winback", label: "Win Back", icon: <UserMinus className="w-3.5 h-3.5" /> },
     { id: "email-clicks", label: "Email Clicks", icon: <MousePointerClick className="w-3.5 h-3.5" /> },
+    { id: "outreach", label: "Outreach", icon: <Mail className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -50,6 +52,7 @@ export default function Admin() {
       {activeTab === "ebitda" && <EBITDATab />}
       {activeTab === "winback" && <WinBackTab />}
       {activeTab === "email-clicks" && <EmailClicksTab />}
+      {activeTab === "outreach" && <Outreach />}
     </div>
   );
 }
