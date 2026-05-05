@@ -1023,11 +1023,6 @@ function OverviewTab({
   const topPlants = plantBreakdown.slice(0, 6);
   const topPlant = plantBreakdown[0];
 
-  // Pie palette comes from the active portal theme so it stays legible
-  // on either cream or deep-brown backgrounds.
-  const { tokens: pieTokens } = usePortalTheme();
-  const PIE_COLORS = pieTokens.pie as unknown as string[];
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Hero — Litres used (visual focal point) */}
