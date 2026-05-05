@@ -33,15 +33,25 @@ export function BoldPMark({
 
   const cols = 7;
   const rows = 7;
-  // Layout inside 100×100 viewBox. Use equal step on both axes so dots are
-  // perfectly square-spaced; the grid is then centred in the tile.
   const step = 14;
-  const gridW = step * (cols - 1); // 56
-  const gridH = step * (rows - 1); // 84
-  const offsetX = (100 - gridW) / 2; // 22
-  const offsetY = (100 - gridH) / 2; // 8
-  // Uniform dot radius — symmetry over perspective.
   const dotR = step * 0.42; // ~5.88
+
+  // Compute glyph bounding box from filled cells so we can center it
+  // inside the tile — gives equal padding on all four sides.
+  let minC = cols, maxC = -1, minR = rows, maxR = -1;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (!grid[r][c]) continue;
+      if (c < minC) minC = c;
+      if (c > maxC) maxC = c;
+      if (r < minR) minR = r;
+      if (r > maxR) maxR = r;
+    }
+  }
+  const glyphW = (maxC - minC) * step;
+  const glyphH = (maxR - minR) * step;
+  const offsetX = (100 - glyphW) / 2 - minC * step;
+  const offsetY = (100 - glyphH) / 2 - minR * step;
 
   const dots: { cx: number; cy: number; r: number }[] = [];
   for (let r = 0; r < rows; r++) {

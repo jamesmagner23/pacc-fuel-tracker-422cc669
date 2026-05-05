@@ -84,7 +84,7 @@ export default function LandingPage() {
     <div style={{ background: "#0E1F10", color: "#ECE4D2", minHeight: "100vh" }}>
       {/* ── NAV ── */}
       <nav className="sticky top-0 z-50" style={{ background: "rgba(14,31,16,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(42,74,46,0.6)", paddingTop: "env(safe-area-inset-top, 0px)" }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16 sm:h-[68px]">
           <PACCNavLogo />
           <div className="hidden md:flex items-center gap-6">
             <a href="#services" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C7BFAC" }}>Services</a>
