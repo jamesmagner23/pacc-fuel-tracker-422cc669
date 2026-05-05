@@ -268,6 +268,19 @@ function FuelIntakeForm() {
         />
       </div>
 
+      {/* Odometer (end of day km) */}
+      <div className="flex flex-col gap-1.5 mb-4">
+        <label className="text-xs text-muted-foreground">Odometer reading (km, end of day)</label>
+        <input
+          type="number"
+          inputMode="numeric"
+          value={odometerKm}
+          onChange={(e) => setOdometerKm(e.target.value)}
+          placeholder="e.g. 184320"
+          className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+        />
+      </div>
+
       <button
         onClick={() => submitMutation.mutate()}
         disabled={!litres || submitMutation.isPending}
