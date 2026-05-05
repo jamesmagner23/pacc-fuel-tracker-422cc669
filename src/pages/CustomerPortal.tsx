@@ -19,7 +19,7 @@ import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { useClientProfile } from "@/hooks/useClientProfile";
-import { User as UserIcon, ChevronDown, LogOut } from "lucide-react";
+import { User as UserIcon, ChevronDown, LogOut, Filter } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePortalFilters,
