@@ -17,9 +17,10 @@ import { PlantItemModal } from "@/components/customer/PlantItemModal";
 import { ProjectModal } from "@/components/customer/ProjectModal";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { format, parseISO, subDays, startOfMonth, startOfYear, startOfWeek, addDays } from "date-fns";
+import { format, parseISO, subDays, startOfMonth, startOfYear, startOfWeek } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { SpeedSolValue } from "@/components/SpeedSolValue";
+import { useDateRange } from "@/hooks/useDateRange";
 
 export default function CustomerHub() {
   const { name } = useParams<{ name: string }>();
@@ -313,14 +314,31 @@ function OverviewTab({ txns, equipment, projects, ftcRates }: { txns: any[]; equ
 /* ---------------- PROJECT TRENDS ---------------- */
 function ProjectTrends({
   projectTxns,
+  allTimeProjectTxns,
   equipmentItems,
   ovById,
+  periodStart,
+  periodEnd,
+  prevStart,
+  prevEnd,
+  periodLabel,
 }: {
   projectTxns: any[];
+  allTimeProjectTxns: any[];
   equipmentItems: any[];
   ovById: Record<number, any>;
+  periodStart: Date | null;
+  periodEnd: Date;
+  prevStart: Date | null;
+  prevEnd: Date | null;
+  periodLabel: string;
 }) {
-  const [granularity, setGranularity] = useState<"day" | "week">("day");
+  // Default trend granularity follows the period: short ranges → daily,
+  // long ranges → weekly. User can still override.
+  const periodDays = periodStart
+    ? Math.max(1, Math.round((periodEnd.getTime() - periodStart.getTime()) / 86_400_000))
+    : 365;
+  const [granularity, setGranularity] = useState<"day" | "week">(periodDays > 45 ? "week" : "day");
 
   // Time-series litres trend
   const series = useMemo(() => {
@@ -344,47 +362,44 @@ function ProjectTrends({
     return Object.values(buckets).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   }, [projectTxns, granularity]);
 
-  // Per-machine WoW + MoM
+  // Per-machine current-period vs prior-period-of-equal-length comparison.
+  // Driven by the global date range so the table always matches the rest
+  // of the app. When the user picks "All time", there's no prior period
+  // and we just show totals.
   const machineDeltas = useMemo(() => {
-    const now = new Date();
-    const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
-    const lastWeekStart = addDays(thisWeekStart, -7);
-    const thisMonthStart = startOfMonth(now);
-    const lastMonthStart = startOfMonth(addDays(thisMonthStart, -1));
-
-    const inRange = (d: Date, start: Date, end: Date) => d >= start && d < end;
+    const inRange = (d: Date, start: Date | null, end: Date | null) =>
+      !!start && !!end && d >= start && d < end;
 
     return equipmentItems
       .map((e: any) => {
         const itemId = e.enriched.id;
-        const itemTxns = projectTxns.filter((t: any) => {
+        const itemTxnsAll = allTimeProjectTxns.filter((t: any) => {
           const ov = ovById[t.id];
           if (ov?.plant_item_id) return ov.plant_item_id === itemId;
           return t.placa === e.placa;
         });
-        let thisWeek = 0, lastWeek = 0, thisMonth = 0, lastMonth = 0;
-        itemTxns.forEach((t: any) => {
+        let current = 0, previous = 0;
+        let totalLitres = 0;
+        itemTxnsAll.forEach((t: any) => {
           if (!t.fecha) return;
-          const d = parseISO(t.fecha);
           const litres = t.cantidad || 0;
-          if (inRange(d, thisWeekStart, addDays(thisWeekStart, 7))) thisWeek += litres;
-          if (inRange(d, lastWeekStart, thisWeekStart)) lastWeek += litres;
-          if (inRange(d, thisMonthStart, now)) thisMonth += litres;
-          if (inRange(d, lastMonthStart, thisMonthStart)) lastMonth += litres;
+          totalLitres += litres;
+          const d = parseISO(t.fecha);
+          if (periodStart && inRange(d, periodStart, periodEnd)) current += litres;
+          if (inRange(d, prevStart, prevEnd)) previous += litres;
         });
-        const wowDelta = thisWeek - lastWeek;
-        const momDelta = thisMonth - lastMonth;
         return {
           id: itemId,
           name: e.enriched.name || e.placa,
           placa: e.placa,
-          totalLitres: itemTxns.reduce((s: number, t: any) => s + (t.cantidad || 0), 0),
-          thisWeek, lastWeek, wowDelta,
-          thisMonth, lastMonth, momDelta,
+          totalLitres,
+          current,
+          previous,
+          delta: current - previous,
         };
       })
-      .sort((a, b) => b.totalLitres - a.totalLitres);
-  }, [equipmentItems, projectTxns, ovById]);
+      .sort((a, b) => (periodStart ? b.current - a.current : b.totalLitres - a.totalLitres));
+  }, [equipmentItems, allTimeProjectTxns, ovById, periodStart, periodEnd, prevStart, prevEnd]);
 
   const fmtDelta = (n: number) => {
     if (n === 0) return <span className="text-muted-foreground">±0L</span>;
@@ -396,12 +411,14 @@ function ProjectTrends({
     );
   };
 
+  const hasComparison = !!prevStart && !!prevEnd;
+
   return (
     <div className="space-y-4">
       <div>
         <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Litres trend
+            Litres trend · <span className="normal-case font-normal text-foreground/80">{periodLabel}</span>
           </h3>
           <div className="flex gap-1">
             {(["day", "week"] as const).map((g) => (
@@ -442,19 +459,19 @@ function ProjectTrends({
       {machineDeltas.length > 0 && (
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Machine comparison (week + month)
+            Machine comparison · <span className="normal-case font-normal text-foreground/80">{periodLabel}</span>
+            {hasComparison && (
+              <span className="normal-case font-normal text-muted-foreground"> vs prior period</span>
+            )}
           </h3>
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-xs">
               <thead className="bg-secondary/30">
                 <tr className="text-left text-muted-foreground">
                   <th className="py-2 px-2.5">Machine</th>
-                  <th className="py-2 px-2.5 text-right">This week</th>
-                  <th className="py-2 px-2.5 text-right">Last week</th>
-                  <th className="py-2 px-2.5 text-right">WoW</th>
-                  <th className="py-2 px-2.5 text-right">This month</th>
-                  <th className="py-2 px-2.5 text-right">Last month</th>
-                  <th className="py-2 px-2.5 text-right">MoM</th>
+                  <th className="py-2 px-2.5 text-right">{hasComparison ? "This period" : "Litres"}</th>
+                  {hasComparison && <th className="py-2 px-2.5 text-right">Prior period</th>}
+                  {hasComparison && <th className="py-2 px-2.5 text-right">Δ</th>}
                 </tr>
               </thead>
               <tbody>
@@ -464,12 +481,17 @@ function ProjectTrends({
                       <div className="font-medium truncate">{m.name}</div>
                       {m.placa && <div className="text-[10px] text-muted-foreground">{m.placa}</div>}
                     </td>
-                    <td className="py-2 px-2.5 text-right tabular-nums">{m.thisWeek.toLocaleString()}L</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums text-muted-foreground">{m.lastWeek.toLocaleString()}L</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums">{fmtDelta(m.wowDelta)}</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums">{m.thisMonth.toLocaleString()}L</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums text-muted-foreground">{m.lastMonth.toLocaleString()}L</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums">{fmtDelta(m.momDelta)}</td>
+                    <td className="py-2 px-2.5 text-right tabular-nums">
+                      {(hasComparison ? m.current : m.totalLitres).toLocaleString()}L
+                    </td>
+                    {hasComparison && (
+                      <td className="py-2 px-2.5 text-right tabular-nums text-muted-foreground">
+                        {m.previous.toLocaleString()}L
+                      </td>
+                    )}
+                    {hasComparison && (
+                      <td className="py-2 px-2.5 text-right tabular-nums">{fmtDelta(m.delta)}</td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -685,6 +707,7 @@ function ProjectsTab({
   const [selected, setSelected] = useState<string | null>(null);
   const del = useDeleteProject();
   const clearBackfill = useClearAutoBackfillForPlant();
+  const { range: globalRange } = useDateRange();
 
   // Pull transaction-level overrides (from the Tag Deliveries page) so a
   // delivery tagged directly to a project counts even if its placa isn't on
@@ -707,16 +730,43 @@ function ProjectsTab({
     return <div className="glass-card p-6 text-sm text-muted-foreground">Link a client account first to manage projects.</div>;
   }
 
-  // Date range for the selected project drill-down
-  const [rangeKey, setRangeKey] = useState<"7d" | "30d" | "month" | "ytd" | "all">("all");
-  const rangeStart = useMemo(() => {
+  // Date range for the selected project drill-down. "nav" follows the
+  // global Today/Week/Month toggle in the top nav so all of the project's
+  // KPIs, trend chart, and period-over-period table align with the rest
+  // of the app.
+  const [rangeKey, setRangeKey] = useState<"nav" | "7d" | "30d" | "month" | "ytd" | "all">("nav");
+  const { rangeStart, rangeEnd, prevStart, prevEnd, rangeLabel } = useMemo(() => {
     const now = new Date();
-    if (rangeKey === "7d") return subDays(now, 7);
-    if (rangeKey === "30d") return subDays(now, 30);
-    if (rangeKey === "month") return startOfMonth(now);
-    if (rangeKey === "ytd") return startOfYear(now);
-    return null;
-  }, [rangeKey]);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let start: Date | null = null;
+    let end: Date = now;
+    let label = "All time";
+    if (rangeKey === "nav") {
+      if (globalRange === "today") {
+        start = startOfToday;
+        label = "Today";
+      } else if (globalRange === "week") {
+        start = startOfWeek(now, { weekStartsOn: 1 });
+        label = "This week";
+      } else {
+        // 'month' (default) and 'custom' fall back to last 30 days
+        start = subDays(startOfToday, 30);
+        label = "Last 30 days";
+      }
+    } else if (rangeKey === "7d") { start = subDays(startOfToday, 7); label = "7 days"; }
+    else if (rangeKey === "30d") { start = subDays(startOfToday, 30); label = "30 days"; }
+    else if (rangeKey === "month") { start = startOfMonth(now); label = "This month"; }
+    else if (rangeKey === "ytd") { start = startOfYear(now); label = "YTD"; }
+
+    let pStart: Date | null = null;
+    let pEnd: Date | null = null;
+    if (start) {
+      const ms = end.getTime() - start.getTime();
+      pEnd = start;
+      pStart = new Date(start.getTime() - ms);
+    }
+    return { rangeStart: start, rangeEnd: end, prevStart: pStart, prevEnd: pEnd, rangeLabel: label };
+  }, [rangeKey, globalRange]);
 
   // Build a map: project_id → { itemIds, placas } from BOTH assignments and overrides
   const projectMembership = useMemo(() => {
@@ -766,6 +816,19 @@ function ProjectsTab({
         return t.placa && m.placas.has(t.placa);
       })
     );
+  };
+
+  const getProjectTxnsAllTime = (projectId: string) => {
+    const m = projectMembership[projectId] || { itemIds: new Set(), placas: new Set() };
+    return txns.filter((t: any) => {
+      const ov = ovById[t.id];
+      if (ov) {
+        if (ov.project_id) return ov.project_id === projectId;
+        if (ov.plant_item_id) return m.itemIds.has(ov.plant_item_id);
+        return false;
+      }
+      return t.placa && m.placas.has(t.placa);
+    });
   };
 
   const projectStats = (projectId: string) => {
@@ -879,9 +942,10 @@ function ProjectsTab({
 
           {selectedProject.notes && <p className="text-sm text-muted-foreground">{selectedProject.notes}</p>}
 
-          {/* Date range pills */}
-          <div className="flex flex-wrap gap-1.5">
+          {/* Date range pills — first option mirrors the top-nav toggle */}
+          <div className="flex flex-wrap items-center gap-1.5">
             {([
+              { k: "nav", l: `Follow nav · ${rangeLabel}` },
               { k: "7d", l: "7 days" },
               { k: "30d", l: "30 days" },
               { k: "month", l: "This month" },
@@ -988,8 +1052,14 @@ function ProjectsTab({
           {selectedTxns.length > 0 && (
             <ProjectTrends
               projectTxns={selectedTxns}
+              allTimeProjectTxns={selected ? getProjectTxnsAllTime(selected) : []}
               equipmentItems={selectedItems}
               ovById={ovById}
+              periodStart={rangeStart}
+              periodEnd={rangeEnd}
+              prevStart={prevStart}
+              prevEnd={prevEnd}
+              periodLabel={rangeLabel}
             />
           )}
 
