@@ -1,14 +1,34 @@
+import { useEffect, useState } from "react";
 import { useDemoContext } from "@/hooks/useDemo";
 import { BoldPMark } from "@/components/BoldPMark";
 
 export function PACCLogo({
   size = "md",
-  tone = "dark",
+  tone,
 }: {
   size?: "sm" | "md";
   tone?: "dark" | "light";
 }) {
   const { isDemo, brand, accentColor, isPaccBranded } = useDemoContext();
+
+  // Auto-detect global theme so the wordmark stays legible on cream/light surfaces.
+  const [autoTone, setAutoTone] = useState<"dark" | "light">(() => {
+    if (typeof document === "undefined") return "dark";
+    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  });
+  useEffect(() => {
+    const update = () => {
+      setAutoTone(document.documentElement.dataset.theme === "light" ? "light" : "dark");
+    };
+    update();
+    window.addEventListener("pacc:global-theme", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("pacc:global-theme", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
+  const effectiveTone = tone ?? autoTone;
 
   const showPaccChrome = !isDemo || isPaccBranded;
   const displayName = showPaccChrome ? "PACC ENERGY" : brand || "FuelTrack";
@@ -19,24 +39,20 @@ export function PACCLogo({
   // tone="dark" → ON dark surface (lime mark + cream wordmark)
   // tone="light" → ON cream/white surface (dark green mark + dark green wordmark)
   // Bold P mark colors. Always a high-contrast tile so the "P" reads even at small sizes.
-  const markBg = showPaccChrome
-    ? tone === "light"
-      ? "#1A472A"
-      : "#1A472A"
-    : "#1A472A";
+  const markBg = "#1A472A";
   const markFg = showPaccChrome
     ? "#C8F26A"
     : accentColor
       ? `hsl(${accentColor})`
       : "#C8F26A";
 
-  const wordmarkColor = tone === "light"
+  const wordmarkColor = effectiveTone === "light"
     ? "#0E1F10"
     : showPaccChrome
       ? "#ECE4D2"
       : "#e8eaf0";
 
-  const subtitleColor = tone === "light" ? "#3F4A3A" : "#8B8773";
+  const subtitleColor = effectiveTone === "light" ? "#3F4A3A" : "#8B8773";
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
