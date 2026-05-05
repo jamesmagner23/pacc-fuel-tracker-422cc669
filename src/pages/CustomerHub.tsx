@@ -857,8 +857,16 @@ function ProjectsTab({
                                 {reasonLabel}
                               </span>
                             </td>
-                            <td className="py-2 pr-3 text-right">{(t.cantidad || 0).toLocaleString()}L</td>
-                            <td className="py-2 text-right">${(t.dinero_total || 0).toLocaleString()}</td>
+                            <td className="py-2 pr-3 text-right">
+                              <SpeedSolValue className="justify-end">
+                                {(t.cantidad || 0).toLocaleString()}L
+                              </SpeedSolValue>
+                            </td>
+                            <td className="py-2 text-right">
+                              <SpeedSolValue className="justify-end" showIcon={false}>
+                                ${(t.dinero_total || 0).toLocaleString()}
+                              </SpeedSolValue>
+                            </td>
                           </tr>
                         );
                       })}
