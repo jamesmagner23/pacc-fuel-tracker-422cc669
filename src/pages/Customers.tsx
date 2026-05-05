@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import Transactions from "./Transactions";
 import ClientPricingTab from "@/components/finance/ClientPricingTab";
 import PricingTab from "@/components/finance/PricingTab";
+import TagDeliveries from "./TagDeliveries";
 
 type LocalRange = "global" | "30d" | "90d" | "ytd" | "all" | "custom";
 
@@ -295,6 +296,7 @@ export default function Customers() {
             { value: "transactions", label: "Transactions" },
             { value: "pricing", label: "Client Pricing" },
             { value: "quotes", label: "Quote Builder" },
+            { value: "tag", label: "Tag Deliveries" },
           ].map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -317,6 +319,9 @@ export default function Customers() {
         </TabsContent>
         <TabsContent value="quotes" className="mt-5">
           <PricingTab />
+        </TabsContent>
+        <TabsContent value="tag" className="mt-5">
+          <TagDeliveries />
         </TabsContent>
       </Tabs>
     </div>
