@@ -16,6 +16,14 @@ export default function BuyPriceTab() {
   const upsert = useUpsertBuyPrice();
   const del = useDeleteBuyPrice();
   const { data: todayPrices = [] } = useTodayBuyPrices();
+  const PRIMARY_SUPPLIER = "Pacific";
+  const SUPPLIER_COLORS: Record<string, string> = {
+    Pacific: "var(--accent)",
+    "Pro Fusion": "#5B9BD5",
+  };
+  const FALLBACK_COLORS = ["#E0A458", "#9C6ADE", "#48B5A6", "#D96C6C"];
+  const colorFor = (sup: string, idx = 0) =>
+    SUPPLIER_COLORS[sup] || FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
   const TGP_LOCATIONS = ["Melbourne", "Sydney", "Brisbane", "Adelaide", "Perth", "Darwin", "Hobart"] as const;
   const TGP_PRODUCTS = ["Diesel", "ULP"] as const;
   const [tgpLocation, setTgpLocation] = useState<string>("Melbourne");
@@ -103,19 +111,29 @@ export default function BuyPriceTab() {
     setShowBulk(false);
   };
 
-  const chartData = [...prices].reverse().map((p) => ({
-    date: format(parseISO(p.price_date), "dd MMM"),
-    price: p.price_per_litre,
-  }));
+  // Build per-supplier chart series. Each row keys by supplier name so Recharts can draw one line per supplier.
+  const allSuppliers = Array.from(
+    new Set([...SUPPLIERS, ...prices.map(p => p.supplier)].filter(Boolean))
+  );
+  const chartDateMap = new Map<string, Record<string, number | string>>();
+  [...prices].reverse().forEach((p) => {
+    const key = format(parseISO(p.price_date), "dd MMM");
+    const row = chartDateMap.get(key) || { date: key };
+    row[p.supplier] = p.price_per_litre;
+    chartDateMap.set(key, row);
+  });
+  const chartData = Array.from(chartDateMap.values());
 
-  // "latest" still used downstream for TGP comparison: pick the cheapest today price (or most recent fallback)
-  const cheapestToday = todayPrices.length > 0
-    ? [...todayPrices].sort((a, b) => a.price_per_litre - b.price_per_litre)[0]
-    : null;
-  const latest = cheapestToday || prices[0];
-  const prev = prices.find(p => p.price_date < (latest?.price_date || ""));
+  // Reconcile everything against Pacific (the active supplier we actually buy from).
+  const pacificPrices = prices.filter(p => p.supplier === PRIMARY_SUPPLIER);
+  const todayPacific = todayPrices.find(p => p.supplier === PRIMARY_SUPPLIER) || null;
+  const latest = todayPacific || pacificPrices[0] || prices[0];
+  const prev = pacificPrices.find(p => p.price_date < (latest?.price_date || ""))
+    || prices.find(p => p.price_date < (latest?.price_date || ""));
   const priceChange = latest && prev ? latest.price_per_litre - prev.price_per_litre : null;
-  const avgPrice = prices.length > 0 ? prices.reduce((s, p) => s + p.price_per_litre, 0) / prices.length : 0;
+  const avgPrice = pacificPrices.length > 0
+    ? pacificPrices.reduce((s, p) => s + p.price_per_litre, 0) / pacificPrices.length
+    : (prices.length > 0 ? prices.reduce((s, p) => s + p.price_per_litre, 0) / prices.length : 0);
 
   // Today's supplier comparison
   const todaySorted = [...todayPrices].sort((a, b) => a.price_per_litre - b.price_per_litre);
@@ -131,7 +149,7 @@ export default function BuyPriceTab() {
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">
-              {cheapest ? `Today's Best Buy — ${cheapest.supplier}` : `Last Buy — ${latest.supplier}`}
+              {todayPacific ? `Today's Buy — ${PRIMARY_SUPPLIER}` : `Last ${PRIMARY_SUPPLIER} Buy`}
             </div>
             <div className="text-3xl sm:text-[44px] font-light text-foreground tracking-tighter tabular-nums">
               ${latest.price_per_litre.toFixed(4)}
@@ -148,7 +166,7 @@ export default function BuyPriceTab() {
             )}
           </div>
           <div className="sm:text-right">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg ({PRIMARY_SUPPLIER})</div>
             <div className="text-lg sm:text-xl font-medium text-muted-foreground tabular-nums">${avgPrice.toFixed(4)}/L</div>
           </div>
         </div>
@@ -166,21 +184,32 @@ export default function BuyPriceTab() {
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {todaySorted.map((p) => {
+            {todaySorted.map((p, i) => {
               const isBest = cheapest && p.id === cheapest.id && todaySorted.length > 1;
+              const isPrimary = p.supplier === PRIMARY_SUPPLIER;
+              const dot = colorFor(p.supplier, i);
               return (
-                <div key={p.id} className={`rounded-lg border p-3 ${isBest ? "border-positive/40 bg-positive/5" : "border-surface-border"}`}>
+                <div key={p.id} className={`rounded-lg border p-3 ${isPrimary ? "border-primary/50 bg-primary/5" : "border-surface-border"}`}>
                   <div className="flex items-center justify-between">
-                    <div className="text-[12px] text-foreground font-medium">{p.supplier}</div>
-                    {isBest && <div className="text-[9px] uppercase tracking-wider text-positive font-semibold">Best</div>}
+                    <div className="text-[12px] text-foreground font-medium flex items-center gap-1.5">
+                      <span className="inline-block w-2 h-2 rounded-full" style={{ background: dot }} />
+                      {p.supplier}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isPrimary && <div className="text-[9px] uppercase tracking-wider text-primary font-semibold">Active</div>}
+                      {isBest && !isPrimary && <div className="text-[9px] uppercase tracking-wider text-positive font-semibold">Cheapest</div>}
+                    </div>
                   </div>
                   <div className="text-xl font-semibold text-foreground tabular-nums mt-1">${p.price_per_litre.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
                 </div>
               );
             })}
-            {SUPPLIERS.filter(s => !todaySorted.some(p => p.supplier === s)).map((s) => (
+            {SUPPLIERS.filter(s => !todaySorted.some(p => p.supplier === s)).map((s, i) => (
               <div key={s} className="rounded-lg border border-dashed border-surface-border p-3 opacity-60">
-                <div className="text-[12px] text-muted-foreground">{s}</div>
+                <div className="text-[12px] text-muted-foreground flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorFor(s, i) }} />
+                  {s}
+                </div>
                 <div className="text-[11px] text-muted-foreground mt-1">No price today</div>
               </div>
             ))}
@@ -336,7 +365,17 @@ export default function BuyPriceTab() {
 
       {chartData.length > 1 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-4">Buy Price Trend — Last {prices.length} Entries</div>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Buy Price Trend by Supplier — Last {prices.length} Entries</div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {allSuppliers.map((s, i) => (
+                <div key={s} className="flex items-center gap-1.5">
+                  <span className="inline-block w-3 h-0.5 rounded" style={{ background: colorFor(s, i) }} />
+                  <span className="text-[10px] text-muted-foreground">{s}</span>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
@@ -346,11 +385,23 @@ export default function BuyPriceTab() {
                   contentStyle={{ background: "var(--background)", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: "var(--text-primary)" }}
                   itemStyle={{ color: "var(--text-primary)" }}
-                  formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]}
+                  formatter={(v: number, name: string) => [`$${v.toFixed(4)}/L`, name]}
                   cursor={{ stroke: "rgba(196,168,130,0.2)" }}
                 />
                 {avgPrice > 0 && <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground) / 0.4)" strokeWidth={1} />}
-                <Line type="monotone" dataKey="price" stroke="var(--accent)" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "var(--accent)" }} />
+                {allSuppliers.map((s, i) => (
+                  <Line
+                    key={s}
+                    type="monotone"
+                    dataKey={s}
+                    name={s}
+                    stroke={colorFor(s, i)}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4, fill: colorFor(s, i) }}
+                    connectNulls
+                  />
+                ))}
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -421,7 +472,10 @@ export default function BuyPriceTab() {
                   <div>
                     <div className="text-[13px] text-foreground font-medium">{format(parseISO(p.price_date), "EEE dd MMM yyyy")}</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70" />
+                      <span
+                        className="inline-block w-2 h-2 rounded-full"
+                        style={{ background: colorFor(p.supplier, allSuppliers.indexOf(p.supplier)) }}
+                      />
                       {p.supplier}
                     </div>
                   </div>
