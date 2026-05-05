@@ -995,12 +995,12 @@ export default function Outreach() {
                   {pricingErrorCount > 0 && (
                     <div
                       role="alert"
-                      className="rounded border border-[#C8F26A] bg-[#0E1F10] px-3 py-2 text-xs text-[#FFD9C8]"
+                      className="rounded border border-[#F5C25B]/60 bg-[#F5C25B]/10 px-3 py-2 text-xs text-[#F5C25B]"
                     >
                       <div className="font-semibold">
                         {pricingErrorCount} field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention
                       </div>
-                      <div className="text-[11px] text-[#F5C25B] mt-0.5">
+                      <div className="text-[11px] text-[#F5C25B]/80 mt-0.5">
                         Fix the highlighted inputs below before sending.
                       </div>
                     </div>
