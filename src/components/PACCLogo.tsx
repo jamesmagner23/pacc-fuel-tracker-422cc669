@@ -30,13 +30,18 @@ export function PACCLogo({
       ? `hsl(${accentColor})`
       : "#C8F26A";
 
+  // Use theme tokens so the wordmark stays visible on both light and dark surfaces.
   const wordmarkColor = tone === "light"
     ? "#0E1F10"
     : showPaccChrome
-      ? "#ECE4D2"
+      ? "var(--text-primary)"
       : "#e8eaf0";
 
-  const subtitleColor = tone === "light" ? "#3F4A3A" : "#8B8773";
+  const subtitleColor = tone === "light"
+    ? "#3F4A3A"
+    : showPaccChrome
+      ? "var(--text-secondary)"
+      : "#8B8773";
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
