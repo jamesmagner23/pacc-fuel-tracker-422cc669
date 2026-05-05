@@ -159,7 +159,7 @@ export function PlantBoard({
                 "flex flex-col rounded-lg border transition-all min-h-[160px]",
                 col.isUnassigned
                   ? "border-dashed border-border bg-card/20"
-                  : "border-border bg-card/40",
+                  : "border-border bg-card shadow-sm",
                 isOver && "border-primary/60 bg-primary/5",
                 picked && !readOnly && "cursor-pointer hover:border-primary/50"
               )}
