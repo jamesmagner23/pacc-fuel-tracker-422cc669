@@ -377,7 +377,10 @@ export default function MarketIntelligence() {
             Melbourne · Australia · {fmtDate(TODAY).toUpperCase()}
           </div>
         </div>
-        <DateRangeToggle />
+        {/* Date toggle lives in the global header — no duplicate here */}
+        <div className="hidden">
+          <DateRangeToggle />
+        </div>
       </div>
 
       {/* LIVE TICKER */}

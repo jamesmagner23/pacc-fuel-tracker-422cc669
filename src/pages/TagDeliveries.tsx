@@ -27,16 +27,18 @@ import { useProjects } from "@/hooks/useProjects";
 type FilterMode = "all" | "untagged" | "tagged";
 
 function useRecentTransactions(days: number) {
-  const fromDate = format(subDays(new Date(), days), "yyyy-MM-dd");
+  const isAll = days <= 0;
+  const fromDate = isAll ? null : format(subDays(new Date(), days), "yyyy-MM-dd");
   return useQuery({
-    queryKey: ["admin-recent-transactions", fromDate],
+    queryKey: ["admin-recent-transactions", fromDate ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("transactions")
         .select("id, fecha, date, nombre_cliente1, placa, cantidad, factura, estacion, ppu, dinero_total")
-        .gte("fecha", `${fromDate}T00:00:00`)
         .order("fecha", { ascending: false })
-        .limit(2000);
+        .limit(isAll ? 10000 : 2000);
+      if (fromDate) q = q.gte("fecha", `${fromDate}T00:00:00`);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
@@ -324,7 +326,7 @@ export default function TagDeliveries() {
               key={k}
               onClick={() => setFilter(k)}
               className={`text-xs font-medium px-3 py-1.5 rounded transition-colors ${
-                filter === k ? "bg-accent text-white" : "text-muted-foreground hover:text-foreground"
+                filter === k ? "bg-accent !text-accent-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
               style={{ minHeight: 36 }}
             >
@@ -342,6 +344,7 @@ export default function TagDeliveries() {
             <SelectItem value="30">Last 30 days</SelectItem>
             <SelectItem value="90">Last 90 days</SelectItem>
             <SelectItem value="180">Last 6 months</SelectItem>
+            <SelectItem value="0">All time</SelectItem>
           </SelectContent>
         </Select>
 
