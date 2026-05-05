@@ -1028,28 +1028,102 @@ function OverviewTab({
   const { tokens: pieTokens } = usePortalTheme();
   const PIE_COLORS = pieTokens.pie as unknown as string[];
 
-  const kpis = [
-    { label: "Total Litres", value: fmtL(totalLitres) },
-    { label: "Deliveries", value: transactions.length.toLocaleString() },
-    { label: "Sites", value: sites.size.toString() },
-    {
-      label: "Est. FTC Savings",
-      value: ftcSavings > 0 ? `$${Math.round(ftcSavings).toLocaleString()}` : "—",
-    },
-  ];
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-        {kpis.map((k) => (
-          <div key={k.label} style={card}>
-            <div style={labelStyle}>{k.label}</div>
-            <div style={{ fontSize: 24, fontFamily: T.sansHead, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
-              {k.value}
-            </div>
-          </div>
-        ))}
+      {/* Hero — Litres used (visual focal point) */}
+      <div
+        style={{
+          ...card,
+          background: `linear-gradient(135deg, ${T.accent}1a, ${T.accent}05)`,
+          borderColor: `${T.accent}55`,
+          padding: 20,
+        }}
+      >
+        <div style={{ ...labelStyle, marginBottom: 6 }}>Litres Used</div>
+        <div
+          style={{
+            fontSize: "clamp(40px, 13vw, 64px)",
+            lineHeight: 1,
+            fontFamily: T.sansHead,
+            fontWeight: 800,
+            color: T.text,
+            fontVariantNumeric: "tabular-nums",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {fmtL(totalLitres)}
+        </div>
+        <div style={{ ...muted(12), marginTop: 6 }}>
+          {transactions.length.toLocaleString()} deliveries · {sites.size} sites
+        </div>
       </div>
+
+      {/* FTC savings — second visual headline */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+        <div style={card}>
+          <div style={labelStyle}>Est. FTC Savings</div>
+          <div
+            style={{
+              fontSize: 28,
+              fontFamily: T.sansHead,
+              fontWeight: 700,
+              color: ftcSavings > 0 ? T.accent : T.muted,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {ftcSavings > 0 ? `$${Math.round(ftcSavings).toLocaleString()}` : "—"}
+          </div>
+          <div style={{ ...muted(11), marginTop: 4 }}>Off-road rate × volume</div>
+        </div>
+        <div style={card}>
+          <div style={labelStyle}>Top Plant</div>
+          <div
+            style={{
+              fontSize: 16,
+              fontFamily: T.sansHead,
+              fontWeight: 700,
+              color: T.text,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {topPlant?.name || "—"}
+          </div>
+          <div style={{ fontSize: 22, fontFamily: T.sansHead, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+            {topPlant ? fmtL(topPlant.litres) : "—"}
+          </div>
+        </div>
+      </div>
+
+      {/* Highest-using plant — horizontal bar chart */}
+      {topPlants.length > 0 && (
+        <div style={card}>
+          <div style={{ ...labelStyle, marginBottom: 4 }}>Top Plant by Volume</div>
+          <div style={{ ...muted(11), marginBottom: 10 }}>Litres per plate / plant this period</div>
+          <div style={{ width: "100%", height: Math.max(140, topPlants.length * 32) }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topPlants} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
+                <XAxis type="number" hide />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={110}
+                  tick={{ fill: T.textSecondary, fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  cursor={{ fill: `${T.accent}11` }}
+                  contentStyle={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, fontSize: 12 }}
+                  formatter={(v: any) => fmtL(Number(v))}
+                />
+                <Bar dataKey="litres" fill={T.accent} radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Live truck location */}
       <TruckMap height={260} showStops={true} />
