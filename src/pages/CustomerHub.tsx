@@ -310,6 +310,177 @@ function OverviewTab({ txns, equipment, projects, ftcRates }: { txns: any[]; equ
   );
 }
 
+/* ---------------- PROJECT TRENDS ---------------- */
+function ProjectTrends({
+  projectTxns,
+  equipmentItems,
+  ovById,
+}: {
+  projectTxns: any[];
+  equipmentItems: any[];
+  ovById: Record<number, any>;
+}) {
+  const [granularity, setGranularity] = useState<"day" | "week">("day");
+
+  // Time-series litres trend
+  const series = useMemo(() => {
+    const buckets: Record<string, { key: string; label: string; litres: number; sortKey: string }> = {};
+    projectTxns.forEach((t) => {
+      if (!t.fecha) return;
+      const d = parseISO(t.fecha);
+      let key: string;
+      let label: string;
+      if (granularity === "day") {
+        key = format(d, "yyyy-MM-dd");
+        label = format(d, "dd MMM");
+      } else {
+        const ws = startOfWeek(d, { weekStartsOn: 1 });
+        key = format(ws, "yyyy-MM-dd");
+        label = `w/c ${format(ws, "dd MMM")}`;
+      }
+      if (!buckets[key]) buckets[key] = { key, label, litres: 0, sortKey: key };
+      buckets[key].litres += t.cantidad || 0;
+    });
+    return Object.values(buckets).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  }, [projectTxns, granularity]);
+
+  // Per-machine WoW + MoM
+  const machineDeltas = useMemo(() => {
+    const now = new Date();
+    const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const lastWeekStart = addDays(thisWeekStart, -7);
+    const thisMonthStart = startOfMonth(now);
+    const lastMonthStart = startOfMonth(addDays(thisMonthStart, -1));
+
+    const inRange = (d: Date, start: Date, end: Date) => d >= start && d < end;
+
+    return equipmentItems
+      .map((e: any) => {
+        const itemId = e.enriched.id;
+        const itemTxns = projectTxns.filter((t: any) => {
+          const ov = ovById[t.id];
+          if (ov?.plant_item_id) return ov.plant_item_id === itemId;
+          return t.placa === e.placa;
+        });
+        let thisWeek = 0, lastWeek = 0, thisMonth = 0, lastMonth = 0;
+        itemTxns.forEach((t: any) => {
+          if (!t.fecha) return;
+          const d = parseISO(t.fecha);
+          const litres = t.cantidad || 0;
+          if (inRange(d, thisWeekStart, addDays(thisWeekStart, 7))) thisWeek += litres;
+          if (inRange(d, lastWeekStart, thisWeekStart)) lastWeek += litres;
+          if (inRange(d, thisMonthStart, now)) thisMonth += litres;
+          if (inRange(d, lastMonthStart, thisMonthStart)) lastMonth += litres;
+        });
+        const wowDelta = thisWeek - lastWeek;
+        const momDelta = thisMonth - lastMonth;
+        return {
+          id: itemId,
+          name: e.enriched.name || e.placa,
+          placa: e.placa,
+          totalLitres: itemTxns.reduce((s: number, t: any) => s + (t.cantidad || 0), 0),
+          thisWeek, lastWeek, wowDelta,
+          thisMonth, lastMonth, momDelta,
+        };
+      })
+      .sort((a, b) => b.totalLitres - a.totalLitres);
+  }, [equipmentItems, projectTxns, ovById]);
+
+  const fmtDelta = (n: number) => {
+    if (n === 0) return <span className="text-muted-foreground">±0L</span>;
+    const positive = n > 0;
+    return (
+      <span className={positive ? "text-success" : "text-destructive"}>
+        {positive ? "▲" : "▼"} {Math.abs(n).toLocaleString()}L
+      </span>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Litres trend
+          </h3>
+          <div className="flex gap-1">
+            {(["day", "week"] as const).map((g) => (
+              <button
+                key={g}
+                onClick={() => setGranularity(g)}
+                className={`px-2.5 py-1 text-[10px] rounded-full border transition-colors ${
+                  granularity === g
+                    ? "border-primary bg-primary/15 text-foreground"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {g === "day" ? "Daily" : "Weekly"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-secondary/20 p-2" style={{ height: 200 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+              <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} />
+              <YAxis tick={{ fontSize: 10, fill: "var(--text-secondary)" }} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 6,
+                  fontSize: 11,
+                }}
+                formatter={(v: any) => [`${Number(v).toLocaleString()}L`, "Litres"]}
+              />
+              <Line type="monotone" dataKey="litres" stroke="var(--accent)" strokeWidth={2} dot={{ r: 2 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {machineDeltas.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+            Machine comparison (week + month)
+          </h3>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-xs">
+              <thead className="bg-secondary/30">
+                <tr className="text-left text-muted-foreground">
+                  <th className="py-2 px-2.5">Machine</th>
+                  <th className="py-2 px-2.5 text-right">This week</th>
+                  <th className="py-2 px-2.5 text-right">Last week</th>
+                  <th className="py-2 px-2.5 text-right">WoW</th>
+                  <th className="py-2 px-2.5 text-right">This month</th>
+                  <th className="py-2 px-2.5 text-right">Last month</th>
+                  <th className="py-2 px-2.5 text-right">MoM</th>
+                </tr>
+              </thead>
+              <tbody>
+                {machineDeltas.map((m) => (
+                  <tr key={m.id} className="border-t border-border/50">
+                    <td className="py-2 px-2.5">
+                      <div className="font-medium truncate">{m.name}</div>
+                      {m.placa && <div className="text-[10px] text-muted-foreground">{m.placa}</div>}
+                    </td>
+                    <td className="py-2 px-2.5 text-right tabular-nums">{m.thisWeek.toLocaleString()}L</td>
+                    <td className="py-2 px-2.5 text-right tabular-nums text-muted-foreground">{m.lastWeek.toLocaleString()}L</td>
+                    <td className="py-2 px-2.5 text-right tabular-nums">{fmtDelta(m.wowDelta)}</td>
+                    <td className="py-2 px-2.5 text-right tabular-nums">{m.thisMonth.toLocaleString()}L</td>
+                    <td className="py-2 px-2.5 text-right tabular-nums text-muted-foreground">{m.lastMonth.toLocaleString()}L</td>
+                    <td className="py-2 px-2.5 text-right tabular-nums">{fmtDelta(m.momDelta)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------------- EQUIPMENT ---------------- */
 function EquipmentTab({
   equipment,
