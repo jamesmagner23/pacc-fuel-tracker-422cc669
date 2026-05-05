@@ -69,16 +69,18 @@ export function ProjectModal({ open, onOpenChange, clientAccountId, initial }: P
             <Label>Site address</Label>
             <Input value={form.site_address} onChange={(e) => setForm({ ...form, site_address: e.target.value })} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Start date</Label>
-              <Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+          {form.id && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Start date</Label>
+                <Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+              </div>
+              <div>
+                <Label>End date</Label>
+                <Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+              </div>
             </div>
-            <div>
-              <Label>End date</Label>
-              <Input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
-            </div>
-          </div>
+          )}
           <div>
             <Label>Status</Label>
             <select
