@@ -1,0 +1,1 @@
+ALTER TABLE public.plant_items ADD COLUMN IF NOT EXISTS display_asset_id text;

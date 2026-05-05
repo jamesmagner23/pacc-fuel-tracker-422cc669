@@ -364,14 +364,24 @@ function EquipmentTab({
           {equipment.map((e) => (
             <button
               key={e.placa || e.enriched?.id}
-              onClick={() => setSelected(e.placa)}
+              onClick={() => {
+                if (!e.enriched) {
+                  handleEdit(e);
+                } else {
+                  setSelected(e.placa);
+                }
+              }}
               className="glass-card p-4 text-left hover:border-primary/40 transition-colors"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-sm truncate">{e.enriched?.name || e.placa || "Unnamed"}</div>
                   <div className="text-[10px] text-muted-foreground truncate">
-                    {e.placa}{e.enriched?.equipment_type && <> · {e.enriched.equipment_type}</>}
+                    {e.enriched?.display_asset_id || e.placa}
+                    {e.enriched?.display_asset_id && e.placa && e.enriched.display_asset_id !== e.placa && (
+                      <> · <span className="opacity-60">{e.placa}</span></>
+                    )}
+                    {e.enriched?.equipment_type && <> · {e.enriched.equipment_type}</>}
                   </div>
                 </div>
                 <Truck className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -397,7 +407,11 @@ function EquipmentTab({
             <div>
               <div className="text-lg font-bold">{selectedItem.enriched?.name || selectedItem.placa}</div>
               <div className="text-xs text-muted-foreground">
-                {selectedItem.placa} {selectedItem.enriched?.equipment_type && <>· {selectedItem.enriched.equipment_type}</>}
+                {selectedItem.enriched?.display_asset_id && (
+                  <><span className="font-semibold text-foreground">{selectedItem.enriched.display_asset_id}</span> · </>
+                )}
+                <span className="opacity-70">SpeedSol: {selectedItem.placa}</span>
+                {selectedItem.enriched?.equipment_type && <> · {selectedItem.enriched.equipment_type}</>}
               </div>
             </div>
             <div className="flex gap-2">

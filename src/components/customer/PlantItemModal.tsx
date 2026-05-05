@@ -48,6 +48,7 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
     size: "",
     tank_size_litres: "",
     colour: "",
+    display_asset_id: "",
   });
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
         tank_size_litres:
           initial?.tank_size_litres != null ? String(initial.tank_size_litres) : "",
         colour: (initial as any)?.colour || "",
+        display_asset_id: (initial as any)?.display_asset_id || "",
       });
       // Hydrate tags for this item from existing links
       if (initial?.id) {
@@ -129,6 +131,7 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
       size: form.size || null,
       tank_size_litres: tankNum,
       colour: form.colour || null,
+      display_asset_id: form.display_asset_id || null,
     } as any);
     if (result?.id) {
       try {
@@ -157,13 +160,31 @@ export function PlantItemModal({ open, onOpenChange, clientAccountId, initial }:
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Plate / Asset ID</Label>
-              <Input value={form.placa} onChange={(e) => setForm({ ...form, placa: e.target.value })} placeholder="ABC123" />
+              <Label>SpeedSol Rego (read-only)</Label>
+              <Input
+                value={form.placa}
+                onChange={(e) => setForm({ ...form, placa: e.target.value })}
+                placeholder="ABC123"
+                disabled={!!initial?.placa}
+                className={initial?.placa ? "opacity-70" : ""}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Linked to delivery records — don't change.</p>
             </div>
             <div>
               <Label>Type</Label>
               <Input value={form.equipment_type} onChange={(e) => setForm({ ...form, equipment_type: e.target.value })} placeholder="Excavator" />
             </div>
+          </div>
+          <div>
+            <Label>Display Asset ID</Label>
+            <Input
+              value={form.display_asset_id}
+              onChange={(e) => setForm({ ...form, display_asset_id: e.target.value })}
+              placeholder="e.g. ISGEN2"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Your internal asset code shown in the customer portal. Doesn't affect SpeedSol data.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

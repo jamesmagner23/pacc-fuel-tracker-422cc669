@@ -21,6 +21,7 @@ export interface PlantItem {
   size: string | null;
   tank_size_litres: number | null;
   colour: string | null;
+  display_asset_id?: string | null;
   created_at: string;
   updated_at: string;
 }

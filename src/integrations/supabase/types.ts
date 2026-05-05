@@ -819,6 +819,7 @@ export type Database = {
           colour: string | null
           created_at: string
           description: string | null
+          display_asset_id: string | null
           equipment_type: string | null
           ftc_rate_id: string | null
           id: string
@@ -839,6 +840,7 @@ export type Database = {
           colour?: string | null
           created_at?: string
           description?: string | null
+          display_asset_id?: string | null
           equipment_type?: string | null
           ftc_rate_id?: string | null
           id?: string
@@ -859,6 +861,7 @@ export type Database = {
           colour?: string | null
           created_at?: string
           description?: string | null
+          display_asset_id?: string | null
           equipment_type?: string | null
           ftc_rate_id?: string | null
           id?: string
