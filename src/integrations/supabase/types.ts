@@ -1551,6 +1551,178 @@ export type Database = {
         }
         Relationships: []
       }
+      truck_documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          expiry_date: string | null
+          file_path: string | null
+          id: string
+          issue_date: string | null
+          label: string | null
+          notes: string | null
+          truck_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          expiry_date?: string | null
+          file_path?: string | null
+          id?: string
+          issue_date?: string | null
+          label?: string | null
+          notes?: string | null
+          truck_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          expiry_date?: string | null
+          file_path?: string | null
+          id?: string
+          issue_date?: string | null
+          label?: string | null
+          notes?: string | null
+          truck_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "truck_documents_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      truck_service_records: {
+        Row: {
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          file_path: string | null
+          id: string
+          notes: string | null
+          service_date: string
+          service_km: number | null
+          service_type: string | null
+          truck_id: string
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          service_date: string
+          service_km?: number | null
+          service_type?: string | null
+          truck_id: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          service_date?: string
+          service_km?: number | null
+          service_type?: string | null
+          truck_id?: string
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "truck_service_records_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trucks: {
+        Row: {
+          build_date: string | null
+          created_at: string
+          current_km: number | null
+          id: string
+          is_active: boolean
+          last_service_date: string | null
+          last_service_km: number | null
+          make: string | null
+          model: string | null
+          name: string
+          next_service_date: string | null
+          next_service_km: number | null
+          notes: string | null
+          photo_path: string | null
+          rego: string | null
+          serial_number: string | null
+          speedsol_estacion: string | null
+          tank_capacity_litres: number | null
+          updated_at: string
+          vin: string | null
+        }
+        Insert: {
+          build_date?: string | null
+          created_at?: string
+          current_km?: number | null
+          id?: string
+          is_active?: boolean
+          last_service_date?: string | null
+          last_service_km?: number | null
+          make?: string | null
+          model?: string | null
+          name: string
+          next_service_date?: string | null
+          next_service_km?: number | null
+          notes?: string | null
+          photo_path?: string | null
+          rego?: string | null
+          serial_number?: string | null
+          speedsol_estacion?: string | null
+          tank_capacity_litres?: number | null
+          updated_at?: string
+          vin?: string | null
+        }
+        Update: {
+          build_date?: string | null
+          created_at?: string
+          current_km?: number | null
+          id?: string
+          is_active?: boolean
+          last_service_date?: string | null
+          last_service_km?: number | null
+          make?: string | null
+          model?: string | null
+          name?: string
+          next_service_date?: string | null
+          next_service_km?: number | null
+          notes?: string | null
+          photo_path?: string | null
+          rego?: string | null
+          serial_number?: string | null
+          speedsol_estacion?: string | null
+          tank_capacity_litres?: number | null
+          updated_at?: string
+          vin?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           client_account_id: number | null
