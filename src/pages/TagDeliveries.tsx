@@ -326,7 +326,7 @@ export default function TagDeliveries() {
               key={k}
               onClick={() => setFilter(k)}
               className={`text-xs font-medium px-3 py-1.5 rounded transition-colors ${
-                filter === k ? "bg-accent text-white" : "text-muted-foreground hover:text-foreground"
+                filter === k ? "bg-accent !text-accent-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
               style={{ minHeight: 36 }}
             >
@@ -344,6 +344,7 @@ export default function TagDeliveries() {
             <SelectItem value="30">Last 30 days</SelectItem>
             <SelectItem value="90">Last 90 days</SelectItem>
             <SelectItem value="180">Last 6 months</SelectItem>
+            <SelectItem value="0">All time</SelectItem>
           </SelectContent>
         </Select>
 
