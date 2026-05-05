@@ -7,6 +7,7 @@ import { useAllTransactions } from "@/hooks/useTransactions";
 import { usePlantItems, useDeletePlantItem, type PlantItem } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments, useDeleteProject, type Project } from "@/hooks/useProjects";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
+import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,12 @@ export default function CustomerHub() {
     () => allTxns.filter((t) => t.nombre_cliente1 === customerName),
     [allTxns, customerName]
   );
+
+  const customerTxnIds = useMemo(
+    () => customerTxns.map((t: any) => t.id).filter((n: any) => Number.isFinite(n)),
+    [customerTxns]
+  );
+  const { data: overrides = {} } = useTransactionOverrides(customerTxnIds);
 
   // Auto-detect placas from transactions, merge with enriched items
   const equipmentList = useMemo(() => {
@@ -148,7 +155,7 @@ export default function CustomerHub() {
           <ProjectsTab projects={projects} assignments={assignments} equipment={equipmentList} txns={customerTxns} clientAccountId={clientAccountId} />
         </TabsContent>
         <TabsContent value="analytics" className="mt-5">
-          <AnalyticsTab txns={customerTxns} equipment={equipmentList} projects={projects} assignments={assignments} />
+          <AnalyticsTab txns={customerTxns} equipment={equipmentList} projects={projects} assignments={assignments} overrides={overrides} />
         </TabsContent>
         <TabsContent value="transactions" className="mt-5">
           <TransactionsTab txns={customerTxns} customerName={customerName} />
