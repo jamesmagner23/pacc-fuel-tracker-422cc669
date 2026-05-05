@@ -787,9 +787,18 @@ function ProjectsTab({
 
           {/* Recent deliveries on project */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Deliveries ({selectedTxns.length})
-            </h3>
+            <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Deliveries ({selectedTxns.length})
+              </h3>
+              <span
+                title="Every litre, price and plate shown here comes directly from SpeedSol. Project/equipment tagging is metadata only — it never modifies the source delivery."
+                className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/30"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                Source: SpeedSol (source of truth)
+              </span>
+            </div>
             {selectedTxns.length === 0 ? (
               <p className="text-xs text-muted-foreground">
                 No deliveries in this period. Tag deliveries to this project from Tag Deliveries, or assign equipment in the Plant Assignment Board.
