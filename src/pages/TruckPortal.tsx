@@ -27,6 +27,7 @@ import {
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, useAllTransactions } from "@/hooks/useTransactions";
 import { useChartPalette } from "@/lib/chartPalette";
+import { DateRangeToggle } from "@/components/DateRangeToggle";
 
 const DOC_TYPES = [
   "Tank Certification",
@@ -576,6 +577,13 @@ function SalesPanel({ truck }: { truck: Truck }) {
 
   return (
     <div className="grid gap-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h3 className="text-sm font-semibold">Sales Performance</h3>
+        <div className="max-w-[320px] w-full sm:w-auto">
+          <DateRangeToggle />
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Stat label="Period Litres" value={`${(periodLitres / 1000).toFixed(1)}k L`} />
         <Stat label="Deliveries" value={periodTxns.length.toString()} />
