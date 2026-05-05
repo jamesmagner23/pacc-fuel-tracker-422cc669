@@ -487,12 +487,12 @@ export default function MarketIntelligence() {
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} interval={Math.floor(BUY_PRICE_TREND.length / 8)} />
                   <YAxis tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]} />
-                  <ReferenceLine x={BUY_PRICE_TREND.find(d => d.isForecast)?.date} stroke="#FF6B5E" strokeDasharray="4 4" strokeWidth={1} label={{ value: "EXCISE REVERTS", position: "top", fontSize: 9, fill: "#FF6B5E" }} />
+                  <ReferenceLine x={BUY_PRICE_TREND.find(d => d.isForecast)?.date} stroke="var(--negative)" strokeDasharray="4 4" strokeWidth={1} label={{ value: "EXCISE REVERTS", position: "top", fontSize: 9, fill: "var(--negative)" }} />
                   {/* Actual line */}
                   <Line
                     type="monotone"
                     dataKey={(d: any) => d.isForecast ? null : d.price}
-                    stroke="#C8F26A"
+                    stroke="var(--positive)"
                     strokeWidth={2}
                     dot={false}
                     name="Actual"
@@ -529,7 +529,7 @@ export default function MarketIntelligence() {
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} interval={Math.floor(BRENT_90_DAY.length / 6)} />
                   <YAxis tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} domain={["auto", "auto"]} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(1)} USD/BBL`, "Brent"]} />
-                  <ReferenceLine x={BRENT_90_DAY.find(d => d.rawDate >= "2026-02-28")?.date} stroke="#FF6B5E" strokeDasharray="4 4" strokeWidth={1} label={{ value: "CONFLICT START", position: "top", fontSize: 9, fill: "#FF6B5E" }} />
+                  <ReferenceLine x={BRENT_90_DAY.find(d => d.rawDate >= "2026-02-28")?.date} stroke="var(--negative)" strokeDasharray="4 4" strokeWidth={1} label={{ value: "CONFLICT START", position: "top", fontSize: 9, fill: "var(--negative)" }} />
                   <Line type="monotone" dataKey="price" stroke="var(--accent)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
