@@ -278,7 +278,7 @@ export default function Overview() {
                     itemStyle={{ color: tc.textPrimary }}
                     formatter={(v: number) => [`$${v.toFixed(2)}/L`, "Price"]}
                   />
-                  <Line type="monotone" dataKey="price" stroke="#C8F26A" strokeWidth={2} dot={{ r: 3, fill: "#C8F26A" }} />
+                  <Line type="monotone" dataKey="price" stroke={tc.accent} strokeWidth={2} dot={{ r: 3, fill: tc.accent }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
