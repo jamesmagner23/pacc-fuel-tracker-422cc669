@@ -92,10 +92,11 @@ export default function TruckPortal() {
                 style={{
                   borderColor: isActive ? "var(--accent)" : "var(--surface-border)",
                   background: isActive ? "var(--accent-light)" : undefined,
+                  color: isActive ? "var(--accent)" : undefined,
                 }}
               >
                 <div className="text-sm font-semibold">{t.name}</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">
+                <div className="text-[11px] mt-0.5" style={{ color: isActive ? "var(--accent)" : "var(--text-secondary)", opacity: isActive ? 0.85 : 1 }}>
                   {t.rego || "No rego"} {t.tank_capacity_litres ? `· ${t.tank_capacity_litres.toLocaleString()}L` : ""}
                 </div>
               </button>
