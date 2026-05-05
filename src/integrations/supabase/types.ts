@@ -524,6 +524,7 @@ export type Database = {
           litres_entered: number
           log_date: string
           notes: string | null
+          odometer_km: number | null
           photo_path: string | null
         }
         Insert: {
@@ -534,6 +535,7 @@ export type Database = {
           litres_entered: number
           log_date?: string
           notes?: string | null
+          odometer_km?: number | null
           photo_path?: string | null
         }
         Update: {
@@ -544,6 +546,7 @@ export type Database = {
           litres_entered?: number
           log_date?: string
           notes?: string | null
+          odometer_km?: number | null
           photo_path?: string | null
         }
         Relationships: []

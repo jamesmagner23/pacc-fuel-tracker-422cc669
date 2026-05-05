@@ -114,6 +114,7 @@ function FuelIntakeForm() {
   const [preview, setPreview] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [bowserPrice, setBowserPrice] = useState("");
+  const [odometerKm, setOdometerKm] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -165,6 +166,7 @@ function FuelIntakeForm() {
         litres_entered: parseFloat(litres),
         photo_path: photoPath,
         bowser_retail_price: bowserPrice ? parseFloat(bowserPrice) : null,
+        odometer_km: odometerKm ? parseFloat(odometerKm) : null,
         notes: notes || null,
       } as any);
       if (error) throw error;
@@ -177,6 +179,7 @@ function FuelIntakeForm() {
       setPreview(null);
       setNotes("");
       setBowserPrice("");
+      setOdometerKm("");
       queryClient.invalidateQueries({ queryKey: ["fuel-intake-today"] });
     },
     onError: (err: Error) => {
@@ -261,6 +264,19 @@ function FuelIntakeForm() {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="e.g. Ampol Dandenong"
+          className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
+        />
+      </div>
+
+      {/* Odometer (end of day km) */}
+      <div className="flex flex-col gap-1.5 mb-4">
+        <label className="text-xs text-muted-foreground">Odometer reading (km, end of day)</label>
+        <input
+          type="number"
+          inputMode="numeric"
+          value={odometerKm}
+          onChange={(e) => setOdometerKm(e.target.value)}
+          placeholder="e.g. 184320"
           className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
         />
       </div>
