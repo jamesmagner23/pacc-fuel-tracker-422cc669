@@ -513,6 +513,7 @@ function ProjectsTab({
   const [editing, setEditing] = useState<Partial<Project> | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const del = useDeleteProject();
+  const clearBackfill = useClearAutoBackfillForPlant();
 
   // Pull transaction-level overrides (from the Tag Deliveries page) so a
   // delivery tagged directly to a project counts even if its placa isn't on
@@ -768,6 +769,12 @@ function ProjectsTab({
                     return t.placa === e.placa;
                   });
                   const itemLitres = itemTxns.reduce((s: number, t: any) => s + (t.cantidad || 0), 0);
+                  // Count auto-backfilled overrides we can offer to clear
+                  const autoBackfillCount = (overrides as any[]).filter(
+                    (o: any) =>
+                      o.plant_item_id === e.enriched.id &&
+                      (o as any).notes === "Auto-tagged by placa match"
+                  ).length;
                   return (
                     <div key={e.enriched.id} className="rounded-lg border border-border bg-secondary/20 p-3">
                       <div className="font-medium text-sm truncate">{e.enriched.name || e.placa}</div>
@@ -779,12 +786,41 @@ function ProjectsTab({
                         <div className="text-base font-bold">{itemLitres.toLocaleString()}L</div>
                         <div className="text-[10px] text-muted-foreground">{itemTxns.length} fills</div>
                       </div>
+                      {autoBackfillCount > 0 && (
+                        <button
+                          type="button"
+                          disabled={clearBackfill.isPending}
+                          onClick={() => {
+                            if (
+                              confirm(
+                                `Clear ${autoBackfillCount} auto-tagged deliver${
+                                  autoBackfillCount === 1 ? "y" : "ies"
+                                } from "${e.enriched.name || e.placa}"? Manual tags are kept.`
+                              )
+                            ) {
+                              clearBackfill.mutate(e.enriched.id);
+                            }
+                          }}
+                          className="mt-2 w-full text-[10px] px-2 py-1 rounded border border-destructive/40 text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          Clear {autoBackfillCount} auto-tagged
+                        </button>
+                      )}
                     </div>
                   );
                 })}
               </div>
             )}
           </div>
+
+          {/* Daily/weekly trend + WoW/MoM per machine */}
+          {selectedTxns.length > 0 && (
+            <ProjectTrends
+              projectTxns={selectedTxns}
+              equipmentItems={selectedItems}
+              ovById={ovById}
+            />
+          )}
 
           {/* Recent deliveries on project */}
           <div>
