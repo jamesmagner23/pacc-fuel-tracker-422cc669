@@ -7,7 +7,7 @@ import { useAllTransactions } from "@/hooks/useTransactions";
 import { usePlantItems, useDeletePlantItem, type PlantItem } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments, useDeleteProject, type Project } from "@/hooks/useProjects";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
-import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
+import { useTransactionOverrides, useClearAutoBackfillForPlant } from "@/hooks/useTransactionOverrides";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { PlantItemModal } from "@/components/customer/PlantItemModal";
 import { ProjectModal } from "@/components/customer/ProjectModal";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { format, parseISO, subDays, startOfMonth, startOfYear } from "date-fns";
+import { format, parseISO, subDays, startOfMonth, startOfYear, startOfWeek, addDays, differenceInCalendarDays } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { SpeedSolValue } from "@/components/SpeedSolValue";
 
