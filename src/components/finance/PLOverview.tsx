@@ -239,9 +239,9 @@ export default function PLOverview() {
               style={{
                 color:
                   k.positive === false
-                    ? "#FF6B5E"
+                    ? "var(--negative)"
                     : k.positive === true
-                    ? "#C8F26A"
+                    ? "var(--positive)"
                     : "var(--text-primary)",
               }}
             >
@@ -251,7 +251,7 @@ export default function PLOverview() {
               {k.pct !== undefined && k.pct !== null && (
                 <span
                   className="text-[11px] flex items-center gap-1"
-                  style={{ color: k.pct >= 0 ? "#C8F26A" : "#FF6B5E" }}
+                  style={{ color: k.pct >= 0 ? "var(--positive)" : "var(--negative)" }}
                 >
                   {k.pct >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
                   {k.pct >= 0 ? "+" : ""}
@@ -344,7 +344,7 @@ export default function PLOverview() {
                   {pricedClients.slice(0, 10).map((c, i) => (
                     <Cell
                       key={i}
-                      fill={c.profit >= 0 ? "#C8F26A" : "#FF6B5E"}
+                      fill={c.profit >= 0 ? "var(--positive)" : "var(--negative)"}
                     />
                   ))}
                 </Bar>
@@ -353,7 +353,7 @@ export default function PLOverview() {
           </div>
           <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: "#C8F26A" }} /> Profitable
+              <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: "var(--positive)" }} /> Profitable
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-sm bg-destructive inline-block" /> Loss
@@ -406,13 +406,13 @@ export default function PLOverview() {
                     </td>
                     <td
                       className="py-2.5 text-right font-medium tabular-nums"
-                      style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.profit >= 0 ? "#C8F26A" : "#FF6B5E" }}
+                      style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.profit >= 0 ? "var(--positive)" : "var(--negative)" }}
                     >
                       {c.hasCustomPricing ? `$${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
                     </td>
                     <td
                       className="py-2.5 text-right tabular-nums"
-                      style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.margin >= 0 ? "#C8F26A" : "#FF6B5E" }}
+                      style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.margin >= 0 ? "var(--positive)" : "var(--negative)" }}
                     >
                       {c.hasCustomPricing ? `${c.margin.toFixed(1)}%` : "—"}
                     </td>
@@ -432,13 +432,13 @@ export default function PLOverview() {
                   </td>
                   <td
                     className="py-2.5 text-right tabular-nums"
-                    style={{ color: grossProfit >= 0 ? "#C8F26A" : "#FF6B5E" }}
+                    style={{ color: grossProfit >= 0 ? "var(--positive)" : "var(--negative)" }}
                   >
                     ${grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </td>
                   <td
                     className="py-2.5 text-right tabular-nums"
-                    style={{ color: grossMargin >= 0 ? "#C8F26A" : "#FF6B5E" }}
+                    style={{ color: grossMargin >= 0 ? "var(--positive)" : "var(--negative)" }}
                   >
                     {grossMargin.toFixed(1)}%
                   </td>
