@@ -314,14 +314,31 @@ function OverviewTab({ txns, equipment, projects, ftcRates }: { txns: any[]; equ
 /* ---------------- PROJECT TRENDS ---------------- */
 function ProjectTrends({
   projectTxns,
+  allTimeProjectTxns,
   equipmentItems,
   ovById,
+  periodStart,
+  periodEnd,
+  prevStart,
+  prevEnd,
+  periodLabel,
 }: {
   projectTxns: any[];
+  allTimeProjectTxns: any[];
   equipmentItems: any[];
   ovById: Record<number, any>;
+  periodStart: Date | null;
+  periodEnd: Date;
+  prevStart: Date | null;
+  prevEnd: Date | null;
+  periodLabel: string;
 }) {
-  const [granularity, setGranularity] = useState<"day" | "week">("day");
+  // Default trend granularity follows the period: short ranges → daily,
+  // long ranges → weekly. User can still override.
+  const periodDays = periodStart
+    ? Math.max(1, Math.round((periodEnd.getTime() - periodStart.getTime()) / 86_400_000))
+    : 365;
+  const [granularity, setGranularity] = useState<"day" | "week">(periodDays > 45 ? "week" : "day");
 
   // Time-series litres trend
   const series = useMemo(() => {
@@ -345,47 +362,44 @@ function ProjectTrends({
     return Object.values(buckets).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   }, [projectTxns, granularity]);
 
-  // Per-machine WoW + MoM
+  // Per-machine current-period vs prior-period-of-equal-length comparison.
+  // Driven by the global date range so the table always matches the rest
+  // of the app. When the user picks "All time", there's no prior period
+  // and we just show totals.
   const machineDeltas = useMemo(() => {
-    const now = new Date();
-    const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
-    const lastWeekStart = addDays(thisWeekStart, -7);
-    const thisMonthStart = startOfMonth(now);
-    const lastMonthStart = startOfMonth(addDays(thisMonthStart, -1));
-
-    const inRange = (d: Date, start: Date, end: Date) => d >= start && d < end;
+    const inRange = (d: Date, start: Date | null, end: Date | null) =>
+      !!start && !!end && d >= start && d < end;
 
     return equipmentItems
       .map((e: any) => {
         const itemId = e.enriched.id;
-        const itemTxns = projectTxns.filter((t: any) => {
+        const itemTxnsAll = allTimeProjectTxns.filter((t: any) => {
           const ov = ovById[t.id];
           if (ov?.plant_item_id) return ov.plant_item_id === itemId;
           return t.placa === e.placa;
         });
-        let thisWeek = 0, lastWeek = 0, thisMonth = 0, lastMonth = 0;
-        itemTxns.forEach((t: any) => {
+        let current = 0, previous = 0;
+        let totalLitres = 0;
+        itemTxnsAll.forEach((t: any) => {
           if (!t.fecha) return;
-          const d = parseISO(t.fecha);
           const litres = t.cantidad || 0;
-          if (inRange(d, thisWeekStart, addDays(thisWeekStart, 7))) thisWeek += litres;
-          if (inRange(d, lastWeekStart, thisWeekStart)) lastWeek += litres;
-          if (inRange(d, thisMonthStart, now)) thisMonth += litres;
-          if (inRange(d, lastMonthStart, thisMonthStart)) lastMonth += litres;
+          totalLitres += litres;
+          const d = parseISO(t.fecha);
+          if (periodStart && inRange(d, periodStart, periodEnd)) current += litres;
+          if (inRange(d, prevStart, prevEnd)) previous += litres;
         });
-        const wowDelta = thisWeek - lastWeek;
-        const momDelta = thisMonth - lastMonth;
         return {
           id: itemId,
           name: e.enriched.name || e.placa,
           placa: e.placa,
-          totalLitres: itemTxns.reduce((s: number, t: any) => s + (t.cantidad || 0), 0),
-          thisWeek, lastWeek, wowDelta,
-          thisMonth, lastMonth, momDelta,
+          totalLitres,
+          current,
+          previous,
+          delta: current - previous,
         };
       })
-      .sort((a, b) => b.totalLitres - a.totalLitres);
-  }, [equipmentItems, projectTxns, ovById]);
+      .sort((a, b) => (periodStart ? b.current - a.current : b.totalLitres - a.totalLitres));
+  }, [equipmentItems, allTimeProjectTxns, ovById, periodStart, periodEnd, prevStart, prevEnd]);
 
   const fmtDelta = (n: number) => {
     if (n === 0) return <span className="text-muted-foreground">±0L</span>;
@@ -397,12 +411,14 @@ function ProjectTrends({
     );
   };
 
+  const hasComparison = !!prevStart && !!prevEnd;
+
   return (
     <div className="space-y-4">
       <div>
         <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Litres trend
+            Litres trend · <span className="normal-case font-normal text-foreground/80">{periodLabel}</span>
           </h3>
           <div className="flex gap-1">
             {(["day", "week"] as const).map((g) => (
@@ -443,19 +459,19 @@ function ProjectTrends({
       {machineDeltas.length > 0 && (
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Machine comparison (week + month)
+            Machine comparison · <span className="normal-case font-normal text-foreground/80">{periodLabel}</span>
+            {hasComparison && (
+              <span className="normal-case font-normal text-muted-foreground"> vs prior period</span>
+            )}
           </h3>
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-xs">
               <thead className="bg-secondary/30">
                 <tr className="text-left text-muted-foreground">
                   <th className="py-2 px-2.5">Machine</th>
-                  <th className="py-2 px-2.5 text-right">This week</th>
-                  <th className="py-2 px-2.5 text-right">Last week</th>
-                  <th className="py-2 px-2.5 text-right">WoW</th>
-                  <th className="py-2 px-2.5 text-right">This month</th>
-                  <th className="py-2 px-2.5 text-right">Last month</th>
-                  <th className="py-2 px-2.5 text-right">MoM</th>
+                  <th className="py-2 px-2.5 text-right">{hasComparison ? "This period" : "Litres"}</th>
+                  {hasComparison && <th className="py-2 px-2.5 text-right">Prior period</th>}
+                  {hasComparison && <th className="py-2 px-2.5 text-right">Δ</th>}
                 </tr>
               </thead>
               <tbody>
@@ -465,12 +481,17 @@ function ProjectTrends({
                       <div className="font-medium truncate">{m.name}</div>
                       {m.placa && <div className="text-[10px] text-muted-foreground">{m.placa}</div>}
                     </td>
-                    <td className="py-2 px-2.5 text-right tabular-nums">{m.thisWeek.toLocaleString()}L</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums text-muted-foreground">{m.lastWeek.toLocaleString()}L</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums">{fmtDelta(m.wowDelta)}</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums">{m.thisMonth.toLocaleString()}L</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums text-muted-foreground">{m.lastMonth.toLocaleString()}L</td>
-                    <td className="py-2 px-2.5 text-right tabular-nums">{fmtDelta(m.momDelta)}</td>
+                    <td className="py-2 px-2.5 text-right tabular-nums">
+                      {(hasComparison ? m.current : m.totalLitres).toLocaleString()}L
+                    </td>
+                    {hasComparison && (
+                      <td className="py-2 px-2.5 text-right tabular-nums text-muted-foreground">
+                        {m.previous.toLocaleString()}L
+                      </td>
+                    )}
+                    {hasComparison && (
+                      <td className="py-2 px-2.5 text-right tabular-nums">{fmtDelta(m.delta)}</td>
+                    )}
                   </tr>
                 ))}
               </tbody>
