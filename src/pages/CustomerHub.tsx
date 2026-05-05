@@ -797,6 +797,19 @@ function ProjectsTab({
     );
   };
 
+  const getProjectTxnsAllTime = (projectId: string) => {
+    const m = projectMembership[projectId] || { itemIds: new Set(), placas: new Set() };
+    return txns.filter((t: any) => {
+      const ov = ovById[t.id];
+      if (ov) {
+        if (ov.project_id) return ov.project_id === projectId;
+        if (ov.plant_item_id) return m.itemIds.has(ov.plant_item_id);
+        return false;
+      }
+      return t.placa && m.placas.has(t.placa);
+    });
+  };
+
   const projectStats = (projectId: string) => {
     const m = projectMembership[projectId] || { itemIds: new Set(), placas: new Set() };
     const projectTxns = getProjectTxns(projectId);
