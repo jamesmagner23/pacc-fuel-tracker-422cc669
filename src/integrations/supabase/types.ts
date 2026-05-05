@@ -1779,6 +1779,10 @@ export type Database = {
         Args: { _plant_item_id: string }
         Returns: Json
       }
+      clear_auto_backfill_for_plant: {
+        Args: { _plant_item_id: string }
+        Returns: number
+      }
       get_client_company_name: { Args: { _user_id: string }; Returns: string }
       get_last_sync_status: {
         Args: never
@@ -1807,6 +1811,15 @@ export type Database = {
       }
       preview_tag_transaction: {
         Args: { _plant_item_id: string; _transaction_id: number }
+        Returns: Json
+      }
+      tag_transaction_single: {
+        Args: {
+          _notes?: string
+          _plant_item_id: string
+          _project_id: string
+          _transaction_id: number
+        }
         Returns: Json
       }
       tag_transaction_with_feedback: {
