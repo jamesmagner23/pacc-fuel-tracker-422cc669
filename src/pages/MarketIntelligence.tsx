@@ -33,22 +33,22 @@ const SEED_DATA = {
 
 const MONTHS = [
   {
-    label: "APR 2026", status: "NOW", color: "#F5C25B", signal: "CAUTION",
+    label: "APR 2026", status: "NOW", color: "var(--warning)", signal: "CAUTION",
     headline: "Excise cut active. TGP down ~32¢ but import cost still elevated. New truck timing ideal — demand surging.",
     actions: ["Update FTC claim to 26.3¢/L", "Lock in customers at current margin", "Monitor AIP TGP daily"],
   },
   {
-    label: "MAY 2026", status: "DANGER", color: "#FF6B5E", signal: "HIGH RISK",
+    label: "MAY 2026", status: "DANGER", color: "var(--negative)", signal: "HIGH RISK",
     headline: "Lowest inbound gasoil month. Gulf of Mexico ships arrive but at premium cost. Localised shortages likely.",
     actions: ["Expect supply allocation pressure", "Prioritise contracted customers", "Watch May budget for excise extension"],
   },
   {
-    label: "JUN 2026", status: "WATCH", color: "#F5C25B", signal: "WATCH",
+    label: "JUN 2026", status: "WATCH", color: "var(--warning)", signal: "WATCH",
     headline: "Supply stabilising if Hormuz reopens. May federal budget likely decides excise extension.",
     actions: ["Model July 1 reversion into all contracts", "Secure supply agreements pre-July", "Review fuel surcharge clauses"],
   },
   {
-    label: "JUL 2026", status: "CLIFF", color: "#FF6B5E", signal: "CLIFF",
+    label: "JUL 2026", status: "CLIFF", color: "var(--negative)", signal: "CLIFF",
     headline: `Excise reverts to 52.6¢/L. RUC reinstates. TGP could spike 26–32¢ overnight. ${daysToJuly} days away.`,
     actions: ["Ensure all contracts have price escalation clauses", "Rebuild FTC to 20.2¢/L", "Brief customers on price movement"],
   },
@@ -104,9 +104,9 @@ function fmtDate(d: Date) {
 
 function statusColor(status: string) {
   const map: Record<string, string> = {
-    BLOCKED: "#FF6B5E", RESTRICTED: "#FF6B5E", HIGH: "#FF6B5E",
-    REDUCED: "#F5C25B", DIVERTED: "#F5C25B", MODERATE: "#F5C25B", WATCH: "#F5C25B",
-    SECURED: "#C8F26A", OPERATING: "#C8F26A", ACTIVE: "#C8F26A",
+    BLOCKED: "var(--negative)", RESTRICTED: "var(--negative)", HIGH: "var(--negative)",
+    REDUCED: "var(--warning)", DIVERTED: "var(--warning)", MODERATE: "var(--warning)", WATCH: "var(--warning)",
+    SECURED: "var(--positive)", OPERATING: "var(--positive)", ACTIVE: "var(--positive)",
   };
   return map[status] || "var(--text-muted)";
 }
@@ -438,7 +438,7 @@ export default function MarketIntelligence() {
               const up = k.change !== null && k.change !== undefined && k.change > 0;
               const changeColor = k.change === null || k.change === undefined
                 ? undefined
-                : (up === k.isGood ? "#C8F26A" : "#FF6B5E");
+                : (up === k.isGood ? "var(--positive)" : "var(--negative)");
               return (
                 <div
                   key={k.label}
@@ -466,9 +466,9 @@ export default function MarketIntelligence() {
 
           {/* Alert banners — matches PLOverview amber warning */}
           {[
-            { color: "#FF6B5E", icon: "⚠", text: "HORMUZ RESTRICTED — Gasoil inflows to Australia tracking -1.47M bbl vs January. April/May critical months." },
-            { color: "#F5C25B", icon: "⏱", text: `EXCISE CLIFF IN ${daysToJuly} DAYS — Diesel TGP to spike +26–32¢/L on July 1 if not extended. All contracts must include escalation clauses.` },
-            { color: "#C8F26A", icon: "✓", text: "NEW TRUCK TIMING OPTIMAL — Mobile delivery demand at historic high as retail stations report shortages. Market conditions favour your expansion." },
+            { color: "var(--negative)", icon: "⚠", text: "HORMUZ RESTRICTED — Gasoil inflows to Australia tracking -1.47M bbl vs January. April/May critical months." },
+            { color: "var(--warning)", icon: "⏱", text: `EXCISE CLIFF IN ${daysToJuly} DAYS — Diesel TGP to spike +26–32¢/L on July 1 if not extended. All contracts must include escalation clauses.` },
+            { color: "var(--positive)", icon: "✓", text: "NEW TRUCK TIMING OPTIMAL — Mobile delivery demand at historic high as retail stations report shortages. Market conditions favour your expansion." },
           ].map((a, i) => (
             <div key={i} className="bg-surface border rounded-[10px] p-4 flex items-start gap-3" style={{ borderColor: `${a.color}33` }}>
               <div className="text-lg mt-0.5" style={{ color: a.color }}>{a.icon}</div>
@@ -487,12 +487,12 @@ export default function MarketIntelligence() {
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} interval={Math.floor(BUY_PRICE_TREND.length / 8)} />
                   <YAxis tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]} />
-                  <ReferenceLine x={BUY_PRICE_TREND.find(d => d.isForecast)?.date} stroke="#FF6B5E" strokeDasharray="4 4" strokeWidth={1} label={{ value: "EXCISE REVERTS", position: "top", fontSize: 9, fill: "#FF6B5E" }} />
+                  <ReferenceLine x={BUY_PRICE_TREND.find(d => d.isForecast)?.date} stroke="var(--negative)" strokeDasharray="4 4" strokeWidth={1} label={{ value: "EXCISE REVERTS", position: "top", fontSize: 9, fill: "var(--negative)" }} />
                   {/* Actual line */}
                   <Line
                     type="monotone"
                     dataKey={(d: any) => d.isForecast ? null : d.price}
-                    stroke="#C8F26A"
+                    stroke="var(--positive)"
                     strokeWidth={2}
                     dot={false}
                     name="Actual"
@@ -529,7 +529,7 @@ export default function MarketIntelligence() {
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} interval={Math.floor(BRENT_90_DAY.length / 6)} />
                   <YAxis tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} domain={["auto", "auto"]} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(1)} USD/BBL`, "Brent"]} />
-                  <ReferenceLine x={BRENT_90_DAY.find(d => d.rawDate >= "2026-02-28")?.date} stroke="#FF6B5E" strokeDasharray="4 4" strokeWidth={1} label={{ value: "CONFLICT START", position: "top", fontSize: 9, fill: "#FF6B5E" }} />
+                  <ReferenceLine x={BRENT_90_DAY.find(d => d.rawDate >= "2026-02-28")?.date} stroke="var(--negative)" strokeDasharray="4 4" strokeWidth={1} label={{ value: "CONFLICT START", position: "top", fontSize: 9, fill: "var(--negative)" }} />
                   <Line type="monotone" dataKey="price" stroke="var(--accent)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
@@ -545,7 +545,7 @@ export default function MarketIntelligence() {
               { label: "Diesel", days: data.dieselReservesDays },
               { label: "Petrol", days: data.petrolReservesDays },
             ].map(r => {
-              const color = r.days < 20 ? "#FF6B5E" : r.days < 30 ? "#F5C25B" : "#C8F26A";
+              const color = r.days < 20 ? "var(--negative)" : r.days < 30 ? "var(--warning)" : "var(--positive)";
               return (
                 <div key={r.label} className="mb-3">
                   <div className="flex justify-between mb-1">
@@ -569,7 +569,7 @@ export default function MarketIntelligence() {
               Supply Route Disruption Risk
             </div>
             {SUPPLY_CHAIN.map(r => {
-              const color = r.risk > 70 ? "#FF6B5E" : r.risk > 40 ? "#F5C25B" : "#C8F26A";
+              const color = r.risk > 70 ? "var(--negative)" : r.risk > 40 ? "var(--warning)" : "var(--positive)";
               return (
                 <div key={r.leg} className="mb-2.5">
                   <div className="flex justify-between mb-1">
@@ -622,10 +622,10 @@ export default function MarketIntelligence() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { from: "Singapore", days: "10–14 days", cost: "NORMAL", status: "SECURED", color: "#C8F26A" },
-                { from: "South Korea", days: "12–16 days", cost: "+15%", status: "REDUCED", color: "#F5C25B" },
-                { from: "India", days: "14–18 days", cost: "+20%", status: "REDUCED", color: "#F5C25B" },
-                { from: "Gulf of Mexico", days: "30–42 days", cost: "+60-80%", status: "ACTIVE (PREMIUM)", color: "#FF6B5E" },
+                { from: "Singapore", days: "10–14 days", cost: "NORMAL", status: "SECURED", color: "var(--positive)" },
+                { from: "South Korea", days: "12–16 days", cost: "+15%", status: "REDUCED", color: "var(--warning)" },
+                { from: "India", days: "14–18 days", cost: "+20%", status: "REDUCED", color: "var(--warning)" },
+                { from: "Gulf of Mexico", days: "30–42 days", cost: "+60-80%", status: "ACTIVE (PREMIUM)", color: "var(--negative)" },
               ].map((r, i) => (
                 <div key={i} className="bg-surface-raised rounded-[10px] p-3" style={{ borderLeft: `3px solid ${r.color}` }}>
                   <div className="text-[12px] font-semibold text-foreground">{r.from}</div>
@@ -747,7 +747,7 @@ export default function MarketIntelligence() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               {
-                title: "FUEL TAX CREDIT — UPDATE REQUIRED", color: "#C8F26A",
+                title: "FUEL TAX CREDIT — UPDATE REQUIRED", color: "var(--positive)",
                 items: [
                   { label: "FTC Rate (was)", value: "20.2¢/L", note: "on-road heavy vehicles" },
                   { label: "FTC Rate (NOW)", value: "26.3¢/L", note: "effective 1 Apr – 30 Jun 2026", highlight: true },
@@ -757,7 +757,7 @@ export default function MarketIntelligence() {
                 ],
               },
               {
-                title: "NEW TRUCK — MARKET TIMING", color: "#F5C25B",
+                title: "NEW TRUCK — MARKET TIMING", color: "var(--warning)",
                 items: [
                   { label: "Retail station shortages (VIC)", value: "~10%", note: "of outlets reporting outages" },
                   { label: "Demand spike vs normal", value: "+40-50%", note: "March peak, stabilising now" },
@@ -799,7 +799,7 @@ export default function MarketIntelligence() {
               { done: false, item: "Build cash buffer for July 1 working capital spike (higher upfront TGP costs)" },
             ].map((c, i) => (
               <div key={i} className="flex gap-2.5 py-2 text-[12px] items-start border-b border-surface-border/50" style={{
-                color: c.done ? "#C8F26A" : "var(--text-secondary)",
+                color: c.done ? "var(--positive)" : "var(--text-secondary)",
               }}>
                 <span className="font-bold w-4 shrink-0">{c.done ? "✓" : "○"}</span>
                 <span style={{ textDecoration: c.done ? "line-through" : undefined, opacity: c.done ? 0.6 : 1 }}>{c.item}</span>

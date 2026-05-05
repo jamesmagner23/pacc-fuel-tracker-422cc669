@@ -145,7 +145,7 @@ function ClientSiteCard({ site }: { site: DBSite }) {
           {site.notes.length > 0 && (
             <div className="mt-3 p-2.5 rounded-lg" style={{ background: "rgba(217,119,6,0.1)", border: "1px solid rgba(217,119,6,0.2)" }}>
               {site.notes.map((note, i) => (
-                <p key={i} className="text-[11px] mb-1 last:mb-0" style={{ color: "#F5C25B" }}>⚠ {note}</p>
+                <p key={i} className="text-[11px] mb-1 last:mb-0" style={{ color: "var(--warning)" }}>⚠ {note}</p>
               ))}
             </div>
           )}

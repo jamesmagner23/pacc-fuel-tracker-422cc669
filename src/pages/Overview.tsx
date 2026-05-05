@@ -9,6 +9,7 @@ import { useTransactions, usePreviousTransactions } from "@/hooks/useTransaction
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO } from "date-fns";
 import { Droplets, TrendingUp, TrendingDown, Clock, Truck, MapPin, Fuel } from "lucide-react";
+import { useChartPalette } from "@/lib/chartPalette";
 
 /** Read a CSS variable at render time so charts pick up theme overrides */
 function cssVar(name: string, fallback = ""): string {
@@ -32,9 +33,8 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
   const [showPct, setShowPct] = useState(false);
   const total = topCustomers.reduce((s, x) => s + x.litres, 0);
   const tc = useThemeColors();
-
-  // Brand-aligned palette: orange spectrum + cream tones for the dark warm-brown theme
-  const PIE_COLORS = ["#C8F26A", "#C8F26A", "#ECE4D2", "#C7BFAC", "#3F6B36", "#8B8773"];
+  const palette = useChartPalette();
+  const PIE_COLORS = palette.categorical;
 
   return (
     <div style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12, padding: "20px 24px" }}>
@@ -278,7 +278,7 @@ export default function Overview() {
                     itemStyle={{ color: tc.textPrimary }}
                     formatter={(v: number) => [`$${v.toFixed(2)}/L`, "Price"]}
                   />
-                  <Line type="monotone" dataKey="price" stroke="#C8F26A" strokeWidth={2} dot={{ r: 3, fill: "#C8F26A" }} />
+                  <Line type="monotone" dataKey="price" stroke={tc.accent} strokeWidth={2} dot={{ r: 3, fill: tc.accent }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (

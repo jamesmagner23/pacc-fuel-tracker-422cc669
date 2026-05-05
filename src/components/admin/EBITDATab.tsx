@@ -6,6 +6,7 @@ import RecurringExpensesPanel from "./RecurringExpensesPanel";
 import { subDays, parseISO, format, startOfMonth, endOfMonth, differenceInCalendarDays, eachDayOfInterval } from "date-fns";
 import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, ReferenceLine, AreaChart, Area } from "recharts";
 import { Wallet, CalendarClock } from "lucide-react";
+import { useChartPalette } from "@/lib/chartPalette";
 
 type Period = "30d" | "90d" | "ytd" | "12m";
 
@@ -179,8 +180,9 @@ export default function EBITDATab() {
 
   const handleRecurringTotal = useCallback((total: number) => setRecurringPeriodTotal(total), []);
 
-  const accent = "var(--accent)";
-  const muted = "var(--text-secondary)";
+  const palette = useChartPalette();
+  const accent = palette.primary;
+  const muted = palette.textMuted;
 
   if (isLoading) return <div className="text-muted-foreground py-12 text-center">Loading…</div>;
 
@@ -252,9 +254,9 @@ export default function EBITDATab() {
                 <ReferenceLine y={0} stroke="var(--surface-border)" />
                 {/* Revenue alongside stacked costs for easy comparison */}
                 <Bar dataKey="revenue" name="Revenue" fill={accent} radius={[3, 3, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="cogs" name="COGS (Fuel)" stackId="cost" fill="#3F6B36" radius={[0, 0, 0, 0]} maxBarSize={28} />
-                <Bar dataKey="opex" name="OpEx" stackId="cost" fill="#1B3520" stroke="#3F6B36" strokeWidth={1} radius={[3, 3, 0, 0]} maxBarSize={28} />
-                <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke="#C8F26A" strokeWidth={2.5} dot={{ r: 3, fill: "#C8F26A" }} />
+                <Bar dataKey="cogs" name="COGS (Fuel)" stackId="cost" fill={palette.secondary} radius={[0, 0, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="opex" name="OpEx" stackId="cost" fill={palette.tertiary} stroke={palette.secondary} strokeWidth={1} radius={[3, 3, 0, 0]} maxBarSize={28} />
+                <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke={palette.positive} strokeWidth={2.5} dot={{ r: 3, fill: palette.positive }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -314,7 +316,7 @@ export default function EBITDATab() {
                 />
                 <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
                 <Area type="monotone" dataKey="repayment" name="Daily repayment" stroke={accent} strokeWidth={2} fill="url(#repayFill)" />
-                <Line type="monotone" dataKey="rolling" name="7-day rolling avg" stroke="#C8F26A" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="rolling" name="7-day rolling avg" stroke={palette.positive} strokeWidth={2} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -396,9 +398,9 @@ export default function EBITDATab() {
                     type="stepAfter"
                     dataKey="actual"
                     name="Actual due (cash hits)"
-                    stroke="#C8F26A"
+                    stroke={palette.positive}
                     strokeWidth={2}
-                    dot={{ r: 2, fill: "#C8F26A" }}
+                    dot={{ r: 2, fill: palette.positive }}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
