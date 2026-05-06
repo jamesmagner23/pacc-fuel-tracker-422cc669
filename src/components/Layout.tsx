@@ -45,7 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // Email outreach demo: only expose Client Portal in the sidebar
   const visibleNavItems = isEmailPortalDemo
     ? navItems.filter(item => item.to === "/portal")
-    : visibleNavItems;
+    : navItems.filter(item => !item.demoOnly || isDemo);
 
   // PACC-branded demo keeps the production palette
   const useDemoPalette = isDemo && !isPaccBranded;
