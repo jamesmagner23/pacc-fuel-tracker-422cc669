@@ -45,7 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // Email outreach demo: only expose Client Portal in the sidebar
   const visibleNavItems = isEmailPortalDemo
     ? navItems.filter(item => item.to === "/portal")
-    : navItems.filter(item => !item.demoOnly || isDemo);
+    : visibleNavItems;
 
   // PACC-branded demo keeps the production palette
   const useDemoPalette = isDemo && !isPaccBranded;
@@ -84,7 +84,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 16px" }}>
-          {navItems.filter(item => !item.demoOnly || isDemo).map((item, i) => {
+          {visibleNavItems.map((item, i) => {
             const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
             return (
               <RouterNavLink
@@ -198,7 +198,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-            {navItems.filter(item => !item.demoOnly || isDemo).map((item, i) => {
+            {visibleNavItems.map((item, i) => {
               const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
               return (
                 <RouterNavLink
