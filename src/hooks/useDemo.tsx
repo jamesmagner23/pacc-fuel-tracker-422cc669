@@ -132,8 +132,8 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   }, [isDemo, isPaccBranded, accentColor, hexColor]);
 
   const value = useMemo(
-    () => ({ isDemo, brand, accentColor: accentColor || hexColor, isPaccBranded }),
-    [isDemo, brand, accentColor, hexColor, isPaccBranded]
+    () => ({ isDemo, brand, accentColor: accentColor || hexColor, isPaccBranded, isEmailPortalDemo }),
+    [isDemo, brand, accentColor, hexColor, isPaccBranded, isEmailPortalDemo]
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
