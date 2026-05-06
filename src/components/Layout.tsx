@@ -38,9 +38,14 @@ const DEMO_TEXT_ACTIVE = "#e8eaf0";
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isDemo, accentColor, isPaccBranded } = useDemoContext();
+  const { isDemo, accentColor, isPaccBranded, isEmailPortalDemo } = useDemoContext();
   const [params] = useSearchParams();
   const bannerOffset = 0;
+
+  // Email outreach demo: only expose Client Portal in the sidebar
+  const visibleNavItems = isEmailPortalDemo
+    ? navItems.filter(item => item.to === "/portal")
+    : navItems.filter(item => !item.demoOnly || isDemo);
 
   // PACC-branded demo keeps the production palette
   const useDemoPalette = isDemo && !isPaccBranded;
@@ -79,7 +84,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 16px" }}>
-          {navItems.filter(item => !item.demoOnly || isDemo).map((item, i) => {
+          {visibleNavItems.map((item, i) => {
             const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
             return (
               <RouterNavLink
@@ -193,7 +198,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-            {navItems.filter(item => !item.demoOnly || isDemo).map((item, i) => {
+            {visibleNavItems.map((item, i) => {
               const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
               return (
                 <RouterNavLink

@@ -7,9 +7,11 @@ interface DemoContextValue {
   accentColor: string | null;
   /** True when demo is launched with brand=pacc — keeps PACC visual identity */
   isPaccBranded: boolean;
+  /** True when the demo session originated from an outreach email link */
+  isEmailPortalDemo: boolean;
 }
 
-const DemoContext = createContext<DemoContextValue>({ isDemo: false, brand: null, accentColor: null, isPaccBranded: false });
+const DemoContext = createContext<DemoContextValue>({ isDemo: false, brand: null, accentColor: null, isPaccBranded: false, isEmailPortalDemo: false });
 
 /** Map friendly color names to HSL values */
 const COLOR_PRESETS: Record<string, string> = {
@@ -130,8 +132,8 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   }, [isDemo, isPaccBranded, accentColor, hexColor]);
 
   const value = useMemo(
-    () => ({ isDemo, brand, accentColor: accentColor || hexColor, isPaccBranded }),
-    [isDemo, brand, accentColor, hexColor, isPaccBranded]
+    () => ({ isDemo, brand, accentColor: accentColor || hexColor, isPaccBranded, isEmailPortalDemo }),
+    [isDemo, brand, accentColor, hexColor, isPaccBranded, isEmailPortalDemo]
   );
 
   return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
