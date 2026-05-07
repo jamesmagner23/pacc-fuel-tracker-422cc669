@@ -1,162 +1,147 @@
-import { useState, useCallback, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-async function dispatch(action: string, payload?: Record<string, unknown>) {
-  const { data, error } = await supabase.functions.invoke("dispatch", {
-    body: { action, payload },
-  });
-  if (error) throw new Error(error.message);
-  if (!data?.success) throw new Error(data?.error ?? "Dispatch failed");
-  return data.data;
+export interface DispatchStop {
+  id: string;
+  scheduled_date: string;
+  client_account_id: number;
+  project_id: string | null;
+  truck_id: string | null;
+  driver_user_id: string | null;
+  site_name: string;
+  address: string | null;
+  estimated_litres: number | null;
+  delivered_litres: number | null;
+  sequence: number;
+  status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  notes: string | null;
+  recurring_id: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-export function useSchedule(date?: string) {
+export interface DispatchRecurring {
+  id: string;
+  client_account_id: number;
+  project_id: string | null;
+  truck_id: string | null;
+  site_name: string;
+  address: string | null;
+  estimated_litres: number | null;
+  notes: string | null;
+  frequency: "daily" | "weekly" | "weekdays";
+  weekdays: number[];
+  start_date: string;
+  end_date: string | null;
+  is_active: boolean;
+}
+
+export function useDispatchStops(date?: string, truckId?: string | null) {
   return useQuery({
-    queryKey: ["dispatch-schedule", date],
-    queryFn: () => dispatch("get_schedule", { date }),
-    refetchInterval: 60000,
-    staleTime: 55000,
+    queryKey: ["dispatch-stops", date, truckId ?? "all"],
+    queryFn: async () => {
+      let q = supabase
+        .from("dispatch_stops" as any)
+        .select("*")
+        .order("sequence", { ascending: true });
+      if (date) q = q.eq("scheduled_date", date);
+      if (truckId) q = q.eq("truck_id", truckId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data || []) as unknown as DispatchStop[];
+    },
+    refetchInterval: 30000,
   });
 }
 
-export function useLocations(date?: string) {
+export function useUpsertStop() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (s: Partial<DispatchStop> & { scheduled_date: string; client_account_id: number; site_name: string }) => {
+      const payload: any = { ...s };
+      const { data, error } = await supabase
+        .from("dispatch_stops" as any)
+        .upsert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as unknown as DispatchStop;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-stops"] }),
+  });
+}
+
+export function useDeleteStop() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("dispatch_stops" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-stops"] }),
+  });
+}
+
+export function useReorderDispatchStops() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (orders: { id: string; sequence: number }[]) => {
+      // bulk update sequences
+      await Promise.all(
+        orders.map((o) =>
+          supabase
+            .from("dispatch_stops" as any)
+            .update({ sequence: o.sequence })
+            .eq("id", o.id)
+        )
+      );
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-stops"] }),
+  });
+}
+
+export function useUpdateStopStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status, delivered_litres }: { id: string; status: DispatchStop["status"]; delivered_litres?: number }) => {
+      const patch: any = { status };
+      if (status === "completed") patch.completed_at = new Date().toISOString();
+      if (delivered_litres !== undefined) patch.delivered_litres = delivered_litres;
+      const { error } = await supabase.from("dispatch_stops" as any).update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-stops"] }),
+  });
+}
+
+export function useUpsertRecurring() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (r: Partial<DispatchRecurring> & { client_account_id: number; site_name: string; frequency: DispatchRecurring["frequency"] }) => {
+      const { data, error } = await supabase
+        .from("dispatch_recurring" as any)
+        .upsert(r as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as unknown as DispatchRecurring;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["dispatch-recurring"] }),
+  });
+}
+
+export function useRecurring() {
   return useQuery({
-    queryKey: ["dispatch-locations", date],
-    queryFn: () => dispatch("get_locations", { date }),
-    staleTime: 300000,
-  });
-}
-
-/**
- * Polls OptimoRoute planning status until finished, then refreshes the schedule.
- * Returns { isPlanning, planningProgress, startPolling }.
- */
-export function usePlanningStatus() {
-  const qc = useQueryClient();
-  const [isPlanning, setIsPlanning] = useState(false);
-  const [planningProgress, setPlanningProgress] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const stopPolling = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
-
-  const startPolling = useCallback(
-    (planningId: number) => {
-      stopPolling();
-      setIsPlanning(true);
-      setPlanningProgress(0);
-
-      // Poll every 1.5s
-      intervalRef.current = setInterval(async () => {
-        try {
-          const result = await dispatch("get_planning_status", { planningId });
-          const pct = result?.percentageComplete ?? 0;
-          const status = result?.status; // N=New, R=Running, F=Finished, C=Cancelled, E=Error
-
-          setPlanningProgress(pct);
-
-          if (status === "F" || status === "C" || status === "E" || pct >= 100) {
-            stopPolling();
-            setIsPlanning(false);
-            setPlanningProgress(100);
-
-            // Refresh schedule after planning completes
-            await qc.invalidateQueries({ queryKey: ["dispatch-schedule"] });
-            await qc.invalidateQueries({ queryKey: ["dispatch-locations"] });
-          }
-        } catch {
-          // On error, stop polling and refresh anyway
-          stopPolling();
-          setIsPlanning(false);
-          qc.invalidateQueries({ queryKey: ["dispatch-schedule"] });
-        }
-      }, 1500);
-
-      // Safety timeout: stop after 60s regardless
-      timeoutRef.current = setTimeout(() => {
-        stopPolling();
-        setIsPlanning(false);
-        qc.invalidateQueries({ queryKey: ["dispatch-schedule"] });
-      }, 60000);
-    },
-    [qc, stopPolling]
-  );
-
-  // Cleanup on unmount
-  useEffect(() => stopPolling, [stopPolling]);
-
-  return { isPlanning, planningProgress, startPolling };
-}
-
-export function useCreateOrder() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (order: Record<string, unknown>) =>
-      dispatch("create_order", { order }),
-    onSuccess: async (data) => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
-        qc.invalidateQueries({ queryKey: ["dispatch-locations"] }),
-      ]);
-
-      // Return planningId so the caller can start polling
-      return data;
-    },
-  });
-}
-
-export function useOptimise() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (date?: string) => dispatch("optimise", { date }),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["dispatch-schedule"] });
-    },
-  });
-}
-
-export function useReorderStops() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (orders: Record<string, unknown>[]) =>
-      dispatch("reorder_stops", { orders }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["dispatch-schedule"] });
-    },
-  });
-}
-
-export function useDeleteOrder() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ orderNos, date }: { orderNos: string[]; date?: string }) => {
-      const result = await dispatch("delete_order", { orderNos, date });
-      const hasSuccessfulDeletion = Array.isArray(result?.results)
-        ? result.results.some((entry: { success?: boolean }) => entry?.success !== false)
-        : false;
-      const firstError = Array.isArray(result?.errors) ? result.errors[0] : null;
-
-      if (!hasSuccessfulDeletion && firstError) {
-        throw new Error(firstError);
-      }
-
-      return result;
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["dispatch-schedule"] }),
-        qc.invalidateQueries({ queryKey: ["dispatch-locations"] }),
-      ]);
+    queryKey: ["dispatch-recurring"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dispatch_recurring" as any)
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as DispatchRecurring[];
     },
   });
 }

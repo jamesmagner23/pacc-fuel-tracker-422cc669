@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, Truck, FolderKanban, Download, Printer, FileText, Search } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Truck, FolderKanban, Download, Printer, FileText, Search, Send } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllTransactions } from "@/hooks/useTransactions";
@@ -26,6 +26,7 @@ import { format, parseISO, subDays, startOfMonth, startOfYear, startOfWeek } fro
 import { toast } from "@/hooks/use-toast";
 import { SpeedSolValue } from "@/components/SpeedSolValue";
 import { useDateRange } from "@/hooks/useDateRange";
+import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
 
 export default function CustomerHub() {
   const { name } = useParams<{ name: string }>();
@@ -109,6 +110,25 @@ export default function CustomerHub() {
   }
 
   return (
+    <CustomerHubInner
+      customerName={customerName}
+      account={account}
+      clientAccountId={clientAccountId}
+      customerTxns={customerTxns}
+      plantItems={plantItems}
+      projects={projects}
+      assignments={assignments}
+      ftcRates={ftcRates}
+      overrides={overrides}
+      equipmentList={equipmentList}
+      navigate={navigate}
+    />
+  );
+}
+
+function CustomerHubInner({ customerName, account, clientAccountId, customerTxns, plantItems, projects, assignments, ftcRates, overrides, equipmentList, navigate }: any) {
+  const [dispatchOpen, setDispatchOpen] = useState(false);
+  return (
     <div className="space-y-5 max-w-[1200px]">
       <button
         onClick={() => navigate("/customers")}
@@ -117,8 +137,9 @@ export default function CustomerHub() {
         <ArrowLeft className="w-4 h-4" /> Back to Customers
       </button>
 
-      <div>
-        <h1 className="text-2xl font-bold">{customerName}</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{customerName}</h1>
         {account && (
           <p className="text-xs text-muted-foreground mt-1">
             {account.contact_name && <>{account.contact_name} · </>}
@@ -131,7 +152,22 @@ export default function CustomerHub() {
             No client account linked yet. Link this Fuel System name in Customers → Client Pricing to enable equipment & projects.
           </p>
         )}
+        </div>
+        {clientAccountId && (
+          <Button size="sm" onClick={() => setDispatchOpen(true)} className="gap-1.5 shrink-0">
+            <Send className="w-3.5 h-3.5" /> Add to Dispatch
+          </Button>
+        )}
       </div>
+
+      {clientAccountId && (
+        <AddToDispatchDialog
+          open={dispatchOpen}
+          onOpenChange={setDispatchOpen}
+          clientAccountId={clientAccountId}
+          clientName={customerName}
+        />
+      )}
 
       <Tabs defaultValue="overview">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
@@ -714,6 +750,7 @@ function ProjectsTab({
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Project> | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [dispatchProject, setDispatchProject] = useState<Project | null>(null);
   const del = useDeleteProject();
   const clearBackfill = useClearAutoBackfillForPlant();
   const { range: globalRange } = useDateRange();
@@ -883,11 +920,8 @@ function ProjectsTab({
           {projects.map((p) => {
             const s = projectStats(p.id);
             return (
-              <button
-                key={p.id}
-                onClick={() => setSelected(p.id)}
-                className="glass-card p-4 text-left hover:border-primary/40 hover:bg-surface-raised/40 transition-colors"
-              >
+              <div key={p.id} className="glass-card p-4 hover:border-primary/40 hover:bg-surface-raised/40 transition-colors relative group">
+                <button onClick={() => setSelected(p.id)} className="text-left w-full bg-transparent border-0 p-0 cursor-pointer">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-sm truncate">{p.name}</div>
@@ -909,13 +943,33 @@ function ProjectsTab({
                     <div className="text-[9px] text-muted-foreground uppercase">Drops</div>
                   </div>
                 </div>
-              </button>
+                </button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full mt-3 h-7 text-[11px] gap-1"
+                  onClick={(e) => { e.stopPropagation(); setDispatchProject(p); }}
+                >
+                  <Plus className="w-3 h-3" /> Add to Dispatch
+                </Button>
+              </div>
             );
           })}
         </div>
       )}
 
       <ProjectModal open={modalOpen} onOpenChange={setModalOpen} clientAccountId={clientAccountId} initial={editing} />
+
+      {dispatchProject && clientAccountId && (
+        <AddToDispatchDialog
+          open={true}
+          onOpenChange={(v) => { if (!v) setDispatchProject(null); }}
+          clientAccountId={clientAccountId}
+          projectId={dispatchProject.id}
+          defaultSiteName={dispatchProject.name}
+          defaultAddress={dispatchProject.site_address || undefined}
+        />
+      )}
 
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
