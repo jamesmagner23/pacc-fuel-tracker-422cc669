@@ -1,15 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Save, X, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions } from "@/hooks/useTransactions";
 import { format, parseISO } from "date-fns";
-import { useClientAccountByName, useEnsureClientAccount } from "@/hooks/useClientAccountByName";
-import { useClientProfile, useUpsertClientProfile, type ClientProfile } from "@/hooks/useClientProfile";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { CustomerProfileCard } from "@/components/customer/CustomerProfileCard";
 
 function cssVar(name: string, fallback = ""): string {
   if (typeof window === "undefined") return fallback;
@@ -68,7 +64,7 @@ export default function CustomerDetail() {
         <p className="text-sm text-muted-foreground mt-1">Avg delivery: {avgSize.toLocaleString()}L · {filtered.length} deliveries this period</p>
       </div>
 
-      <ProfileCard customerName={customerName} />
+      <CustomerProfileCard customerName={customerName} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="glass-card p-4 sm:p-5">
