@@ -185,7 +185,7 @@ function OperationsOverview() {
         ) : (
           <div className="space-y-2">
             {truckBreakdown.map((t) => (
-              <div key={t.name} className="flex items-center justify-between text-sm py-1.5 border-b border-border-subtle last:border-0">
+              <div key={t.name} className="flex items-center justify-between text-sm py-1.5 border-b border-subtle last:border-0">
                 <span className="text-foreground">{t.name}</span>
                 <span className="tabular-nums font-medium">{t.litres.toLocaleString()}L</span>
               </div>
