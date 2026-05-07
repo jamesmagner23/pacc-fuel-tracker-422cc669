@@ -14,17 +14,17 @@
     --surface-border: #2A4A2E;
     --surface-hover: #1F3A24;
 
-    --accent: #3F6B36;              /* deep brand green */
-    --accent-hover: #4F8344;
-    --accent-light: rgba(63,107,54,0.18);
-    --accent-text: #3F6B36;
+    --accent: #C8F26A;              /* lime */
+    --accent-hover: #B6E254;
+    --accent-light: rgba(200,242,106,0.14);
+    --accent-text: #C8F26A;
 
     --text-primary: #ECE4D2;        /* warm cream */
     --text-secondary: #C7BFAC;
     --text-muted: #8B8773;
 
-    --positive: #3F6B36;
-    --positive-bg: rgba(63,107,54,0.18);
+    --positive: #C8F26A;
+    --positive-bg: rgba(200,242,106,0.14);
     --negative: #FF6B5E;
     --negative-bg: rgba(255,107,94,0.14);
     --warning: #F5C25B;
@@ -42,7 +42,7 @@
     /* Shadcn compat */
     --foreground: var(--text-primary);
     --primary: var(--accent);
-    --primary-foreground: #ECE4D2; /* dark green button → cream text */
+    --primary-foreground: #0E1F10; /* lime button → dark text */
     --card: var(--surface);
     --card-foreground: var(--text-primary);
     --popover: var(--surface-raised);
