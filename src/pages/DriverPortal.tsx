@@ -436,237 +436,94 @@ function DriverSiteCombobox({
     </div>
   );
 }
-
-function DriverAddOrderForm({ dateStr, onClose }: { dateStr: string; onClose: () => void }) {
-  const { data: clients = [] } = useClientAccountsForDriver();
-  const { data: knownLocations = [] } = useLocations(dateStr);
-  const createOrder = useCreateOrder();
-
-  const [clientSearch, setClientSearch] = useState("");
-  const [selectedClient, setSelectedClient] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [site, setSite] = useState("");
-  const [litres, setLitres] = useState("");
-  const [notes, setNotes] = useState("");
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const filtered = clients.filter((c) =>
-    c.company_name.toLowerCase().includes(clientSearch.toLowerCase())
-  );
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleSubmit = () => {
-    const name = selectedClient || clientSearch;
-    if (!name || !site) {
-      toast.error("Client and site address are required");
-      return;
-    }
-    createOrder.mutate(
-      {
-        orderNo: `DRV-${Date.now()}`,
-        date: dateStr,
-        location: { name, address: site },
-        duration: litres ? parseInt(litres) : 30,
-        priority: "medium",
-        notes: notes || undefined,
-      },
-        {
-          onSuccess: () => {
-            toast.success("Order added to PACC and sent to OptimoRoute");
-            onClose();
-          },
-        onError: (err) => toast.error(err.message),
-      }
-    );
-  };
-
-  return (
-    <div className="card p-4 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-foreground">Add Delivery Stop</span>
-        <button onClick={onClose} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Client search */}
-      <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Client</label>
-        <div ref={wrapperRef} className="relative">
-          <input
-            type="text"
-            value={showDropdown ? clientSearch : selectedClient || clientSearch}
-            onChange={(e) => {
-              setClientSearch(e.target.value);
-              setSelectedClient("");
-              setShowDropdown(true);
-            }}
-            onFocus={() => {
-              setShowDropdown(true);
-              if (selectedClient) setClientSearch(selectedClient);
-            }}
-            placeholder="Search client…"
-            className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
-          />
-          {showDropdown && clientSearch.length >= 1 && filtered.length > 0 && (
-            <div
-              className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-lg max-h-36 overflow-y-auto"
-              style={{ background: "var(--surface)", border: "1px solid var(--surface-border)" }}
-            >
-              {filtered.map((c) => (
-                <button
-                  key={c.id}
-                  className="w-full text-left px-3 py-2.5 text-sm hover:opacity-80 transition-opacity"
-                  style={{ color: "var(--foreground)", background: "none", border: "none", cursor: "pointer" }}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => {
-                    setSelectedClient(c.company_name);
-                    setClientSearch(c.company_name);
-                    setShowDropdown(false);
-                  }}
-                >
-                  {c.company_name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Site address dropdown */}
-      <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Site Address</label>
-        <DriverSiteCombobox
-          locations={knownLocations}
-          value={site}
-          onChange={setSite}
-        />
-      </div>
-
-      {/* Litres */}
-      <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Estimated Litres</label>
-        <input
-          type="number"
-          value={litres}
-          onChange={(e) => setLitres(e.target.value)}
-          placeholder="3000"
-          className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
-        />
-      </div>
-
-      {/* Notes */}
-      <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Notes (optional)</label>
-        <input
-          type="text"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Access via rear gate…"
-          className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors"
-        />
-      </div>
-
-      <button
-        onClick={handleSubmit}
-        disabled={createOrder.isPending}
-        className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        style={{ minHeight: 48 }}
-      >
-        <Plus className="w-4 h-4" />
-        {createOrder.isPending ? "Adding…" : "Add to Route"}
-      </button>
-    </div>
-  );
+function googleMapsRouteUrl(stops) {
+  const points = stops
+    .filter((s) => s.address && s.status !== "completed" && s.status !== "cancelled")
+    .map((s) => encodeURIComponent(s.address));
+  if (!points.length) return null;
+  const dest = points[points.length - 1];
+  const wps = points.slice(0, -1).join("|");
+  return `https://www.google.com/maps/dir/?api=1&destination=${dest}${wps ? `&waypoints=${wps}` : ""}&travelmode=driving`;
 }
 
 function MyDayTab() {
   const today = format(new Date(), "yyyy-MM-dd");
-  const { data: schedule, isLoading } = useSchedule(today);
-  const reorderStops = useReorderStops();
-  const [showAddForm, setShowAddForm] = useState(false);
+  const { data: stops = [], isLoading } = useDispatchStops(today);
+  const reorder = useReorderDispatchStops();
+  const updateStatus = useUpdateStopStatus();
+  const [addOpen, setAddOpen] = useState(false);
+  const [pickClient, setPickClient] = useState<number | null>(null);
 
-  const stops = useMemo(() => {
-    if (!schedule?.routes?.length) return [];
-    const route = schedule.routes[0];
-    return (route.stops || []).map((s: any, i: number) => ({
-      seq: i + 1,
-      orderNo: s.orderNo,
-      clientName: s.locationName || s.orderNo || `Stop ${i + 1}`,
-      address: s.address || "",
-      litres: s.duration || 0,
-      status: (s.status?.toLowerCase() || "scheduled") as StopStatus,
-    }));
-  }, [schedule]);
+  const { data: clients = [] } = useQuery({
+    queryKey: ["client-accounts-driver"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("client_accounts")
+        .select("id, company_name")
+        .eq("is_active", true)
+        .order("company_name");
+      return (data || []) as { id: number; company_name: string }[];
+    },
+  });
 
-  const handleReorder = (reordered: typeof stops) => {
-    const orders = reordered.map((s, i) => ({ orderNo: s.orderNo, sequence: i + 1 }));
-    reorderStops.mutate(orders, {
-      onError: (err) => toast.error(err.message),
-    });
+  const sorted = useMemo(
+    () => [...stops].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0)),
+    [stops]
+  );
+
+  const handleReorder = (reordered: DispatchStop[]) => {
+    reorder.mutate(
+      reordered.map((s, i) => ({ id: s.id, sequence: i + 1 })),
+      { onError: (err: any) => toast.error(err.message) }
+    );
   };
 
   const { getDragProps, getItemStyle } = useDragReorder({
-    items: stops,
+    items: sorted,
     onReorder: handleReorder,
-    canDrag: (item: any) => item.status !== "completed",
+    canDrag: (s: DispatchStop) => s.status !== "completed" && s.status !== "cancelled",
   });
 
-  const completedCount = stops.filter((s: any) => s.status === "completed").length;
+  const completedCount = sorted.filter((s) => s.status === "completed").length;
+  const mapsUrl = googleMapsRouteUrl(sorted);
 
   if (isLoading) {
-    return <div className="text-center py-10"><p className="text-sm text-muted-foreground">Loading schedule…</p></div>;
+    return <div className="text-center py-10"><p className="text-sm text-muted-foreground">Loading route…</p></div>;
   }
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Summary + Add button */}
       <div className="card p-4 flex items-center justify-between">
         <div>
           <p className="kpi-label mb-0.5">Today's Route</p>
-          <p className="text-lg font-bold text-foreground">{stops.length} stops</p>
+          <p className="text-lg font-bold text-foreground">{sorted.length} stops</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
             <p className="kpi-label mb-0.5">Completed</p>
-            <p className="text-lg font-bold" style={{ color: "var(--positive, #C8F26A)" }}>{completedCount} / {stops.length}</p>
+            <p className="text-lg font-bold" style={{ color: "var(--positive, #C8F26A)" }}>{completedCount} / {sorted.length}</p>
           </div>
           <button
-            onClick={() => setShowAddForm((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg transition-colors shrink-0"
-            style={{
-              background: "var(--accent, #C8F26A)",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-              padding: "10px 14px",
-              minHeight: 48,
-              fontSize: 12,
-              fontWeight: 600,
-            }}
+            onClick={() => setAddOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg"
+            style={{ background: "var(--accent, #C8F26A)", color: "#fff", border: "none", cursor: "pointer", padding: "10px 14px", minHeight: 48, fontSize: 12, fontWeight: 600 }}
           >
-            <Plus className="w-4 h-4" />
-            Add
+            <Plus className="w-4 h-4" /> Add
           </button>
         </div>
       </div>
 
-      {/* Add order form */}
-      {showAddForm && (
-        <DriverAddOrderForm dateStr={today} onClose={() => setShowAddForm(false)} />
+      {mapsUrl && (
+        <button
+          onClick={() => window.open(mapsUrl, "_blank")}
+          className="card p-3 flex items-center justify-center gap-2 text-sm font-semibold"
+          style={{ background: "var(--accent, #C8F26A)", color: "#fff", border: "none", cursor: "pointer", minHeight: 48 }}
+        >
+          <MapPin className="w-4 h-4" /> Open full route in Google Maps
+        </button>
       )}
 
-      {/* Stop list or empty state */}
-      {stops.length === 0 ? (
+      {sorted.length === 0 ? (
         <div className="text-center py-10">
           <ClipboardList className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-md text-muted-foreground m-0">No stops scheduled today</p>
@@ -679,31 +536,28 @@ function MyDayTab() {
             <span className="text-xs text-muted-foreground ml-2">Drag to reorder</span>
           </div>
           <div className="flex flex-col">
-            {stops.map((stop: any, idx: number) => {
+            {sorted.map((stop, idx) => {
               const isCompleted = stop.status === "completed";
-              const dragProps = getDragProps(idx);
+              const dragProps = isCompleted ? {} : getDragProps(idx);
               const itemStyle = getItemStyle(idx);
               return (
                 <div
-                  key={stop.orderNo || idx}
+                  key={stop.id}
                   {...dragProps}
                   className="flex items-center gap-3 px-4 border-b border-surface-border last:border-0"
                   style={{
-                    minHeight: 56,
+                    minHeight: 64,
                     opacity: isCompleted ? 0.4 : itemStyle.opacity,
                     borderTop: itemStyle.borderTop,
                     borderBottom: itemStyle.borderBottom,
                     cursor: isCompleted ? "default" : itemStyle.cursor,
                   }}
                 >
-                  {/* Drag handle */}
                   {!isCompleted && (
                     <div className="shrink-0 touch-none" style={{ color: "var(--text-muted)", cursor: "grab" }}>
                       <GripVertical className="w-4 h-4" />
                     </div>
                   )}
-
-                  {/* Sequence circle */}
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                     style={{
@@ -711,23 +565,74 @@ function MyDayTab() {
                       color: isCompleted ? "#C8F26A" : "var(--accent, #C8F26A)",
                     }}
                   >
-                    {stop.seq}
+                    {idx + 1}
                   </div>
-
-                  {/* Info */}
                   <div className="flex-1 min-w-0 py-2">
-                    <div className="text-sm font-medium text-foreground truncate">{stop.clientName}</div>
+                    <div className="text-sm font-medium text-foreground truncate">{stop.site_name}</div>
                     {stop.address && <div className="text-xs text-muted-foreground truncate">{stop.address}</div>}
-                    {stop.litres > 0 && <div className="text-[11px] text-muted-foreground mt-0.5">{stop.litres.toLocaleString()}L est.</div>}
+                    {stop.estimated_litres && <div className="text-[11px] text-muted-foreground mt-0.5">{Number(stop.estimated_litres).toLocaleString()}L est.</div>}
                   </div>
-
-                  {/* Status */}
-                  <StopStatusChip status={stop.status} />
+                  {!isCompleted && stop.address && (
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(stop.address)}&travelmode=driving`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2 py-1.5 rounded text-[11px] font-semibold"
+                      style={{ background: "var(--surface-raised)", color: "var(--accent, #C8F26A)", textDecoration: "none" }}
+                    >
+                      Directions
+                    </a>
+                  )}
+                  {!isCompleted && (
+                    <button
+                      onClick={() => updateStatus.mutate({ id: stop.id, status: "completed" })}
+                      className="p-1.5 rounded"
+                      style={{ background: "transparent", color: "var(--positive, #C8F26A)", border: "none", cursor: "pointer" }}
+                      title="Mark complete"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
+      )}
+
+      {addOpen && pickClient === null && (
+        <div className="card p-4 space-y-2">
+          <div className="text-sm font-semibold">Pick a customer</div>
+          <select
+            className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm"
+            onChange={(e) => setPickClient(Number(e.target.value))}
+            defaultValue=""
+          >
+            <option value="" disabled>Select customer…</option>
+            {clients.map((c) => <option key={c.id} value={c.id}>{c.company_name}</option>)}
+          </select>
+          <button
+            onClick={() => setAddOpen(false)}
+            className="text-xs text-muted-foreground"
+            style={{ background: "none", border: "none", cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {pickClient !== null && (
+        <AddToDispatchDialog
+          open={true}
+          onOpenChange={(v) => {
+            if (!v) {
+              setPickClient(null);
+              setAddOpen(false);
+            }
+          }}
+          clientAccountId={pickClient}
+          clientName={clients.find((c) => c.id === pickClient)?.company_name}
+        />
       )}
     </div>
   );
