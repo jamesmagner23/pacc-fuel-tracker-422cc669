@@ -1917,6 +1917,10 @@ export type Database = {
         Args: { _plant_item_id: string }
         Returns: number
       }
+      expand_dispatch_recurring: {
+        Args: { _days_ahead?: number }
+        Returns: number
+      }
       get_client_company_name: { Args: { _user_id: string }; Returns: string }
       get_last_sync_status: {
         Args: never
