@@ -18,23 +18,27 @@ export function BoldPMark({
 }) {
   const tileRadius = bleed ? 0 : (rounded * 100) / size;
 
-  // Square 5×5 P glyph — square bbox guarantees equal padding on all four
-  // sides. 1 = dot, 0 = empty.
+  // 5 cols × 7 rows P glyph — closed bowl on top, long stem below,
+  // matching the dotted PACC ENERGY reference logo.
   const grid: number[][] = [
     [1, 1, 1, 1, 0], // row 0 — top of bowl
     [1, 0, 0, 0, 1], // row 1 — bowl side
-    [1, 1, 1, 1, 0], // row 2 — bottom of bowl
-    [1, 0, 0, 0, 0], // row 3 — stem
+    [1, 0, 0, 0, 1], // row 2 — bowl side
+    [1, 1, 1, 1, 0], // row 3 — bottom of bowl
     [1, 0, 0, 0, 0], // row 4 — stem
+    [1, 0, 0, 0, 0], // row 5 — stem
+    [1, 0, 0, 0, 0], // row 6 — stem
   ];
 
   const cols = 5;
-  const rows = 5;
+  const rows = 7;
   // Choose step so the glyph's outer dot-edges leave a uniform `pad` on
   // every side of the 100-unit tile.
   // glyphSpan + 2*dotR + 2*pad = 100, where glyphSpan = (n-1)*step and dotR = 0.42*step.
   const pad = 12;
-  const step = (100 - 2 * pad) / ((cols - 1) + 2 * 0.42); // ≈ 15.7
+  const stepX = (100 - 2 * pad) / ((cols - 1) + 2 * 0.42);
+  const stepY = (100 - 2 * pad) / ((rows - 1) + 2 * 0.42);
+  const step = Math.min(stepX, stepY);
   const dotR = step * 0.42;
 
   // Compute glyph bounding box from filled cells so we can center it
