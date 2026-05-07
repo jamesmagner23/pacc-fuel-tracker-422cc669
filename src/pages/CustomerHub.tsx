@@ -110,6 +110,25 @@ export default function CustomerHub() {
   }
 
   return (
+    <CustomerHubInner
+      customerName={customerName}
+      account={account}
+      clientAccountId={clientAccountId}
+      customerTxns={customerTxns}
+      plantItems={plantItems}
+      projects={projects}
+      assignments={assignments}
+      ftcRates={ftcRates}
+      overrides={overrides}
+      equipmentList={equipmentList}
+      navigate={navigate}
+    />
+  );
+}
+
+function CustomerHubInner({ customerName, account, clientAccountId, customerTxns, plantItems, projects, assignments, ftcRates, overrides, equipmentList, navigate }: any) {
+  const [dispatchOpen, setDispatchOpen] = useState(false);
+  return (
     <div className="space-y-5 max-w-[1200px]">
       <button
         onClick={() => navigate("/customers")}
@@ -118,8 +137,9 @@ export default function CustomerHub() {
         <ArrowLeft className="w-4 h-4" /> Back to Customers
       </button>
 
-      <div>
-        <h1 className="text-2xl font-bold">{customerName}</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{customerName}</h1>
         {account && (
           <p className="text-xs text-muted-foreground mt-1">
             {account.contact_name && <>{account.contact_name} · </>}
@@ -132,7 +152,22 @@ export default function CustomerHub() {
             No client account linked yet. Link this Fuel System name in Customers → Client Pricing to enable equipment & projects.
           </p>
         )}
+        </div>
+        {clientAccountId && (
+          <Button size="sm" onClick={() => setDispatchOpen(true)} className="gap-1.5 shrink-0">
+            <Send className="w-3.5 h-3.5" /> Add to Dispatch
+          </Button>
+        )}
       </div>
+
+      {clientAccountId && (
+        <AddToDispatchDialog
+          open={dispatchOpen}
+          onOpenChange={setDispatchOpen}
+          clientAccountId={clientAccountId}
+          clientName={customerName}
+        />
+      )}
 
       <Tabs defaultValue="overview">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
