@@ -7,9 +7,9 @@ const ROOT = process.cwd();
 const EXPECTED = {
   themeColor: "#0E1F10",
   background: "#0E1F10",
-  accent: "#C8F26A",
+  accent: "#3F6B36",
   textPrimary: "#ECE4D2",
-  positive: "#C8F26A",
+  positive: "#3F6B36",
   negative: "#FF6B5E",
   warning: "#F5C25B",
 };
