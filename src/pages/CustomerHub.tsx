@@ -980,6 +980,37 @@ function ProjectsTab({
                 {opt.l}
               </button>
             ))}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "px-2.5 py-1 text-[11px] rounded-full border transition-colors inline-flex items-center gap-1",
+                    rangeKey === "custom"
+                      ? "border-primary bg-primary/15 text-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <CalendarIcon className="w-3 h-3" />
+                  {rangeKey === "custom" && customFrom
+                    ? `${format(customFrom, "dd MMM")} – ${customTo ? format(customTo, "dd MMM") : "…"}`
+                    : "Custom"}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-auto p-0">
+                <Calendar
+                  mode="range"
+                  selected={{ from: customFrom, to: customTo }}
+                  onSelect={(r) => {
+                    setCustomFrom(r?.from);
+                    setCustomTo(r?.to);
+                    if (r?.from) setRangeKey("custom");
+                  }}
+                  numberOfMonths={2}
+                  weekStartsOn={1}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* KPI tiles */}
