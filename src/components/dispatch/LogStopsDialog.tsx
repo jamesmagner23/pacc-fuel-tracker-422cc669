@@ -14,6 +14,7 @@ import { useTrucks } from "@/hooks/useTrucks";
 import { useDrivers } from "@/hooks/useDrivers";
 import { useUpsertStop } from "@/hooks/useDispatch";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   open: boolean;
@@ -45,6 +46,7 @@ function newRow(): Row {
 
 export function LogStopsDialog({ open, onOpenChange, defaultDate }: Props) {
   const [date, setDate] = useState<Date>(defaultDate ?? addDays(new Date(), 1));
+  const navigate = useNavigate();
   const [rows, setRows] = useState<Row[]>([newRow(), newRow(), newRow()]);
   const [bulkTruck, setBulkTruck] = useState<string>("none");
   const [bulkDriver, setBulkDriver] = useState<string>("none");
@@ -100,6 +102,14 @@ export function LogStopsDialog({ open, onOpenChange, defaultDate }: Props) {
         } as any);
       }
       toast.success(`${valid.length} stop${valid.length > 1 ? "s" : ""} logged`);
+      const dateStr = format(date, "yyyy-MM-dd");
+      toast("Route updated", {
+        description: `Verify trucks & drivers for ${format(date, "EEE dd MMM")}`,
+        action: {
+          label: "View route",
+          onClick: () => navigate(`/dispatch?date=${dateStr}`),
+        },
+      });
       setRows([newRow(), newRow(), newRow()]);
       onOpenChange(false);
     } catch (e: any) {
