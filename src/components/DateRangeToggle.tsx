@@ -15,7 +15,8 @@ export function DateRangeToggle() {
       style={{
         display: "flex",
         alignItems: "center",
-        flex: "1 1 auto",
+        justifyContent: "center",
+        flex: "0 0 auto",
         minWidth: 0,
         maxWidth: "100%",
         background: "var(--surface)",
@@ -42,8 +43,8 @@ export function DateRangeToggle() {
               cursor: "pointer",
               transition: "all 0.15s",
               whiteSpace: "nowrap",
-              flex: "1 1 0",
-              minWidth: 0,
+            flex: "0 0 auto",
+            textAlign: "center",
             }}
           >
             {opt.label}
