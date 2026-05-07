@@ -326,10 +326,11 @@ export default function PLOverview() {
                 <Tooltip
                   cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
                   contentStyle={{
-                    background: "var(--background)",
+                    background: "var(--surface-raised)",
                     border: "1px solid var(--surface-border)",
                     borderRadius: 8,
                     fontSize: 11,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
                   }}
                   labelStyle={{ color: "var(--text-primary)" }}
                   itemStyle={{ color: "var(--text-primary)" }}
