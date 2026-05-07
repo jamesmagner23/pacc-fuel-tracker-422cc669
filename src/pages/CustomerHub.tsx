@@ -886,7 +886,7 @@ function ProjectsTab({
               <button
                 key={p.id}
                 onClick={() => setSelected(p.id)}
-                className="glass-card p-4 text-left hover:border-primary/40 transition-colors"
+                className="glass-card p-4 text-left hover:border-primary/40 hover:bg-surface-raised/40 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
