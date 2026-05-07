@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Plus, GripVertical, Trash2, Package, CheckCircle2, Clock, MapPin, Navigation, ListPlus } from "lucide-react";
@@ -105,7 +106,24 @@ function StopRow({ stop, idx, dragProps, itemStyle, clientNameById, truckNameByI
 }
 
 export default function Dispatch() {
-  const [date, setDate] = useState<Date>(new Date());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialDate = (() => {
+    const q = searchParams.get("date");
+    if (q && /^\d{4}-\d{2}-\d{2}$/.test(q)) {
+      const [y, m, d] = q.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+    return new Date();
+  })();
+  const [date, setDate] = useState<Date>(initialDate);
+  useEffect(() => {
+    const q = searchParams.get("date");
+    const cur = format(date, "yyyy-MM-dd");
+    if (q && q !== cur && /^\d{4}-\d{2}-\d{2}$/.test(q)) {
+      const [y, m, d] = q.split("-").map(Number);
+      setDate(new Date(y, m - 1, d));
+    }
+  }, [searchParams]);
   const [calOpen, setCalOpen] = useState(false);
   const [truckFilter, setTruckFilter] = useState<string>("all");
   const [addOpen, setAddOpen] = useState(false);
@@ -165,7 +183,7 @@ export default function Dispatch() {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
-              <Calendar mode="single" selected={date} onSelect={(d) => { if (d) { setDate(d); setCalOpen(false); } }} initialFocus />
+            <Calendar mode="single" selected={date} onSelect={(d) => { if (d) { setDate(d); setSearchParams({ date: format(d, "yyyy-MM-dd") }, { replace: true }); setCalOpen(false); } }} initialFocus />
             </PopoverContent>
           </Popover>
           <Select value={truckFilter} onValueChange={setTruckFilter}>
