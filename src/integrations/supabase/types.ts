@@ -413,6 +413,140 @@ export type Database = {
         }
         Relationships: []
       }
+      dispatch_recurring: {
+        Row: {
+          address: string | null
+          client_account_id: number
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          estimated_litres: number | null
+          frequency: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          project_id: string | null
+          site_name: string
+          start_date: string
+          truck_id: string | null
+          updated_at: string
+          weekdays: number[]
+        }
+        Insert: {
+          address?: string | null
+          client_account_id: number
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          estimated_litres?: number | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          project_id?: string | null
+          site_name: string
+          start_date?: string
+          truck_id?: string | null
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Update: {
+          address?: string | null
+          client_account_id?: number
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          estimated_litres?: number | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          project_id?: string | null
+          site_name?: string
+          start_date?: string
+          truck_id?: string | null
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Relationships: []
+      }
+      dispatch_stops: {
+        Row: {
+          address: string | null
+          client_account_id: number
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          delivered_litres: number | null
+          driver_user_id: string | null
+          estimated_litres: number | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          project_id: string | null
+          recurring_id: string | null
+          scheduled_date: string
+          sequence: number
+          site_name: string
+          status: string
+          truck_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          client_account_id: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_litres?: number | null
+          driver_user_id?: string | null
+          estimated_litres?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          project_id?: string | null
+          recurring_id?: string | null
+          scheduled_date: string
+          sequence?: number
+          site_name: string
+          status?: string
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          client_account_id?: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_litres?: number | null
+          driver_user_id?: string | null
+          estimated_litres?: number | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          project_id?: string | null
+          recurring_id?: string | null
+          scheduled_date?: string
+          sequence?: number
+          site_name?: string
+          status?: string
+          truck_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_stops_recurring_id_fkey"
+            columns: ["recurring_id"]
+            isOneToOne: false
+            referencedRelation: "dispatch_recurring"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_cta_clicks: {
         Row: {
           campaign: string
