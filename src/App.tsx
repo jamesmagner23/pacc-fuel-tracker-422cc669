@@ -18,6 +18,7 @@ import DeliveryDocket from "./pages/DeliveryDocket";
 import CustomerPortal from "./pages/CustomerPortal";
 import DriverPortal from "./pages/DriverPortal";
 import Admin from "./pages/Admin";
+import Operations from "./pages/Operations";
 import Reconciliation from "./pages/Reconciliation";
 import TagDeliveries from "./pages/TagDeliveries";
 import Outreach from "./pages/Outreach";
@@ -59,6 +60,7 @@ function DemoAwareRoutes() {
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/operations" element={<Operations />} />
                 <Route path="/dispatch" element={<Dispatch />} />
                 <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                 <Route path="/trucks" element={<TruckPortal />} />
@@ -86,7 +88,7 @@ function DemoAwareRoutes() {
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/finance" element={<Finance />} />
                    <Route path="/admin" element={<Admin />} />
-                   
+                   <Route path="/operations" element={<Operations />} />
                    <Route path="/dispatch" element={<Dispatch />} />
                   <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                   <Route path="/trucks" element={<TruckPortal />} />
