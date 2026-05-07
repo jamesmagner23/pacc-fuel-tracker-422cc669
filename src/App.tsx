@@ -48,6 +48,8 @@ function DemoAwareRoutes() {
       <Route path="/docket/:id" element={<DeliveryDocket />} />
       {/* In demo mode, portal/driver get the sidebar Layout */}
       {isDemo ? (
+        <>
+        <Route path="/operations" element={<Operations />} />
         <Route
           path="/*"
           element={
@@ -71,6 +73,7 @@ function DemoAwareRoutes() {
             </Layout>
           }
         />
+        </>
       ) : (
         <>
           <Route path="/portal" element={<CustomerPortal />} />
