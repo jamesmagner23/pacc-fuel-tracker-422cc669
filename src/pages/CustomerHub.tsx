@@ -9,6 +9,11 @@ import { useProjects, useProjectAssignments, useDeleteProject, type Project } fr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { useTransactionOverrides, useClearAutoBackfillForPlant } from "@/hooks/useTransactionOverrides";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CustomerProfileCard } from "@/components/customer/CustomerProfileCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -132,6 +137,7 @@ export default function CustomerHub() {
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
           {[
             { v: "overview", l: "Overview" },
+            { v: "profile", l: "Profile" },
             { v: "equipment", l: "Plant & Equipment" },
             { v: "projects", l: "Projects" },
             { v: "analytics", l: "Analytics" },
@@ -149,6 +155,9 @@ export default function CustomerHub() {
 
         <TabsContent value="overview" className="mt-5">
           <OverviewTab txns={customerTxns} equipment={equipmentList} projects={projects} ftcRates={ftcRates} />
+        </TabsContent>
+        <TabsContent value="profile" className="mt-5">
+          <CustomerProfileCard customerName={customerName} />
         </TabsContent>
         <TabsContent value="equipment" className="mt-5">
           <EquipmentTab equipment={equipmentList} clientAccountId={clientAccountId} txns={customerTxns} ftcRates={ftcRates} />
@@ -734,7 +743,9 @@ function ProjectsTab({
   // global Today/Week/Month toggle in the top nav so all of the project's
   // KPIs, trend chart, and period-over-period table align with the rest
   // of the app.
-  const [rangeKey, setRangeKey] = useState<"nav" | "7d" | "30d" | "month" | "ytd" | "all">("nav");
+  const [rangeKey, setRangeKey] = useState<"nav" | "7d" | "30d" | "month" | "ytd" | "all" | "custom">("nav");
+  const [customFrom, setCustomFrom] = useState<Date | undefined>(undefined);
+  const [customTo, setCustomTo] = useState<Date | undefined>(undefined);
   const { rangeStart, rangeEnd, prevStart, prevEnd, rangeLabel } = useMemo(() => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -757,6 +768,11 @@ function ProjectsTab({
     else if (rangeKey === "30d") { start = subDays(startOfToday, 30); label = "30 days"; }
     else if (rangeKey === "month") { start = startOfMonth(now); label = "This month"; }
     else if (rangeKey === "ytd") { start = startOfYear(now); label = "YTD"; }
+    else if (rangeKey === "custom" && customFrom) {
+      start = customFrom;
+      end = customTo ? new Date(customTo.getFullYear(), customTo.getMonth(), customTo.getDate(), 23, 59, 59) : now;
+      label = `${format(customFrom, "dd MMM")} – ${format(customTo || now, "dd MMM yy")}`;
+    }
 
     let pStart: Date | null = null;
     let pEnd: Date | null = null;
@@ -766,7 +782,7 @@ function ProjectsTab({
       pStart = new Date(start.getTime() - ms);
     }
     return { rangeStart: start, rangeEnd: end, prevStart: pStart, prevEnd: pEnd, rangeLabel: label };
-  }, [rangeKey, globalRange]);
+  }, [rangeKey, globalRange, customFrom, customTo]);
 
   // Build a map: project_id → { itemIds, placas } from BOTH assignments and overrides
   const projectMembership = useMemo(() => {
@@ -870,7 +886,7 @@ function ProjectsTab({
               <button
                 key={p.id}
                 onClick={() => setSelected(p.id)}
-                className="glass-card p-4 text-left hover:border-primary/40 transition-colors"
+                className="glass-card p-4 text-left hover:border-primary/40 hover:bg-surface-raised/40 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -964,6 +980,37 @@ function ProjectsTab({
                 {opt.l}
               </button>
             ))}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "px-2.5 py-1 text-[11px] rounded-full border transition-colors inline-flex items-center gap-1",
+                    rangeKey === "custom"
+                      ? "border-primary bg-primary/15 text-foreground"
+                      : "border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <CalendarIcon className="w-3 h-3" />
+                  {rangeKey === "custom" && customFrom
+                    ? `${format(customFrom, "dd MMM")} – ${customTo ? format(customTo, "dd MMM") : "…"}`
+                    : "Custom"}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-auto p-0">
+                <Calendar
+                  mode="range"
+                  selected={{ from: customFrom, to: customTo }}
+                  onSelect={(r) => {
+                    setCustomFrom(r?.from);
+                    setCustomTo(r?.to);
+                    if (r?.from) setRangeKey("custom");
+                  }}
+                  numberOfMonths={2}
+                  weekStartsOn={1}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* KPI tiles */}
