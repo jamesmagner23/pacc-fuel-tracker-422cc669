@@ -750,6 +750,7 @@ function ProjectsTab({
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Project> | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [dispatchProject, setDispatchProject] = useState<Project | null>(null);
   const del = useDeleteProject();
   const clearBackfill = useClearAutoBackfillForPlant();
   const { range: globalRange } = useDateRange();
