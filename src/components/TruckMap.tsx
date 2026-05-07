@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { supabase } from "@/integrations/supabase/client";
 import { useMapboxToken } from "@/hooks/useMapboxToken";
+import { useLatestTruckLocation } from "@/hooks/useLatestTruckLocation";
 import { MapPin, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 
 const MELB = { lng: 144.9631, lat: -37.8136 };
@@ -12,24 +11,6 @@ interface TruckMapProps {
   height?: number;
   showStops?: boolean;
   compact?: boolean;
-}
-
-function useTruckLocation() {
-  return useQuery({
-    queryKey: ["truck-location"],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("get-truck-location");
-        if (error) return { success: false, driver: null, route: null };
-        return data;
-      } catch {
-        return { success: false, driver: null, route: null };
-      }
-    },
-    retry: false,
-    refetchInterval: 30000,
-    staleTime: 25000,
-  });
 }
 
 function cssVar(name: string, fallback = ""): string {
@@ -48,10 +29,12 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const [mapAttempt, setMapAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
-  const { data, isFetching, dataUpdatedAt, refetch } = useTruckLocation();
+  const { data: ping, isFetching, refetch } = useLatestTruckLocation();
   const { data: mapToken, isLoading: isMapTokenLoading } = useMapboxToken();
-  const driver = data?.driver;
-  const route = data?.route;
+  const driver = ping
+    ? { name: ping.driver_name || "Driver", lat: ping.lat, lng: ping.lng, lastUpdate: ping.recorded_at }
+    : null;
+  const route = null as null | { completed: number; total: number };
   const hasLocation = !!(driver?.lat && driver?.lng);
 
   const mapBg = cssVar("--map-bg", "#0A1A0C");
