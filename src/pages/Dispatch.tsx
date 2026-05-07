@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plus, GripVertical, Trash2, Package, CheckCircle2, Clock, MapPin, Navigation } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, GripVertical, Trash2, Package, CheckCircle2, Clock, MapPin, Navigation, ListPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { useDispatchStops, useDeleteStop, useReorderDispatchStops, useUpdateStop
 import { useTrucks } from "@/hooks/useTrucks";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
+import { LogStopsDialog } from "@/components/dispatch/LogStopsDialog";
 import { toast } from "sonner";
 
 function googleMapsUrl(stops: DispatchStop[]) {
@@ -109,6 +110,7 @@ export default function Dispatch() {
   const [truckFilter, setTruckFilter] = useState<string>("all");
   const [addOpen, setAddOpen] = useState(false);
   const [addClientId, setAddClientId] = useState<number | null>(null);
+  const [logStopsOpen, setLogStopsOpen] = useState(false);
 
   const dateStr = format(date, "yyyy-MM-dd");
   const { data: trucks = [] } = useTrucks();
@@ -180,6 +182,9 @@ export default function Dispatch() {
               <Navigation className="w-3.5 h-3.5" /> Route in Maps
             </Button>
           )}
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setLogStopsOpen(true)}>
+            <ListPlus className="w-3.5 h-3.5" /> Log Stops
+          </Button>
           <Button size="sm" className="gap-1.5" onClick={() => setAddOpen(true)}>
             <Plus className="w-3.5 h-3.5" /> New Stop
           </Button>
@@ -265,6 +270,8 @@ export default function Dispatch() {
           clientName={clientNameById[addClientId]}
         />
       )}
+
+      <LogStopsDialog open={logStopsOpen} onOpenChange={setLogStopsOpen} defaultDate={date} />
     </div>
   );
 }
