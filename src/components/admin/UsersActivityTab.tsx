@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subDays } from "date-fns";
-import { Users, Activity, Trash2, Pencil, LogIn, Download, Eye, X, KeyRound, UserPlus } from "lucide-react";
+import { Users, Activity, Trash2, Pencil, LogIn, Download, Eye, X, KeyRound, UserPlus, RefreshCw, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_USERS, DEMO_ACTIVITY } from "@/data/demoData";
@@ -133,6 +133,32 @@ export default function UsersActivityTab() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "operations" | "driver" | "client">("operations");
   const [newClientId, setNewClientId] = useState<string>("");
+
+  // Reset-password dialog state
+  const [resetUser, setResetUser] = useState<UserRow | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetPassword, setResetPassword] = useState<string>("");
+
+  const handleResetPassword = async (user: UserRow) => {
+    if (!confirm(`Generate a new password for ${user.full_name || user.email}? Their current password will stop working.`)) return;
+    setResetUser(user);
+    setResetting(true);
+    setResetPassword("");
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-reset-portal-password", {
+        body: { user_id: user.user_id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setResetPassword((data as any).password);
+      toast.success("New password generated");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to reset password");
+      setResetUser(null);
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const { data: clientAccounts = [] } = useQuery({
     queryKey: ["client-accounts-for-user-create"],
@@ -330,6 +356,9 @@ export default function UsersActivityTab() {
                       <div className="flex gap-1">
                         <button onClick={() => handleEdit(user)} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1 transition-colors" title="Edit">
                           <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleResetPassword(user)} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-accent p-1 transition-colors" title="Reset password">
+                          <RefreshCw className="w-3.5 h-3.5" />
                         </button>
                         {user.role !== "admin" && (
                           <button onClick={() => { if (confirm(`Remove ${user.full_name || user.email}?`)) deleteUser.mutate(user.user_id); }} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-destructive p-1 transition-colors" title="Delete">
