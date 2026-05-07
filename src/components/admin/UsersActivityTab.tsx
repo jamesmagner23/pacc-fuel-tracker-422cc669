@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subDays } from "date-fns";
-import { Users, Activity, Trash2, Pencil, LogIn, Download, Eye, X, KeyRound } from "lucide-react";
+import { Users, Activity, Trash2, Pencil, LogIn, Download, Eye, X, KeyRound, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_USERS, DEMO_ACTIVITY } from "@/data/demoData";
@@ -125,6 +125,69 @@ export default function UsersActivityTab() {
   const [provisionResults, setProvisionResults] = useState<any[] | null>(null);
   const qc = useQueryClient();
 
+  // Create-user dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState<"admin" | "operations" | "driver" | "client">("operations");
+  const [newClientId, setNewClientId] = useState<string>("");
+
+  const { data: clientAccounts = [] } = useQuery({
+    queryKey: ["client-accounts-for-user-create"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("client_accounts")
+        .select("id, company_name")
+        .eq("is_active", true)
+        .order("company_name");
+      return (data || []) as { id: number; company_name: string }[];
+    },
+  });
+
+  const generatePassword = () => {
+    const pwd = Math.random().toString(36).slice(-10) + "!" + Math.floor(Math.random() * 100);
+    setNewPassword(pwd);
+  };
+
+  const handleCreateUser = async () => {
+    if (!newEmail || !newPassword) {
+      toast.error("Email and password required");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (newRole === "client" && !newClientId) {
+      toast.error("Pick a client account for client users");
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-create-portal-user", {
+        body: {
+          email: newEmail.trim().toLowerCase(),
+          password: newPassword,
+          full_name: newName.trim() || null,
+          role: newRole,
+          client_account_id: newRole === "client" ? Number(newClientId) : null,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(`Created ${newRole} login for ${newEmail}`);
+      setCreateOpen(false);
+      setNewName(""); setNewEmail(""); setNewPassword(""); setNewClientId("");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to create user");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const admins = users.filter(u => u.role === "admin");
   const clients = users.filter(u => u.role === "client");
   const drivers = users.filter(u => u.role === "driver");
@@ -217,6 +280,14 @@ export default function UsersActivityTab() {
             >
               <KeyRound className="w-3.5 h-3.5" />
               {provisioning ? "Provisioning…" : "Provision portal logins"}
+            </button>
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="flex items-center gap-1.5 bg-accent text-accent-foreground hover:opacity-90 px-3 py-1.5 rounded-md text-[11px] font-medium transition-opacity"
+              title="Create a new login with role and portal access"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              New user
             </button>
             {provisionResults && (
               <button
@@ -352,6 +423,90 @@ export default function UsersActivityTab() {
                 <div className={`text-[12px] font-semibold uppercase px-2 py-1 rounded-full w-fit ${ROLE_COLORS[editingUser.role]}`}>{editingUser.role}</div>
               </div>
               <button onClick={handleSaveEdit} className="bg-primary text-primary-foreground border-none rounded-full px-5 py-2 text-xs font-semibold cursor-pointer mt-2">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {createOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setCreateOpen(false)}>
+          <div className="bg-surface border border-surface-border rounded-[10px] p-5 w-full max-w-[460px]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm font-semibold text-foreground">Create user</div>
+              <button onClick={() => setCreateOpen(false)} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-muted-foreground">Portal access (role)</label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {([
+                    { v: "admin", l: "Admin (full access)" },
+                    { v: "operations", l: "Operations" },
+                    { v: "driver", l: "Driver" },
+                    { v: "client", l: "Client (customer)" },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setNewRole(opt.v)}
+                      className={`text-[12px] px-3 py-2 rounded-md border transition-colors text-left ${
+                        newRole === opt.v
+                          ? "border-accent bg-accent/15 text-foreground font-medium"
+                          : "border-surface-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {opt.l}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  At login, the user is auto-routed to their portal:
+                  admin → Master, operations → Ops, driver → Driver, client → Customer.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-muted-foreground">Full name</label>
+                <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Jane Smith"
+                  className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-muted-foreground">Email</label>
+                <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="user@paccenergy.com"
+                  className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-muted-foreground">Password</label>
+                <div className="flex gap-2">
+                  <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="At least 6 characters"
+                    className="flex-1 bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
+                  <button type="button" onClick={generatePassword}
+                    className="text-[11px] px-3 rounded-md border border-surface-border text-muted-foreground hover:text-foreground">
+                    Generate
+                  </button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Share this with the user — they sign in at /login.</p>
+              </div>
+
+              {newRole === "client" && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] text-muted-foreground">Customer account</label>
+                  <select value={newClientId} onChange={(e) => setNewClientId(e.target.value)}
+                    className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none">
+                    <option value="">Select customer…</option>
+                    {clientAccounts.map((c) => (
+                      <option key={c.id} value={c.id}>{c.company_name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <button onClick={handleCreateUser} disabled={creating}
+                className="bg-primary text-primary-foreground border-none rounded-full px-5 py-2.5 text-xs font-semibold cursor-pointer mt-2 disabled:opacity-60">
+                {creating ? "Creating…" : "Create user"}
+              </button>
             </div>
           </div>
         </div>

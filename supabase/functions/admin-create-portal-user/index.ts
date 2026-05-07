@@ -8,9 +8,17 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { email, password, full_name, client_account_id } = await req.json();
-    if (!email || !password || !client_account_id) {
-      return new Response(JSON.stringify({ error: "email, password, client_account_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { email, password, full_name, client_account_id, role } = await req.json();
+    const userRole: string = role || "client";
+    const validRoles = ["admin", "operations", "driver", "client"];
+    if (!email || !password) {
+      return new Response(JSON.stringify({ error: "email and password required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (!validRoles.includes(userRole)) {
+      return new Response(JSON.stringify({ error: `invalid role: ${userRole}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (userRole === "client" && !client_account_id) {
+      return new Response(JSON.stringify({ error: "client_account_id required for client role" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const admin = createClient(
@@ -29,10 +37,10 @@ Deno.serve(async (req) => {
 
     const { error: roleErr } = await admin.from("user_roles").insert({
       user_id: userId,
-      role: "client",
+      role: userRole,
       email,
       full_name,
-      client_account_id,
+      client_account_id: userRole === "client" ? client_account_id : null,
     });
     if (roleErr) throw roleErr;
 
