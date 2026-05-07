@@ -1,24 +1,32 @@
 import { useState } from "react";
-import { Truck, Users, Route, Gauge, Mail, FileText } from "lucide-react";
+import { LayoutDashboard, Gauge, Users, Shield, TrendingUp, UserMinus, MousePointerClick, Mail, Palette, FileText } from "lucide-react";
 import Reconciliation from "./Reconciliation";
-import Trucks from "./Trucks";
-import Customers from "./Customers";
-import Dispatch from "./Dispatch";
+import SOPManager from "@/components/admin/SOPManager";
+import AdminOverview from "@/components/admin/AdminOverview";
+import UsersActivityTab from "@/components/admin/UsersActivityTab";
+import EBITDATab from "@/components/admin/EBITDATab";
+import WinBackTab from "@/components/admin/WinBackTab";
+import EmailClicksTab from "@/components/admin/EmailClicksTab";
 import Outreach from "./Outreach";
+import BrandingTab from "@/components/admin/BrandingTab";
 import EmailTemplatesTab from "@/components/admin/EmailTemplatesTab";
 
-type TabId = "trucks" | "customers" | "dispatch" | "reconciliation" | "outreach" | "email-templates";
+type TabId = "overview" | "reconciliation" | "users" | "sops" | "ebitda" | "winback" | "email-clicks" | "outreach" | "email-templates" | "branding";
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState<TabId>("trucks");
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
 
   const tabs: { id: TabId; label: string; icon: JSX.Element }[] = [
-    { id: "trucks", label: "Trucks", icon: <Truck className="w-3.5 h-3.5" /> },
-    { id: "customers", label: "Customers", icon: <Users className="w-3.5 h-3.5" /> },
-    { id: "dispatch", label: "Dispatch", icon: <Route className="w-3.5 h-3.5" /> },
+    { id: "overview", label: "Overview", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
     { id: "reconciliation", label: "Reconciliation", icon: <Gauge className="w-3.5 h-3.5" /> },
+    { id: "users", label: "Users & Activity", icon: <Users className="w-3.5 h-3.5" /> },
+    { id: "sops", label: "SOPs", icon: <Shield className="w-3.5 h-3.5" /> },
+    { id: "ebitda", label: "EBITDA", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+    { id: "winback", label: "Win Back", icon: <UserMinus className="w-3.5 h-3.5" /> },
+    { id: "email-clicks", label: "Email Clicks", icon: <MousePointerClick className="w-3.5 h-3.5" /> },
     { id: "outreach", label: "Outreach", icon: <Mail className="w-3.5 h-3.5" /> },
     { id: "email-templates", label: "Email Templates", icon: <FileText className="w-3.5 h-3.5" /> },
+    { id: "branding", label: "Branding", icon: <Palette className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -41,12 +49,16 @@ export default function Admin() {
         ))}
       </div>
 
-      {activeTab === "trucks" && <Trucks />}
-      {activeTab === "customers" && <Customers />}
-      {activeTab === "dispatch" && <Dispatch />}
+      {activeTab === "overview" && <AdminOverview />}
       {activeTab === "reconciliation" && <Reconciliation />}
+      {activeTab === "users" && <UsersActivityTab />}
+      {activeTab === "sops" && <SOPManager />}
+      {activeTab === "ebitda" && <EBITDATab />}
+      {activeTab === "winback" && <WinBackTab />}
+      {activeTab === "email-clicks" && <EmailClicksTab />}
       {activeTab === "outreach" && <Outreach />}
       {activeTab === "email-templates" && <EmailTemplatesTab />}
+      {activeTab === "branding" && <BrandingTab />}
     </div>
   );
 }
