@@ -920,11 +920,8 @@ function ProjectsTab({
           {projects.map((p) => {
             const s = projectStats(p.id);
             return (
-              <button
-                key={p.id}
-                onClick={() => setSelected(p.id)}
-                className="glass-card p-4 text-left hover:border-primary/40 hover:bg-surface-raised/40 transition-colors"
-              >
+              <div key={p.id} className="glass-card p-4 hover:border-primary/40 hover:bg-surface-raised/40 transition-colors relative group">
+                <button onClick={() => setSelected(p.id)} className="text-left w-full bg-transparent border-0 p-0 cursor-pointer">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-sm truncate">{p.name}</div>
@@ -946,13 +943,33 @@ function ProjectsTab({
                     <div className="text-[9px] text-muted-foreground uppercase">Drops</div>
                   </div>
                 </div>
-              </button>
+                </button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full mt-3 h-7 text-[11px] gap-1"
+                  onClick={(e) => { e.stopPropagation(); setDispatchProject(p); }}
+                >
+                  <Plus className="w-3 h-3" /> Add to Dispatch
+                </Button>
+              </div>
             );
           })}
         </div>
       )}
 
       <ProjectModal open={modalOpen} onOpenChange={setModalOpen} clientAccountId={clientAccountId} initial={editing} />
+
+      {dispatchProject && clientAccountId && (
+        <AddToDispatchDialog
+          open={true}
+          onOpenChange={(v) => { if (!v) setDispatchProject(null); }}
+          clientAccountId={clientAccountId}
+          projectId={dispatchProject.id}
+          defaultSiteName={dispatchProject.name}
+          defaultAddress={dispatchProject.site_address || undefined}
+        />
+      )}
 
       <div>
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
