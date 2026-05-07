@@ -60,7 +60,6 @@ function DemoAwareRoutes() {
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/admin" element={<Admin />} />
-                <Route path="/operations" element={<Operations />} />
                 <Route path="/dispatch" element={<Dispatch />} />
                 <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                 <Route path="/trucks" element={<TruckPortal />} />
@@ -76,6 +75,7 @@ function DemoAwareRoutes() {
         <>
           <Route path="/portal" element={<CustomerPortal />} />
           <Route path="/driver" element={<DriverPortal />} />
+          <Route path="/operations" element={<Operations />} />
           <Route
             path="/*"
             element={
@@ -88,7 +88,6 @@ function DemoAwareRoutes() {
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/finance" element={<Finance />} />
                    <Route path="/admin" element={<Admin />} />
-                   <Route path="/operations" element={<Operations />} />
                    <Route path="/dispatch" element={<Dispatch />} />
                   <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                   <Route path="/trucks" element={<TruckPortal />} />
