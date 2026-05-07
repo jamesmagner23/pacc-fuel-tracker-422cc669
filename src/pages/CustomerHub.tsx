@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, Truck, FolderKanban, Download, Printer, FileText, Search } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Truck, FolderKanban, Download, Printer, FileText, Search, Send } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllTransactions } from "@/hooks/useTransactions";
@@ -26,6 +26,7 @@ import { format, parseISO, subDays, startOfMonth, startOfYear, startOfWeek } fro
 import { toast } from "@/hooks/use-toast";
 import { SpeedSolValue } from "@/components/SpeedSolValue";
 import { useDateRange } from "@/hooks/useDateRange";
+import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
 
 export default function CustomerHub() {
   const { name } = useParams<{ name: string }>();
