@@ -9,6 +9,11 @@ import { useProjects, useProjectAssignments, useDeleteProject, type Project } fr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { useTransactionOverrides, useClearAutoBackfillForPlant } from "@/hooks/useTransactionOverrides";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CustomerProfileCard } from "@/components/customer/CustomerProfileCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -132,6 +137,7 @@ export default function CustomerHub() {
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
           {[
             { v: "overview", l: "Overview" },
+            { v: "profile", l: "Profile" },
             { v: "equipment", l: "Plant & Equipment" },
             { v: "projects", l: "Projects" },
             { v: "analytics", l: "Analytics" },
@@ -149,6 +155,9 @@ export default function CustomerHub() {
 
         <TabsContent value="overview" className="mt-5">
           <OverviewTab txns={customerTxns} equipment={equipmentList} projects={projects} ftcRates={ftcRates} />
+        </TabsContent>
+        <TabsContent value="profile" className="mt-5">
+          <CustomerProfileCard customerName={customerName} />
         </TabsContent>
         <TabsContent value="equipment" className="mt-5">
           <EquipmentTab equipment={equipmentList} clientAccountId={clientAccountId} txns={customerTxns} ftcRates={ftcRates} />
