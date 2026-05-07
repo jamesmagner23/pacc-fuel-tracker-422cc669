@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subDays } from "date-fns";
-import { Users, Activity, Trash2, Pencil, LogIn, Download, Eye, X, KeyRound, UserPlus } from "lucide-react";
+import { Users, Activity, Trash2, Pencil, LogIn, Download, Eye, X, KeyRound, UserPlus, RefreshCw, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_USERS, DEMO_ACTIVITY } from "@/data/demoData";
@@ -133,6 +133,32 @@ export default function UsersActivityTab() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "operations" | "driver" | "client">("operations");
   const [newClientId, setNewClientId] = useState<string>("");
+
+  // Reset-password dialog state
+  const [resetUser, setResetUser] = useState<UserRow | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetPassword, setResetPassword] = useState<string>("");
+
+  const handleResetPassword = async (user: UserRow) => {
+    if (!confirm(`Generate a new password for ${user.full_name || user.email}? Their current password will stop working.`)) return;
+    setResetUser(user);
+    setResetting(true);
+    setResetPassword("");
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-reset-portal-password", {
+        body: { user_id: user.user_id },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setResetPassword((data as any).password);
+      toast.success("New password generated");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to reset password");
+      setResetUser(null);
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const { data: clientAccounts = [] } = useQuery({
     queryKey: ["client-accounts-for-user-create"],
@@ -331,6 +357,9 @@ export default function UsersActivityTab() {
                         <button onClick={() => handleEdit(user)} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1 transition-colors" title="Edit">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
+                        <button onClick={() => handleResetPassword(user)} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-accent p-1 transition-colors" title="Reset password">
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
                         {user.role !== "admin" && (
                           <button onClick={() => { if (confirm(`Remove ${user.full_name || user.email}?`)) deleteUser.mutate(user.user_id); }} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-destructive p-1 transition-colors" title="Delete">
                             <Trash2 className="w-3.5 h-3.5" />
@@ -424,6 +453,64 @@ export default function UsersActivityTab() {
               </div>
               <button onClick={handleSaveEdit} className="bg-primary text-primary-foreground border-none rounded-full px-5 py-2 text-xs font-semibold cursor-pointer mt-2">Save Changes</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {resetUser && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => { setResetUser(null); setResetPassword(""); }}>
+          <div className="bg-surface border border-surface-border rounded-[10px] p-5 w-full max-w-[440px]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm font-semibold text-foreground">New password for {resetUser.full_name || resetUser.email}</div>
+              <button onClick={() => { setResetUser(null); setResetPassword(""); }} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {resetting ? (
+              <div className="text-[13px] text-muted-foreground py-4 text-center">Generating…</div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-[12px] text-muted-foreground">
+                  Existing passwords can't be retrieved (they're hashed). This is the new password — copy it now, you won't see it again after closing this dialog.
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] text-muted-foreground">Email</label>
+                  <div className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] font-mono select-all">{resetUser.email}</div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] text-muted-foreground">New password</label>
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] font-mono select-all">{resetPassword}</div>
+                    <button
+                      type="button"
+                      onClick={() => { navigator.clipboard.writeText(resetPassword); toast.success("Password copied"); }}
+                      className="flex items-center gap-1.5 text-[11px] px-3 rounded-md border border-surface-border text-muted-foreground hover:text-foreground"
+                    >
+                      <Copy className="w-3.5 h-3.5" /> Copy
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const both = `Email: ${resetUser.email}\nPassword: ${resetPassword}\nLogin: ${window.location.origin}/login`;
+                      navigator.clipboard.writeText(both);
+                      toast.success("Email + password copied");
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1.5 text-[12px] px-3 py-2 rounded-md border border-surface-border text-foreground hover:bg-muted/30"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> Copy login details
+                  </button>
+                  <a
+                    href={`mailto:${resetUser.email}?subject=${encodeURIComponent("Your PACC Energy login")}&body=${encodeURIComponent(`Hi ${resetUser.full_name || ""},\n\nYour login has been reset.\n\nEmail: ${resetUser.email}\nPassword: ${resetPassword}\nSign in: ${window.location.origin}/login\n\nPlease change your password after signing in.`)}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 text-[12px] px-3 py-2 rounded-md bg-accent text-accent-foreground hover:opacity-90"
+                  >
+                    <Mail className="w-3.5 h-3.5" /> Email to user
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
