@@ -48,6 +48,8 @@ function DemoAwareRoutes() {
       <Route path="/docket/:id" element={<DeliveryDocket />} />
       {/* In demo mode, portal/driver get the sidebar Layout */}
       {isDemo ? (
+        <>
+        <Route path="/operations" element={<Operations />} />
         <Route
           path="/*"
           element={
@@ -60,7 +62,6 @@ function DemoAwareRoutes() {
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/admin" element={<Admin />} />
-                <Route path="/operations" element={<Operations />} />
                 <Route path="/dispatch" element={<Dispatch />} />
                 <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                 <Route path="/trucks" element={<TruckPortal />} />
@@ -72,10 +73,12 @@ function DemoAwareRoutes() {
             </Layout>
           }
         />
+        </>
       ) : (
         <>
           <Route path="/portal" element={<CustomerPortal />} />
           <Route path="/driver" element={<DriverPortal />} />
+          <Route path="/operations" element={<Operations />} />
           <Route
             path="/*"
             element={
@@ -88,7 +91,6 @@ function DemoAwareRoutes() {
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/finance" element={<Finance />} />
                    <Route path="/admin" element={<Admin />} />
-                   <Route path="/operations" element={<Operations />} />
                    <Route path="/dispatch" element={<Dispatch />} />
                   <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                   <Route path="/trucks" element={<TruckPortal />} />
@@ -104,7 +106,7 @@ function DemoAwareRoutes() {
   );
 }
 
-type UserRole = "admin" | "client" | "driver" | null;
+type UserRole = "admin" | "client" | "driver" | "operations" | null;
 
 const PUBLIC_PATHS = ["/login", "/landing", "/reset-password"];
 
@@ -148,6 +150,9 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       }
       if (userRole === "driver" && !path.startsWith("/driver") && !path.startsWith("/docket")) {
         navigate("/driver", { replace: true });
+      }
+      if (userRole === "operations" && !path.startsWith("/operations") && !path.startsWith("/docket")) {
+        navigate("/operations", { replace: true });
       }
     };
 
@@ -230,6 +235,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         return <>{children}</>;
       }
       return <Navigate to="/driver" replace />;
+    }
+    if (role === "operations") {
+      if (location.pathname.startsWith("/operations") || location.pathname.startsWith("/docket")) {
+        return <>{children}</>;
+      }
+      return <Navigate to="/operations" replace />;
     }
   }
 

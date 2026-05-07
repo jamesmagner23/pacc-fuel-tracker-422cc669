@@ -17,7 +17,6 @@ const navItems = [
   { to: "/trucks", label: "Trucks" },
   { to: "/portal", label: "Client Portal", demoOnly: true },
   { to: "/driver", label: "Driver Portal", demoOnly: true },
-  { to: "/operations", label: "Operations" },
   { to: "/admin", label: "Admin" },
 ];
 
@@ -41,6 +40,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isDemo, accentColor, isPaccBranded, isEmailPortalDemo } = useDemoContext();
   const [params] = useSearchParams();
   const bannerOffset = 0;
+
+  // Date range toggle is global state — only show it on routes whose pages
+  // actually consume it. Otherwise clicking Today/Week/Month does nothing
+  // visible and that's confusing UX.
+  const dateRangeRoutes = ["/", "/customers", "/transactions", "/trucks", "/performance", "/finance"];
+  const showDateRange = dateRangeRoutes.some((r) =>
+    r === "/" ? location.pathname === "/" : location.pathname === r || location.pathname.startsWith(r + "/")
+  );
 
   // Email outreach demo: only expose Client Portal in the sidebar
   const visibleNavItems = isEmailPortalDemo
@@ -313,7 +320,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Desktop right cluster */}
             <div className="hidden md:flex" style={{ alignItems: "center", gap: 8 }}>
               <SyncButton />
-              <DateRangeToggle />
+              {showDateRange && <DateRangeToggle />}
               <GlobalThemeToggle compact />
             </div>
 
@@ -325,16 +332,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Mobile second row: one date range toggle, full-width and touch-friendly */}
-          <div
-            className="flex md:hidden"
-            style={{
-              justifyContent: "center",
-              padding: "8px 12px 10px",
-              borderTop: `1px solid ${BORDER}`,
-            }}
-          >
-            <DateRangeToggle />
-          </div>
+          {showDateRange && (
+            <div
+              className="flex md:hidden"
+              style={{
+                justifyContent: "center",
+                padding: "8px 12px 10px",
+                borderTop: `1px solid ${BORDER}`,
+              }}
+            >
+              <DateRangeToggle />
+            </div>
+          )}
         </header>
 
         <main
