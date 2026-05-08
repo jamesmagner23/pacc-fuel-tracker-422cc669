@@ -290,17 +290,22 @@ function CustomerList() {
 }
 
 export default function Customers() {
+  const { data: role } = useUserRole();
+  const hideMoney = role === "operations";
+  const tabs = [
+    { value: "customers", label: "Customers" },
+    { value: "transactions", label: "Transactions" },
+    ...(hideMoney ? [] : [
+      { value: "pricing", label: "Client Pricing" },
+      { value: "quotes", label: "Quote Builder" },
+    ]),
+    { value: "tag", label: "Tag Deliveries" },
+  ];
   return (
     <div className="flex flex-col gap-5 max-w-[1100px] w-full">
       <Tabs defaultValue="customers">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
-          {[
-            { value: "customers", label: "Customers" },
-            { value: "transactions", label: "Transactions" },
-            { value: "pricing", label: "Client Pricing" },
-            { value: "quotes", label: "Quote Builder" },
-            { value: "tag", label: "Tag Deliveries" },
-          ].map((tab) => (
+          {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
@@ -317,12 +322,16 @@ export default function Customers() {
         <TabsContent value="transactions" className="mt-5">
           <Transactions embedded />
         </TabsContent>
-        <TabsContent value="pricing" className="mt-5">
-          <ClientPricingTab />
-        </TabsContent>
-        <TabsContent value="quotes" className="mt-5">
-          <PricingTab />
-        </TabsContent>
+        {!hideMoney && (
+          <>
+            <TabsContent value="pricing" className="mt-5">
+              <ClientPricingTab />
+            </TabsContent>
+            <TabsContent value="quotes" className="mt-5">
+              <PricingTab />
+            </TabsContent>
+          </>
+        )}
         <TabsContent value="tag" className="mt-5">
           <TagDeliveries />
         </TabsContent>
