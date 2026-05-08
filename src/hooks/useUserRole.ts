@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "client" | "driver" | null;
+export type AppRole = "admin" | "client" | "driver" | "operations" | null;
 
 /**
  * Returns the signed-in user's role from `user_roles`. Cached — safe to
