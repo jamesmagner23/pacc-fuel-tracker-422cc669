@@ -13,11 +13,14 @@ import Transactions from "./Transactions";
 import ClientPricingTab from "@/components/finance/ClientPricingTab";
 import PricingTab from "@/components/finance/PricingTab";
 import TagDeliveries from "./TagDeliveries";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type LocalRange = "global" | "30d" | "90d" | "ytd" | "all" | "custom";
 
 function CustomerList() {
   const { range } = useDateRange();
+  const { data: role } = useUserRole();
+  const hideMoney = role === "operations";
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -187,7 +190,7 @@ function CustomerList() {
         {([
           { key: "litres", label: "Litres" },
           { key: "deliveries", label: "Deliveries" },
-          { key: "revenue", label: "Revenue" },
+          ...(hideMoney ? [] : [{ key: "revenue" as const, label: "Revenue" }]),
         ] as const).map((opt) => (
           <button
             key={opt.key}
@@ -234,7 +237,7 @@ function CustomerList() {
                     <div className="w-5 h-5 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[9px] font-bold shrink-0">
                       {initials || "?"}
                     </div>
-                    {c.revenue > 0 && (
+                    {!hideMoney && c.revenue > 0 && (
                       <div className="text-[9px] text-muted-foreground font-medium tabular-nums leading-tight text-right">
                         ${c.revenue >= 1000 ? `${(c.revenue / 1000).toFixed(1)}k` : Math.round(c.revenue)}
                       </div>
