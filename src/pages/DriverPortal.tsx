@@ -15,6 +15,7 @@ import { useDispatchStops, useReorderDispatchStops, useUpdateStopStatus, type Di
 import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { TagDeliveriesTab } from "@/components/driver/TagDeliveriesTab";
+import { ShareLocationToggle } from "@/components/driver/ShareLocationToggle";
 import { usePortalTheme } from "@/lib/portalTheme";
 import { PortalThemeToggle } from "@/components/portal/PortalThemeToggle";
 
@@ -734,6 +735,8 @@ export default function DriverPortal() {
         ) : (
         <>
         <TruckMap height={200} compact={true} />
+
+        <ShareLocationToggle />
 
         <div className="card p-7 text-center">
           <div className="flex items-center justify-center gap-1.5 mb-3">
