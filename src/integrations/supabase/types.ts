@@ -547,6 +547,42 @@ export type Database = {
           },
         ]
       }
+      driver_locations: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          driver_user_id: string
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          recorded_at: string
+          speed: number | null
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          driver_user_id: string
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          recorded_at?: string
+          speed?: number | null
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          driver_user_id?: string
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          recorded_at?: string
+          speed?: number | null
+        }
+        Relationships: []
+      }
       email_cta_clicks: {
         Row: {
           campaign: string
