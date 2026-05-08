@@ -10,8 +10,8 @@ const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 // Suppliers we look for. Tweak the `query` to match the real sender / subject.
 const SUPPLIERS: { name: string; query: string }[] = [
-  { name: "Pacific", query: "from:(pacific) (price OR pricing OR rack) newer_than:2d" },
-  { name: "Pro Fusion", query: "from:(profusion OR \"pro fusion\") (price OR pricing OR rack) newer_than:2d" },
+  { name: "Pacific", query: "from:admin@pacificfuelsolutions.com.au newer_than:2d" },
+  { name: "Pro Fusion", query: "from:tony@profusionfuels.com.au -subject:minus1 newer_than:2d" },
 ];
 
 function decodeBase64Url(s: string): string {
