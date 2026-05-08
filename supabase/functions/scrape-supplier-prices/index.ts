@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
 
   for (const sup of SUPPLIERS) {
     try {
-      const listResp = await fetch(`${GATEWAY_URL}/users/me/messages?maxResults=5&q=${encodeURIComponent(sup.query)}`, {
+      const listResp = await fetch(`${GATEWAY_URL}/users/me/messages?maxResults=10&q=${encodeURIComponent(sup.query)}`, {
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GOOGLE_MAIL_API_KEY },
       });
       const listData = await listResp.json();
@@ -111,12 +111,43 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const msgId = messages[0].id;
+      // Fetch metadata for all candidates and pick the most recent by internalDate
+      const metas = await Promise.all(
+        messages.slice(0, 10).map(async (m: any) => {
+          const r = await fetch(`${GATEWAY_URL}/users/me/messages/${m.id}?format=metadata&metadataHeaders=Date`, {
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GOOGLE_MAIL_API_KEY },
+          });
+          const j = await r.json().catch(() => ({}));
+          return { id: m.id as string, internalDate: Number(j.internalDate || 0) };
+        }),
+      );
+      metas.sort((a, b) => b.internalDate - a.internalDate);
+      const latest = metas[0];
+      const msgId = latest.id;
+
+      // Skip if we've already successfully ingested this exact message
+      const { data: prior } = await admin
+        .from("supplier_price_scrape_log")
+        .select("id, gmail_message_id, scraped_at")
+        .eq("supplier", sup.name)
+        .eq("status", "success")
+        .eq("gmail_message_id", msgId)
+        .limit(1);
+      if (prior && prior.length) {
+        await admin.from("supplier_price_scrape_log").insert({
+          supplier: sup.name, status: "skipped_duplicate", gmail_message_id: msgId,
+          error: "Already ingested this Gmail message",
+        });
+        results.push({ supplier: sup.name, status: "skipped_duplicate", msgId });
+        continue;
+      }
+
       const msgResp = await fetch(`${GATEWAY_URL}/users/me/messages/${msgId}?format=full`, {
         headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GOOGLE_MAIL_API_KEY },
       });
       const msg = await msgResp.json();
       const body = extractPlainText(msg.payload);
+      const emailEpochMs = Number(msg.internalDate || latest.internalDate || 0);
 
       const { price, date, reason } = await aiExtractPrice(sup.name, body);
       if (price == null || price <= 0) {
@@ -129,6 +160,46 @@ Deno.serve(async (req) => {
       }
 
       const priceDate = date || today;
+
+      // Only overwrite the buy price if this email is newer than the email
+      // that produced the currently-stored price for this (supplier, price_date).
+      const { data: latestSuccess } = await admin
+        .from("supplier_price_scrape_log")
+        .select("gmail_message_id, scraped_at")
+        .eq("supplier", sup.name)
+        .eq("status", "success")
+        .eq("price_date", priceDate)
+        .order("scraped_at", { ascending: false })
+        .limit(1);
+
+      let shouldWrite = true;
+      if (latestSuccess && latestSuccess.length && latestSuccess[0].gmail_message_id) {
+        const prevId = latestSuccess[0].gmail_message_id;
+        if (prevId === msgId) {
+          shouldWrite = false;
+        } else {
+          // Compare by internalDate of the previously-ingested message
+          const r = await fetch(`${GATEWAY_URL}/users/me/messages/${prevId}?format=metadata`, {
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GOOGLE_MAIL_API_KEY },
+          });
+          const prev = await r.json().catch(() => ({}));
+          const prevEpoch = Number(prev.internalDate || 0);
+          if (prevEpoch && emailEpochMs && emailEpochMs <= prevEpoch) {
+            shouldWrite = false;
+          }
+        }
+      }
+
+      if (!shouldWrite) {
+        await admin.from("supplier_price_scrape_log").insert({
+          supplier: sup.name, status: "skipped_stale", price_per_litre: price, price_date: priceDate,
+          gmail_message_id: msgId, raw_excerpt: body.slice(0, 500),
+          error: "Newer or equal price already stored for this date",
+        });
+        results.push({ supplier: sup.name, status: "skipped_stale", price, priceDate });
+        continue;
+      }
+
       await admin.from("buy_prices").upsert(
         { supplier: sup.name, price_per_litre: price, price_date: priceDate, notes: `Auto-scraped from Gmail (${reason || "ok"})` },
         { onConflict: "price_date,supplier" },
