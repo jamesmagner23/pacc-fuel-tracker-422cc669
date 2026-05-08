@@ -10,8 +10,8 @@ const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 // Suppliers we look for. Tweak the `query` to match the real sender / subject.
 const SUPPLIERS: { name: string; query: string }[] = [
-  { name: "Pacific", query: "from:(pacific) (price OR pricing OR rack) newer_than:2d" },
-  { name: "Pro Fusion", query: "from:(profusion OR \"pro fusion\") (price OR pricing OR rack) newer_than:2d" },
+  { name: "Pacific", query: "from:admin@pacificfuelsolutions.com.au newer_than:2d" },
+  { name: "Pro Fusion", query: "from:tony@profusionfuels.com.au -subject:minus1 newer_than:2d" },
 ];
 
 function decodeBase64Url(s: string): string {
@@ -114,15 +114,27 @@ Deno.serve(async (req) => {
       // Fetch metadata for all candidates and pick the most recent by internalDate
       const metas = await Promise.all(
         messages.slice(0, 10).map(async (m: any) => {
-          const r = await fetch(`${GATEWAY_URL}/users/me/messages/${m.id}?format=metadata&metadataHeaders=Date`, {
+          const r = await fetch(`${GATEWAY_URL}/users/me/messages/${m.id}?format=metadata&metadataHeaders=Date&metadataHeaders=Subject`, {
             headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GOOGLE_MAIL_API_KEY },
           });
           const j = await r.json().catch(() => ({}));
-          return { id: m.id as string, internalDate: Number(j.internalDate || 0) };
+          const subject = (j.payload?.headers || []).find((h: any) => h.name?.toLowerCase() === "subject")?.value || "";
+          return { id: m.id as string, internalDate: Number(j.internalDate || 0), subject };
         }),
       );
-      metas.sort((a, b) => b.internalDate - a.internalDate);
-      const latest = metas[0];
+      // Safety net: exclude Pro Fusion "minus1" emails even if Gmail query missed them
+      const filtered = sup.name === "Pro Fusion"
+        ? metas.filter((m) => !/minus\s*1/i.test(m.subject))
+        : metas;
+      if (!filtered.length) {
+        await admin.from("supplier_price_scrape_log").insert({
+          supplier: sup.name, status: "no_email", error: "All candidates filtered (e.g. minus1)",
+        });
+        results.push({ supplier: sup.name, status: "no_email" });
+        continue;
+      }
+      filtered.sort((a, b) => b.internalDate - a.internalDate);
+      const latest = filtered[0];
       const msgId = latest.id;
 
       // Skip if we've already successfully ingested this exact message
