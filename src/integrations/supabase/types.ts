@@ -1541,6 +1541,84 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_price_scrape_log: {
+        Row: {
+          error: string | null
+          gmail_message_id: string | null
+          id: string
+          price_date: string | null
+          price_per_litre: number | null
+          raw_excerpt: string | null
+          scraped_at: string
+          status: string
+          supplier: string | null
+        }
+        Insert: {
+          error?: string | null
+          gmail_message_id?: string | null
+          id?: string
+          price_date?: string | null
+          price_per_litre?: number | null
+          raw_excerpt?: string | null
+          scraped_at?: string
+          status: string
+          supplier?: string | null
+        }
+        Update: {
+          error?: string | null
+          gmail_message_id?: string | null
+          id?: string
+          price_date?: string | null
+          price_per_litre?: number | null
+          raw_excerpt?: string | null
+          scraped_at?: string
+          status?: string
+          supplier?: string | null
+        }
+        Relationships: []
+      }
+      supplier_purchases: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_ref: string | null
+          litres: number
+          notes: string | null
+          price_per_litre_ex_gst: number
+          purchase_date: string
+          supplier: string
+          total_ex_gst: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_ref?: string | null
+          litres: number
+          notes?: string | null
+          price_per_litre_ex_gst: number
+          purchase_date: string
+          supplier: string
+          total_ex_gst?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_ref?: string | null
+          litres?: number
+          notes?: string | null
+          price_per_litre_ex_gst?: number
+          purchase_date?: string
+          supplier?: string
+          total_ex_gst?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sync_log: {
         Row: {
           error_message: string | null
