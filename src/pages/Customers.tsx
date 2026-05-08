@@ -13,11 +13,14 @@ import Transactions from "./Transactions";
 import ClientPricingTab from "@/components/finance/ClientPricingTab";
 import PricingTab from "@/components/finance/PricingTab";
 import TagDeliveries from "./TagDeliveries";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type LocalRange = "global" | "30d" | "90d" | "ytd" | "all" | "custom";
 
 function CustomerList() {
   const { range } = useDateRange();
+  const { data: role } = useUserRole();
+  const hideMoney = role === "operations";
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -187,7 +190,7 @@ function CustomerList() {
         {([
           { key: "litres", label: "Litres" },
           { key: "deliveries", label: "Deliveries" },
-          { key: "revenue", label: "Revenue" },
+          ...(hideMoney ? [] : [{ key: "revenue" as const, label: "Revenue" }]),
         ] as const).map((opt) => (
           <button
             key={opt.key}
@@ -234,7 +237,7 @@ function CustomerList() {
                     <div className="w-5 h-5 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[9px] font-bold shrink-0">
                       {initials || "?"}
                     </div>
-                    {c.revenue > 0 && (
+                    {!hideMoney && c.revenue > 0 && (
                       <div className="text-[9px] text-muted-foreground font-medium tabular-nums leading-tight text-right">
                         ${c.revenue >= 1000 ? `${(c.revenue / 1000).toFixed(1)}k` : Math.round(c.revenue)}
                       </div>
@@ -287,17 +290,22 @@ function CustomerList() {
 }
 
 export default function Customers() {
+  const { data: role } = useUserRole();
+  const hideMoney = role === "operations";
+  const tabs = [
+    { value: "customers", label: "Customers" },
+    { value: "transactions", label: "Transactions" },
+    ...(hideMoney ? [] : [
+      { value: "pricing", label: "Client Pricing" },
+      { value: "quotes", label: "Quote Builder" },
+    ]),
+    { value: "tag", label: "Tag Deliveries" },
+  ];
   return (
     <div className="flex flex-col gap-5 max-w-[1100px] w-full">
       <Tabs defaultValue="customers">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
-          {[
-            { value: "customers", label: "Customers" },
-            { value: "transactions", label: "Transactions" },
-            { value: "pricing", label: "Client Pricing" },
-            { value: "quotes", label: "Quote Builder" },
-            { value: "tag", label: "Tag Deliveries" },
-          ].map((tab) => (
+          {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
@@ -314,12 +322,16 @@ export default function Customers() {
         <TabsContent value="transactions" className="mt-5">
           <Transactions embedded />
         </TabsContent>
-        <TabsContent value="pricing" className="mt-5">
-          <ClientPricingTab />
-        </TabsContent>
-        <TabsContent value="quotes" className="mt-5">
-          <PricingTab />
-        </TabsContent>
+        {!hideMoney && (
+          <>
+            <TabsContent value="pricing" className="mt-5">
+              <ClientPricingTab />
+            </TabsContent>
+            <TabsContent value="quotes" className="mt-5">
+              <PricingTab />
+            </TabsContent>
+          </>
+        )}
         <TabsContent value="tag" className="mt-5">
           <TagDeliveries />
         </TabsContent>

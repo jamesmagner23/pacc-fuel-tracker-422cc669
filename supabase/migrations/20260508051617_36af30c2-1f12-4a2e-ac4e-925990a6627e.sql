@@ -1,0 +1,1 @@
+CREATE POLICY "Operations can view all transactions" ON public.transactions FOR SELECT TO authenticated USING (has_role(auth.uid(), 'operations'::app_role));
