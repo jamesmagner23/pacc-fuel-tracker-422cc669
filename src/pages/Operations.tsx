@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { LayoutDashboard, Truck, Users, Route, LogOut, CalendarIcon, Droplet, DollarSign, Package, Gauge } from "lucide-react";
+import { LayoutDashboard, Truck, Users, Route, LogOut, CalendarIcon, Droplet, Package, Gauge } from "lucide-react";
 import { format, subDays, startOfYear, parseISO, startOfWeek } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -7,7 +7,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { PACCLogo } from "@/components/PACCLogo";
 import { GlobalThemeToggle } from "@/components/GlobalThemeToggle";
-import { SyncButton } from "@/components/SyncButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import Trucks from "./Trucks";
@@ -28,10 +27,9 @@ function OperationsOverview() {
     const wkStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd");
     const wk = txns.filter((t) => t.date && t.date >= wkStart);
     const litres = wk.reduce((s, t) => s + (t.cantidad || 0), 0);
-    const revenue = wk.reduce((s, t) => s + (t.dinero_total || 0), 0);
     const deliveries = wk.length;
     const avg = deliveries ? Math.round(litres / deliveries) : 0;
-    return { litres, revenue, deliveries, avg };
+    return { litres, deliveries, avg };
   }, [txns]);
 
   const filtered = useMemo(() => {
@@ -157,10 +155,9 @@ function OperationsOverview() {
       {/* Weekly headline KPIs */}
       <div>
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">This week</div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {[
             { label: "Litres", value: `${weekKpis.litres.toLocaleString()}L`, Icon: Droplet },
-            { label: "Revenue (inc GST)", value: `$${weekKpis.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, Icon: DollarSign },
             { label: "Deliveries", value: weekKpis.deliveries.toLocaleString(), Icon: Package },
             { label: "Avg drop", value: `${weekKpis.avg.toLocaleString()}L`, Icon: Gauge },
           ].map((k) => (
@@ -261,7 +258,6 @@ export default function Operations() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <SyncButton />
             <GlobalThemeToggle compact />
             <button
               onClick={async () => {
