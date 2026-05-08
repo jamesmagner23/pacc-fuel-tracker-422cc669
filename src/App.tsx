@@ -25,6 +25,7 @@ import Outreach from "./pages/Outreach";
 import TruckPortal from "./pages/TruckPortal";
 
 import Dispatch from "./pages/Dispatch";
+import Suppliers from "./pages/Suppliers";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import LandingPage from "./pages/LandingPage";
@@ -63,6 +64,7 @@ function DemoAwareRoutes() {
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/dispatch" element={<Dispatch />} />
+                <Route path="/suppliers" element={<Suppliers />} />
                 <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                 <Route path="/trucks" element={<TruckPortal />} />
                 <Route path="/portal" element={<CustomerPortal />} />
@@ -92,6 +94,7 @@ function DemoAwareRoutes() {
                   <Route path="/finance" element={<Finance />} />
                    <Route path="/admin" element={<Admin />} />
                    <Route path="/dispatch" element={<Dispatch />} />
+                  <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                   <Route path="/trucks" element={<TruckPortal />} />
                   <Route path="/admin/outreach" element={<Outreach />} />

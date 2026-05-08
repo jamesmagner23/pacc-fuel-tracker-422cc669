@@ -143,7 +143,13 @@ export default function Suppliers() {
   };
 
   // Add purchase form
-  const [pf, setPf] = useState({ purchase_date: format(new Date(), "yyyy-MM-dd"), supplier: SUPPLIERS[0], litres: "", price: "", invoice: "" });
+  const [pf, setPf] = useState<{ purchase_date: string; supplier: string; litres: string; price: string; invoice: string }>({
+    purchase_date: format(new Date(), "yyyy-MM-dd"),
+    supplier: SUPPLIERS[0],
+    litres: "",
+    price: "",
+    invoice: "",
+  });
   const addPurchase = useMutation({
     mutationFn: async () => {
       const litres = parseFloat(pf.litres);
