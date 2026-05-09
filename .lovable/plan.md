@@ -1,111 +1,79 @@
-## Unified CRM — `/crm`
+## Goal
 
-A single CRM workspace shared by Admin + Operations, surfacing both prospects and existing customers on two boards (Acquisition for new sales, Retention for current customers). Email-only for v1 (uses your existing Gmail connector). Templates, activity log, and a "warn before double-contacting" guard included. SMS hook left as a later add-on.
+Add two sub-tabs to **Market Intelligence** (`/market`) — keep `/suppliers` untouched.
 
----
+1. **BOWSER AVG** — Melbourne metro average retail diesel (what trucks pay at the pump)
+2. **TGP COMPARE** — Melbourne terminal gate prices side-by-side across brands
 
-### What gets built
-
-**1. Navigation**
-- New top-level sidebar item `CRM` (visible to admin + driver/ops roles).
-- Removes the standalone Admin → Outreach tab and folds its functionality into CRM.
-- Adds a CRM shortcut card to the Operations page.
-
-**2. Two-board layout (one page, tab switcher)**
-- **Acquisition board** — kanban of leads moving through `New → Contacted → Quoted → Won → Lost`. Lost cards capture a reason + optional follow-up date.
-- **Retention board** — kanban of existing customers in `Active → At-risk → Churned`. "At-risk" auto-flag if no transactions in last 30 days (read-only signal alongside manual placement).
-- Drag-and-drop between columns; each card shows org name, owner avatar, last contact, next follow-up, value indicator.
-
-**3. Customer / Contact model**
-- One CRM record per organisation. For existing clients, links to the `client_accounts` row so retention cards stay in sync (name, brand). Prospects live as standalone CRM records until converted (button: "Convert to client account").
-- Each CRM record holds many contacts (name, role, email, phone, is_primary, do_not_contact).
-- Tags, owner (user_id), source (referral / cold / inbound / etc.), notes (rich text), next-follow-up date, lost-reason.
-
-**4. Communication**
-- "Email" button on a contact opens the existing Gmail compose flow (reuses `send-via-gmail` + `email_templates`).
-- Template picker pulls from `email_templates` and merges variables (contact.first_name, org, owner, portal link).
-- Every send is logged into a unified `crm_activity` table (channel, subject, body excerpt, sent_by, gmail_message_id, thread_id, contact_id, customer_id).
-- "Log call / Log SMS / Log meeting / Note" manual entry types so the activity timeline reflects everything (not just emails).
-- **Double-contact warning**: when composing, if any teammate has emailed this contact in the last 7 days, the compose modal shows an amber banner ("Sarah emailed Tony 2 days ago — subject: …") but does not block. Configurable cooldown stored in a single `crm_settings` row.
-
-**5. Templates**
-- Reuses existing `email_templates` table (already there). CRM page gets a Templates tab — list, create, edit, preview with sample contact merge.
-- Variables documented inline ({{contact.first_name}}, {{customer.name}}, {{owner.name}}, {{portal_url}}).
-
-**6. Analytics dashboard (CRM → Insights tab)**
-- Pipeline value & count by stage.
-- Conversion rate New → Won (last 30/90 days).
-- Win/loss breakdown with top lost-reasons.
-- Activity volume per teammate (emails sent, calls logged) — last 14 days bar chart.
-- "Quiet customers" widget: top 10 retention customers with longest gap since last contact.
-- Reuses brand chart palette (orange line/bars, no black text).
-
-**7. Permissions**
-- Admin: full CRUD on everything.
-- Driver/ops: read all, create activity + contacts, edit cards they own or are assigned to. Can't delete customers.
-- Clients: no access (already gated by role routing).
+Both default to last 7 days, Inc/Ex GST toggle.
 
 ---
 
-### Data model (new tables)
+## 1. BOWSER AVG — Melbourne retail diesel
 
-```text
-crm_customers
-  id, kind ('prospect'|'client'), client_account_id (nullable FK→client_accounts),
-  name, website, industry, source, owner_user_id, status ('active'|'archived'),
-  acquisition_stage ('new'|'contacted'|'quoted'|'won'|'lost'),
-  retention_stage  ('active'|'at_risk'|'churned'),
-  lost_reason, next_follow_up_at, estimated_value, tags text[], notes,
-  created_by, created_at, updated_at
+**Two data sources merged on one chart:**
 
-crm_contacts
-  id, customer_id FK, first_name, last_name, role, email, phone,
-  is_primary bool, do_not_contact bool, notes, created_at, updated_at
+- **AIP weekly retail** (trusted baseline, weekly, ex-GST → convert) — scrape `https://www.aip.com.au/pricing/retail-diesel`, store as `source='AIP_Retail'`, `location='Melbourne'`
+- **PetrolSpy daily aggregator** (live signal, daily) — call PetrolSpy API for diesel stations within Melbourne metro bounding box, compute mean price, store as `source='PetrolSpy'`, `location='Melbourne'`
 
-crm_activities
-  id, customer_id FK, contact_id FK nullable, user_id (sender),
-  channel ('email'|'call'|'sms'|'meeting'|'note'),
-  direction ('outbound'|'inbound'|'internal'),
-  subject, body_excerpt, gmail_message_id, gmail_thread_id,
-  outcome ('sent'|'replied'|'bounced'|'no_response'|null),
-  occurred_at timestamptz, created_at
+**New table** `retail_bowser_prices`:
+- `price_date date`, `source text`, `location text`, `product text` (default `'Diesel'`), `price_inc_gst numeric`, `sample_size integer`, `notes text`
+- Unique on `(price_date, location, product, source)`
+- RLS: admins manage, authenticated read
 
-crm_settings  (single-row config)
-  cooldown_days int default 7, default_owner_user_id, updated_at
-```
+**New edge function** `fetch-retail-bowser`:
+- Fetches both sources, upserts daily
+- Scheduled via `pg_cron` daily at 09:00 UTC
+- Bonus: also pulls **driver intake** average (`fuel_intake_logs.bowser_retail_price`) by date — already in DB, no scrape needed; chart renders this as a third line straight from existing data
 
-RLS: admin = all; driver = select all + insert activities/contacts + update owned cards; nothing exposed to client role. Indexes on customer_id, occurred_at desc.
-
-A trigger on `outreach_send_log` mirrors new Gmail sends into `crm_activities` when the recipient email matches a `crm_contacts.email`, so historical/external sends still surface in the timeline.
+**UI on BOWSER AVG tab:**
+- 3-line chart: AIP weekly · PetrolSpy daily · Our actual driver fills
+- KPI tiles: today's avg, 7-day avg, vs our buy price spread
+- Inc/Ex GST toggle, 7d / 30d / 90d range
 
 ---
 
-### Files to create / change
+## 2. TGP COMPARE — Melbourne, all brands
 
-**New**
-- `supabase/migrations/<ts>_crm_core.sql` — tables, RLS, trigger, seed `crm_settings` row.
-- `src/pages/CRM.tsx` — page shell with tabs: Acquisition · Retention · Contacts · Templates · Insights.
-- `src/components/crm/AcquisitionBoard.tsx`, `RetentionBoard.tsx` — kanban columns w/ drag.
-- `src/components/crm/CustomerDrawer.tsx` — slide-out detail (overview, contacts, activity timeline, send-email).
-- `src/components/crm/ContactList.tsx`, `ContactEditor.tsx`.
-- `src/components/crm/ActivityTimeline.tsx`, `LogActivityDialog.tsx`.
-- `src/components/crm/ComposeEmailDialog.tsx` — template picker + cooldown warning + Gmail send.
-- `src/components/crm/CrmInsights.tsx` — 4–5 charts.
-- `src/hooks/useCrmCustomers.ts`, `useCrmContacts.ts`, `useCrmActivities.ts`.
+Existing `terminal_gate_prices` already has `source` column. Today it stores `AIP` (city-average) and `Viva` (brand-specific). To compare brands properly we need each major's published TGP.
 
-**Edited**
-- `src/App.tsx` — route `/crm`.
-- `src/components/Layout.tsx` — sidebar entry.
-- `src/pages/Admin.tsx` — replace Outreach tab with a "CRM →" link card (deep-link to /crm Templates tab for the email templates section that already lived under Admin).
-- `src/pages/Operations.tsx` — add CRM shortcut tile.
-- `mem://index.md` + new `mem://features/crm` memory file.
+**Brand scrapers** (all Melbourne diesel, store with `source='<Brand>'`, `location='Melbourne'`):
+- **Viva** — already scraped daily by `fetch-viva-tgp`
+- **Ampol** — extend with `fetch-ampol-tgp`: scrapes `https://www.ampol.com.au/about-ampol/fuel-pricing/terminal-gate-pricing`
+- **BP** — `fetch-bp-tgp`: scrapes `https://www.bp.com/en_au/australia/home/products-and-services/bp-fuels/fuel-pricing.html`
+- **Mobil** — `fetch-mobil-tgp`: scrapes Mobil Australia TGP page
+- **7-Eleven** — `fetch-711-tgp`: scrapes 7-Eleven TGP page
+- All use `r.jina.ai` proxy (same trick as Viva) to avoid CDN blocks
+- All scheduled daily 20:15 UTC via `pg_cron`
+
+Keep existing AIP city-avg as a "market" reference line.
+
+**UI on TGP COMPARE tab:**
+- Multi-line chart: one line per brand, AIP city-avg as dashed reference
+- Today snapshot: tile per brand with current price + delta vs city avg + cheapest highlighted in green
+- 7d default range, Inc/Ex GST toggle (data stored ex-GST)
+- Empty-state per brand if scrape hasn't landed yet (don't fail loudly)
 
 ---
 
-### Out of scope for v1 (called out so we don't over-build)
-- SMS sending (Twilio) — schema has `channel='sms'` ready for when you say go.
-- Inbound email parsing (replies auto-attached to timeline) — relies on Gmail watch/push, can add after.
-- Quotes integration on the customer card — easy to wire next pass to existing `quotes` table.
-- Per-user notification settings (email me when a teammate contacts my customer).
+## Scope I'm NOT doing in this pass
+- Other cities (you said Melbourne only)
+- Per-station retail breakdown (only city avg)
+- Historical backfill — charts grow as scrapers run forward
 
-Sound right? Hit approve and I'll build it.
+---
+
+## Technical Details
+
+**Files to add**
+- Migration: `retail_bowser_prices` table + RLS
+- Edge functions: `fetch-retail-bowser`, `fetch-ampol-tgp`, `fetch-bp-tgp`, `fetch-mobil-tgp`, `fetch-711-tgp`
+- `pg_cron` schedules (insert tool, not migration — contains anon key)
+- Hook: `useRetailBowserPrices.ts`
+- Tab components: `MarketBowserAvgTab.tsx`, `MarketTGPCompareTab.tsx`
+- Wire into `MarketIntelligence.tsx` tabs array
+
+**Files to edit**
+- `src/pages/MarketIntelligence.tsx` — add 2 tabs
+
+**Risk**: brand TGP pages may change HTML/block scrapers. The `r.jina.ai` markdown proxy pattern (already proven for Viva) handles most cases. Each scraper logs to a `scrape_attempts`-style audit so failures are visible.
