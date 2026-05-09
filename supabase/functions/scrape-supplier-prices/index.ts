@@ -9,10 +9,18 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1"
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 // Suppliers we look for. Tweak the `query` to match the real sender / subject.
-const SUPPLIERS: { name: string; query: string }[] = [
-  { name: "Pacific", query: "from:admin@pacificfuelsolutions.com.au newer_than:2d" },
-  { name: "Pro Fusion", query: "from:tony@profusionfuels.com.au -subject:minus1 newer_than:2d" },
+const SUPPLIERS: { name: string; from: string }[] = [
+  { name: "Pacific", from: "admin@pacificfuelsolutions.com.au" },
+  { name: "Pro Fusion", from: "tony@profusionfuels.com.au" },
 ];
+
+function buildQuery(from: string, supplier: string, windowExpr: string): string {
+  // Exclude Pro Fusion "minus 1" / "minus1" pricing (lower-grade, not used).
+  const exclude = supplier === "Pro Fusion"
+    ? ' -subject:"minus 1" -subject:minus1 -subject:"-1"'
+    : "";
+  return `from:${from}${exclude} ${windowExpr}`;
+}
 
 function decodeBase64Url(s: string): string {
   const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
@@ -96,13 +104,44 @@ Deno.serve(async (req) => {
 
   const today = new Date().toISOString().slice(0, 10);
 
+  // Backfill mode: process every matching email in the lookback window,
+  // not just the latest. Triggered via { backfill: true } in body or ?backfill=1.
+  let backfill = false;
+  let lookbackDays = 2;
+  try {
+    const url = new URL(req.url);
+    if (url.searchParams.get("backfill")) backfill = true;
+    const lb = url.searchParams.get("days");
+    if (lb) lookbackDays = Math.max(1, Math.min(1095, Number(lb)));
+  } catch { /* ignore */ }
+  if (req.method === "POST") {
+    try {
+      const j = await req.clone().json();
+      if (j?.backfill) backfill = true;
+      if (j?.days) lookbackDays = Math.max(1, Math.min(1095, Number(j.days)));
+    } catch { /* no body */ }
+  }
+  if (backfill && lookbackDays < 30) lookbackDays = 365;
+  const windowExpr = `newer_than:${lookbackDays}d`;
+
   for (const sup of SUPPLIERS) {
     try {
-      const listResp = await fetch(`${GATEWAY_URL}/users/me/messages?maxResults=10&q=${encodeURIComponent(sup.query)}`, {
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GOOGLE_MAIL_API_KEY },
-      });
-      const listData = await listResp.json();
-      const messages = listData.messages || [];
+      const q = buildQuery(sup.from, sup.name, windowExpr);
+      // Page through results (Gmail caps at 100/page).
+      const messages: { id: string }[] = [];
+      let pageToken: string | undefined = undefined;
+      const maxPages = backfill ? 20 : 1;
+      for (let p = 0; p < maxPages; p++) {
+        const url = `${GATEWAY_URL}/users/me/messages?maxResults=${backfill ? 100 : 10}&q=${encodeURIComponent(q)}${pageToken ? `&pageToken=${pageToken}` : ""}`;
+        const listResp = await fetch(url, {
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GOOGLE_MAIL_API_KEY },
+        });
+        const listData = await listResp.json();
+        const batch = listData.messages || [];
+        messages.push(...batch);
+        pageToken = listData.nextPageToken;
+        if (!pageToken) break;
+      }
       if (!messages.length) {
         await admin.from("supplier_price_scrape_log").insert({
           supplier: sup.name, status: "no_email", error: "No matching messages",
@@ -111,9 +150,9 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Fetch metadata for all candidates and pick the most recent by internalDate
+      // Fetch metadata for all candidates.
       const metas = await Promise.all(
-        messages.slice(0, 10).map(async (m: any) => {
+        messages.map(async (m: any) => {
           const r = await fetch(`${GATEWAY_URL}/users/me/messages/${m.id}?format=metadata&metadataHeaders=Date&metadataHeaders=Subject`, {
             headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GOOGLE_MAIL_API_KEY },
           });
@@ -122,9 +161,9 @@ Deno.serve(async (req) => {
           return { id: m.id as string, internalDate: Number(j.internalDate || 0), subject };
         }),
       );
-      // Safety net: exclude Pro Fusion "minus1" emails even if Gmail query missed them
+      // Safety net: exclude Pro Fusion "minus 1" / "-1" emails even if Gmail query missed them
       const filtered = sup.name === "Pro Fusion"
-        ? metas.filter((m) => !/minus\s*1/i.test(m.subject))
+        ? metas.filter((m) => !/minus\s*1/i.test(m.subject) && !/-\s*1\b/i.test(m.subject))
         : metas;
       if (!filtered.length) {
         await admin.from("supplier_price_scrape_log").insert({
@@ -134,8 +173,12 @@ Deno.serve(async (req) => {
         continue;
       }
       filtered.sort((a, b) => b.internalDate - a.internalDate);
-      const latest = filtered[0];
-      const msgId = latest.id;
+
+      // In backfill mode iterate all; in normal mode just the latest.
+      const toProcess = backfill ? filtered : [filtered[0]];
+      for (const cand of toProcess) {
+        const latest = cand;
+        const msgId = cand.id;
 
       // Skip if we've already successfully ingested this exact message
       const { data: prior } = await admin
@@ -146,11 +189,13 @@ Deno.serve(async (req) => {
         .eq("gmail_message_id", msgId)
         .limit(1);
       if (prior && prior.length) {
-        await admin.from("supplier_price_scrape_log").insert({
-          supplier: sup.name, status: "skipped_duplicate", gmail_message_id: msgId,
-          error: "Already ingested this Gmail message",
-        });
-        results.push({ supplier: sup.name, status: "skipped_duplicate", msgId });
+        if (!backfill) {
+          await admin.from("supplier_price_scrape_log").insert({
+            supplier: sup.name, status: "skipped_duplicate", gmail_message_id: msgId,
+            error: "Already ingested this Gmail message",
+          });
+          results.push({ supplier: sup.name, status: "skipped_duplicate", msgId });
+        }
         continue;
       }
 
@@ -171,7 +216,9 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const priceDate = date || today;
+      // Prefer AI-extracted date; fall back to email's send date (in backfill, NEVER `today`).
+      const emailDate = emailEpochMs ? new Date(emailEpochMs).toISOString().slice(0, 10) : today;
+      const priceDate = date || emailDate;
 
       // Only overwrite the buy price if this email is newer than the email
       // that produced the currently-stored price for this (supplier, price_date).
@@ -221,6 +268,7 @@ Deno.serve(async (req) => {
         gmail_message_id: msgId, raw_excerpt: body.slice(0, 500),
       });
       results.push({ supplier: sup.name, status: "success", price, priceDate });
+      } // end toProcess loop
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       await admin.from("supplier_price_scrape_log").insert({
