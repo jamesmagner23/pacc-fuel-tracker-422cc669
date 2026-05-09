@@ -82,8 +82,16 @@ export default function Suppliers() {
   const { data: prices = [] } = useBuyPrices(days);
   const { data: todayPrices = [] } = useTodayBuyPrices();
   // Reference Viva Energy Australia's published Melbourne diesel TGP
-  // (scraped daily by the fetch-viva-tgp edge function).
-  const { data: tgp = [] } = useTGPrices("Melbourne", "Diesel", days, "Viva");
+  // (scraped daily by the fetch-viva-tgp edge function). Fall back to AIP
+  // for dates Viva hasn't published yet so the spread chart isn't blank.
+  const { data: vivaTgp = [] } = useTGPrices("Melbourne", "Diesel", days, "Viva");
+  const { data: aipTgp = [] } = useTGPrices("Melbourne", "Diesel", days, "AIP");
+  const tgp = useMemo(() => {
+    const byDate = new Map<string, typeof vivaTgp[number]>();
+    aipTgp.forEach(t => byDate.set(t.price_date, t));
+    vivaTgp.forEach(t => byDate.set(t.price_date, t)); // Viva wins
+    return Array.from(byDate.values());
+  }, [vivaTgp, aipTgp]);
   const [running, setRunning] = useState(false);
 
   // Suppliers the user actually purchases from. Scraped quotes from non-active
