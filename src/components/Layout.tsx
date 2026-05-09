@@ -12,6 +12,7 @@ import { GlobalThemeToggle } from "./GlobalThemeToggle";
 const navItems = [
   { to: "/", label: "Overview" },
   { to: "/customers", label: "Customers" },
+  { to: "/crm", label: "CRM" },
   { to: "/finance", label: "Finance" },
   { to: "/suppliers", label: "Suppliers" },
   { to: "/dispatch", label: "Dispatch" },
