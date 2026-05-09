@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 const SUPPLIER_COLORS: Record<string, string> = {
   Pacific: "var(--accent)",
+  "Pro Fusion": "#9C6ADE",
 };
 const DIFF_COLOR = "#9C6ADE";
 const FALLBACK = ["#E0A458", "#9C6ADE", "#48B5A6", "#D96C6C"];
@@ -78,13 +79,8 @@ export default function Suppliers() {
   const qc = useQueryClient();
   const [showInc, setShowInc] = useState(true);
   const [days, setDays] = useState(7);
-  const { data: pricesRaw = [] } = useBuyPrices(days);
-  const { data: todayPricesRaw = [] } = useTodayBuyPrices();
-  // Pro Fusion was a legacy quote-only supplier; historical scrape rows may
-  // still exist in the DB but the user does not buy from them. Filter out
-  // everywhere so attribution, snapshots and charts only show real suppliers.
-  const prices = useMemo(() => pricesRaw.filter(p => p.supplier !== "Pro Fusion"), [pricesRaw]);
-  const todayPrices = useMemo(() => todayPricesRaw.filter(p => p.supplier !== "Pro Fusion"), [todayPricesRaw]);
+  const { data: prices = [] } = useBuyPrices(days);
+  const { data: todayPrices = [] } = useTodayBuyPrices();
   // Reference Viva Energy Australia's published Melbourne diesel TGP
   // (scraped daily by the fetch-viva-tgp edge function). Fall back to AIP
   // for dates Viva hasn't published yet so the spread chart isn't blank.
