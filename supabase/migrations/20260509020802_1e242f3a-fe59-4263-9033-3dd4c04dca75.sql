@@ -1,0 +1,2 @@
+NOTIFY pgrst, 'reload schema';
+COMMENT ON CONSTRAINT terminal_gate_prices_price_date_location_product_source_key ON public.terminal_gate_prices IS 'Allows AIP and Viva (and future sources) to coexist for the same date/location/product.';
