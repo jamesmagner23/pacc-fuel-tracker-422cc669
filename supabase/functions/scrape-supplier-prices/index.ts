@@ -9,9 +9,9 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1"
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 // Suppliers we look for. Tweak the `query` to match the real sender / subject.
-const SUPPLIERS: { name: string; from: string }[] = [
-  { name: "Pacific", from: "admin@pacificfuelsolutions.com.au" },
+const ALL_SUPPLIERS: { name: string; from: string }[] = [
   { name: "Pro Fusion", from: "tony@profusionfuels.com.au" },
+  { name: "Pacific", from: "admin@pacificfuelsolutions.com.au" },
 ];
 
 function buildQuery(from: string, supplier: string, windowExpr: string): string {
@@ -126,6 +126,22 @@ Deno.serve(async (req) => {
   }
   if (backfill && lookbackDays < 30) lookbackDays = 365;
   const windowExpr = `newer_than:${lookbackDays}d`;
+
+  // Optional ?supplier=Pro%20Fusion to limit to one supplier (avoids timeout).
+  let onlySupplier: string | null = null;
+  try {
+    const url = new URL(req.url);
+    onlySupplier = url.searchParams.get("supplier");
+  } catch { /* ignore */ }
+  if (req.method === "POST") {
+    try {
+      const j = await req.clone().json();
+      if (j?.supplier) onlySupplier = j.supplier;
+    } catch { /* no body */ }
+  }
+  const SUPPLIERS = onlySupplier
+    ? ALL_SUPPLIERS.filter((s) => s.name.toLowerCase() === onlySupplier!.toLowerCase())
+    : ALL_SUPPLIERS;
 
   for (const sup of SUPPLIERS) {
     try {
