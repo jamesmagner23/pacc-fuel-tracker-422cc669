@@ -243,6 +243,217 @@ export type Database = {
           },
         ]
       }
+      crm_activities: {
+        Row: {
+          body_excerpt: string | null
+          channel: string
+          contact_id: string | null
+          created_at: string
+          customer_id: string
+          direction: string
+          gmail_message_id: string | null
+          gmail_thread_id: string | null
+          id: string
+          occurred_at: string
+          outcome: string | null
+          subject: string | null
+          user_id: string | null
+        }
+        Insert: {
+          body_excerpt?: string | null
+          channel: string
+          contact_id?: string | null
+          created_at?: string
+          customer_id: string
+          direction?: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
+          id?: string
+          occurred_at?: string
+          outcome?: string | null
+          subject?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          body_excerpt?: string | null
+          channel?: string
+          contact_id?: string | null
+          created_at?: string
+          customer_id?: string
+          direction?: string
+          gmail_message_id?: string | null
+          gmail_thread_id?: string | null
+          id?: string
+          occurred_at?: string
+          outcome?: string | null
+          subject?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_contacts: {
+        Row: {
+          created_at: string
+          customer_id: string
+          do_not_contact: boolean
+          email: string | null
+          first_name: string | null
+          id: string
+          is_primary: boolean
+          last_name: string | null
+          notes: string | null
+          phone: string | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          do_not_contact?: boolean
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          is_primary?: boolean
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          do_not_contact?: boolean
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          is_primary?: boolean
+          last_name?: string | null
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contacts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "crm_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_customers: {
+        Row: {
+          acquisition_stage: string
+          client_account_id: number | null
+          created_at: string
+          created_by: string | null
+          estimated_value: number | null
+          id: string
+          industry: string | null
+          kind: string
+          lost_reason: string | null
+          name: string
+          next_follow_up_at: string | null
+          notes: string | null
+          owner_user_id: string | null
+          retention_stage: string
+          source: string | null
+          status: string
+          tags: string[] | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          acquisition_stage?: string
+          client_account_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          estimated_value?: number | null
+          id?: string
+          industry?: string | null
+          kind?: string
+          lost_reason?: string | null
+          name: string
+          next_follow_up_at?: string | null
+          notes?: string | null
+          owner_user_id?: string | null
+          retention_stage?: string
+          source?: string | null
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          acquisition_stage?: string
+          client_account_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          estimated_value?: number | null
+          id?: string
+          industry?: string | null
+          kind?: string
+          lost_reason?: string | null
+          name?: string
+          next_follow_up_at?: string | null
+          notes?: string | null
+          owner_user_id?: string | null
+          retention_stage?: string
+          source?: string | null
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_customers_client_account_id_fkey"
+            columns: ["client_account_id"]
+            isOneToOne: false
+            referencedRelation: "client_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_settings: {
+        Row: {
+          cooldown_days: number
+          default_owner_user_id: string | null
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          cooldown_days?: number
+          default_owner_user_id?: string | null
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          cooldown_days?: number
+          default_owner_user_id?: string | null
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_pricing: {
         Row: {
           client_account_id: number
