@@ -421,38 +421,6 @@ export default function Suppliers() {
         )}
       </div>
 
-      {/* Log a purchase */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Log a Purchase</div>
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-end flex-wrap">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Date</label>
-            <input type="date" value={pf.purchase_date} onChange={(e) => setPf({ ...pf, purchase_date: e.target.value })} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Supplier</label>
-            <select value={pf.supplier} onChange={(e) => setPf({ ...pf, supplier: e.target.value })} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none">
-              {SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Litres</label>
-            <input type="number" value={pf.litres} onChange={(e) => setPf({ ...pf, litres: e.target.value })} placeholder="e.g. 8000" className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-32" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Price/L ex GST</label>
-            <input type="number" step="0.0001" value={pf.price} onChange={(e) => setPf({ ...pf, price: e.target.value })} placeholder="e.g. 1.8400" className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-32" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Invoice (optional)</label>
-            <input value={pf.invoice} onChange={(e) => setPf({ ...pf, invoice: e.target.value })} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-40" />
-          </div>
-          <button onClick={() => addPurchase.mutate()} disabled={addPurchase.isPending} className="bg-primary text-primary-foreground rounded-full px-5 py-2 text-xs font-semibold disabled:opacity-60">
-            {addPurchase.isPending ? "Saving…" : "Save Purchase"}
-          </button>
-        </div>
-      </div>
-
       {/* Scrape audit table */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
