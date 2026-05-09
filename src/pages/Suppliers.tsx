@@ -77,8 +77,8 @@ interface ScrapeLog {
 
 export default function Suppliers() {
   const qc = useQueryClient();
-  const [showInc, setShowInc] = useState(false);
-  const [days, setDays] = useState(30);
+  const [showInc, setShowInc] = useState(true);
+  const [days, setDays] = useState(7);
   const { data: prices = [] } = useBuyPrices(days);
   const { data: todayPrices = [] } = useTodayBuyPrices();
   // Reference Viva Energy Australia's published Melbourne diesel TGP
