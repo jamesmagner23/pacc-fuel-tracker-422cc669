@@ -19,7 +19,7 @@ import {
   type ReconAlert,
   type PumpReading,
 } from "@/hooks/useReconciliation";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useTransactions, type Transaction } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
 import { FLEET } from "@/pages/Trucks";
 
@@ -230,8 +230,17 @@ function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any
   );
 }
 
-function DailyBreakdownTable({ rows }: { rows: DailyReconRow[] }) {
+function DailyBreakdownTable({
+  rows,
+  pumpReadings,
+  transactions,
+}: {
+  rows: DailyReconRow[];
+  pumpReadings: PumpReading[];
+  transactions: Transaction[];
+}) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [drillView, setDrillView] = useState<"truck" | "txn">("truck");
 
   return (
     <div className="card overflow-hidden">
@@ -284,21 +293,15 @@ function DailyBreakdownTable({ rows }: { rows: DailyReconRow[] }) {
                 </tr>
                 {expanded === row.date && (
                   <tr key={`${row.date}-detail`}>
-                    <td colSpan={6} className="px-4 py-3 bg-surface-raised/30">
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        {row.driverNotes.length > 0 && (
-                          <p><strong>Notes:</strong> {row.driverNotes.join("; ")}</p>
-                        )}
-                        {row.pumpLitres === 0 && row.speedsolLitres > 0 && (
-                          <p className="text-warning">⚠ Missing pump reading for this day</p>
-                        )}
-                        {row.speedsolLitres === 0 && row.pumpLitres > 0 && (
-                          <p className="text-warning">⚠ No Fuel System transactions recorded</p>
-                        )}
-                        {row.pumpLitres === 0 && row.speedsolLitres === 0 && (
-                          <p>No data recorded for this day</p>
-                        )}
-                      </div>
+                    <td colSpan={6} className="px-4 py-4 bg-surface-raised/30">
+                      <DayDrillDown
+                        date={row.date}
+                        pumpReadings={pumpReadings.filter((p) => p.reading_date === row.date)}
+                        transactions={transactions.filter((t) => t.date === row.date)}
+                        notes={row.driverNotes}
+                        view={drillView}
+                        onViewChange={setDrillView}
+                      />
                     </td>
                   </tr>
                 )}
@@ -307,6 +310,182 @@ function DailyBreakdownTable({ rows }: { rows: DailyReconRow[] }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function DayDrillDown({
+  date,
+  pumpReadings,
+  transactions,
+  notes,
+  view,
+  onViewChange,
+}: {
+  date: string;
+  pumpReadings: PumpReading[];
+  transactions: Transaction[];
+  notes: string[];
+  view: "truck" | "txn";
+  onViewChange: (v: "truck" | "txn") => void;
+}) {
+  const totalPump = pumpReadings.reduce((s, p) => s + Number(p.litres || 0), 0);
+  const totalSpeed = transactions.reduce((s, t) => s + Number(t.cantidad || 0), 0);
+  const variance = totalPump - totalSpeed;
+
+  // Group by truck (pump.truck vs txn.estacion)
+  const trucks = new Map<string, { pump: number; speed: number; drivers: Set<string>; placas: Set<string>; txCount: number; pumpCount: number }>();
+  for (const p of pumpReadings) {
+    const k = p.truck || "Unknown";
+    const e = trucks.get(k) || { pump: 0, speed: 0, drivers: new Set(), placas: new Set(), txCount: 0, pumpCount: 0 };
+    e.pump += Number(p.litres || 0);
+    e.pumpCount += 1;
+    trucks.set(k, e);
+  }
+  for (const t of transactions) {
+    const k = t.estacion || "Unknown";
+    const e = trucks.get(k) || { pump: 0, speed: 0, drivers: new Set(), placas: new Set(), txCount: 0, pumpCount: 0 };
+    e.speed += Number(t.cantidad || 0);
+    e.txCount += 1;
+    if (t.nombre_vendedor) e.drivers.add(t.nombre_vendedor);
+    if (t.placa) e.placas.add(t.placa);
+    trucks.set(k, e);
+  }
+  const truckRows = Array.from(trucks.entries()).sort((a, b) => Math.abs(b[1].pump - b[1].speed) - Math.abs(a[1].pump - a[1].speed));
+
+  const noData = pumpReadings.length === 0 && transactions.length === 0;
+
+  return (
+    <div className="space-y-3">
+      {/* Header strip */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-4 text-xs">
+          <span className="text-muted-foreground">Pump <span className="text-foreground font-semibold tabular-nums">{totalPump.toLocaleString()}L</span></span>
+          <span className="text-muted-foreground">Fuel System <span className="text-foreground font-semibold tabular-nums">{totalSpeed.toLocaleString()}L</span></span>
+          <span className="text-muted-foreground">Unattributed <span className="font-semibold tabular-nums" style={{ color: varianceColor(variance) }}>{variance >= 0 ? "+" : ""}{variance.toLocaleString()}L</span></span>
+        </div>
+        {!noData && (
+          <div className="flex gap-1 bg-surface border border-surface-border rounded-[8px] p-0.5">
+            {[
+              { id: "truck" as const, label: "By truck / driver" },
+              { id: "txn" as const, label: "By transaction" },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => onViewChange(opt.id)}
+                className="px-2.5 py-1 rounded-[6px] text-[11px] font-medium transition-colors border-none cursor-pointer"
+                style={{
+                  background: view === opt.id ? "var(--accent-light)" : "transparent",
+                  color: view === opt.id ? "var(--accent)" : "var(--text-secondary)",
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {notes.length > 0 && (
+        <p className="text-xs text-muted-foreground"><strong className="text-foreground">Driver notes:</strong> {notes.join("; ")}</p>
+      )}
+
+      {noData && (
+        <p className="text-xs text-muted-foreground">No pump readings or transactions recorded for this day.</p>
+      )}
+
+      {!noData && view === "truck" && (
+        <div className="overflow-x-auto rounded-[8px] border border-surface-border">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-surface-raised/40 text-[10px] uppercase text-muted-foreground">
+                <th className="text-left px-3 py-2 font-medium">Truck</th>
+                <th className="text-left px-3 py-2 font-medium">Drivers</th>
+                <th className="text-right px-3 py-2 font-medium">Pump (L)</th>
+                <th className="text-right px-3 py-2 font-medium">Fuel System (L)</th>
+                <th className="text-right px-3 py-2 font-medium">Unattributed</th>
+                <th className="text-right px-3 py-2 font-medium">Fills</th>
+              </tr>
+            </thead>
+            <tbody>
+              {truckRows.map(([truck, v]) => {
+                const d = v.pump - v.speed;
+                return (
+                  <tr key={truck} className="border-t border-border-subtle">
+                    <td className="px-3 py-2 font-medium text-foreground">{truck}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{v.drivers.size > 0 ? Array.from(v.drivers).join(", ") : "—"}</td>
+                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.pump > 0 ? v.pump.toLocaleString() : "—"}</td>
+                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.speed > 0 ? v.speed.toLocaleString() : "—"}</td>
+                    <td className="px-3 py-2 text-right tabular-nums font-semibold" style={{ color: varianceColor(d) }}>
+                      {(v.pump > 0 || v.speed > 0) ? `${d >= 0 ? "+" : ""}${d.toLocaleString()}` : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">{v.txCount}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {!noData && view === "txn" && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {/* Pump readings */}
+          <div className="rounded-[8px] border border-surface-border overflow-hidden">
+            <div className="bg-surface-raised/40 px-3 py-2 text-[10px] uppercase text-muted-foreground font-medium flex items-center justify-between">
+              <span>Pump readings</span>
+              <span className="tabular-nums text-foreground">{totalPump.toLocaleString()}L</span>
+            </div>
+            {pumpReadings.length === 0 ? (
+              <p className="px-3 py-3 text-xs text-warning">⚠ No pump reading recorded</p>
+            ) : (
+              <ul className="divide-y divide-border-subtle">
+                {pumpReadings.map((p) => (
+                  <li key={p.id} className="px-3 py-2 text-xs flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-foreground font-medium">{p.truck}</p>
+                      {p.notes && <p className="text-muted-foreground truncate">{p.notes}</p>}
+                    </div>
+                    <span className="tabular-nums font-semibold text-foreground whitespace-nowrap">{Number(p.litres).toLocaleString()}L</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Fuel System transactions */}
+          <div className="rounded-[8px] border border-surface-border overflow-hidden">
+            <div className="bg-surface-raised/40 px-3 py-2 text-[10px] uppercase text-muted-foreground font-medium flex items-center justify-between">
+              <span>Fuel System transactions ({transactions.length})</span>
+              <span className="tabular-nums text-foreground">{totalSpeed.toLocaleString()}L</span>
+            </div>
+            {transactions.length === 0 ? (
+              <p className="px-3 py-3 text-xs text-warning">⚠ No transactions recorded</p>
+            ) : (
+              <ul className="divide-y divide-border-subtle max-h-72 overflow-y-auto">
+                {transactions
+                  .slice()
+                  .sort((a, b) => (b.fecha || "").localeCompare(a.fecha || ""))
+                  .map((t) => (
+                    <li key={t.id} className="px-3 py-2 text-xs flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-foreground font-medium truncate">
+                          {t.nombre_cliente1 || t.placa || "—"}
+                        </p>
+                        <p className="text-muted-foreground truncate">
+                          {[t.estacion, t.nombre_vendedor, t.producto].filter(Boolean).join(" · ")}
+                        </p>
+                      </div>
+                      <span className="tabular-nums font-semibold text-foreground whitespace-nowrap">
+                        {Number(t.cantidad || 0).toLocaleString()}L
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -781,7 +960,9 @@ export default function Reconciliation() {
         ))}
       </div>
 
-      {activeTab === "daily" && <DailyBreakdownTable rows={dailyRows} />}
+      {activeTab === "daily" && (
+        <DailyBreakdownTable rows={dailyRows} pumpReadings={pumpReadings} transactions={rangeTransactions} />
+      )}
       {activeTab === "pump" && (
         <PumpReadingsTab
           readings={pumpReadings}
