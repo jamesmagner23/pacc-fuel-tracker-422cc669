@@ -1,54 +1,94 @@
 import { useMemo, useState } from "react";
-import { format, parseISO, subDays, differenceInCalendarDays, eachDayOfInterval } from "date-fns";
-import {
-  XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
-  BarChart, Bar, LineChart, Line, CartesianGrid, Cell,
-} from "recharts";
+import { format, parseISO, subDays } from "date-fns";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, BarChart, Bar, Legend } from "recharts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBuyPrices, useTodayBuyPrices, SUPPLIERS } from "@/hooks/useBuyPrices";
 import { useTGPrices } from "@/hooks/useTGPrices";
-import { RefreshCw, Mail, Gauge, ArrowDown, ArrowUp, Clock } from "lucide-react";
+import { Trophy, RefreshCw, Mail, Gauge } from "lucide-react";
 import { toast } from "sonner";
 
-/* ---------- palette (lifted from index.css tokens) ---------- */
-const C_LIME = "#C8F26A";       // var(--accent), Pro Fusion + good
-const C_SAGE = "#7BAE6F";       // Pacific — deeper sage step-down from lime
-const C_CORAL = "#FF6B5E";      // var(--negative), above TGP / bad
-const C_GRID = "#1F3A24";       // var(--surface-raised)-ish
-const C_AXIS = "#8B8773";       // var(--text-muted)
-const SUPPLIER_COLORS: Record<string, string> = { Pacific: C_SAGE, "Pro Fusion": C_LIME };
-const colorFor = (s: string) => SUPPLIER_COLORS[s] || C_SAGE;
+const SUPPLIER_COLORS: Record<string, string> = {
+  Pacific: "var(--accent)",
+  "Pro Fusion": "#1E3A8A",
+};
+const DIFF_COLOR = "#9C6ADE";
+const FALLBACK = ["#E0A458", "#9C6ADE", "#48B5A6", "#D96C6C"];
+const colorFor = (s: string, i = 0) => SUPPLIER_COLORS[s] || FALLBACK[i % FALLBACK.length];
 const GST = 1.1;
-const EXCISE_CLIFF = new Date("2026-07-01");
 
-/* ---------- helpers ---------- */
-const fmtCpl = (v: number) => `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}c`;
-const fmtPrice = (v: number) => `$${v.toFixed(4)}`;
-const rollingAvg = (vals: (number | null)[], window = 7) =>
-  vals.map((_, i) => {
-    const slice = vals.slice(Math.max(0, i - window + 1), i + 1).filter((x): x is number => x != null);
-    return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null;
-  });
+/** Custom tooltip used by both supplier price charts. Shows per-supplier
+ *  value plus the email-sent date and AI date-phrase reason from the scrape log. */
+function PriceTooltip({ active, payload, label, suffix = "", stripSuffix, signed }: any) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload || {};
+  const meta = (row._meta || {}) as Record<string, { sent: string; reason: string | null }>;
+  const effectiveDate = row._iso ? format(parseISO(row._iso), "EEE dd MMM yyyy") : label;
+  return (
+    <div className="bg-background border border-surface-border rounded-lg shadow-lg p-2.5 min-w-[220px] max-w-[300px]">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Effective {effectiveDate}</div>
+      {payload.map((p: any) => {
+        const key = stripSuffix ? String(p.dataKey).replace(stripSuffix, "") : String(p.dataKey);
+        if (key === "diff") {
+          return (
+            <div key={p.dataKey} className="flex items-center justify-between gap-3 py-1 border-t border-surface-border/60 mt-1 pt-1.5">
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="inline-block w-2 h-2 rounded-sm" style={{ background: p.fill, opacity: 0.6 }} />
+                Difference
+              </span>
+              <span className="text-[11px] tabular-nums text-foreground">${Number(p.value).toFixed(4)}</span>
+            </div>
+          );
+        }
+        const v = Number(p.value);
+        const valStr = `${signed && v >= 0 ? "+" : ""}$${v.toFixed(4)}${suffix}`;
+        const m = meta[key];
+        return (
+          <div key={p.dataKey} className="py-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5 text-[12px] text-foreground">
+                <span className="inline-block w-2 h-2 rounded-sm" style={{ background: p.fill }} />
+                {key}
+              </span>
+              <span className="text-[12px] tabular-nums text-foreground font-medium">{valStr}</span>
+            </div>
+            {m && (
+              <div className="ml-3.5 mt-0.5 space-y-0.5">
+                <div className="text-[10px] text-muted-foreground">Email sent {format(parseISO(m.sent), "dd MMM HH:mm")}</div>
+                {m.reason && <div className="text-[10px] text-muted-foreground italic line-clamp-2">"{m.reason}"</div>}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 interface ScrapeLog {
-  id: string; scraped_at: string; supplier: string | null;
-  status: string; price_per_litre: number | null;
-  price_date: string | null; error: string | null;
+  id: string;
+  scraped_at: string;
+  supplier: string | null;
+  status: string;
+  price_per_litre: number | null;
+  price_date: string | null;
+  error: string | null;
 }
 
 export default function Suppliers() {
   const qc = useQueryClient();
   const [showInc, setShowInc] = useState(false);
-  const [days, setDays] = useState<7 | 14 | 30>(14);
-  const [notionalLitres, setNotionalLitres] = useState(5000);
+  const [days, setDays] = useState(30);
+  const { data: prices = [] } = useBuyPrices(days);
+  const { data: todayPrices = [] } = useTodayBuyPrices();
+  // Reference Viva Energy Australia's published Melbourne diesel TGP
+  // (scraped daily by the fetch-viva-tgp edge function).
+  const { data: tgp = [] } = useTGPrices("Melbourne", "Diesel", days, "Viva");
   const [running, setRunning] = useState(false);
 
-  const { data: prices = [] } = useBuyPrices(Math.max(days, 30));
-  const { data: todayPrices = [] } = useTodayBuyPrices();
-  const { data: tgp = [] } = useTGPrices("Melbourne", "Diesel", Math.max(days, 30), "Viva");
-
-  // Driver intake (volume & spend ledger)
+  // Reconciliation source: driver-recorded bowser intake (litres + bowser
+  // retail price). Each intake is attributed to whichever supplier had the
+  // cheapest scraped buy price on that date.
   const intakeQ = useQuery({
     queryKey: ["fuel-intake-recon", days],
     queryFn: async () => {
@@ -63,11 +103,12 @@ export default function Suppliers() {
     },
   });
 
-  // Scrape audit
+  // Audit filters
   const [auditFrom, setAuditFrom] = useState<string>(format(subDays(new Date(), 30), "yyyy-MM-dd"));
   const [auditTo, setAuditTo] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [auditSupplier, setAuditSupplier] = useState<string>("all");
   const [auditStatus, setAuditStatus] = useState<string>("all");
+
   const scrapeLogQ = useQuery({
     queryKey: ["supplier-scrape-log", auditFrom, auditTo, auditSupplier, auditStatus],
     queryFn: async () => {
@@ -86,491 +127,324 @@ export default function Suppliers() {
     },
   });
 
-  /* ---------- DECISION HERO ---------- */
-  const hero = useMemo(() => {
-    if (!todayPrices.length) return null;
-    const sorted = [...todayPrices].sort((a, b) => a.price_per_litre - b.price_per_litre);
-    const winner = sorted[0];
-    const other = sorted[1];
-    const todayIso = format(new Date(), "yyyy-MM-dd");
-    const tgpToday = tgp.find(t => t.price_date === todayIso) ?? tgp[tgp.length - 1];
-    const winnerEx = winner.price_per_litre;
-    const otherEx = other?.price_per_litre;
-    const tgpEx = tgpToday ? tgpToday.price_per_litre / GST : null;
-    return {
-      winner, other,
-      winnerEx, otherEx, tgpEx,
-      vsOther: otherEx != null ? winnerEx - otherEx : null,
-      vsTgp: tgpEx != null ? winnerEx - tgpEx : null,
-      asOf: winner.created_at ?? null,
-    };
-  }, [todayPrices, tgp]);
+  // Snapshot
+  const todaySorted = [...todayPrices].sort((a, b) => a.price_per_litre - b.price_per_litre);
+  const cheapest = todaySorted[0];
+  const dearest = todaySorted[todaySorted.length - 1];
+  const todayDelta = cheapest && dearest && cheapest.id !== dearest.id
+    ? dearest.price_per_litre - cheapest.price_per_litre : null;
 
-  const daysToExcise = differenceInCalendarDays(EXCISE_CLIFF, new Date());
-
-  /* ---------- SPREAD VS TGP (horizontal grouped bar chart) ---------- */
-  const spreadData = useMemo(() => {
-    const today = new Date();
-    const start = subDays(today, days - 1);
-    const range = eachDayOfInterval({ start, end: today });
-    const tgpMap = new Map(tgp.map(t => [t.price_date, t.price_per_litre / GST]));
-    return range.map(d => {
-      const iso = format(d, "yyyy-MM-dd");
-      const t = tgpMap.get(iso);
-      const row: any = { date: format(d, "EEE dd"), iso };
-      SUPPLIERS.forEach(s => {
-        const p = prices.find(x => x.price_date === iso && x.supplier === s);
-        row[`${s}_spread`] = p && t != null ? Number((p.price_per_litre - t).toFixed(4)) : null;
-        row[`${s}_price`] = p?.price_per_litre ?? null;
-      });
-      row.tgp = t ?? null;
-      return row;
-    }).reverse(); // most recent at top
-  }, [prices, tgp, days]);
-
-  /* ---------- DAILY BUY PRICE LINES ---------- */
-  const lineData = useMemo(() => {
-    const today = new Date();
-    const start = subDays(today, days - 1);
-    const range = eachDayOfInterval({ start, end: today });
-    const rows = range.map(d => {
-      const iso = format(d, "yyyy-MM-dd");
-      const row: any = { date: format(d, "dd MMM"), iso };
-      SUPPLIERS.forEach(s => {
-        const p = prices.find(x => x.price_date === iso && x.supplier === s);
-        row[s] = p ? (showInc ? p.price_per_litre * GST : p.price_per_litre) : null;
-      });
-      return row;
+  // Scrape metadata for chart tooltips: latest successful scrape per (supplier, price_date)
+  // → email sent date + AI's date-phrase reason.
+  const scrapeMetaQ = useQuery({
+    queryKey: ["scrape-meta", days],
+    queryFn: async () => {
+      const since = format(subDays(new Date(), days), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("supplier_price_scrape_log" as any)
+        .select("supplier, price_date, scraped_at, error")
+        .eq("status", "success")
+        .gte("price_date", since)
+        .order("scraped_at", { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as { supplier: string; price_date: string; scraped_at: string; error: string | null }[];
+    },
+  });
+  // Map: `${supplier}|${price_date}` → latest successful entry (last write wins given asc order).
+  const metaMap = useMemo(() => {
+    const m = new Map<string, { sent: string; reason: string | null }>();
+    (scrapeMetaQ.data || []).forEach(r => {
+      if (!r.supplier || !r.price_date) return;
+      m.set(`${r.supplier}|${r.price_date}`, { sent: r.scraped_at, reason: r.error });
     });
-    // Append rolling 7d averages
-    SUPPLIERS.forEach(s => {
-      const series = rows.map(r => r[s]);
-      const avg = rollingAvg(series, 7);
-      rows.forEach((r, i) => { r[`${s}_avg`] = avg[i]; });
-    });
-    return rows;
-  }, [prices, days, showInc]);
+    return m;
+  }, [scrapeMetaQ.data]);
 
-  const latestSpread = useMemo(() => {
-    // last day where both suppliers exist
-    for (let i = lineData.length - 1; i >= 0; i--) {
-      const r = lineData[i];
-      const a = r["Pacific"], b = r["Pro Fusion"];
+  // Trend chart data (one row per date, columns per supplier)
+  const allSuppliers = Array.from(new Set([...SUPPLIERS, ...prices.map(p => p.supplier)].filter(Boolean)));
+  const trendData = useMemo(() => {
+    const map = new Map<string, Record<string, any>>();
+    [...prices].reverse().forEach(p => {
+      const key = format(parseISO(p.price_date), "dd MMM");
+      const row = map.get(key) || { date: key, _iso: p.price_date, _meta: {} as Record<string, { sent: string; reason: string | null }> };
+      const v = showInc ? p.price_per_litre * GST : p.price_per_litre;
+      row[p.supplier] = Number(v.toFixed(4));
+      const meta = metaMap.get(`${p.supplier}|${p.price_date}`);
+      if (meta) (row._meta as any)[p.supplier] = meta;
+      map.set(key, row);
+    });
+    return Array.from(map.values()).map((row) => {
+      const a = row["Pacific"];
+      const b = row["Pro Fusion"];
       if (typeof a === "number" && typeof b === "number") {
-        return { iso: r.iso, date: r.date, diff: a - b, pacific: a, profusion: b };
+        row["diff"] = Number(Math.abs(a - b).toFixed(4));
       }
-    }
-    return null;
-  }, [lineData]);
-
-  /* ---------- CUMULATIVE POSITION ---------- */
-  const cumulative = useMemo(() => {
-    const today = new Date();
-    const start = subDays(today, 6);
-    const range = eachDayOfInterval({ start, end: today });
-    let cheapestSpend = 0, pacificSpend = 0, daysCounted = 0;
-    range.forEach(d => {
-      const iso = format(d, "yyyy-MM-dd");
-      const dayPrices = prices.filter(p => p.price_date === iso);
-      if (!dayPrices.length) return;
-      const cheapest = dayPrices.reduce((m, p) => p.price_per_litre < m.price_per_litre ? p : m);
-      const pacific = dayPrices.find(p => p.supplier === "Pacific") ?? cheapest;
-      cheapestSpend += cheapest.price_per_litre * notionalLitres;
-      pacificSpend += pacific.price_per_litre * notionalLitres;
-      daysCounted++;
+      return row;
     });
-    return { saved: pacificSpend - cheapestSpend, daysCounted };
-  }, [prices, notionalLitres]);
+  }, [prices, showInc, metaMap]);
 
-  /* ---------- VOLUME & SPEND ---------- */
-  const ledger = useMemo(() => {
-    const cheapestByDate = new Map<string, { supplier: string; price: number }>();
-    prices.forEach(p => {
-      const cur = cheapestByDate.get(p.price_date);
+  // Spread vs TGP chart
+  const tgpSpread = useMemo(() => {
+    const tgpMap = new Map(tgp.map(t => [t.price_date, t.price_per_litre / GST]));
+    const dates = Array.from(new Set([...prices.map(p => p.price_date), ...tgp.map(t => t.price_date)])).sort();
+    return dates.map(d => {
+      const row: Record<string, any> = { date: format(parseISO(d), "dd MMM"), _iso: d, _meta: {} as Record<string, { sent: string; reason: string | null }>, tgp: tgpMap.get(d) ?? null };
+      allSuppliers.forEach(s => {
+        const p = prices.find(x => x.price_date === d && x.supplier === s);
+        if (p && tgpMap.has(d)) row[`${s}_spread`] = Number((p.price_per_litre - (tgpMap.get(d) as number)).toFixed(4));
+        const meta = metaMap.get(`${s}|${d}`);
+        if (meta) (row._meta as any)[s] = meta;
+      });
+      return row;
+    });
+  }, [prices, tgp, allSuppliers, metaMap]);
+
+  // Volume & spend per supplier — derived from driver intake logs, attributed
+  // to the cheapest scraped supplier price on each intake date.
+  const volSpend = useMemo(() => {
+    // Build cheapest-supplier-by-date lookup from scraped buy_prices
+    const cheapest = new Map<string, { supplier: string; price: number }>();
+    prices.forEach((p) => {
+      const cur = cheapest.get(p.price_date);
       if (!cur || p.price_per_litre < cur.price) {
-        cheapestByDate.set(p.price_date, { supplier: p.supplier, price: p.price_per_litre });
+        cheapest.set(p.price_date, { supplier: p.supplier, price: p.price_per_litre });
       }
     });
-    const rows = (intakeQ.data || []).map((log: any) => {
+    const map = new Map<string, { litres: number; spend: number }>();
+    let untaggedLitres = 0;
+    let untaggedSpend = 0;
+    (intakeQ.data || []).forEach((log: any) => {
       const litres = Number(log.litres_entered) || 0;
+      // Spend is litres × retail price the bowser pump charged us (ex GST).
       const retail = Number(log.bowser_retail_price) || 0;
-      const spendEx = litres * (retail / GST);
-      const match = cheapestByDate.get(log.log_date);
-      return {
-        id: log.id,
-        date: log.log_date,
-        litres,
-        spend: spendEx,
-        supplier: match?.supplier ?? "Unattributed",
-        rate: litres > 0 ? spendEx / litres : 0,
-      };
+      const spend = litres * (retail / GST); // bowser retail is inc-GST → ex
+      const match = cheapest.get(log.log_date);
+      if (match) {
+        const cur = map.get(match.supplier) || { litres: 0, spend: 0 };
+        cur.litres += litres;
+        cur.spend += spend;
+        map.set(match.supplier, cur);
+      } else {
+        untaggedLitres += litres;
+        untaggedSpend += spend;
+      }
     });
-    const totals = rows.reduce(
-      (acc, r) => {
-        acc.litres += r.litres;
-        acc.spend += r.spend;
-        const k = r.supplier;
-        acc.bySupplier[k] = acc.bySupplier[k] || { litres: 0, spend: 0 };
-        acc.bySupplier[k].litres += r.litres;
-        acc.bySupplier[k].spend += r.spend;
-        return acc;
-      },
-      { litres: 0, spend: 0, bySupplier: {} as Record<string, { litres: number; spend: number }> }
-    );
-    return { rows, totals };
+    const rows = Array.from(map.entries()).map(([supplier, v]) => ({
+      supplier,
+      litres: Math.round(v.litres),
+      spend: Math.round(v.spend),
+      avg: v.litres > 0 ? v.spend / v.litres : 0,
+    }));
+    if (untaggedLitres > 0) {
+      rows.push({
+        supplier: "Unattributed",
+        litres: Math.round(untaggedLitres),
+        spend: Math.round(untaggedSpend),
+        avg: untaggedLitres > 0 ? untaggedSpend / untaggedLitres : 0,
+      });
+    }
+    return rows;
   }, [intakeQ.data, prices]);
+
 
   const handleRunScrape = async () => {
     setRunning(true);
     try {
-      const { error } = await supabase.functions.invoke("scrape-supplier-prices");
+      const { data, error } = await supabase.functions.invoke("scrape-supplier-prices");
       if (error) throw error;
       toast.success("Scraper run complete");
       qc.invalidateQueries({ queryKey: ["buy-prices"] });
       qc.invalidateQueries({ queryKey: ["buy-prices-today-all"] });
       qc.invalidateQueries({ queryKey: ["supplier-scrape-log"] });
-    } catch {
+      console.log("scrape result", data);
+    } catch (e) {
       toast.error("Scrape failed — check the log");
-    } finally { setRunning(false); }
-  };
-
-  /* ---------- chart tooltips ---------- */
-  const SpreadTooltip = ({ active, payload }: any) => {
-    if (!active || !payload?.length) return null;
-    const row = payload[0].payload;
-    return (
-      <div className="bg-surface-raised border border-surface-border rounded-md p-2.5 text-[11px] tabular-nums min-w-[180px]">
-        <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">{row.date}</div>
-        {row.tgp != null && (
-          <div className="flex justify-between text-muted-foreground mb-1">
-            <span>Viva TGP</span><span className="text-foreground">{fmtPrice(row.tgp)}</span>
-          </div>
-        )}
-        {SUPPLIERS.map(s => {
-          const sp = row[`${s}_spread`], pr = row[`${s}_price`];
-          if (sp == null) return null;
-          const c = sp <= 0 ? C_LIME : C_CORAL;
-          return (
-            <div key={s} className="flex items-center justify-between gap-3 py-0.5">
-              <span className="flex items-center gap-1.5 text-foreground">
-                <span className="inline-block w-2 h-2 rounded-sm" style={{ background: colorFor(s) }} />{s}
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="text-muted-foreground">{fmtPrice(pr)}</span>
-                <span style={{ color: c }} className="font-medium">{fmtCpl(sp)}/L</span>
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const LineTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div className="bg-surface-raised border border-surface-border rounded-md p-2.5 text-[11px] tabular-nums min-w-[160px]">
-        <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">{label}</div>
-        {payload.filter((p: any) => !p.dataKey.endsWith("_avg") && p.value != null).map((p: any) => (
-          <div key={p.dataKey} className="flex items-center justify-between gap-3 py-0.5">
-            <span className="flex items-center gap-1.5 text-foreground">
-              <span className="inline-block w-2 h-2 rounded-sm" style={{ background: p.stroke }} />{p.dataKey}
-            </span>
-            <span className="text-foreground">{fmtPrice(p.value)}/L</span>
-          </div>
-        ))}
-      </div>
-    );
+    } finally {
+      setRunning(false);
+    }
   };
 
   return (
     <div className="flex flex-col gap-4 max-w-[1200px]">
-      {/* HEADER */}
+      {/* Header / actions */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl text-foreground tracking-tight">Suppliers</h1>
-          <p className="text-[11px] text-muted-foreground mt-1 normal-case">Procurement intelligence — Pacific vs Pro Fusion vs Viva TGP</p>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Suppliers</h1>
+          <p className="text-xs text-muted-foreground mt-1">Pacific & Pro Fusion daily pricing, volumes & spend</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 bg-surface border border-surface-border rounded-full p-1">
-            {([7, 14, 30] as const).map(d => (
-              <button key={d} onClick={() => setDays(d)}
-                className={`px-3 py-1 text-[11px] rounded-full tabular-nums ${days === d ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-                {d}d
-              </button>
-            ))}
+            <button onClick={() => setShowInc(false)} className={`px-3 py-1 text-[11px] rounded-full ${!showInc ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Ex GST</button>
+            <button onClick={() => setShowInc(true)} className={`px-3 py-1 text-[11px] rounded-full ${showInc ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Inc GST</button>
           </div>
-          <div className="flex items-center gap-1 bg-surface border border-surface-border rounded-full p-1">
-            <button onClick={() => setShowInc(false)} className={`px-3 py-1 text-[11px] rounded-full ${!showInc ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}>Ex GST</button>
-            <button onClick={() => setShowInc(true)} className={`px-3 py-1 text-[11px] rounded-full ${showInc ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}>Inc GST</button>
-          </div>
-          <button onClick={handleRunScrape} disabled={running}
-            className="border border-surface-border rounded-full px-3 py-1.5 text-[11px] text-foreground flex items-center gap-1.5 hover:bg-surface disabled:opacity-60">
+          <select value={days} onChange={(e) => setDays(parseInt(e.target.value))} className="bg-surface border border-surface-border rounded-full text-foreground px-3 py-1 text-[11px] outline-none">
+            <option value={7}>Last 7 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={90}>Last 90 days</option>
+            <option value={365}>Last 365 days</option>
+          </select>
+          <button onClick={handleRunScrape} disabled={running} className="bg-primary text-primary-foreground rounded-full px-4 py-1.5 text-[11px] font-medium flex items-center gap-1.5 disabled:opacity-60">
             <RefreshCw className={`w-3 h-3 ${running ? "animate-spin" : ""}`} />
-            {running ? "Scraping…" : "Scrape now"}
+            {running ? "Scraping…" : "Scrape Gmail now"}
           </button>
         </div>
       </div>
 
-      {/* 1. DECISION HERO */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-5 sm:p-7 relative overflow-hidden">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex-1 min-w-[260px]">
-            <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-2">Today's Recommendation</div>
-            {hero ? (
-              <>
-                <h2 className="text-foreground tracking-tight" style={{ fontSize: 30, lineHeight: 1.1 }}>
-                  Buy from <span style={{ color: C_LIME }}>{hero.winner.supplier.toUpperCase()}</span> today
-                </h2>
-                <div className="text-[12px] text-muted-foreground mt-2 tabular-nums">
-                  {hero.vsOther != null && (
-                    <span>{fmtCpl(hero.vsOther)}/L vs {hero.other?.supplier}</span>
-                  )}
-                  {hero.vsOther != null && hero.vsTgp != null && <span className="mx-1.5 opacity-50">·</span>}
-                  {hero.vsTgp != null && (
-                    <span>{fmtCpl(hero.vsTgp)}/L vs Viva TGP</span>
-                  )}
-                </div>
-                {hero.asOf && (
-                  <div className="text-[10px] text-muted-foreground mt-3 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> as of {format(parseISO(hero.asOf), "HH:mm")}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <h2 className="text-foreground tracking-tight" style={{ fontSize: 26, lineHeight: 1.15 }}>No quotes in yet today</h2>
-                <p className="text-[12px] text-muted-foreground mt-2">Pricing typically lands by midday. Use <span className="text-foreground">Scrape now</span> to pull the latest emails.</p>
-              </>
-            )}
-          </div>
-
-          {/* Side-by-side prices */}
-          {hero && (
-            <div className="flex items-end gap-6">
-              {[hero.winner, hero.other].filter(Boolean).map((p, i) => {
-                const isWinner = i === 0;
-                const v = showInc ? p.price_per_litre * GST : p.price_per_litre;
-                return (
-                  <div key={p.id} className="text-right">
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 flex items-center justify-end gap-1.5">
-                      <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorFor(p.supplier) }} />
+      {/* Today snapshot */}
+      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Today's Snapshot</div>
+          {cheapest && (
+            <div className="text-[11px] text-positive font-medium flex items-center gap-1">
+              <Trophy className="w-3 h-3" /> Cheapest: {cheapest.supplier}
+              {todayDelta != null && <span className="text-muted-foreground ml-1">— saves ${todayDelta.toFixed(4)}/L</span>}
+            </div>
+          )}
+        </div>
+        {todaySorted.length === 0 ? (
+          <div className="text-sm text-muted-foreground">No prices recorded today yet. The scraper runs at 12:00pm daily, or click <span className="text-foreground">Scrape Gmail now</span>.</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {todaySorted.map((p, i) => {
+              const isBest = cheapest && p.id === cheapest.id && todaySorted.length > 1;
+              const value = showInc ? p.price_per_litre * GST : p.price_per_litre;
+              return (
+                <div key={p.id} className={`rounded-lg border p-4 ${isBest ? "border-positive/50 bg-positive/5" : "border-surface-border"}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-[12px] text-foreground font-medium flex items-center gap-1.5">
+                      <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorFor(p.supplier, i) }} />
                       {p.supplier}
                     </div>
-                    <div className="tabular-nums tracking-tight" style={{
-                      fontSize: isWinner ? 36 : 26,
-                      color: isWinner ? C_LIME : "var(--text-secondary)",
-                      opacity: isWinner ? 1 : 0.6,
-                      fontWeight: 600,
-                    }}>
-                      ${v.toFixed(4)}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">/L {showInc ? "inc" : "ex"} GST</div>
+                    {isBest && <div className="text-[9px] uppercase tracking-wider text-positive font-semibold">Recommended</div>}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Excise countdown */}
-        <div className="absolute top-3 right-4 text-[10px] text-muted-foreground tabular-nums">
-          {daysToExcise > 0 ? `Excise step-up in ${daysToExcise} days` : `Excise step-up effective ${format(EXCISE_CLIFF, "dd MMM yyyy")}`}
-        </div>
+                  <div className="text-2xl font-semibold text-foreground tabular-nums">${value.toFixed(4)}<span className="text-xs text-muted-foreground">/L {showInc ? "inc" : "ex"} GST</span></div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* 2. SPREAD VS VIVA TGP */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Spread vs Viva TGP — last {days} days</div>
-          <div className="flex items-center gap-3 text-[10px]">
-            <span className="flex items-center gap-1.5 text-muted-foreground"><span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: C_SAGE }} />Pacific</span>
-            <span className="flex items-center gap-1.5 text-muted-foreground"><span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: C_LIME }} />Pro Fusion</span>
-            <span className="flex items-center gap-1.5 text-muted-foreground"><span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ background: C_CORAL }} />Above TGP</span>
-          </div>
-        </div>
-        <div style={{ height: Math.max(220, days * 28) }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={spreadData} layout="vertical" margin={{ top: 4, right: 24, left: 8, bottom: 4 }} barCategoryGap={6} barGap={2}>
-              <XAxis type="number" tick={{ fontSize: 10, fill: C_AXIS }} axisLine={false} tickLine={false}
-                tickFormatter={(v) => `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}c`}
-                domain={['dataMin - 0.01', 'dataMax + 0.01']} />
-              <YAxis dataKey="date" type="category" tick={{ fontSize: 10, fill: C_AXIS }} axisLine={false} tickLine={false} width={56} />
-              <ReferenceLine x={0} stroke={C_LIME} strokeWidth={1.5} ifOverflow="extendDomain"
-                label={{ value: "VIVA TGP", position: "top", fill: C_LIME, fontSize: 9, offset: 4 }} />
-              <Tooltip cursor={{ fill: "rgba(255,255,255,0.03)" }} content={<SpreadTooltip />} />
-              {SUPPLIERS.map(s => (
-                <Bar key={s} dataKey={`${s}_spread`} barSize={9} radius={[2, 2, 2, 2]}>
-                  {spreadData.map((row, i) => {
-                    const v = row[`${s}_spread`];
-                    const c = v == null ? "transparent" : v > 0 ? C_CORAL : colorFor(s);
-                    return <Cell key={i} fill={c} />;
-                  })}
-                </Bar>
+      {/* Trend chart */}
+      {trendData.length > 1 && (
+        <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Daily Buy Price — {showInc ? "Inc" : "Ex"} GST</div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {allSuppliers.map((s, i) => (
+                <div key={s} className="flex items-center gap-1.5">
+                  <span className="inline-block w-3 h-0.5 rounded" style={{ background: colorFor(s, i) }} />
+                  <span className="text-[10px] text-muted-foreground">{s}</span>
+                </div>
               ))}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* 3. DAILY BUY PRICE LINES */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Daily Buy Price — last {days} days · {showInc ? "Inc" : "Ex"} GST</div>
-          <div className="flex items-center gap-3 text-[10px]">
-            {SUPPLIERS.map(s => (
-              <span key={s} className="flex items-center gap-1.5 text-muted-foreground">
-                <span className="inline-block w-3 h-0.5" style={{ background: colorFor(s) }} />{s}
-              </span>
-            ))}
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <span className="inline-block w-3 h-0.5 border-t border-dashed" style={{ borderColor: C_AXIS }} />7d avg
-            </span>
-          </div>
-        </div>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={lineData} margin={{ top: 16, right: 64, left: 8, bottom: 4 }}>
-              <CartesianGrid stroke={C_GRID} strokeDasharray="2 4" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: C_AXIS }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 10, fill: C_AXIS }} axisLine={false} tickLine={false}
-                tickFormatter={(v) => `$${v.toFixed(2)}`} domain={['auto', 'auto']} />
-              <Tooltip cursor={{ stroke: C_GRID }} content={<LineTooltip />} />
-              {SUPPLIERS.map(s => (
-                <Line key={s} type="monotone" dataKey={s} stroke={colorFor(s)}
-                  strokeWidth={1.75} dot={{ r: 2.5, fill: colorFor(s), strokeWidth: 0 }}
-                  activeDot={{ r: 4 }} connectNulls isAnimationActive={false} />
-              ))}
-              {SUPPLIERS.map(s => (
-                <Line key={`${s}_avg`} type="monotone" dataKey={`${s}_avg`} stroke={colorFor(s)}
-                  strokeWidth={1} strokeDasharray="3 3" strokeOpacity={0.4} dot={false} connectNulls isAnimationActive={false} />
-              ))}
-              {latestSpread && (
-                <ReferenceLine x={latestSpread.date} stroke="transparent"
-                  label={{ value: `${fmtCpl(latestSpread.diff)}`, position: "right",
-                    fill: latestSpread.diff <= 0 ? C_LIME : C_CORAL, fontSize: 11, offset: 8 }} />
-              )}
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* 4. CUMULATIVE POSITION */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">Cumulative position — last 7 days</div>
-            <div className="text-foreground tabular-nums" style={{ fontSize: 22, lineHeight: 1.2 }}>
-              {cumulative.saved >= 0 ? <ArrowDown className="inline w-4 h-4 mr-1" style={{ color: C_LIME }} /> : <ArrowUp className="inline w-4 h-4 mr-1" style={{ color: C_CORAL }} />}
-              <span style={{ color: cumulative.saved >= 0 ? C_LIME : C_CORAL }}>${Math.abs(cumulative.saved).toFixed(0)}</span>
-              <span className="text-muted-foreground text-[13px] font-normal ml-2">
-                {cumulative.saved >= 0 ? "saved" : "lost"} buying cheapest each day vs Pacific-only
-              </span>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-sm" style={{ background: DIFF_COLOR, opacity: 0.5 }} />
+              <span className="text-[10px] text-muted-foreground">Difference</span>
             </div>
-            <div className="text-[10px] text-muted-foreground mt-1.5 tabular-nums">
-              Notional {notionalLitres.toLocaleString()} L/day · {cumulative.daysCounted} days with quotes
             </div>
           </div>
-          <div className="flex items-center gap-1 bg-surface-raised border border-surface-border rounded-full p-1">
-            {[2000, 5000, 10000].map(v => (
-              <button key={v} onClick={() => setNotionalLitres(v)}
-                className={`px-2.5 py-1 text-[10px] rounded-full tabular-nums ${notionalLitres === v ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-                {(v / 1000)}k L/day
-              </button>
-            ))}
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={trendData} barCategoryGap="20%" barGap={2}>
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis yAxisId="price" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
+                <YAxis yAxisId="diff" orientation="right" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(3)}`} domain={[0, "auto"]} />
+                <Tooltip cursor={{ fill: "var(--surface-border)", opacity: 0.25 }} content={<PriceTooltip suffix="/L" />} />
+                {allSuppliers.map((s, i) => (
+                  <Bar key={s} yAxisId="price" dataKey={s} fill={colorFor(s, i)} radius={[2, 2, 0, 0]} />
+                ))}
+                <Bar yAxisId="diff" dataKey="diff" name="Difference" fill={DIFF_COLOR} fillOpacity={0.5} radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 5. VOLUME & SPEND LEDGER */}
+      {/* Spread vs TGP */}
+      {tgpSpread.length > 1 && (
+        <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Spread vs Viva Melbourne TGP (Ex GST) — negative = below TGP</div>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={tgpSpread} barCategoryGap="20%" barGap={2}>
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v >= 0 ? "+" : ""}$${v.toFixed(3)}`} />
+                <ReferenceLine y={0} stroke="var(--text-secondary)" strokeDasharray="3 3" />
+                <Tooltip cursor={{ fill: "var(--surface-border)", opacity: 0.25 }} content={<PriceTooltip suffix="/L" stripSuffix="_spread" signed />} />
+                {allSuppliers.map((s, i) => (
+                  <Bar key={s} dataKey={`${s}_spread`} fill={colorFor(s, i)} radius={[2, 2, 0, 0]} />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Volume & spend */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Gauge className="w-3 h-3" /> Volume & Spend — last {days} days
-          </div>
-          {ledger.totals.litres > 0 && (
-            <div className="text-[11px] text-muted-foreground tabular-nums">
-              Total <span className="text-foreground">{ledger.totals.litres.toLocaleString()} L</span> ·
-              <span className="text-foreground"> ${Math.round(ledger.totals.spend).toLocaleString()}</span> ex GST
-            </div>
-          )}
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-3 h-3" /> Volume & Spend (from reconciliation intake) — Last {days} days</div>
         </div>
-
-        {ledger.rows.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-[13px] text-foreground mb-1">No purchases logged yet</p>
-            <p className="text-[11px] text-muted-foreground">Drivers log fuel intake from the Driver Portal — those entries flow in automatically and get attributed to the cheapest supplier on the day.</p>
-          </div>
+        {volSpend.length === 0 ? (
+          <div className="text-sm text-muted-foreground">No bowser intake recorded yet. Drivers log fuel intake from the Driver Portal — those entries feed this view automatically.</div>
         ) : (
           <>
-            {/* per-supplier split */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-              {Object.entries(ledger.totals.bySupplier).map(([sup, t]) => (
-                <div key={sup} className="border border-surface-border rounded-md p-3">
-                  <div className="text-[11px] text-foreground flex items-center gap-1.5">
-                    <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorFor(sup) }} />{sup}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              {volSpend.map((v, i) => (
+                <div key={v.supplier} className="rounded-lg border border-surface-border p-3">
+                  <div className="text-[12px] text-foreground font-medium flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorFor(v.supplier, i) }} />
+                    {v.supplier}
                   </div>
-                  <div className="text-[18px] font-semibold text-foreground tabular-nums mt-1">{t.litres.toLocaleString()}<span className="text-[11px] text-muted-foreground font-normal"> L</span></div>
-                  <div className="text-[11px] text-muted-foreground tabular-nums">${Math.round(t.spend).toLocaleString()} · avg ${(t.spend / t.litres).toFixed(4)}/L</div>
+                  <div className="text-xl font-semibold text-foreground tabular-nums mt-1">{v.litres.toLocaleString()}<span className="text-xs text-muted-foreground"> L</span></div>
+                  <div className="text-[12px] text-muted-foreground tabular-nums mt-0.5">${v.spend.toLocaleString()} ex GST · avg ${v.avg.toFixed(4)}/L</div>
                 </div>
               ))}
             </div>
-            {/* compact ledger */}
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <table className="w-full text-[12px] min-w-[520px]">
-                <thead>
-                  <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-surface-border">
-                    <th className="text-left py-2 px-2 font-medium">Date</th>
-                    <th className="text-left py-2 px-2 font-medium">Attributed</th>
-                    <th className="text-right py-2 px-2 font-medium">Litres</th>
-                    <th className="text-right py-2 px-2 font-medium">Rate /L</th>
-                    <th className="text-right py-2 px-2 font-medium">Spend ex GST</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ledger.rows.map(r => (
-                    <tr key={r.id} className="border-b border-surface-border/60 hover:bg-surface-raised/30">
-                      <td className="py-2 px-2 text-muted-foreground tabular-nums whitespace-nowrap">{format(parseISO(r.date), "dd MMM")}</td>
-                      <td className="py-2 px-2 text-foreground"><span className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle" style={{ background: colorFor(r.supplier) }} />{r.supplier}</td>
-                      <td className="py-2 px-2 text-right tabular-nums text-foreground">{r.litres.toLocaleString()}</td>
-                      <td className="py-2 px-2 text-right tabular-nums text-muted-foreground">${r.rate.toFixed(4)}</td>
-                      <td className="py-2 px-2 text-right tabular-nums text-foreground">${Math.round(r.spend).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={volSpend}>
+                  <XAxis dataKey="supplier" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="litres" name="Litres" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="spend" name="Spend $" fill="#5B9BD5" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </>
         )}
       </div>
 
-      {/* SCRAPE AUDIT (kept) */}
+      {/* Scrape audit table */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Mail className="w-3 h-3" /> Scrape Audit
+            <Mail className="w-3 h-3" /> Scrape Audit — Email → Extracted Price → Effective Date
           </div>
-          <div className="text-[10px] text-muted-foreground tabular-nums">{(scrapeLogQ.data || []).length} entries</div>
+          <div className="text-[10px] text-muted-foreground">{(scrapeLogQ.data || []).length} entries</div>
         </div>
+
         <div className="flex items-end gap-2 flex-wrap mb-3">
           <div className="flex flex-col gap-1">
             <label className="text-[10px] text-muted-foreground uppercase tracking-wider">From</label>
-            <input type="date" value={auditFrom} onChange={(e) => setAuditFrom(e.target.value)} className="bg-surface-raised border border-surface-border rounded-md text-foreground px-2 py-1.5 text-[12px] outline-none" />
+            <input type="date" value={auditFrom} onChange={(e) => setAuditFrom(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-2 py-1.5 text-[12px] outline-none" />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] text-muted-foreground uppercase tracking-wider">To</label>
-            <input type="date" value={auditTo} onChange={(e) => setAuditTo(e.target.value)} className="bg-surface-raised border border-surface-border rounded-md text-foreground px-2 py-1.5 text-[12px] outline-none" />
+            <input type="date" value={auditTo} onChange={(e) => setAuditTo(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-2 py-1.5 text-[12px] outline-none" />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Supplier</label>
-            <select value={auditSupplier} onChange={(e) => setAuditSupplier(e.target.value)} className="bg-surface-raised border border-surface-border rounded-md text-foreground px-2 py-1.5 text-[12px] outline-none">
+            <select value={auditSupplier} onChange={(e) => setAuditSupplier(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-2 py-1.5 text-[12px] outline-none">
               <option value="all">All</option>
               {SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Status</label>
-            <select value={auditStatus} onChange={(e) => setAuditStatus(e.target.value)} className="bg-surface-raised border border-surface-border rounded-md text-foreground px-2 py-1.5 text-[12px] outline-none">
+            <select value={auditStatus} onChange={(e) => setAuditStatus(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-2 py-1.5 text-[12px] outline-none">
               <option value="all">All</option>
               <option value="success">Success</option>
               <option value="parse_failed">Parse failed</option>
@@ -582,12 +456,12 @@ export default function Suppliers() {
           </div>
           <button
             onClick={() => { setAuditFrom(format(subDays(new Date(), 30), "yyyy-MM-dd")); setAuditTo(format(new Date(), "yyyy-MM-dd")); setAuditSupplier("all"); setAuditStatus("all"); }}
-            className="bg-surface-raised border border-surface-border rounded-md text-foreground px-3 py-1.5 text-[11px] hover:bg-surface-border/40">
-            Reset
-          </button>
+            className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-1.5 text-[11px] hover:bg-surface-border/40"
+          >Reset</button>
         </div>
+
         {(scrapeLogQ.data || []).length === 0 ? (
-          <div className="text-[12px] text-muted-foreground py-6 text-center">No scrape attempts in this range.</div>
+          <div className="text-sm text-muted-foreground py-6 text-center">No scrape attempts in this range.</div>
         ) : (
           <div className="overflow-x-auto -mx-4 sm:mx-0">
             <table className="w-full text-[12px] min-w-[720px]">
@@ -596,14 +470,14 @@ export default function Suppliers() {
                   <th className="text-left py-2 px-2 font-medium">Scraped</th>
                   <th className="text-left py-2 px-2 font-medium">Supplier</th>
                   <th className="text-left py-2 px-2 font-medium">Status</th>
-                  <th className="text-right py-2 px-2 font-medium">Extracted</th>
-                  <th className="text-left py-2 px-2 font-medium">Effective</th>
-                  <th className="text-left py-2 px-2 font-medium">Notes</th>
+                  <th className="text-right py-2 px-2 font-medium">Extracted Price</th>
+                  <th className="text-left py-2 px-2 font-medium">Effective Date</th>
+                  <th className="text-left py-2 px-2 font-medium">Date Phrase / Notes</th>
                 </tr>
               </thead>
               <tbody>
                 {(scrapeLogQ.data || []).map((l) => (
-                  <tr key={l.id} className="border-b border-surface-border/60 hover:bg-surface-raised/30">
+                  <tr key={l.id} className="border-b border-surface-border/60 hover:bg-raised/40">
                     <td className="py-2 px-2 text-muted-foreground tabular-nums whitespace-nowrap">{format(parseISO(l.scraped_at), "dd MMM HH:mm")}</td>
                     <td className="py-2 px-2 text-foreground">{l.supplier || "—"}</td>
                     <td className="py-2 px-2">
