@@ -96,8 +96,10 @@ Deno.serve(async (req) => {
     );
   } catch (e) {
     console.error("Viva TGP error:", e);
+    const msg = e instanceof Error ? e.message
+      : (typeof e === "object" ? JSON.stringify(e) : String(e));
     return new Response(
-      JSON.stringify({ success: false, error: e instanceof Error ? e.message : String(e) }),
+      JSON.stringify({ success: false, error: msg }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
