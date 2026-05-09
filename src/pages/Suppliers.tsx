@@ -10,8 +10,9 @@ import { toast } from "sonner";
 
 const SUPPLIER_COLORS: Record<string, string> = {
   Pacific: "var(--accent)",
-  "Pro Fusion": "#5B9BD5",
+  "Pro Fusion": "#1E3A8A",
 };
+const DIFF_COLOR = "#9C6ADE";
 const FALLBACK = ["#E0A458", "#9C6ADE", "#48B5A6", "#D96C6C"];
 const colorFor = (s: string, i = 0) => SUPPLIER_COLORS[s] || FALLBACK[i % FALLBACK.length];
 const GST = 1.1;
@@ -91,7 +92,15 @@ export default function Suppliers() {
       row[p.supplier] = Number(v.toFixed(4));
       map.set(key, row);
     });
-    return Array.from(map.values());
+    // Compute |Pacific − Pro Fusion| per row so we can draw a difference line.
+    return Array.from(map.values()).map((row) => {
+      const a = row["Pacific"];
+      const b = row["Pro Fusion"];
+      if (typeof a === "number" && typeof b === "number") {
+        row["diff"] = Number(Math.abs(a - b).toFixed(4));
+      }
+      return row;
+    });
   }, [prices, showInc]);
 
   // Spread vs TGP chart
@@ -242,17 +251,23 @@ export default function Suppliers() {
                   <span className="text-[10px] text-muted-foreground">{s}</span>
                 </div>
               ))}
+            <div className="flex items-center gap-1.5">
+              <span className="inline-block w-3 h-0.5 rounded border-t-2 border-dashed" style={{ borderColor: DIFF_COLOR, background: "transparent" }} />
+              <span className="text-[10px] text-muted-foreground">Difference</span>
+            </div>
             </div>
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trendData}>
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
+              <YAxis yAxisId="price" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
+              <YAxis yAxisId="diff" orientation="right" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(3)}`} domain={[0, "auto"]} />
                 <Tooltip contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }} formatter={(v: number, n: string) => [`$${v.toFixed(4)}/L`, n]} />
                 {allSuppliers.map((s, i) => (
-                  <Line key={s} type="monotone" dataKey={s} stroke={colorFor(s, i)} strokeWidth={2} dot={false} connectNulls />
+                <Line key={s} yAxisId="price" type="monotone" dataKey={s} stroke={colorFor(s, i)} strokeWidth={2} dot={false} connectNulls />
                 ))}
+              <Line yAxisId="diff" type="monotone" dataKey="diff" name="Difference" stroke={DIFF_COLOR} strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls />
               </LineChart>
             </ResponsiveContainer>
           </div>
