@@ -405,8 +405,26 @@ export default function Suppliers() {
 
       {/* Volume & spend */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-3 h-3" /> Volume & Spend (from reconciliation intake) — Last {days} days</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Purchasing from:</span>
+            {allSuppliers.map((s, i) => {
+              const on = activeSuppliers.includes(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => toggleActive(s)}
+                  className={`text-[11px] px-2 py-1 rounded-md border transition-colors flex items-center gap-1.5 ${on ? "border-surface-border bg-surface-elevated text-foreground" : "border-surface-border/60 text-muted-foreground opacity-60 hover:opacity-100"}`}
+                  title={on ? `Click to exclude ${s} from spend attribution` : `Click to include ${s} in spend attribution`}
+                >
+                  <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorFor(s, i), opacity: on ? 1 : 0.4 }} />
+                  {s}
+                </button>
+              );
+            })}
+          </div>
         </div>
         {volSpend.length === 0 ? (
           <div className="text-sm text-muted-foreground">No bowser intake recorded yet. Drivers log fuel intake from the Driver Portal — those entries feed this view automatically.</div>
