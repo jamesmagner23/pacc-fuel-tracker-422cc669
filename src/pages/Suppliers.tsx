@@ -367,7 +367,7 @@ export default function Suppliers() {
       {/* Spread vs TGP */}
       {tgpSpread.length > 1 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Spread vs Melbourne TGP (Ex GST) — negative = below TGP</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Spread vs Viva Melbourne TGP (Ex GST) — negative = below TGP</div>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={tgpSpread} barCategoryGap="20%" barGap={2}>
@@ -387,10 +387,10 @@ export default function Suppliers() {
       {/* Volume & spend */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Volume & Spend per Supplier — Last {days} days</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-3 h-3" /> Volume & Spend (from reconciliation intake) — Last {days} days</div>
         </div>
         {volSpend.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No purchases logged yet. Use the form below to record what you actually bought from each supplier.</div>
+          <div className="text-sm text-muted-foreground">No bowser intake recorded yet. Drivers log fuel intake from the Driver Portal — those entries feed this view automatically.</div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
