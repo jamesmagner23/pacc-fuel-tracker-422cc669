@@ -199,12 +199,13 @@ Deno.serve(async (req) => {
         const latest = cand;
         const msgId = cand.id;
 
-      // Skip if we've already successfully ingested this exact message
+      // Skip if we've already seen this exact message (success OR parse_failed),
+      // so backfill doesn't repeatedly re-AI the same un-priced email.
       const { data: prior } = await admin
         .from("supplier_price_scrape_log")
-        .select("id, gmail_message_id, scraped_at")
+        .select("id, gmail_message_id, status")
         .eq("supplier", sup.name)
-        .eq("status", "success")
+        .in("status", ["success", "parse_failed", "skipped_stale"])
         .eq("gmail_message_id", msgId)
         .limit(1);
       if (prior && prior.length) {
