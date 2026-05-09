@@ -246,10 +246,6 @@ export default function Suppliers() {
     return rows;
   }, [intakeQ.data, prices]);
 
-  const totalIntakeLitres = useMemo(
-    () => (intakeQ.data || []).reduce((s: number, l: any) => s + (Number(l.litres_entered) || 0), 0),
-    [intakeQ.data],
-  );
 
   const handleRunScrape = async () => {
     setRunning(true);
