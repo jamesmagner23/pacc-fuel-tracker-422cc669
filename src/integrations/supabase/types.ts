@@ -1642,6 +1642,45 @@ export type Database = {
         }
         Relationships: []
       }
+      retail_bowser_prices: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          notes: string | null
+          price_date: string
+          price_inc_gst: number
+          product: string
+          sample_size: number | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location?: string
+          notes?: string | null
+          price_date: string
+          price_inc_gst: number
+          product?: string
+          sample_size?: number | null
+          source: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          notes?: string | null
+          price_date?: string
+          price_inc_gst?: number
+          product?: string
+          sample_size?: number | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       scheduled_deliveries: {
         Row: {
           client_account_id: number | null
