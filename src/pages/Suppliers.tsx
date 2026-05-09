@@ -360,7 +360,14 @@ export default function Suppliers() {
       {trendData.length > 1 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Daily Buy Price — {showInc ? "Inc" : "Ex"} GST</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-3 flex-wrap">
+              <span>Daily Buy Price — {showInc ? "Inc" : "Ex"} GST</span>
+              {(() => {
+                const last = [...trendData].reverse().find(r => typeof r.diff === "number");
+                if (!last) return null;
+                return <span className="normal-case tracking-normal text-[11px] text-foreground">Latest spread: <span className="tabular-nums font-medium">${Number(last.diff).toFixed(4)}/L</span></span>;
+              })()}
+            </div>
             <div className="flex items-center gap-3 flex-wrap">
               {allSuppliers.map((s, i) => (
                 <div key={s} className="flex items-center gap-1.5">
@@ -368,23 +375,17 @@ export default function Suppliers() {
                   <span className="text-[10px] text-muted-foreground">{s}</span>
                 </div>
               ))}
-            <div className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3 rounded-sm" style={{ background: DIFF_COLOR, opacity: 0.5 }} />
-              <span className="text-[10px] text-muted-foreground">Difference</span>
-            </div>
             </div>
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={trendData} barCategoryGap="20%" barGap={2}>
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                <YAxis yAxisId="price" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
-                <YAxis yAxisId="diff" orientation="right" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(3)}`} domain={[0, "auto"]} />
+                <YAxis tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                 <Tooltip cursor={{ fill: "var(--surface-border)", opacity: 0.25 }} content={<PriceTooltip suffix="/L" />} />
                 {allSuppliers.map((s, i) => (
-                  <Bar key={s} yAxisId="price" dataKey={s} fill={colorFor(s, i)} radius={[2, 2, 0, 0]} />
+                  <Bar key={s} dataKey={s} fill={colorFor(s, i)} radius={[2, 2, 0, 0]} />
                 ))}
-                <Bar yAxisId="diff" dataKey="diff" name="Difference" fill={DIFF_COLOR} fillOpacity={0.5} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
