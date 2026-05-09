@@ -221,9 +221,13 @@ export default function Suppliers() {
   // Volume & spend per supplier — derived from driver intake logs, attributed
   // to the cheapest scraped supplier price on each intake date.
   const volSpend = useMemo(() => {
-    // Build cheapest-supplier-by-date lookup from scraped buy_prices
+    // Build cheapest-supplier-by-date lookup from scraped buy_prices,
+    // restricted to suppliers the user is ACTUALLY purchasing from. This
+    // prevents quote-only suppliers (e.g. Pro Fusion before any orders) from
+    // appearing on the Volume & Spend chart.
     const cheapest = new Map<string, { supplier: string; price: number }>();
     prices.forEach((p) => {
+      if (!activeSuppliers.includes(p.supplier)) return;
       const cur = cheapest.get(p.price_date);
       if (!cur || p.price_per_litre < cur.price) {
         cheapest.set(p.price_date, { supplier: p.supplier, price: p.price_per_litre });
@@ -263,7 +267,7 @@ export default function Suppliers() {
       });
     }
     return rows;
-  }, [intakeQ.data, prices]);
+  }, [intakeQ.data, prices, activeSuppliers]);
 
 
   const handleRunScrape = async () => {
