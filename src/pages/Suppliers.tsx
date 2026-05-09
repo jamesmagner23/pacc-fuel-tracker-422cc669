@@ -94,23 +94,27 @@ export default function Suppliers() {
   }, [vivaTgp, aipTgp]);
   const [running, setRunning] = useState(false);
 
-  // Suppliers the user actually purchases from. Scraped quotes from non-active
-  // suppliers are still tracked for benchmarking but are NOT used to attribute
-  // intake volume/spend. Persisted in localStorage; defaults to Pacific only
-  // (Pro Fusion is quote-only until the user starts buying from them).
-  const [activeSuppliers, setActiveSuppliers] = useState<string[]>(() => {
+  // Primary supplier: every bowser intake is attributed to this supplier.
+  // We never auto-pick the "cheapest" — drivers always fill at the same
+  // bowser, so attribution must be deterministic. Stored in localStorage,
+  // defaults to Pacific. Other scraped suppliers stay visible for
+  // benchmarking but never receive intake.
+  const [primarySupplier, setPrimarySupplier] = useState<string>(() => {
     try {
+      const v = localStorage.getItem("suppliers.primary");
+      if (v) return v;
+      // Migrate old multi-select setting → first entry
       const raw = localStorage.getItem("suppliers.activePurchase");
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr[0]) return arr[0];
+      }
     } catch { /* noop */ }
-    return ["Pacific"];
+    return "Pacific";
   });
-  const toggleActive = (s: string) => {
-    setActiveSuppliers((prev) => {
-      const next = prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s];
-      try { localStorage.setItem("suppliers.activePurchase", JSON.stringify(next)); } catch { /* noop */ }
-      return next;
-    });
+  const setPrimary = (s: string) => {
+    setPrimarySupplier(s);
+    try { localStorage.setItem("suppliers.primary", s); } catch { /* noop */ }
   };
 
   // Reconciliation source: driver-recorded bowser intake (litres + bowser
@@ -226,56 +230,38 @@ export default function Suppliers() {
     });
   }, [prices, tgp, allSuppliers, metaMap]);
 
-  // Volume & spend per supplier — derived from driver intake logs, attributed
-  // to the cheapest scraped supplier price on each intake date.
+  // Volume & spend — every intake is attributed to the primary supplier
+  // unless the driver explicitly noted another supplier in the log notes
+  // (case-insensitive substring match against any known supplier name).
   const volSpend = useMemo(() => {
-    // Build cheapest-supplier-by-date lookup from scraped buy_prices,
-    // restricted to suppliers the user is ACTUALLY purchasing from. This
-    // prevents quote-only suppliers (e.g. Pro Fusion before any orders) from
-    // appearing on the Volume & Spend chart.
-    const cheapest = new Map<string, { supplier: string; price: number }>();
-    prices.forEach((p) => {
-      if (!activeSuppliers.includes(p.supplier)) return;
-      const cur = cheapest.get(p.price_date);
-      if (!cur || p.price_per_litre < cur.price) {
-        cheapest.set(p.price_date, { supplier: p.supplier, price: p.price_per_litre });
-      }
-    });
     const map = new Map<string, { litres: number; spend: number }>();
-    let untaggedLitres = 0;
-    let untaggedSpend = 0;
     (intakeQ.data || []).forEach((log: any) => {
       const litres = Number(log.litres_entered) || 0;
-      // Spend is litres × retail price the bowser pump charged us (ex GST).
       const retail = Number(log.bowser_retail_price) || 0;
-      const spend = litres * (retail / GST); // bowser retail is inc-GST → ex
-      const match = cheapest.get(log.log_date);
-      if (match) {
-        const cur = map.get(match.supplier) || { litres: 0, spend: 0 };
-        cur.litres += litres;
-        cur.spend += spend;
-        map.set(match.supplier, cur);
-      } else {
-        untaggedLitres += litres;
-        untaggedSpend += spend;
-      }
+      const spend = litres * (retail / GST); // bowser retail inc-GST → ex
+      const note = String(log.notes || "").toLowerCase();
+      const overridden = SUPPLIERS.find(s => s !== primarySupplier && note.includes(s.toLowerCase()));
+      const supplier = overridden || primarySupplier;
+      const cur = map.get(supplier) || { litres: 0, spend: 0 };
+      cur.litres += litres;
+      cur.spend += spend;
+      map.set(supplier, cur);
     });
-    const rows = Array.from(map.entries()).map(([supplier, v]) => ({
+    return Array.from(map.entries()).map(([supplier, v]) => ({
       supplier,
       litres: Math.round(v.litres),
       spend: Math.round(v.spend),
       avg: v.litres > 0 ? v.spend / v.litres : 0,
     }));
-    if (untaggedLitres > 0) {
-      rows.push({
-        supplier: "Unattributed",
-        litres: Math.round(untaggedLitres),
-        spend: Math.round(untaggedSpend),
-        avg: untaggedLitres > 0 ? untaggedSpend / untaggedLitres : 0,
-      });
-    }
-    return rows;
-  }, [intakeQ.data, prices, activeSuppliers]);
+  }, [intakeQ.data, primarySupplier]);
+
+  // Audit list: any intake log whose notes mention a non-primary supplier.
+  const overriddenLogs = useMemo(() => {
+    return (intakeQ.data || []).filter((log: any) => {
+      const note = String(log.notes || "").toLowerCase();
+      return SUPPLIERS.some(s => s !== primarySupplier && note.includes(s.toLowerCase()));
+    });
+  }, [intakeQ.data, primarySupplier]);
 
 
   const handleRunScrape = async () => {
@@ -417,16 +403,16 @@ export default function Suppliers() {
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-3 h-3" /> Volume & Spend (from reconciliation intake) — Last {days} days</div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Purchasing from:</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Primary supplier:</span>
             {allSuppliers.map((s, i) => {
-              const on = activeSuppliers.includes(s);
+              const on = primarySupplier === s;
               return (
                 <button
                   key={s}
                   type="button"
-                  onClick={() => toggleActive(s)}
-                  className={`text-[11px] px-2 py-1 rounded-md border transition-colors flex items-center gap-1.5 ${on ? "border-surface-border bg-surface-elevated text-foreground" : "border-surface-border/60 text-muted-foreground opacity-60 hover:opacity-100"}`}
-                  title={on ? `Click to exclude ${s} from spend attribution` : `Click to include ${s} in spend attribution`}
+                  onClick={() => setPrimary(s)}
+                  className={`text-[11px] px-2 py-1 rounded-md border transition-colors flex items-center gap-1.5 ${on ? "border-accent bg-surface-elevated text-foreground" : "border-surface-border/60 text-muted-foreground opacity-60 hover:opacity-100"}`}
+                  title={`Attribute all bowser intake to ${s}`}
                 >
                   <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorFor(s, i), opacity: on ? 1 : 0.4 }} />
                   {s}
@@ -434,6 +420,12 @@ export default function Suppliers() {
               );
             })}
           </div>
+        </div>
+        <div className="text-[11px] text-muted-foreground mb-3">
+          Every bowser fill is attributed to <span className="text-foreground">{primarySupplier}</span> unless the driver's notes explicitly mention another supplier name.
+          {overriddenLogs.length > 0 && (
+            <> {overriddenLogs.length} log{overriddenLogs.length === 1 ? "" : "s"} mention another supplier — see audit list below.</>
+          )}
         </div>
         {volSpend.length === 0 ? (
           <div className="text-sm text-muted-foreground">No bowser intake recorded yet. Drivers log fuel intake from the Driver Portal — those entries feed this view automatically.</div>
@@ -463,6 +455,20 @@ export default function Suppliers() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            {overriddenLogs.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-surface-border">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Notes-overridden intake</div>
+                <div className="space-y-1">
+                  {overriddenLogs.map((log: any) => (
+                    <div key={log.id} className="flex items-center justify-between text-[11px] gap-2">
+                      <span className="text-muted-foreground tabular-nums">{log.log_date}</span>
+                      <span className="text-foreground tabular-nums">{Number(log.litres_entered).toLocaleString()} L</span>
+                      <span className="text-muted-foreground truncate flex-1 text-right">{log.notes}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
