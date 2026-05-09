@@ -17,6 +17,54 @@ const FALLBACK = ["#E0A458", "#9C6ADE", "#48B5A6", "#D96C6C"];
 const colorFor = (s: string, i = 0) => SUPPLIER_COLORS[s] || FALLBACK[i % FALLBACK.length];
 const GST = 1.1;
 
+/** Custom tooltip used by both supplier price charts. Shows per-supplier
+ *  value plus the email-sent date and AI date-phrase reason from the scrape log. */
+function PriceTooltip({ active, payload, label, suffix = "", stripSuffix, signed }: any) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload || {};
+  const meta = (row._meta || {}) as Record<string, { sent: string; reason: string | null }>;
+  const effectiveDate = row._iso ? format(parseISO(row._iso), "EEE dd MMM yyyy") : label;
+  return (
+    <div className="bg-background border border-surface-border rounded-lg shadow-lg p-2.5 min-w-[220px] max-w-[300px]">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Effective {effectiveDate}</div>
+      {payload.map((p: any) => {
+        const key = stripSuffix ? String(p.dataKey).replace(stripSuffix, "") : String(p.dataKey);
+        if (key === "diff") {
+          return (
+            <div key={p.dataKey} className="flex items-center justify-between gap-3 py-1 border-t border-surface-border/60 mt-1 pt-1.5">
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="inline-block w-2 h-2 rounded-sm" style={{ background: p.fill, opacity: 0.6 }} />
+                Difference
+              </span>
+              <span className="text-[11px] tabular-nums text-foreground">${Number(p.value).toFixed(4)}</span>
+            </div>
+          );
+        }
+        const v = Number(p.value);
+        const valStr = `${signed && v >= 0 ? "+" : ""}$${v.toFixed(4)}${suffix}`;
+        const m = meta[key];
+        return (
+          <div key={p.dataKey} className="py-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5 text-[12px] text-foreground">
+                <span className="inline-block w-2 h-2 rounded-sm" style={{ background: p.fill }} />
+                {key}
+              </span>
+              <span className="text-[12px] tabular-nums text-foreground font-medium">{valStr}</span>
+            </div>
+            {m && (
+              <div className="ml-3.5 mt-0.5 space-y-0.5">
+                <div className="text-[10px] text-muted-foreground">Email sent {format(parseISO(m.sent), "dd MMM HH:mm")}</div>
+                {m.reason && <div className="text-[10px] text-muted-foreground italic line-clamp-2">"{m.reason}"</div>}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 interface SupplierPurchase {
   id: string;
   purchase_date: string;
