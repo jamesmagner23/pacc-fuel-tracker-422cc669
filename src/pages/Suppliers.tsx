@@ -86,6 +86,25 @@ export default function Suppliers() {
   const { data: tgp = [] } = useTGPrices("Melbourne", "Diesel", days, "Viva");
   const [running, setRunning] = useState(false);
 
+  // Suppliers the user actually purchases from. Scraped quotes from non-active
+  // suppliers are still tracked for benchmarking but are NOT used to attribute
+  // intake volume/spend. Persisted in localStorage; defaults to Pacific only
+  // (Pro Fusion is quote-only until the user starts buying from them).
+  const [activeSuppliers, setActiveSuppliers] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem("suppliers.activePurchase");
+      if (raw) return JSON.parse(raw);
+    } catch { /* noop */ }
+    return ["Pacific"];
+  });
+  const toggleActive = (s: string) => {
+    setActiveSuppliers((prev) => {
+      const next = prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s];
+      try { localStorage.setItem("suppliers.activePurchase", JSON.stringify(next)); } catch { /* noop */ }
+      return next;
+    });
+  };
+
   // Reconciliation source: driver-recorded bowser intake (litres + bowser
   // retail price). Each intake is attributed to whichever supplier had the
   // cheapest scraped buy price on that date.
@@ -202,9 +221,13 @@ export default function Suppliers() {
   // Volume & spend per supplier — derived from driver intake logs, attributed
   // to the cheapest scraped supplier price on each intake date.
   const volSpend = useMemo(() => {
-    // Build cheapest-supplier-by-date lookup from scraped buy_prices
+    // Build cheapest-supplier-by-date lookup from scraped buy_prices,
+    // restricted to suppliers the user is ACTUALLY purchasing from. This
+    // prevents quote-only suppliers (e.g. Pro Fusion before any orders) from
+    // appearing on the Volume & Spend chart.
     const cheapest = new Map<string, { supplier: string; price: number }>();
     prices.forEach((p) => {
+      if (!activeSuppliers.includes(p.supplier)) return;
       const cur = cheapest.get(p.price_date);
       if (!cur || p.price_per_litre < cur.price) {
         cheapest.set(p.price_date, { supplier: p.supplier, price: p.price_per_litre });
@@ -244,7 +267,7 @@ export default function Suppliers() {
       });
     }
     return rows;
-  }, [intakeQ.data, prices]);
+  }, [intakeQ.data, prices, activeSuppliers]);
 
 
   const handleRunScrape = async () => {
@@ -382,8 +405,26 @@ export default function Suppliers() {
 
       {/* Volume & spend */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-3 h-3" /> Volume & Spend (from reconciliation intake) — Last {days} days</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Purchasing from:</span>
+            {allSuppliers.map((s, i) => {
+              const on = activeSuppliers.includes(s);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => toggleActive(s)}
+                  className={`text-[11px] px-2 py-1 rounded-md border transition-colors flex items-center gap-1.5 ${on ? "border-surface-border bg-surface-elevated text-foreground" : "border-surface-border/60 text-muted-foreground opacity-60 hover:opacity-100"}`}
+                  title={on ? `Click to exclude ${s} from spend attribution` : `Click to include ${s} in spend attribution`}
+                >
+                  <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorFor(s, i), opacity: on ? 1 : 0.4 }} />
+                  {s}
+                </button>
+              );
+            })}
+          </div>
         </div>
         {volSpend.length === 0 ? (
           <div className="text-sm text-muted-foreground">No bowser intake recorded yet. Drivers log fuel intake from the Driver Portal — those entries feed this view automatically.</div>
