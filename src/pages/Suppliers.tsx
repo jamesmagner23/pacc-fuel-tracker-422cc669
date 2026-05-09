@@ -86,6 +86,25 @@ export default function Suppliers() {
   const { data: tgp = [] } = useTGPrices("Melbourne", "Diesel", days, "Viva");
   const [running, setRunning] = useState(false);
 
+  // Suppliers the user actually purchases from. Scraped quotes from non-active
+  // suppliers are still tracked for benchmarking but are NOT used to attribute
+  // intake volume/spend. Persisted in localStorage; defaults to Pacific only
+  // (Pro Fusion is quote-only until the user starts buying from them).
+  const [activeSuppliers, setActiveSuppliers] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem("suppliers.activePurchase");
+      if (raw) return JSON.parse(raw);
+    } catch { /* noop */ }
+    return ["Pacific"];
+  });
+  const toggleActive = (s: string) => {
+    setActiveSuppliers((prev) => {
+      const next = prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s];
+      try { localStorage.setItem("suppliers.activePurchase", JSON.stringify(next)); } catch { /* noop */ }
+      return next;
+    });
+  };
+
   // Reconciliation source: driver-recorded bowser intake (litres + bowser
   // retail price). Each intake is attributed to whichever supplier had the
   // cheapest scraped buy price on that date.
