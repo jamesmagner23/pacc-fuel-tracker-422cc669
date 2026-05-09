@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { format, parseISO, subDays, differenceInCalendarDays, eachDayOfInterval } from "date-fns";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
-  BarChart, Bar, LineChart, Line, CartesianGrid, Cell, LabelList,
+  BarChart, Bar, LineChart, Line, CartesianGrid, Cell,
 } from "recharts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
