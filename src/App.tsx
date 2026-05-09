@@ -26,6 +26,7 @@ import TruckPortal from "./pages/TruckPortal";
 
 import Dispatch from "./pages/Dispatch";
 import Suppliers from "./pages/Suppliers";
+import CRM from "./pages/CRM";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import LandingPage from "./pages/LandingPage";
@@ -70,6 +71,7 @@ function DemoAwareRoutes() {
                 <Route path="/portal" element={<CustomerPortal />} />
                 <Route path="/driver" element={<DriverPortal />} />
                 <Route path="/admin/outreach" element={<Outreach />} />
+                <Route path="/crm" element={<CRM />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>
@@ -98,6 +100,7 @@ function DemoAwareRoutes() {
                   <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                   <Route path="/trucks" element={<TruckPortal />} />
                   <Route path="/admin/outreach" element={<Outreach />} />
+                  <Route path="/crm" element={<CRM />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
