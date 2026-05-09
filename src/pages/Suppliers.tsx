@@ -61,14 +61,25 @@ export default function Suppliers() {
     },
   });
 
+  // Audit filters
+  const [auditFrom, setAuditFrom] = useState<string>(format(subDays(new Date(), 30), "yyyy-MM-dd"));
+  const [auditTo, setAuditTo] = useState<string>(format(new Date(), "yyyy-MM-dd"));
+  const [auditSupplier, setAuditSupplier] = useState<string>("all");
+  const [auditStatus, setAuditStatus] = useState<string>("all");
+
   const scrapeLogQ = useQuery({
-    queryKey: ["supplier-scrape-log"],
+    queryKey: ["supplier-scrape-log", auditFrom, auditTo, auditSupplier, auditStatus],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("supplier_price_scrape_log" as any)
         .select("*")
+        .gte("scraped_at", `${auditFrom}T00:00:00Z`)
+        .lte("scraped_at", `${auditTo}T23:59:59Z`)
         .order("scraped_at", { ascending: false })
-        .limit(10);
+        .limit(500);
+      if (auditSupplier !== "all") q = q.eq("supplier", auditSupplier);
+      if (auditStatus !== "all") q = q.eq("status", auditStatus);
+      const { data, error } = await q;
       if (error) throw error;
       return (data || []) as unknown as ScrapeLog[];
     },
@@ -363,26 +374,79 @@ export default function Suppliers() {
         </div>
       </div>
 
-      {/* Scrape log */}
+      {/* Scrape audit table */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Mail className="w-3 h-3" /> Recent Gmail Scrape Attempts</div>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Mail className="w-3 h-3" /> Scrape Audit — Email → Extracted Price → Effective Date
+          </div>
+          <div className="text-[10px] text-muted-foreground">{(scrapeLogQ.data || []).length} entries</div>
         </div>
+
+        <div className="flex items-end gap-2 flex-wrap mb-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">From</label>
+            <input type="date" value={auditFrom} onChange={(e) => setAuditFrom(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-2 py-1.5 text-[12px] outline-none" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">To</label>
+            <input type="date" value={auditTo} onChange={(e) => setAuditTo(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-2 py-1.5 text-[12px] outline-none" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Supplier</label>
+            <select value={auditSupplier} onChange={(e) => setAuditSupplier(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-2 py-1.5 text-[12px] outline-none">
+              <option value="all">All</option>
+              {SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Status</label>
+            <select value={auditStatus} onChange={(e) => setAuditStatus(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-2 py-1.5 text-[12px] outline-none">
+              <option value="all">All</option>
+              <option value="success">Success</option>
+              <option value="parse_failed">Parse failed</option>
+              <option value="skipped_stale">Skipped (stale)</option>
+              <option value="skipped_duplicate">Skipped (duplicate)</option>
+              <option value="no_email">No email</option>
+              <option value="error">Error</option>
+            </select>
+          </div>
+          <button
+            onClick={() => { setAuditFrom(format(subDays(new Date(), 30), "yyyy-MM-dd")); setAuditTo(format(new Date(), "yyyy-MM-dd")); setAuditSupplier("all"); setAuditStatus("all"); }}
+            className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-1.5 text-[11px] hover:bg-surface-border/40"
+          >Reset</button>
+        </div>
+
         {(scrapeLogQ.data || []).length === 0 ? (
-          <div className="text-sm text-muted-foreground">No scrape attempts yet. The scheduler runs daily at 12:00pm.</div>
+          <div className="text-sm text-muted-foreground py-6 text-center">No scrape attempts in this range.</div>
         ) : (
-          <div className="flex flex-col">
-            {(scrapeLogQ.data || []).map((l, i, arr) => (
-              <div key={l.id} className="flex items-center justify-between py-2.5" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
-                <div className="min-w-0">
-                  <div className="text-[13px] text-foreground font-medium">{l.supplier || "—"} <span className={`ml-2 text-[10px] uppercase tracking-wider ${l.status === "success" ? "text-positive" : "text-destructive"}`}>{l.status}</span></div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">{format(parseISO(l.scraped_at), "dd MMM HH:mm")} {l.error ? `· ${l.error}` : ""}</div>
-                </div>
-                {l.price_per_litre != null && (
-                  <div className="text-[13px] text-foreground tabular-nums">${Number(l.price_per_litre).toFixed(4)}/L</div>
-                )}
-              </div>
-            ))}
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full text-[12px] min-w-[720px]">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-surface-border">
+                  <th className="text-left py-2 px-2 font-medium">Scraped</th>
+                  <th className="text-left py-2 px-2 font-medium">Supplier</th>
+                  <th className="text-left py-2 px-2 font-medium">Status</th>
+                  <th className="text-right py-2 px-2 font-medium">Extracted Price</th>
+                  <th className="text-left py-2 px-2 font-medium">Effective Date</th>
+                  <th className="text-left py-2 px-2 font-medium">Date Phrase / Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(scrapeLogQ.data || []).map((l) => (
+                  <tr key={l.id} className="border-b border-surface-border/60 hover:bg-raised/40">
+                    <td className="py-2 px-2 text-muted-foreground tabular-nums whitespace-nowrap">{format(parseISO(l.scraped_at), "dd MMM HH:mm")}</td>
+                    <td className="py-2 px-2 text-foreground">{l.supplier || "—"}</td>
+                    <td className="py-2 px-2">
+                      <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${l.status === "success" ? "text-positive bg-positive/10" : l.status?.startsWith("skipped") ? "text-muted-foreground bg-surface-border/40" : "text-destructive bg-destructive/10"}`}>{l.status}</span>
+                    </td>
+                    <td className="py-2 px-2 text-right tabular-nums text-foreground">{l.price_per_litre != null ? `$${Number(l.price_per_litre).toFixed(4)}` : "—"}</td>
+                    <td className="py-2 px-2 tabular-nums text-foreground">{l.price_date ? format(parseISO(l.price_date), "dd MMM yyyy") : "—"}</td>
+                    <td className="py-2 px-2 text-muted-foreground max-w-[320px] truncate" title={l.error || ""}>{l.error || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
