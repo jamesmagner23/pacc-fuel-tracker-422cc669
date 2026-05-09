@@ -14,7 +14,7 @@ export interface BuyPrice {
 }
 
 // Fetch all buy prices ordered by date desc
-export const SUPPLIERS = ["Pacific", "Pro Fusion"] as const;
+export const SUPPLIERS = ["Pacific"] as const;
 export type SupplierName = typeof SUPPLIERS[number] | string;
 
 export function useBuyPrices(days = 365) {

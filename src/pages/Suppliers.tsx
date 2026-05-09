@@ -10,7 +10,6 @@ import { toast } from "sonner";
 
 const SUPPLIER_COLORS: Record<string, string> = {
   Pacific: "var(--accent)",
-  "Pro Fusion": "#1E3A8A",
 };
 const DIFF_COLOR = "#9C6ADE";
 const FALLBACK = ["#E0A458", "#9C6ADE", "#48B5A6", "#D96C6C"];
@@ -79,8 +78,13 @@ export default function Suppliers() {
   const qc = useQueryClient();
   const [showInc, setShowInc] = useState(true);
   const [days, setDays] = useState(7);
-  const { data: prices = [] } = useBuyPrices(days);
-  const { data: todayPrices = [] } = useTodayBuyPrices();
+  const { data: pricesRaw = [] } = useBuyPrices(days);
+  const { data: todayPricesRaw = [] } = useTodayBuyPrices();
+  // Pro Fusion was a legacy quote-only supplier; historical scrape rows may
+  // still exist in the DB but the user does not buy from them. Filter out
+  // everywhere so attribution, snapshots and charts only show real suppliers.
+  const prices = useMemo(() => pricesRaw.filter(p => p.supplier !== "Pro Fusion"), [pricesRaw]);
+  const todayPrices = useMemo(() => todayPricesRaw.filter(p => p.supplier !== "Pro Fusion"), [todayPricesRaw]);
   // Reference Viva Energy Australia's published Melbourne diesel TGP
   // (scraped daily by the fetch-viva-tgp edge function). Fall back to AIP
   // for dates Viva hasn't published yet so the spread chart isn't blank.
@@ -301,7 +305,7 @@ export default function Suppliers() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-foreground tracking-tight">Suppliers</h1>
-          <p className="text-xs text-muted-foreground mt-1">Pacific & Pro Fusion daily pricing, volumes & spend</p>
+          <p className="text-xs text-muted-foreground mt-1">Pacific daily pricing, volumes & spend</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 bg-surface border border-surface-border rounded-full p-1">
