@@ -50,13 +50,20 @@ function extractPlainText(payload: any): string {
   return parts.join("\n").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 8000);
 }
 
-async function aiExtractPrice(supplier: string, body: string): Promise<{ price: number | null; date: string | null; reason: string }> {
+async function aiExtractPrice(supplier: string, body: string, emailDate: string): Promise<{ price: number | null; date: string | null; reason: string }> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) return { price: null, date: null, reason: "No LOVABLE_API_KEY" };
 
-  const prompt = `Extract the diesel buy price (per litre, EX-GST, in AUD) that ${supplier} is charging today from this email.
+  const supplierHint = supplier === "Pro Fusion"
+    ? `IMPORTANT: ${supplier} sends pricing emails the day BEFORE the price applies. The email often says "for tomorrow" or names a specific future date (e.g. "price for 9th May"). The price_date MUST be that effective date — NOT the email send date. If the body just says "tomorrow" / "next day" with no explicit date, set price_date to the day AFTER the email send date (${emailDate}).`
+    : `If the email states a specific effective date, use that. Otherwise use the email send date (${emailDate}).`;
+
+  const prompt = `Extract the diesel buy price (per litre, EX-GST, in AUD) from this ${supplier} email.
+The email was sent on ${emailDate}.
+${supplierHint}
 Return strict JSON: {"price_per_litre_ex_gst": number|null, "price_date": "YYYY-MM-DD"|null, "reason": string}.
-If multiple products, prefer Diesel. If only inc-GST is shown, divide by 1.1 to convert. If unsure, return null.
+If multiple products, prefer Diesel. If only inc-GST is shown, divide by 1.1 to convert. If unsure about the price, return null.
+The "reason" should briefly state which date phrase you used (e.g. "for tomorrow → 2025-05-09" or "explicit: 9th May 2025").
 
 EMAIL BODY:
 ${body}`;
@@ -226,7 +233,8 @@ Deno.serve(async (req) => {
       const body = extractPlainText(msg.payload);
       const emailEpochMs = Number(msg.internalDate || latest.internalDate || 0);
 
-      const { price, date, reason } = await aiExtractPrice(sup.name, body);
+      const emailDateStr = emailEpochMs ? new Date(emailEpochMs).toISOString().slice(0, 10) : today;
+      const { price, date, reason } = await aiExtractPrice(sup.name, body, emailDateStr);
       if (price == null || price <= 0) {
         await admin.from("supplier_price_scrape_log").insert({
           supplier: sup.name, status: "parse_failed", gmail_message_id: msgId,
@@ -236,9 +244,13 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Prefer AI-extracted date; fall back to email's send date (in backfill, NEVER `today`).
-      const emailDate = emailEpochMs ? new Date(emailEpochMs).toISOString().slice(0, 10) : today;
-      const priceDate = date || emailDate;
+      // Prefer AI-extracted effective date. For Pro Fusion, fall back to email date + 1 day
+      // (their emails are always for "tomorrow"). For others, fall back to the email send date.
+      let fallbackDate = emailDateStr;
+      if (sup.name === "Pro Fusion" && emailEpochMs) {
+        fallbackDate = new Date(emailEpochMs + 86400000).toISOString().slice(0, 10);
+      }
+      const priceDate = date || fallbackDate;
 
       // Only overwrite the buy price if this email is newer than the email
       // that produced the currently-stored price for this (supplier, price_date).
