@@ -54,16 +54,20 @@ async function aiExtractPrice(supplier: string, body: string, emailDate: string)
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) return { price: null, date: null, reason: "No LOVABLE_API_KEY" };
 
-  const supplierHint = supplier === "Pro Fusion"
-    ? `IMPORTANT: ${supplier} sends pricing emails the day BEFORE the price applies. The email often says "for tomorrow" or names a specific future date (e.g. "price for 9th May"). The price_date MUST be that effective date — NOT the email send date. If the body just says "tomorrow" / "next day" with no explicit date, set price_date to the day AFTER the email send date (${emailDate}).`
-    : `If the email states a specific effective date, use that. Otherwise use the email send date (${emailDate}).`;
-
   const prompt = `Extract the diesel buy price (per litre, EX-GST, in AUD) from this ${supplier} email.
-The email was sent on ${emailDate}.
-${supplierHint}
+The email was SENT on ${emailDate}.
+
+IMPORTANT — effective date rules (apply to BOTH Pro Fusion and Pacific):
+- Both suppliers typically send pricing emails the day BEFORE the price applies (i.e. price is "for tomorrow").
+- ALWAYS read the email body carefully to find the effective date. Look for phrases like "for tomorrow", "for [day name]", "effective [date]", "price for 9th May", "valid [date]", etc.
+- If an explicit date is stated in the body, USE THAT DATE — even if it differs from email-date+1.
+- If the body says "tomorrow" / "next day" with no explicit date, use the day AFTER the email send date (${emailDate}).
+- ONLY fall back to the email send date if the body clearly says "today" / "effective today" / "for today's price".
+- Never blindly assume — verify against the body every time.
+
 Return strict JSON: {"price_per_litre_ex_gst": number|null, "price_date": "YYYY-MM-DD"|null, "reason": string}.
 If multiple products, prefer Diesel. If only inc-GST is shown, divide by 1.1 to convert. If unsure about the price, return null.
-The "reason" should briefly state which date phrase you used (e.g. "for tomorrow → 2025-05-09" or "explicit: 9th May 2025").
+The "reason" MUST briefly quote the date phrase you used (e.g. 'body says "for tomorrow" → 2025-05-09', or 'explicit: "price for 9th May 2025"', or 'no date in body, defaulting to email-date+1').
 
 EMAIL BODY:
 ${body}`;
@@ -244,12 +248,11 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Prefer AI-extracted effective date. For Pro Fusion, fall back to email date + 1 day
-      // (their emails are always for "tomorrow"). For others, fall back to the email send date.
-      let fallbackDate = emailDateStr;
-      if (sup.name === "Pro Fusion" && emailEpochMs) {
-        fallbackDate = new Date(emailEpochMs + 86400000).toISOString().slice(0, 10);
-      }
+      // Prefer AI-extracted effective date. Both Pro Fusion and Pacific send "for tomorrow" pricing,
+      // so fall back to email-date + 1 day if the AI couldn't find an explicit date.
+      const fallbackDate = emailEpochMs
+        ? new Date(emailEpochMs + 86400000).toISOString().slice(0, 10)
+        : emailDateStr;
       const priceDate = date || fallbackDate;
 
       // Only overwrite the buy price if this email is newer than the email
