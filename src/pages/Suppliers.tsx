@@ -252,23 +252,23 @@ export default function Suppliers() {
                 </div>
               ))}
             <div className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-0.5 rounded border-t-2 border-dashed" style={{ borderColor: DIFF_COLOR, background: "transparent" }} />
+              <span className="inline-block w-3 h-3 rounded-sm" style={{ background: DIFF_COLOR, opacity: 0.5 }} />
               <span className="text-[10px] text-muted-foreground">Difference</span>
             </div>
             </div>
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData}>
+              <BarChart data={trendData} barCategoryGap="20%" barGap={2}>
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-              <YAxis yAxisId="price" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
-              <YAxis yAxisId="diff" orientation="right" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(3)}`} domain={[0, "auto"]} />
+                <YAxis yAxisId="price" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
+                <YAxis yAxisId="diff" orientation="right" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(3)}`} domain={[0, "auto"]} />
                 <Tooltip contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }} formatter={(v: number, n: string) => [`$${v.toFixed(4)}/L`, n]} />
                 {allSuppliers.map((s, i) => (
-                <Line key={s} yAxisId="price" type="monotone" dataKey={s} stroke={colorFor(s, i)} strokeWidth={2} dot={false} connectNulls />
+                  <Bar key={s} yAxisId="price" dataKey={s} fill={colorFor(s, i)} radius={[2, 2, 0, 0]} />
                 ))}
-              <Line yAxisId="diff" type="monotone" dataKey="diff" name="Difference" stroke={DIFF_COLOR} strokeWidth={1.5} strokeDasharray="4 3" dot={false} connectNulls />
-              </LineChart>
+                <Bar yAxisId="diff" dataKey="diff" name="Difference" fill={DIFF_COLOR} fillOpacity={0.5} radius={[2, 2, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -280,15 +280,15 @@ export default function Suppliers() {
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Spread vs Melbourne TGP (Ex GST) — negative = below TGP</div>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={tgpSpread}>
+              <BarChart data={tgpSpread} barCategoryGap="20%" barGap={2}>
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v >= 0 ? "+" : ""}$${v.toFixed(3)}`} />
                 <ReferenceLine y={0} stroke="var(--text-secondary)" strokeDasharray="3 3" />
                 <Tooltip contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }} formatter={(v: number, n: string) => [`${v >= 0 ? "+" : ""}$${v.toFixed(4)}/L`, n.replace("_spread", "")]} />
                 {allSuppliers.map((s, i) => (
-                  <Line key={s} type="monotone" dataKey={`${s}_spread`} stroke={colorFor(s, i)} strokeWidth={2} dot={false} connectNulls />
+                  <Bar key={s} dataKey={`${s}_spread`} fill={colorFor(s, i)} radius={[2, 2, 0, 0]} />
                 ))}
-              </LineChart>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
