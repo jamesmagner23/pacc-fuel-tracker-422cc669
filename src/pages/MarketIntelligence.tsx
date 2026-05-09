@@ -816,6 +816,9 @@ export default function MarketIntelligence() {
         </div>
       )}
 
+      {tab === "BOWSER AVG" && <MarketBowserAvgTab />}
+      {tab === "TGP COMPARE" && <MarketTGPCompareTab />}
+
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-surface-border text-center">
         <div className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">
