@@ -403,16 +403,16 @@ export default function Suppliers() {
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-3 h-3" /> Volume & Spend (from reconciliation intake) — Last {days} days</div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Purchasing from:</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Primary supplier:</span>
             {allSuppliers.map((s, i) => {
-              const on = activeSuppliers.includes(s);
+              const on = primarySupplier === s;
               return (
                 <button
                   key={s}
                   type="button"
-                  onClick={() => toggleActive(s)}
-                  className={`text-[11px] px-2 py-1 rounded-md border transition-colors flex items-center gap-1.5 ${on ? "border-surface-border bg-surface-elevated text-foreground" : "border-surface-border/60 text-muted-foreground opacity-60 hover:opacity-100"}`}
-                  title={on ? `Click to exclude ${s} from spend attribution` : `Click to include ${s} in spend attribution`}
+                  onClick={() => setPrimary(s)}
+                  className={`text-[11px] px-2 py-1 rounded-md border transition-colors flex items-center gap-1.5 ${on ? "border-accent bg-surface-elevated text-foreground" : "border-surface-border/60 text-muted-foreground opacity-60 hover:opacity-100"}`}
+                  title={`Attribute all bowser intake to ${s}`}
                 >
                   <span className="inline-block w-2 h-2 rounded-full" style={{ background: colorFor(s, i), opacity: on ? 1 : 0.4 }} />
                   {s}
@@ -420,6 +420,12 @@ export default function Suppliers() {
               );
             })}
           </div>
+        </div>
+        <div className="text-[11px] text-muted-foreground mb-3">
+          Every bowser fill is attributed to <span className="text-foreground">{primarySupplier}</span> unless the driver's notes explicitly mention another supplier name.
+          {overriddenLogs.length > 0 && (
+            <> {overriddenLogs.length} log{overriddenLogs.length === 1 ? "" : "s"} mention another supplier — see audit list below.</>
+          )}
         </div>
         {volSpend.length === 0 ? (
           <div className="text-sm text-muted-foreground">No bowser intake recorded yet. Drivers log fuel intake from the Driver Portal — those entries feed this view automatically.</div>
@@ -449,6 +455,20 @@ export default function Suppliers() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            {overriddenLogs.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-surface-border">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Notes-overridden intake</div>
+                <div className="space-y-1">
+                  {overriddenLogs.map((log: any) => (
+                    <div key={log.id} className="flex items-center justify-between text-[11px] gap-2">
+                      <span className="text-muted-foreground tabular-nums">{log.log_date}</span>
+                      <span className="text-foreground tabular-nums">{Number(log.litres_entered).toLocaleString()} L</span>
+                      <span className="text-muted-foreground truncate flex-1 text-right">{log.notes}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
