@@ -17,6 +17,54 @@ const FALLBACK = ["#E0A458", "#9C6ADE", "#48B5A6", "#D96C6C"];
 const colorFor = (s: string, i = 0) => SUPPLIER_COLORS[s] || FALLBACK[i % FALLBACK.length];
 const GST = 1.1;
 
+/** Custom tooltip used by both supplier price charts. Shows per-supplier
+ *  value plus the email-sent date and AI date-phrase reason from the scrape log. */
+function PriceTooltip({ active, payload, label, suffix = "", stripSuffix, signed }: any) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload || {};
+  const meta = (row._meta || {}) as Record<string, { sent: string; reason: string | null }>;
+  const effectiveDate = row._iso ? format(parseISO(row._iso), "EEE dd MMM yyyy") : label;
+  return (
+    <div className="bg-background border border-surface-border rounded-lg shadow-lg p-2.5 min-w-[220px] max-w-[300px]">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Effective {effectiveDate}</div>
+      {payload.map((p: any) => {
+        const key = stripSuffix ? String(p.dataKey).replace(stripSuffix, "") : String(p.dataKey);
+        if (key === "diff") {
+          return (
+            <div key={p.dataKey} className="flex items-center justify-between gap-3 py-1 border-t border-surface-border/60 mt-1 pt-1.5">
+              <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="inline-block w-2 h-2 rounded-sm" style={{ background: p.fill, opacity: 0.6 }} />
+                Difference
+              </span>
+              <span className="text-[11px] tabular-nums text-foreground">${Number(p.value).toFixed(4)}</span>
+            </div>
+          );
+        }
+        const v = Number(p.value);
+        const valStr = `${signed && v >= 0 ? "+" : ""}$${v.toFixed(4)}${suffix}`;
+        const m = meta[key];
+        return (
+          <div key={p.dataKey} className="py-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5 text-[12px] text-foreground">
+                <span className="inline-block w-2 h-2 rounded-sm" style={{ background: p.fill }} />
+                {key}
+              </span>
+              <span className="text-[12px] tabular-nums text-foreground font-medium">{valStr}</span>
+            </div>
+            {m && (
+              <div className="ml-3.5 mt-0.5 space-y-0.5">
+                <div className="text-[10px] text-muted-foreground">Email sent {format(parseISO(m.sent), "dd MMM HH:mm")}</div>
+                {m.reason && <div className="text-[10px] text-muted-foreground italic line-clamp-2">"{m.reason}"</div>}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 interface SupplierPurchase {
   id: string;
   purchase_date: string;
@@ -92,18 +140,45 @@ export default function Suppliers() {
   const todayDelta = cheapest && dearest && cheapest.id !== dearest.id
     ? dearest.price_per_litre - cheapest.price_per_litre : null;
 
+  // Scrape metadata for chart tooltips: latest successful scrape per (supplier, price_date)
+  // → email sent date + AI's date-phrase reason.
+  const scrapeMetaQ = useQuery({
+    queryKey: ["scrape-meta", days],
+    queryFn: async () => {
+      const since = format(subDays(new Date(), days), "yyyy-MM-dd");
+      const { data, error } = await supabase
+        .from("supplier_price_scrape_log" as any)
+        .select("supplier, price_date, scraped_at, error")
+        .eq("status", "success")
+        .gte("price_date", since)
+        .order("scraped_at", { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as { supplier: string; price_date: string; scraped_at: string; error: string | null }[];
+    },
+  });
+  // Map: `${supplier}|${price_date}` → latest successful entry (last write wins given asc order).
+  const metaMap = useMemo(() => {
+    const m = new Map<string, { sent: string; reason: string | null }>();
+    (scrapeMetaQ.data || []).forEach(r => {
+      if (!r.supplier || !r.price_date) return;
+      m.set(`${r.supplier}|${r.price_date}`, { sent: r.scraped_at, reason: r.error });
+    });
+    return m;
+  }, [scrapeMetaQ.data]);
+
   // Trend chart data (one row per date, columns per supplier)
   const allSuppliers = Array.from(new Set([...SUPPLIERS, ...prices.map(p => p.supplier)].filter(Boolean)));
   const trendData = useMemo(() => {
-    const map = new Map<string, Record<string, number | string>>();
+    const map = new Map<string, Record<string, any>>();
     [...prices].reverse().forEach(p => {
       const key = format(parseISO(p.price_date), "dd MMM");
-      const row = map.get(key) || { date: key };
+      const row = map.get(key) || { date: key, _iso: p.price_date, _meta: {} as Record<string, { sent: string; reason: string | null }> };
       const v = showInc ? p.price_per_litre * GST : p.price_per_litre;
       row[p.supplier] = Number(v.toFixed(4));
+      const meta = metaMap.get(`${p.supplier}|${p.price_date}`);
+      if (meta) (row._meta as any)[p.supplier] = meta;
       map.set(key, row);
     });
-    // Compute |Pacific − Pro Fusion| per row so we can draw a difference line.
     return Array.from(map.values()).map((row) => {
       const a = row["Pacific"];
       const b = row["Pro Fusion"];
@@ -112,21 +187,23 @@ export default function Suppliers() {
       }
       return row;
     });
-  }, [prices, showInc]);
+  }, [prices, showInc, metaMap]);
 
   // Spread vs TGP chart
   const tgpSpread = useMemo(() => {
-    const tgpMap = new Map(tgp.map(t => [t.price_date, t.price_per_litre / GST])); // ex GST
+    const tgpMap = new Map(tgp.map(t => [t.price_date, t.price_per_litre / GST]));
     const dates = Array.from(new Set([...prices.map(p => p.price_date), ...tgp.map(t => t.price_date)])).sort();
     return dates.map(d => {
-      const row: Record<string, any> = { date: format(parseISO(d), "dd MMM"), tgp: tgpMap.get(d) ?? null };
+      const row: Record<string, any> = { date: format(parseISO(d), "dd MMM"), _iso: d, _meta: {} as Record<string, { sent: string; reason: string | null }>, tgp: tgpMap.get(d) ?? null };
       allSuppliers.forEach(s => {
         const p = prices.find(x => x.price_date === d && x.supplier === s);
         if (p && tgpMap.has(d)) row[`${s}_spread`] = Number((p.price_per_litre - (tgpMap.get(d) as number)).toFixed(4));
+        const meta = metaMap.get(`${s}|${d}`);
+        if (meta) (row._meta as any)[s] = meta;
       });
       return row;
     });
-  }, [prices, tgp, allSuppliers]);
+  }, [prices, tgp, allSuppliers, metaMap]);
 
   // Volume & spend per supplier
   const volSpend = useMemo(() => {
@@ -274,7 +351,7 @@ export default function Suppliers() {
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis yAxisId="price" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                 <YAxis yAxisId="diff" orientation="right" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(3)}`} domain={[0, "auto"]} />
-                <Tooltip contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }} formatter={(v: number, n: string) => [`$${v.toFixed(4)}/L`, n]} />
+                <Tooltip cursor={{ fill: "var(--surface-border)", opacity: 0.25 }} content={<PriceTooltip suffix="/L" />} />
                 {allSuppliers.map((s, i) => (
                   <Bar key={s} yAxisId="price" dataKey={s} fill={colorFor(s, i)} radius={[2, 2, 0, 0]} />
                 ))}
@@ -295,7 +372,7 @@ export default function Suppliers() {
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v >= 0 ? "+" : ""}$${v.toFixed(3)}`} />
                 <ReferenceLine y={0} stroke="var(--text-secondary)" strokeDasharray="3 3" />
-                <Tooltip contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }} formatter={(v: number, n: string) => [`${v >= 0 ? "+" : ""}$${v.toFixed(4)}/L`, n.replace("_spread", "")]} />
+                <Tooltip cursor={{ fill: "var(--surface-border)", opacity: 0.25 }} content={<PriceTooltip suffix="/L" stripSuffix="_spread" signed />} />
                 {allSuppliers.map((s, i) => (
                   <Bar key={s} dataKey={`${s}_spread`} fill={colorFor(s, i)} radius={[2, 2, 0, 0]} />
                 ))}
