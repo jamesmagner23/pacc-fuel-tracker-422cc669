@@ -6,6 +6,8 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, BarChart, Bar, Cell
 } from "recharts";
+import { MarketBowserAvgTab } from "@/components/market/MarketBowserAvgTab";
+import { MarketTGPCompareTab } from "@/components/market/MarketTGPCompareTab";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const TODAY = new Date();
@@ -352,7 +354,7 @@ export default function MarketIntelligence() {
   const [activeMonth, setActiveMonth] = useState(0);
   const [tab, setTab] = useState("OVERVIEW");
 
-  const tabs = ["OVERVIEW", "SUPPLY CHAIN", "MONTH BY MONTH", "PACC IMPACT"];
+  const tabs = ["OVERVIEW", "SUPPLY CHAIN", "MONTH BY MONTH", "PACC IMPACT", "BOWSER AVG", "TGP COMPARE"];
 
   // ─── KPI data ───
   const kpis = [
