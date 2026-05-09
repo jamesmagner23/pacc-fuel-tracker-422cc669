@@ -9,9 +9,9 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1"
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 // Suppliers we look for. Tweak the `query` to match the real sender / subject.
-const SUPPLIERS: { name: string; from: string }[] = [
-  { name: "Pacific", from: "admin@pacificfuelsolutions.com.au" },
+const ALL_SUPPLIERS: { name: string; from: string }[] = [
   { name: "Pro Fusion", from: "tony@profusionfuels.com.au" },
+  { name: "Pacific", from: "admin@pacificfuelsolutions.com.au" },
 ];
 
 function buildQuery(from: string, supplier: string, windowExpr: string): string {
@@ -89,7 +89,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  const GOOGLE_MAIL_API_KEY = Deno.env.get("GOOGLE_MAIL_API_KEY");
+  // Prefer the fuel@paccvictoria.com mailbox (linked as connection #2) since
+  // supplier pricing emails go there. Fall back to the original mailbox.
+  const GOOGLE_MAIL_API_KEY =
+    Deno.env.get("GOOGLE_MAIL_API_KEY_1") || Deno.env.get("GOOGLE_MAIL_API_KEY");
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -123,6 +126,22 @@ Deno.serve(async (req) => {
   }
   if (backfill && lookbackDays < 30) lookbackDays = 365;
   const windowExpr = `newer_than:${lookbackDays}d`;
+
+  // Optional ?supplier=Pro%20Fusion to limit to one supplier (avoids timeout).
+  let onlySupplier: string | null = null;
+  try {
+    const url = new URL(req.url);
+    onlySupplier = url.searchParams.get("supplier");
+  } catch { /* ignore */ }
+  if (req.method === "POST") {
+    try {
+      const j = await req.clone().json();
+      if (j?.supplier) onlySupplier = j.supplier;
+    } catch { /* no body */ }
+  }
+  const SUPPLIERS = onlySupplier
+    ? ALL_SUPPLIERS.filter((s) => s.name.toLowerCase() === onlySupplier!.toLowerCase())
+    : ALL_SUPPLIERS;
 
   for (const sup of SUPPLIERS) {
     try {
@@ -180,12 +199,13 @@ Deno.serve(async (req) => {
         const latest = cand;
         const msgId = cand.id;
 
-      // Skip if we've already successfully ingested this exact message
+      // Skip if we've already seen this exact message (success OR parse_failed),
+      // so backfill doesn't repeatedly re-AI the same un-priced email.
       const { data: prior } = await admin
         .from("supplier_price_scrape_log")
-        .select("id, gmail_message_id, scraped_at")
+        .select("id, gmail_message_id, status")
         .eq("supplier", sup.name)
-        .eq("status", "success")
+        .in("status", ["success", "parse_failed", "skipped_stale"])
         .eq("gmail_message_id", msgId)
         .limit(1);
       if (prior && prior.length) {
