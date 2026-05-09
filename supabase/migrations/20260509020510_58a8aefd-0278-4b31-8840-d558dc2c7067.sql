@@ -1,0 +1,2 @@
+ALTER TABLE public.terminal_gate_prices DROP CONSTRAINT IF EXISTS terminal_gate_prices_price_date_location_product_key;
+ALTER TABLE public.terminal_gate_prices ADD CONSTRAINT terminal_gate_prices_price_date_location_product_source_key UNIQUE (price_date, location, product, source);
