@@ -15,6 +15,7 @@ const navItems = [
   { to: "/crm", label: "CRM" },
   { to: "/finance", label: "Finance" },
   { to: "/suppliers", label: "Suppliers" },
+  { to: "/market", label: "Market Intel" },
   { to: "/dispatch", label: "Dispatch" },
   { to: "/trucks", label: "Trucks" },
   { to: "/portal", label: "Client Portal", demoOnly: true },
