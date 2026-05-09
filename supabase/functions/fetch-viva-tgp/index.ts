@@ -84,10 +84,18 @@ Deno.serve(async (req) => {
     }
 
     if (records.length > 0) {
-      const { error } = await supabase
+      // Delete-then-insert avoids relying on PostgREST's cached onConflict
+      // shape (which can lag schema changes).
+      const { error: delErr } = await supabase
         .from("terminal_gate_prices")
-        .upsert(records, { onConflict: "price_date,location,product" });
-      if (error) throw error;
+        .delete()
+        .eq("price_date", priceDate)
+        .eq("source", "Viva");
+      if (delErr) throw delErr;
+      const { error: insErr } = await supabase
+        .from("terminal_gate_prices")
+        .insert(records);
+      if (insErr) throw insErr;
     }
 
     return new Response(
