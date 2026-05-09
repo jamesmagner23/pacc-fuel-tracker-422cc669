@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { format, parseISO, subDays } from "date-fns";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, BarChart, Bar, Legend } from "recharts";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, BarChart, Bar, Legend } from "recharts";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBuyPrices, useTodayBuyPrices, SUPPLIERS } from "@/hooks/useBuyPrices";
 import { useTGPrices } from "@/hooks/useTGPrices";
-import { TrendingDown, TrendingUp, Trophy, RefreshCw, Mail } from "lucide-react";
+import { Trophy, RefreshCw, Mail, Gauge } from "lucide-react";
 import { toast } from "sonner";
 
 const SUPPLIER_COLORS: Record<string, string> = {
@@ -65,17 +65,6 @@ function PriceTooltip({ active, payload, label, suffix = "", stripSuffix, signed
   );
 }
 
-interface SupplierPurchase {
-  id: string;
-  purchase_date: string;
-  supplier: string;
-  litres: number;
-  price_per_litre_ex_gst: number;
-  total_ex_gst: number;
-  invoice_ref: string | null;
-  notes: string | null;
-}
-
 interface ScrapeLog {
   id: string;
   scraped_at: string;
@@ -92,20 +81,25 @@ export default function Suppliers() {
   const [days, setDays] = useState(30);
   const { data: prices = [] } = useBuyPrices(days);
   const { data: todayPrices = [] } = useTodayBuyPrices();
-  const { data: tgp = [] } = useTGPrices("Melbourne", "Diesel", days);
+  // Reference Viva Energy Australia's published Melbourne diesel TGP
+  // (scraped daily by the fetch-viva-tgp edge function).
+  const { data: tgp = [] } = useTGPrices("Melbourne", "Diesel", days, "Viva");
   const [running, setRunning] = useState(false);
 
-  const purchasesQ = useQuery({
-    queryKey: ["supplier-purchases", days],
+  // Reconciliation source: driver-recorded bowser intake (litres + bowser
+  // retail price). Each intake is attributed to whichever supplier had the
+  // cheapest scraped buy price on that date.
+  const intakeQ = useQuery({
+    queryKey: ["fuel-intake-recon", days],
     queryFn: async () => {
       const since = format(subDays(new Date(), days), "yyyy-MM-dd");
       const { data, error } = await supabase
-        .from("supplier_purchases" as any)
-        .select("*")
-        .gte("purchase_date", since)
-        .order("purchase_date", { ascending: false });
+        .from("fuel_intake_logs")
+        .select("id, log_date, litres_entered, bowser_retail_price, notes")
+        .gte("log_date", since)
+        .order("log_date", { ascending: false });
       if (error) throw error;
-      return (data || []) as unknown as SupplierPurchase[];
+      return data || [];
     },
   });
 
@@ -205,22 +199,53 @@ export default function Suppliers() {
     });
   }, [prices, tgp, allSuppliers, metaMap]);
 
-  // Volume & spend per supplier
+  // Volume & spend per supplier — derived from driver intake logs, attributed
+  // to the cheapest scraped supplier price on each intake date.
   const volSpend = useMemo(() => {
-    const map = new Map<string, { litres: number; spend: number }>();
-    (purchasesQ.data || []).forEach(p => {
-      const cur = map.get(p.supplier) || { litres: 0, spend: 0 };
-      cur.litres += Number(p.litres);
-      cur.spend += Number(p.total_ex_gst);
-      map.set(p.supplier, cur);
+    // Build cheapest-supplier-by-date lookup from scraped buy_prices
+    const cheapest = new Map<string, { supplier: string; price: number }>();
+    prices.forEach((p) => {
+      const cur = cheapest.get(p.price_date);
+      if (!cur || p.price_per_litre < cur.price) {
+        cheapest.set(p.price_date, { supplier: p.supplier, price: p.price_per_litre });
+      }
     });
-    return Array.from(map.entries()).map(([supplier, v]) => ({
+    const map = new Map<string, { litres: number; spend: number }>();
+    let untaggedLitres = 0;
+    let untaggedSpend = 0;
+    (intakeQ.data || []).forEach((log: any) => {
+      const litres = Number(log.litres_entered) || 0;
+      // Spend is litres × retail price the bowser pump charged us (ex GST).
+      const retail = Number(log.bowser_retail_price) || 0;
+      const spend = litres * (retail / GST); // bowser retail is inc-GST → ex
+      const match = cheapest.get(log.log_date);
+      if (match) {
+        const cur = map.get(match.supplier) || { litres: 0, spend: 0 };
+        cur.litres += litres;
+        cur.spend += spend;
+        map.set(match.supplier, cur);
+      } else {
+        untaggedLitres += litres;
+        untaggedSpend += spend;
+      }
+    });
+    const rows = Array.from(map.entries()).map(([supplier, v]) => ({
       supplier,
       litres: Math.round(v.litres),
       spend: Math.round(v.spend),
       avg: v.litres > 0 ? v.spend / v.litres : 0,
     }));
-  }, [purchasesQ.data]);
+    if (untaggedLitres > 0) {
+      rows.push({
+        supplier: "Unattributed",
+        litres: Math.round(untaggedLitres),
+        spend: Math.round(untaggedSpend),
+        avg: untaggedLitres > 0 ? untaggedSpend / untaggedLitres : 0,
+      });
+    }
+    return rows;
+  }, [intakeQ.data, prices]);
+
 
   const handleRunScrape = async () => {
     setRunning(true);
@@ -238,33 +263,6 @@ export default function Suppliers() {
       setRunning(false);
     }
   };
-
-  // Add purchase form
-  const [pf, setPf] = useState<{ purchase_date: string; supplier: string; litres: string; price: string; invoice: string }>({
-    purchase_date: format(new Date(), "yyyy-MM-dd"),
-    supplier: SUPPLIERS[0],
-    litres: "",
-    price: "",
-    invoice: "",
-  });
-  const addPurchase = useMutation({
-    mutationFn: async () => {
-      const litres = parseFloat(pf.litres);
-      const price = parseFloat(pf.price);
-      if (!litres || !price) throw new Error("Enter litres and price");
-      const { error } = await supabase.from("supplier_purchases" as any).insert({
-        purchase_date: pf.purchase_date, supplier: pf.supplier,
-        litres, price_per_litre_ex_gst: price, invoice_ref: pf.invoice || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Purchase logged");
-      setPf({ ...pf, litres: "", price: "", invoice: "" });
-      qc.invalidateQueries({ queryKey: ["supplier-purchases"] });
-    },
-    onError: (e: any) => toast.error(e.message || "Failed"),
-  });
 
   return (
     <div className="flex flex-col gap-4 max-w-[1200px]">
@@ -365,7 +363,7 @@ export default function Suppliers() {
       {/* Spread vs TGP */}
       {tgpSpread.length > 1 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Spread vs Melbourne TGP (Ex GST) — negative = below TGP</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Spread vs Viva Melbourne TGP (Ex GST) — negative = below TGP</div>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={tgpSpread} barCategoryGap="20%" barGap={2}>
@@ -385,10 +383,10 @@ export default function Suppliers() {
       {/* Volume & spend */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Volume & Spend per Supplier — Last {days} days</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-3 h-3" /> Volume & Spend (from reconciliation intake) — Last {days} days</div>
         </div>
         {volSpend.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No purchases logged yet. Use the form below to record what you actually bought from each supplier.</div>
+          <div className="text-sm text-muted-foreground">No bowser intake recorded yet. Drivers log fuel intake from the Driver Portal — those entries feed this view automatically.</div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
@@ -417,38 +415,6 @@ export default function Suppliers() {
             </div>
           </>
         )}
-      </div>
-
-      {/* Log a purchase */}
-      <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">Log a Purchase</div>
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-end flex-wrap">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Date</label>
-            <input type="date" value={pf.purchase_date} onChange={(e) => setPf({ ...pf, purchase_date: e.target.value })} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Supplier</label>
-            <select value={pf.supplier} onChange={(e) => setPf({ ...pf, supplier: e.target.value })} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none">
-              {SUPPLIERS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Litres</label>
-            <input type="number" value={pf.litres} onChange={(e) => setPf({ ...pf, litres: e.target.value })} placeholder="e.g. 8000" className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-32" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Price/L ex GST</label>
-            <input type="number" step="0.0001" value={pf.price} onChange={(e) => setPf({ ...pf, price: e.target.value })} placeholder="e.g. 1.8400" className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-32" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Invoice (optional)</label>
-            <input value={pf.invoice} onChange={(e) => setPf({ ...pf, invoice: e.target.value })} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-40" />
-          </div>
-          <button onClick={() => addPurchase.mutate()} disabled={addPurchase.isPending} className="bg-primary text-primary-foreground rounded-full px-5 py-2 text-xs font-semibold disabled:opacity-60">
-            {addPurchase.isPending ? "Saving…" : "Save Purchase"}
-          </button>
-        </div>
       </div>
 
       {/* Scrape audit table */}

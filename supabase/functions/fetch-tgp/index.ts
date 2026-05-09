@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
     if (records.length > 0) {
       const { error } = await supabase
         .from("terminal_gate_prices")
-        .upsert(records, { onConflict: "price_date,location,product" });
+        .upsert(records, { onConflict: "price_date,location,product,source" });
       if (error) throw error;
     }
 

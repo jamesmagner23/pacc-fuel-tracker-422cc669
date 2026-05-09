@@ -15,21 +15,23 @@ export interface TerminalGatePrice {
   created_at: string;
 }
 
-export function useTGPrices(location = "Melbourne", product = "Diesel", days = 30) {
+export function useTGPrices(location = "Melbourne", product = "Diesel", days = 30, source?: string) {
   const isDemo = useDemo();
   return useQuery({
-    queryKey: ["tgp", location, product, days, isDemo],
+    queryKey: ["tgp", location, product, days, source ?? "any", isDemo],
     queryFn: async () => {
       if (isDemo) {
         return getDemoData().tgp.slice(0, days);
       }
-      const { data, error } = await supabase
+      let q = supabase
         .from("terminal_gate_prices")
         .select("*")
         .eq("location", location)
         .eq("product", product)
         .order("price_date", { ascending: false })
         .limit(days);
+      if (source) q = q.eq("source", source);
+      const { data, error } = await q;
       if (error) throw error;
       return (data || []) as TerminalGatePrice[];
     },
