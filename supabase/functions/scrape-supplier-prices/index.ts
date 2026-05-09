@@ -301,6 +301,9 @@ Deno.serve(async (req) => {
       await admin.from("supplier_price_scrape_log").insert({
         supplier: sup.name, status: "success", price_per_litre: price, price_date: priceDate,
         gmail_message_id: msgId, raw_excerpt: body.slice(0, 500),
+        // Store the AI's date-phrase reasoning so the audit table can show how
+        // the effective price_date was derived (e.g. 'body says "for tomorrow" → 2025-05-09').
+        error: reason || null,
       });
       results.push({ supplier: sup.name, status: "success", price, priceDate });
       } // end toProcess loop
