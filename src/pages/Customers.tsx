@@ -229,7 +229,7 @@ function CustomerList() {
               return (
                 <button
                   key={c.name}
-                  onClick={() => navigate(`/customers/${encodeURIComponent(c.name)}`)}
+                  onClick={() => navigate(`${hideMoney ? "/operations" : ""}/customers/${encodeURIComponent(c.name)}`)}
                   className="rounded-lg border border-border bg-card/40 hover:bg-card hover:border-primary/40 transition-all p-1.5 flex flex-col text-left animate-fade-in min-h-[68px]"
                   style={{ animationDelay: `${i * 20}ms` }}
                 >
