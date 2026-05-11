@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { ArrowLeft, Plus, Pencil, Trash2, Truck, FolderKanban, Download, Printer, FileText, Search, Send } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,8 @@ import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
 export default function CustomerHub() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const inOperations = location.pathname.startsWith("/operations");
   const customerName = decodeURIComponent(name || "");
 
   // Resolve client_account_id by matching speedsol name or company name
@@ -122,19 +124,20 @@ export default function CustomerHub() {
       overrides={overrides}
       equipmentList={equipmentList}
       navigate={navigate}
+      inOperations={inOperations}
     />
   );
 }
 
-function CustomerHubInner({ customerName, account, clientAccountId, customerTxns, plantItems, projects, assignments, ftcRates, overrides, equipmentList, navigate }: any) {
+function CustomerHubInner({ customerName, account, clientAccountId, customerTxns, plantItems, projects, assignments, ftcRates, overrides, equipmentList, navigate, inOperations }: any) {
   const [dispatchOpen, setDispatchOpen] = useState(false);
   return (
     <div className="space-y-5 max-w-[1200px]">
       <button
-        onClick={() => navigate("/customers")}
+        onClick={() => navigate(inOperations ? "/operations" : "/customers")}
         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="w-4 h-4" /> Back to Customers
+        <ArrowLeft className="w-4 h-4" /> {inOperations ? "Back to Operations" : "Back to Customers"}
       </button>
 
       <div className="flex items-start justify-between gap-3">
