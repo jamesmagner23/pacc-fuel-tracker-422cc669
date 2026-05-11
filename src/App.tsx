@@ -53,6 +53,7 @@ function DemoAwareRoutes() {
       {isDemo ? (
         <>
         <Route path="/operations" element={<Operations />} />
+        <Route path="/operations/customers/:name" element={<CustomerHub />} />
         <Route
           path="/*"
           element={
@@ -85,6 +86,7 @@ function DemoAwareRoutes() {
           <Route path="/portal" element={<CustomerPortal />} />
           <Route path="/driver" element={<DriverPortal />} />
           <Route path="/operations" element={<Operations />} />
+          <Route path="/operations/customers/:name" element={<CustomerHub />} />
           <Route
             path="/*"
             element={
