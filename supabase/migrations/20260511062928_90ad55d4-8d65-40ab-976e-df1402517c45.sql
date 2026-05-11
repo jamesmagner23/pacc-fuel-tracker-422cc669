@@ -1,0 +1,1 @@
+CREATE POLICY "Operations manage dispatch_recurring" ON public.dispatch_recurring FOR ALL USING (has_role(auth.uid(), 'operations'::app_role)) WITH CHECK (has_role(auth.uid(), 'operations'::app_role));
