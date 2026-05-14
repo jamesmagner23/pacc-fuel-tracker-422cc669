@@ -447,6 +447,93 @@ function googleMapsRouteUrl(stops) {
   return `https://www.google.com/maps/dir/?api=1&destination=${dest}${wps ? `&waypoints=${wps}` : ""}&travelmode=driving`;
 }
 
+function EditStopDialog({
+  stop,
+  onClose,
+  onSave,
+}: {
+  stop: DispatchStop;
+  onClose: () => void;
+  onSave: (patch: { site_name: string; address: string | null; estimated_litres: number | null; notes: string | null }) => void;
+}) {
+  const [siteName, setSiteName] = useState(stop.site_name);
+  const [address, setAddress] = useState(stop.address ?? "");
+  const [litres, setLitres] = useState(stop.estimated_litres?.toString() ?? "");
+  const [notes, setNotes] = useState(stop.notes ?? "");
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.6)" }}
+      onClick={onClose}
+    >
+      <div
+        className="card w-full sm:max-w-md p-4 space-y-3 m-0 sm:m-4 rounded-t-2xl sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <div className="text-base font-semibold">Edit stop</div>
+          <button onClick={onClose} className="p-1" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground">Site name</label>
+          <input
+            value={siteName}
+            onChange={(e) => setSiteName(e.target.value)}
+            className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm"
+          />
+          <label className="text-xs text-muted-foreground">Address</label>
+          <input
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm"
+          />
+          <label className="text-xs text-muted-foreground">Estimated litres</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={litres}
+            onChange={(e) => setLitres(e.target.value)}
+            className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm"
+          />
+          <label className="text-xs text-muted-foreground">Notes</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm"
+          />
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-lg text-sm font-semibold"
+            style={{ background: "var(--surface-raised)", color: "var(--text-muted)", border: "none", cursor: "pointer", padding: "12px", minHeight: 48 }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() =>
+              onSave({
+                site_name: siteName.trim() || stop.site_name,
+                address: address.trim() || null,
+                estimated_litres: litres ? Number(litres) : null,
+                notes: notes.trim() || null,
+              })
+            }
+            className="flex-1 rounded-lg text-sm font-semibold"
+            style={{ background: "var(--accent, #C8F26A)", color: "#fff", border: "none", cursor: "pointer", padding: "12px", minHeight: 48 }}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MyDayTab() {
   const today = format(new Date(), "yyyy-MM-dd");
   const { data: stops = [], isLoading } = useDispatchStops(today);
