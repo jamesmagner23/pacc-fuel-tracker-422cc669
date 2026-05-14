@@ -448,7 +448,6 @@ function googleMapsRouteUrl(stops) {
 }
 
 function MyDayTab() {
-  // edit dialog defined below
   const today = format(new Date(), "yyyy-MM-dd");
   const { data: stops = [], isLoading } = useDispatchStops(today);
   const reorder = useReorderDispatchStops();
