@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plus, GripVertical, Trash2, Package, CheckCircle2, Clock, MapPin, Navigation, ListPlus } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, GripVertical, Trash2, Package, CheckCircle2, Clock, MapPin, Navigation, ListPlus, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TruckMap } from "@/components/TruckMap";
-import { useDispatchStops, useDeleteStop, useReorderDispatchStops, useUpdateStopStatus, type DispatchStop } from "@/hooks/useDispatch";
+import { useDispatchStops, useDeleteStop, useReorderDispatchStops, useUpdateStopStatus, useRecurring, useDeleteRecurring, type DispatchStop } from "@/hooks/useDispatch";
 import { useTrucks } from "@/hooks/useTrucks";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
@@ -137,6 +137,8 @@ export default function Dispatch() {
   const del = useDeleteStop();
   const reorder = useReorderDispatchStops();
   const updateStatus = useUpdateStopStatus();
+  const { data: recurring = [] } = useRecurring();
+  const delRecurring = useDeleteRecurring();
 
   const truckNameById = useMemo(() => Object.fromEntries(trucks.map((t) => [t.id, t.name])), [trucks]);
   const clientNameById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c.company_name])), [clients]);
@@ -290,6 +292,65 @@ export default function Dispatch() {
       )}
 
       <LogStopsDialog open={logStopsOpen} onOpenChange={setLogStopsOpen} defaultDate={date} />
+
+      {/* Recurring orders */}
+      <div className="card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Repeat className="w-4 h-4 text-muted-foreground" />
+          <div className="text-sm font-semibold">Recurring orders</div>
+          <span className="text-[11px] text-muted-foreground">({recurring.length})</span>
+        </div>
+        {recurring.length === 0 ? (
+          <div className="text-xs text-muted-foreground py-4 text-center">No recurring orders.</div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {recurring.map((r) => (
+              <div key={r.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold truncate">
+                    {r.site_name}
+                    {clientNameById[r.client_account_id] && (
+                      <span className="text-muted-foreground font-normal"> · {clientNameById[r.client_account_id]}</span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground truncate">
+                    {r.frequency === "daily" && "Every day"}
+                    {r.frequency === "weekdays" && "Weekdays (Mon–Fri)"}
+                    {r.frequency === "weekly" && `Weekly · ${(r.weekdays || []).map((d) => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}`}
+                    {r.estimated_litres ? ` · ${Number(r.estimated_litres).toLocaleString()}L` : ""}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-destructive"
+                  title="End recurring order"
+                  onClick={() => {
+                    const wipeFuture = window.confirm(
+                      `End recurring "${r.site_name}"?\n\nOK = also remove upcoming scheduled stops.\nCancel = keep upcoming stops (you'll confirm next).`
+                    );
+                    if (wipeFuture) {
+                      delRecurring.mutate(
+                        { id: r.id, deleteFutureStops: true },
+                        { onSuccess: () => toast.success("Recurring order ended"), onError: (e: any) => toast.error(e.message) }
+                      );
+                      return;
+                    }
+                    if (window.confirm(`End recurring "${r.site_name}" but keep upcoming stops?`)) {
+                      delRecurring.mutate(
+                        { id: r.id, deleteFutureStops: false },
+                        { onSuccess: () => toast.success("Recurring order ended"), onError: (e: any) => toast.error(e.message) }
+                      );
+                    }
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
