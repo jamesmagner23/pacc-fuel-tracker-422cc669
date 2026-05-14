@@ -145,3 +145,30 @@ export function useRecurring() {
     },
   });
 }
+
+export function useDeleteRecurring() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, deleteFutureStops }: { id: string; deleteFutureStops?: boolean }) => {
+      if (deleteFutureStops) {
+        const today = new Date().toISOString().slice(0, 10);
+        const { error: delErr } = await supabase
+          .from("dispatch_stops" as any)
+          .delete()
+          .eq("recurring_id", id)
+          .gte("scheduled_date", today)
+          .neq("status", "completed");
+        if (delErr) throw delErr;
+      }
+      const { error } = await supabase
+        .from("dispatch_recurring" as any)
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dispatch-recurring"] });
+      qc.invalidateQueries({ queryKey: ["dispatch-stops"] });
+    },
+  });
+}
