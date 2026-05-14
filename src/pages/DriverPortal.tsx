@@ -452,8 +452,11 @@ function MyDayTab() {
   const { data: stops = [], isLoading } = useDispatchStops(today);
   const reorder = useReorderDispatchStops();
   const updateStatus = useUpdateStopStatus();
+  const deleteStop = useDeleteStop();
+  const upsertStop = useUpsertStop();
   const [addOpen, setAddOpen] = useState(false);
   const [pickClient, setPickClient] = useState<number | null>(null);
+  const [editStop, setEditStop] = useState<DispatchStop | null>(null);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["client-accounts-driver"],
@@ -594,11 +597,52 @@ function MyDayTab() {
                       <CheckCircle2 className="w-4 h-4" />
                     </button>
                   )}
+                  {!isCompleted && (
+                    <button
+                      onClick={() => setEditStop(stop)}
+                      className="p-1.5 rounded"
+                      style={{ background: "transparent", color: "var(--text-muted)", border: "none", cursor: "pointer" }}
+                      title="Edit stop"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (confirm(`Delete "${stop.site_name}" from today's route?`)) {
+                        deleteStop.mutate(stop.id, {
+                          onSuccess: () => toast.success("Stop removed"),
+                          onError: (e: any) => toast.error(e.message),
+                        });
+                      }
+                    }}
+                    className="p-1.5 rounded"
+                    style={{ background: "transparent", color: "#ef4444", border: "none", cursor: "pointer" }}
+                    title="Delete stop"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               );
             })}
           </div>
         </div>
+      )}
+
+      {editStop && (
+        <EditStopDialog
+          stop={editStop}
+          onClose={() => setEditStop(null)}
+          onSave={(patch) => {
+            upsertStop.mutate(
+              { ...editStop, ...patch },
+              {
+                onSuccess: () => { toast.success("Stop updated"); setEditStop(null); },
+                onError: (e: any) => toast.error(e.message),
+              }
+            );
+          }}
+        />
       )}
 
       {addOpen && pickClient === null && (
