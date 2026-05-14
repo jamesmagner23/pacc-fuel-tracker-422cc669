@@ -1,0 +1,1 @@
+CREATE POLICY "Drivers delete dispatch_stops" ON public.dispatch_stops FOR DELETE TO authenticated USING (has_role(auth.uid(), 'driver'::app_role));
