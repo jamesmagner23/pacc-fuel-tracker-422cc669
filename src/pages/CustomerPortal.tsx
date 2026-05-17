@@ -3208,6 +3208,34 @@ function PlantTab({
           </p>
         )}
       </div>
+
+      <PlantDetailsModal
+        open={!!selectedItemId}
+        onClose={() => setSelectedItemId(null)}
+        item={plantItems.find((p) => p.id === selectedItemId) || null}
+        stats={(() => {
+          const it = plantItems.find((p) => p.id === selectedItemId);
+          if (!it?.placa) return null;
+          const eq = equipment.find((e) => e.placa === it.placa);
+          return eq ? { litres: eq.litres, deliveries: eq.deliveries } : null;
+        })()}
+        tags={selectedItemId ? tagsByItem[selectedItemId] || [] : []}
+        projectName={(() => {
+          if (!selectedItemId) return null;
+          const a = assignments.find((x: any) => x.plant_item_id === selectedItemId && !x.removed_at);
+          if (!a) return null;
+          return projects.find((p) => p.id === a.project_id)?.name || null;
+        })()}
+        tokens={{
+          surface: T.surface,
+          border: T.border,
+          text: T.text,
+          textSecondary: T.textSecondary,
+          muted: T.muted,
+          accent: T.accent,
+          bg: T.bg,
+        }}
+      />
     </div>
   );
 }
