@@ -265,7 +265,7 @@ export function PlantBoard({
                                 {tagsByItem[id].map((t) => (
                                   <span
                                     key={t}
-                                    className="inline-block text-[9px] font-medium leading-none px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/25"
+                                    className="inline-block text-[9px] font-medium leading-none px-1.5 py-0.5 rounded bg-primary/20 text-foreground border border-primary/40"
                                   >
                                     {t}
                                   </span>
