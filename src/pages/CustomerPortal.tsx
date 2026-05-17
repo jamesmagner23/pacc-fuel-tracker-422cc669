@@ -47,6 +47,9 @@ const T = {
   borderSubtle: "#F1E8D8",
   accent: "#C8F26A",
   accentHover: "#B6E254",
+  // Chart fill color — deliberately NOT the lime accent. Lime is reserved
+  // for buttons/borders; charts use a darker, more readable green on cream.
+  chart: "#3F6B36",
   text: "#0E1F10",
   textSecondary: "#2A4A2E",
   muted: "#8B8773",
@@ -79,6 +82,10 @@ function applyPortalTheme(theme: PortalTheme) {
   T.borderSubtle = tk.borderSubtle;
   T.accent = tk.accent;
   T.accentHover = tk.accentHover;
+  // Dark themes can keep using lime for chart fills (good contrast on
+  // forest-green canvas); light themes drop to a darker green so bars
+  // remain legible without leaning on the lime UI accent.
+  T.chart = theme === "dark" ? tk.accent : "#3F6B36";
   T.text = tk.text;
   T.textSecondary = tk.textSecondary;
   T.muted = tk.textMuted;
