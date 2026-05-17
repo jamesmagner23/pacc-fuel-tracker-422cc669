@@ -342,7 +342,7 @@ function GhostButton({ children, onClick, disabled }: { children: React.ReactNod
       onMouseEnter={(e) => {
         if (disabled) return;
         e.currentTarget.style.borderColor = T.accent;
-        e.currentTarget.style.color = T.accent;
+        e.currentTarget.style.color = T.text;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = T.border;
@@ -1194,7 +1194,7 @@ function HeroLitres({
             }}
           >
             {Math.round(totalLitres).toLocaleString()}
-            <span style={{ fontSize: "0.36em", fontWeight: 500, color: T.accent, letterSpacing: "-0.01em" }}>L</span>
+            <span style={{ fontSize: "0.36em", fontWeight: 500, color: T.text, letterSpacing: "-0.01em" }}>L</span>
           </div>
           <div style={{ ...muted(11), marginTop: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>
             <strong style={{ color: T.text, fontWeight: 600 }}>{deliveries.toLocaleString()}</strong> deliveries
@@ -1394,7 +1394,7 @@ function FtcReportTab({
                   {Math.round(v.litres).toLocaleString()} L × ${v.rate.toFixed(3)}/L
                 </div>
               </div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
                 ${Math.round(v.credit).toLocaleString()}
               </div>
             </div>
@@ -1431,14 +1431,14 @@ function FtcReportTab({
                   <td style={ftcTd}>
                     {r.category}
                     {!r.mapped && (
-                      <span style={{ marginLeft: 6, fontSize: 10, padding: "1px 6px", borderRadius: 999, background: `${T.accent}22`, color: T.accent }}>
+                      <span style={{ marginLeft: 6, fontSize: 10, padding: "1px 6px", borderRadius: 999, background: `${T.accent}22`, color: T.text }}>
                         unmapped
                       </span>
                     )}
                   </td>
                   <td style={{ ...ftcTd, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.rate.toFixed(3)}</td>
                   <td style={{ ...ftcTd, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{Math.round(r.litres).toLocaleString()}</td>
-                  <td style={{ ...ftcTd, textAlign: "right", fontWeight: 600, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+                  <td style={{ ...ftcTd, textAlign: "right", fontWeight: 600, color: T.text, fontVariantNumeric: "tabular-nums" }}>
                     ${Math.round(r.credit).toLocaleString()}
                   </td>
                 </tr>
@@ -1544,7 +1544,7 @@ function OverviewTab({
               fontSize: 28,
               fontFamily: T.sansHead,
               fontWeight: 700,
-              color: ftcSavings > 0 ? T.accent : T.muted,
+              color: ftcSavings > 0 ? T.text : T.muted,
               fontVariantNumeric: "tabular-nums",
             }}
           >
@@ -1557,7 +1557,7 @@ function OverviewTab({
               style={{
                 marginTop: 10,
                 background: "transparent",
-                color: T.accent,
+                color: T.text,
                 border: `1px solid ${T.accent}88`,
                 borderRadius: 999,
                 padding: "6px 12px",
@@ -1587,7 +1587,7 @@ function OverviewTab({
           >
             {topPlant?.name || "—"}
           </div>
-          <div style={{ fontSize: 22, fontFamily: T.sansHead, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: 22, fontFamily: T.sansHead, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
             {topPlant ? fmtL(topPlant.litres) : "—"}
           </div>
         </div>
@@ -1876,7 +1876,7 @@ function DeliveriesTab({
                       {project && (
                         <span style={{
                           fontSize: 9, letterSpacing: "0.08em", textTransform: "uppercase",
-                          color: T.accent, border: `1px solid ${T.accent}55`, background: `${T.accent}11`,
+                          color: T.text, border: `1px solid ${T.accent}55`, background: `${T.accent}11`,
                           borderRadius: 3, padding: "1px 5px",
                         }} title={project.site_address || undefined}>{project.name}</span>
                       )}
@@ -2010,7 +2010,7 @@ function SitesTab({ transactions, companyName }: { transactions: any[]; companyN
         fontWeight: 500,
         letterSpacing: "0.1em",
         textTransform: "uppercase",
-        color: sortKey === k ? T.accent : T.muted,
+        color: sortKey === k ? T.text : T.muted,
         borderBottom: `1px solid ${T.border}`,
         whiteSpace: "nowrap",
       }}
@@ -2192,7 +2192,7 @@ function FtcTab({ transactions }: { transactions: any[] }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
             <div style={labelStyle}>{period === "annual" ? "Annual" : period === "quarterly" ? "Quarterly" : "Monthly"} Estimated Saving</div>
-            <div style={{ fontSize: 32, fontFamily: T.sansHead, fontWeight: 600, color: T.accent, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+            <div style={{ fontSize: 32, fontFamily: T.sansHead, fontWeight: 600, color: T.text, fontVariantNumeric: "tabular-nums", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
               ${fmtNum(calc.periodTotal, 2)}
             </div>
             <div style={{ ...muted(11), marginTop: 6 }}>
@@ -2452,7 +2452,7 @@ function ProjectsTab({
         </div>
         <div style={card}>
           <div style={labelStyle}>Litres Unassigned</div>
-          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: T.sansHead, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: 24, fontWeight: 700, fontFamily: T.sansHead, color: T.text, fontVariantNumeric: "tabular-nums" }}>
             {fmtL(stats.unassignedLitres)}
           </div>
           <div style={{ ...muted(11), marginTop: 4 }}>{stats.unassignedDeliveries} deliveries</div>
@@ -2503,7 +2503,7 @@ function ProjectsTab({
                     </div>
                     <div>
                       <div style={labelStyle}>CO₂e (t)</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
                         {fmtNum(co2Tonnes, 2)}
                       </div>
                     </div>
@@ -2512,7 +2512,7 @@ function ProjectsTab({
                       style={{
                         alignSelf: "center",
                         background: expandedProjectId === p.id ? T.accent : "transparent",
-                        color: expandedProjectId === p.id ? T.text : T.accent,
+                        color: expandedProjectId === p.id ? T.text : T.text,
                         border: `1px solid ${T.accent}88`,
                         borderRadius: 999,
                         padding: "8px 14px",
@@ -2743,7 +2743,7 @@ function EmissionsTab({ transactions, companyName }: { transactions: any[]; comp
         </div>
         <div style={card}>
           <div style={labelStyle}>CO₂e (Tonnes)</div>
-          <div style={{ fontSize: 26, fontFamily: T.sansHead, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: 26, fontFamily: T.sansHead, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
             {fmtNum(co2Tonnes, 2)}
           </div>
           <div style={{ ...muted(11), marginTop: 4 }}>tonnes CO₂e (Scope 1)</div>
@@ -3857,7 +3857,7 @@ function AnalyticsTab({
           </div>
           <div>
             <div style={labelStyle}>FTC claimable</div>
-            <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: T.accent }}>
+            <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: T.text }}>
               {fmt$(totalFtc)}
             </div>
           </div>
@@ -3866,7 +3866,7 @@ function AnalyticsTab({
             onClick={downloadRecap}
             disabled={perMachine.length === 0}
             style={{
-              background: T.accent, color: "#FFFFFF", border: "none",
+              background: T.accent, color: T.text, border: "none",
               borderRadius: 6, padding: "10px 14px", fontSize: 12, fontWeight: 600,
               cursor: perMachine.length === 0 ? "not-allowed" : "pointer",
               opacity: perMachine.length === 0 ? 0.5 : 1,
@@ -3972,7 +3972,7 @@ function AnalyticsTab({
               onClick={() => void emailRecap()}
               disabled={emailSending || !emailRecipients.trim()}
               style={{
-                background: T.accent, color: "#FFFFFF", border: "none",
+                background: T.accent, color: T.text, border: "none",
                 borderRadius: 6, padding: "10px 14px", fontSize: 12, fontWeight: 600,
                 cursor: (emailSending || !emailRecipients.trim()) ? "not-allowed" : "pointer",
                 opacity: (emailSending || !emailRecipients.trim()) ? 0.6 : 1,
@@ -4018,7 +4018,7 @@ function AnalyticsTab({
                 <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   {fmtL(m.litres)}
                 </span>
-                <span style={{ minWidth: 80, textAlign: "right", color: T.accent, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   {fmt$(m.ftcClaim)}
                 </span>
               </div>
@@ -4092,7 +4092,7 @@ function AnalyticsTab({
                 <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   {fmtL(p.litres)}
                 </span>
-                <span style={{ minWidth: 80, textAlign: "right", color: T.accent, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   {fmt$(p.ftcClaim)}
                 </span>
               </div>
@@ -4192,7 +4192,7 @@ function CompareGrid({ a, b }: { a: CompareSide; b: CompareSide }) {
                     <div style={labelStyle}>{s.label}</div>
                     <div style={{
                       fontSize: 18, fontWeight: 700,
-                      color: s.accent ? T.accent : T.text,
+                      color: s.accent ? T.text : T.text,
                       fontVariantNumeric: "tabular-nums",
                     }}>
                       {s.fmt(s.num)}
