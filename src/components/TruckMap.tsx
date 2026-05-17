@@ -4,8 +4,18 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { useMapboxToken } from "@/hooks/useMapboxToken";
 import { useLatestTruckLocation } from "@/hooks/useLatestTruckLocation";
 import { MapPin, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
+import { useDemo } from "@/hooks/useDemo";
 
 const MELB = { lng: 144.9631, lat: -37.8136 };
+
+// Fake truck fleet for demo mode — 4 trucks orbiting different points
+// around metro Melbourne so the "Live Truck Location" card feels alive.
+const DEMO_TRUCKS = [
+  { id: "BOWSR-01", driver: "Jake Mitchell", center: { lng: 145.215, lat: -37.987 } }, // Dandenong
+  { id: "BOWSR-02", driver: "Sarah Chen",    center: { lng: 144.752, lat: -37.866 } }, // Laverton
+  { id: "BOWSR-03", driver: "Tom Bradley",   center: { lng: 145.030, lat: -37.654 } }, // Epping
+  { id: "BOWSR-04", driver: "Liam Foster",   center: { lng: 145.061, lat: -37.910 } }, // Moorabbin
+];
 
 interface TruckMapProps {
   height?: number;
@@ -22,6 +32,8 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const demoMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const demoFrameRef = useRef<number | null>(null);
   const lastCoordsRef = useRef<{ lng: number; lat: number } | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const [mapReady, setMapReady] = useState(false);
@@ -29,13 +41,16 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const [mapAttempt, setMapAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
+  const isDemo = useDemo();
   const { data: ping, isFetching, refetch } = useLatestTruckLocation();
   const { data: mapToken, isLoading: isMapTokenLoading } = useMapboxToken();
-  const driver = ping
+  const driver = isDemo
+    ? { name: DEMO_TRUCKS[0].driver, lat: DEMO_TRUCKS[0].center.lat, lng: DEMO_TRUCKS[0].center.lng, lastUpdate: new Date().toISOString() }
+    : ping
     ? { name: ping.driver_name || "Driver", lat: ping.lat, lng: ping.lng, lastUpdate: ping.recorded_at }
     : null;
   const route = null as null | { completed: number; total: number };
-  const hasLocation = !!(driver?.lat && driver?.lng);
+  const hasLocation = isDemo ? true : !!(driver?.lat && driver?.lng);
 
   const mapBg = cssVar("--map-bg", "#0A1A0C");
   const mapBorder = cssVar("--map-border", "#1A301D");
@@ -116,6 +131,9 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
 
   useEffect(() => {
     if (!mapReady || !hasLocation || !mapRef.current || !driver) return;
+    // In demo mode we paint a fleet of fake animated trucks instead of
+    // tracking the single live driver ping.
+    if (isDemo) return;
 
     const target = { lng: driver.lng as number, lat: driver.lat as number };
 
@@ -164,6 +182,62 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
       return;
     }
   }, [mapReady, hasLocation, driver?.lat, driver?.lng, accent]);
+
+  // Demo-mode fleet: render 4 markers and animate them around small loops.
+  useEffect(() => {
+    if (!isDemo || !mapReady || !mapRef.current) return;
+    const map = mapRef.current;
+
+    // Clean any previous markers (effect re-runs on theme/accent change).
+    demoMarkersRef.current.forEach((m) => m.remove());
+    demoMarkersRef.current = [];
+
+    DEMO_TRUCKS.forEach((t) => {
+      const el = document.createElement("div");
+      el.style.cssText = `
+        width:14px;height:14px;
+        background:${accent};
+        border-radius:50%;
+        box-shadow:0 0 0 5px ${accent}33,0 0 0 10px ${accent}14,0 2px 6px rgba(0,0,0,0.3);
+      `;
+      const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
+        .setLngLat([t.center.lng, t.center.lat])
+        .setPopup(new mapboxgl.Popup({ offset: 14, closeButton: false }).setHTML(
+          `<div style="font-size:12px;font-weight:600;color:#111">${t.id}</div><div style="font-size:11px;color:#555">${t.driver}</div>`
+        ))
+        .addTo(map);
+      demoMarkersRef.current.push(marker);
+    });
+
+    // Fit map to show all trucks
+    try {
+      const bounds = new mapboxgl.LngLatBounds();
+      DEMO_TRUCKS.forEach((t) => bounds.extend([t.center.lng, t.center.lat]));
+      map.fitBounds(bounds, { padding: 60, duration: 800, maxZoom: 11 });
+    } catch { /* noop */ }
+
+    const start = performance.now();
+    const radius = 0.012; // ~1.3km loop
+    const tick = (now: number) => {
+      const elapsed = (now - start) / 1000;
+      DEMO_TRUCKS.forEach((t, i) => {
+        // Each truck loops at a different speed + phase
+        const speed = 0.18 + i * 0.04;
+        const phase = (i * Math.PI) / 2;
+        const lng = t.center.lng + Math.cos(elapsed * speed + phase) * radius;
+        const lat = t.center.lat + Math.sin(elapsed * speed + phase) * radius * 0.7;
+        demoMarkersRef.current[i]?.setLngLat([lng, lat]);
+      });
+      demoFrameRef.current = requestAnimationFrame(tick);
+    };
+    demoFrameRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (demoFrameRef.current) cancelAnimationFrame(demoFrameRef.current);
+      demoMarkersRef.current.forEach((m) => m.remove());
+      demoMarkersRef.current = [];
+    };
+  }, [isDemo, mapReady, accent]);
 
   useEffect(() => {
     return () => {
