@@ -140,15 +140,21 @@ function applyPortalTheme(theme: PortalTheme) {
 }
 
 const tabs = [
-  "01 Overview",
-  "02 Deliveries",
-  "03 Projects",
-  "04 Plant",
-  "05 Analytics",
-  "06 Emissions",
-  "07 Profile",
+  "Overview",
+  "Deliveries",
+  "Fleet",
+  "Reports",
+  "Profile",
 ] as const;
 type Tab = (typeof tabs)[number];
+
+// Fleet group: Plant + Projects
+const fleetSubtabs = ["Plant", "Projects"] as const;
+type FleetSubtab = (typeof fleetSubtabs)[number];
+
+// Reports group: Analytics + Emissions + Fuel Tax Credit
+const reportSubtabs = ["Analytics", "Emissions", "Fuel Tax Credit"] as const;
+type ReportSubtab = (typeof reportSubtabs)[number];
 
 // Day / Week / Month period toggle for the customer portal.
 type PortalPeriod = "day" | "week" | "month" | "all";
