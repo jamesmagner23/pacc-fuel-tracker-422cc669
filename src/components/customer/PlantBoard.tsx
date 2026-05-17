@@ -31,6 +31,8 @@ interface PlantBoardProps {
   readOnly?: boolean;
   /** plant_item.id → tag names attached to that item (rendered as chips). */
   tagsByItem?: Record<string, string[]>;
+  /** Fired when a plant card is clicked (not during drag). Use to open a details modal. */
+  onItemClick?: (plantItemId: string) => void;
 }
 
 /**
@@ -45,6 +47,7 @@ export function PlantBoard({
   clientAccountId,
   readOnly = false,
   tagsByItem = {},
+  onItemClick,
 }: PlantBoardProps) {
   const move = useMoveAssignment();
   const [dragging, setDragging] = useState<string | null>(null);
@@ -214,13 +217,18 @@ export function PlantBoard({
                           setOver(null);
                         }}
                         onClick={(ev) => {
-                          if (readOnly) return;
                           ev.stopPropagation();
+                          if (onItemClick) {
+                            onItemClick(id);
+                            return;
+                          }
+                          if (readOnly) return;
                           setPicked((p) => (p === id ? null : id));
                         }}
                         className={cn(
                           "rounded-md border bg-background/60 p-2 select-none transition-all",
                           !readOnly && "cursor-grab active:cursor-grabbing hover:border-primary/40 hover:bg-background",
+                          onItemClick && "cursor-pointer",
                           isDragging && "opacity-40",
                           isPicked && "ring-2 ring-primary border-primary/60"
                         )}
@@ -252,11 +260,6 @@ export function PlantBoard({
                             <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
                               {e.litres.toLocaleString()}L · {e.deliveries} fills
                             </div>
-                            {e.enriched!.service_notes && (
-                              <div className="text-[10px] text-muted-foreground/80 italic truncate mt-0.5">
-                                {e.enriched!.service_notes}
-                              </div>
-                            )}
                             {tagsByItem[id] && tagsByItem[id].length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {tagsByItem[id].map((t) => (
