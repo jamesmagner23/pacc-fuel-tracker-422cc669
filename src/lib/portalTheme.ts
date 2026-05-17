@@ -33,7 +33,10 @@ export const LIGHT_TOKENS = {
   mapBg: "#F4EEDF",
   // Pie palette tuned for cream
   // Harmonious sage/olive tonal palette with one warm accent
-  pie: ["#C8F26A", "#5C8A4E", "#A7C77A", "#D8B36A", "#7A9A8B", "#C28A5A"],
+  // Light-theme pie palette intentionally omits the lime UI accent —
+  // lime is reserved for buttons. Charts lead with darker greens for
+  // readability on cream backgrounds.
+  pie: ["#3F6B36", "#5C8A4E", "#A7C77A", "#7A9A8B", "#D8B36A", "#C28A5A"],
   badgePending: "#6B7565",
   badgeConfirmed: "#C8F26A",
   badgeCompleted: "#0E1F10",
