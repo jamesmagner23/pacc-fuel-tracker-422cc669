@@ -342,7 +342,7 @@ function GhostButton({ children, onClick, disabled }: { children: React.ReactNod
       onMouseEnter={(e) => {
         if (disabled) return;
         e.currentTarget.style.borderColor = T.accent;
-        e.currentTarget.style.color = T.accent;
+        e.currentTarget.style.color = T.text;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = T.border;
@@ -1544,7 +1544,7 @@ function OverviewTab({
               fontSize: 28,
               fontFamily: T.sansHead,
               fontWeight: 700,
-              color: ftcSavings > 0 ? T.accent : T.muted,
+              color: ftcSavings > 0 ? T.text : T.muted,
               fontVariantNumeric: "tabular-nums",
             }}
           >
@@ -2010,7 +2010,7 @@ function SitesTab({ transactions, companyName }: { transactions: any[]; companyN
         fontWeight: 500,
         letterSpacing: "0.1em",
         textTransform: "uppercase",
-        color: sortKey === k ? T.accent : T.muted,
+        color: sortKey === k ? T.text : T.muted,
         borderBottom: `1px solid ${T.border}`,
         whiteSpace: "nowrap",
       }}
@@ -2512,7 +2512,7 @@ function ProjectsTab({
                       style={{
                         alignSelf: "center",
                         background: expandedProjectId === p.id ? T.accent : "transparent",
-                        color: expandedProjectId === p.id ? T.text : T.accent,
+                        color: expandedProjectId === p.id ? T.text : T.text,
                         border: `1px solid ${T.accent}88`,
                         borderRadius: 999,
                         padding: "8px 14px",
@@ -3866,7 +3866,7 @@ function AnalyticsTab({
             onClick={downloadRecap}
             disabled={perMachine.length === 0}
             style={{
-              background: T.accent, color: "#FFFFFF", border: "none",
+              background: T.accent, color: T.text, border: "none",
               borderRadius: 6, padding: "10px 14px", fontSize: 12, fontWeight: 600,
               cursor: perMachine.length === 0 ? "not-allowed" : "pointer",
               opacity: perMachine.length === 0 ? 0.5 : 1,
@@ -3972,7 +3972,7 @@ function AnalyticsTab({
               onClick={() => void emailRecap()}
               disabled={emailSending || !emailRecipients.trim()}
               style={{
-                background: T.accent, color: "#FFFFFF", border: "none",
+                background: T.accent, color: T.text, border: "none",
                 borderRadius: 6, padding: "10px 14px", fontSize: 12, fontWeight: 600,
                 cursor: (emailSending || !emailRecipients.trim()) ? "not-allowed" : "pointer",
                 opacity: (emailSending || !emailRecipients.trim()) ? 0.6 : 1,
@@ -4192,7 +4192,7 @@ function CompareGrid({ a, b }: { a: CompareSide; b: CompareSide }) {
                     <div style={labelStyle}>{s.label}</div>
                     <div style={{
                       fontSize: 18, fontWeight: 700,
-                      color: s.accent ? T.accent : T.text,
+                      color: s.accent ? T.text : T.text,
                       fontVariantNumeric: "tabular-nums",
                     }}>
                       {s.fmt(s.num)}
