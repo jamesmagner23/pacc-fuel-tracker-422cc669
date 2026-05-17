@@ -1466,12 +1466,14 @@ function OverviewTab({
   speedsolNames,
   isDemo,
   plantItems,
+  onOpenFtcReport,
 }: {
   transactions: any[];
   demoSuffix: string;
   speedsolNames: string[];
   isDemo: boolean;
   plantItems: any[];
+  onOpenFtcReport?: () => void;
 }) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
