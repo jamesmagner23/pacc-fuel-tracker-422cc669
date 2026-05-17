@@ -234,7 +234,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
             {visibleNavItems.map((item, i) => {
-              const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
+              const currentTab = params.get("tab");
+              const isActive = item.tab
+                ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "01 Overview")
+                : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
               return (
                 <RouterNavLink
                   key={item.to}
