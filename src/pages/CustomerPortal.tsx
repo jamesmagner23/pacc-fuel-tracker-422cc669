@@ -14,6 +14,7 @@ import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { usePlantItems } from "@/hooks/usePlantItems";
+import { PlantDetailsModal } from "@/components/customer/PlantDetailsModal";
 import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
 import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttribution";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
