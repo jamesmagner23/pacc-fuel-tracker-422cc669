@@ -2507,6 +2507,25 @@ function ProjectsTab({
                         {fmtNum(co2Tonnes, 2)}
                       </div>
                     </div>
+                    <button
+                      onClick={() => setExpandedProjectId((cur) => (cur === p.id ? null : p.id))}
+                      style={{
+                        alignSelf: "center",
+                        background: expandedProjectId === p.id ? T.accent : "transparent",
+                        color: expandedProjectId === p.id ? "#ffffff" : T.accent,
+                        border: `1px solid ${T.accent}88`,
+                        borderRadius: 999,
+                        padding: "8px 14px",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {expandedProjectId === p.id ? "Hide drill-down" : "Drill down"}
+                    </button>
                   </div>
                 </div>
 
@@ -2527,7 +2546,75 @@ function ProjectsTab({
                   </div>
                 )}
 
-                {weekly.length > 0 && (
+                {expandedProjectId === p.id ? (
+                  (() => {
+                    const buckets = history[p.id]?.[granularity] || {};
+                    const entries = Object.entries(buckets).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 24);
+                    const maxL = entries.reduce((m, [, v]) => Math.max(m, v.litres), 0) || 1;
+                    const totalL = entries.reduce((s, [, v]) => s + v.litres, 0);
+                    const totalD = entries.reduce((s, [, v]) => s + v.deliveries, 0);
+                    const labelFor = (k: string) => {
+                      if (granularity === "day") return format(parseISO(k), "EEE d MMM yyyy");
+                      if (granularity === "month") return format(parseISO(k + "-01"), "MMM yyyy");
+                      // week
+                      const wkEnd = format(addDays(parseISO(k), 6), "dd MMM");
+                      return `${format(parseISO(k), "dd MMM")} – ${wkEnd}`;
+                    };
+                    return (
+                      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 12, flexWrap: "wrap" }}>
+                          <div style={labelStyle}>Drill-down · All history</div>
+                          <div style={{ display: "inline-flex", border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
+                            {(["day", "week", "month"] as const).map((g) => (
+                              <button
+                                key={g}
+                                onClick={() => setGranularity(g)}
+                                style={{
+                                  padding: "6px 12px",
+                                  fontSize: 10,
+                                  fontFamily: T.sansHead,
+                                  fontWeight: granularity === g ? 700 : 500,
+                                  letterSpacing: "0.08em",
+                                  textTransform: "uppercase",
+                                  color: granularity === g ? "#ffffff" : T.textSecondary,
+                                  background: granularity === g ? T.accent : "transparent",
+                                  border: "none",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                {g === "day" ? "Daily" : g === "week" ? "Weekly" : "Monthly"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {entries.length === 0 ? (
+                          <p style={muted(12)}>No fuel attributed to this project yet.</p>
+                        ) : (
+                          <>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              {entries.map(([k, v]) => (
+                                <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+                                  <span style={{ color: T.textSecondary, width: 170, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{labelFor(k)}</span>
+                                  <div style={{ flex: 1, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden" }}>
+                                    <div style={{ width: `${(v.litres / maxL) * 100}%`, height: "100%", background: T.accent }} />
+                                  </div>
+                                  <span style={{ color: T.muted, fontSize: 11, fontVariantNumeric: "tabular-nums", minWidth: 50, textAlign: "right" }}>{v.deliveries} dlv</span>
+                                  <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 80, textAlign: "right" }}>{fmtL(v.litres)}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px dashed ${T.border}`, display: "flex", justifyContent: "space-between", fontSize: 11, color: T.muted }}>
+                              <span style={{ textTransform: "uppercase", letterSpacing: "0.06em" }}>Showing last {entries.length} {granularity === "day" ? "days" : granularity === "week" ? "weeks" : "months"}</span>
+                              <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                                {fmtL(totalL)} · {totalD} deliveries
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()
+                ) : weekly.length > 0 && (
                   <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
                     <div style={{ ...labelStyle, marginBottom: 8 }}>Weekly Breakdown</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
