@@ -26,13 +26,11 @@ const navItems = [
 // In demo mode the sidebar is rebuilt as the customer-portal tab list.
 // Each entry deep-links into /portal with a ?tab= param the page reads.
 const demoPortalNavItems = [
-  { to: "/portal", label: "Overview",   tab: "01 Overview" },
-  { to: "/portal", label: "Deliveries", tab: "02 Deliveries" },
-  { to: "/portal", label: "Projects",   tab: "03 Projects" },
-  { to: "/portal", label: "Plant",      tab: "04 Plant" },
-  { to: "/portal", label: "Analytics",  tab: "05 Analytics" },
-  { to: "/portal", label: "Emissions",  tab: "06 Emissions" },
-  { to: "/portal", label: "Profile",    tab: "07 Profile" },
+  { to: "/portal", label: "Overview",   tab: "Overview" },
+  { to: "/portal", label: "Deliveries", tab: "Deliveries" },
+  { to: "/portal", label: "Fleet",      tab: "Fleet" },
+  { to: "/portal", label: "Reports",    tab: "Reports" },
+  { to: "/portal", label: "Profile",    tab: "Profile" },
 ];
 
 /** Build sidebar link href, preserving demo params and optional ?tab=. */
@@ -119,7 +117,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {visibleNavItems.map((item, i) => {
             const currentTab = params.get("tab");
             const isActive = item.tab
-              ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "01 Overview")
+              ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "Overview")
               : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
             return (
               <RouterNavLink
