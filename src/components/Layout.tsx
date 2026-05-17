@@ -123,7 +123,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
             return (
               <RouterNavLink
-                key={item.to}
+                key={item.label}
                 to={buildHref(item.to, item.tab, demoSuffix, params)}
                 style={{
                   display: "flex",
@@ -240,7 +240,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
               return (
                 <RouterNavLink
-                  key={item.to}
+                  key={item.label}
                   to={buildHref(item.to, item.tab, demoSuffix, params)}
                   onClick={() => setMobileMenuOpen(false)}
                   style={{
