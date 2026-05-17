@@ -1214,7 +1214,7 @@ function HeroLitres({
           <div style={{ width: 140, height: 56, opacity: 0.85 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={series} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-                <Bar dataKey="litres" fill={T.accent} radius={[2, 2, 0, 0]} />
+                <Bar dataKey="litres" fill={T.chart} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -1618,11 +1618,11 @@ function OverviewTab({
                   tickLine={false}
                 />
                 <Tooltip
-                  cursor={{ fill: `${T.accent}11` }}
+                  cursor={{ fill: `${T.chart}14` }}
                   contentStyle={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, fontSize: 12 }}
                   formatter={(v: any) => fmtL(Number(v))}
                 />
-                <Bar dataKey="litres" fill={T.accent} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="litres" fill={T.chart} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -2544,7 +2544,7 @@ function ProjectsTab({
                         <div key={name} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
                           <span style={{ color: T.textSecondary, width: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 0 }}>{name}</span>
                           <div style={{ flex: 1, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden" }}>
-                            <div style={{ width: `${(l / maxLitres) * 100}%`, height: "100%", background: T.accent }} />
+                            <div style={{ width: `${(l / maxLitres) * 100}%`, height: "100%", background: T.chart }} />
                           </div>
                           <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 70, textAlign: "right" }}>{fmtL(l)}</span>
                         </div>
@@ -2603,7 +2603,7 @@ function ProjectsTab({
                                 <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
                                   <span style={{ color: T.textSecondary, width: 170, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{labelFor(k)}</span>
                                   <div style={{ flex: 1, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden" }}>
-                                    <div style={{ width: `${(v.litres / maxL) * 100}%`, height: "100%", background: T.accent }} />
+                                    <div style={{ width: `${(v.litres / maxL) * 100}%`, height: "100%", background: T.chart }} />
                                   </div>
                                   <span style={{ color: T.muted, fontSize: 11, fontVariantNumeric: "tabular-nums", minWidth: 50, textAlign: "right" }}>{v.deliveries} dlv</span>
                                   <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 80, textAlign: "right" }}>{fmtL(v.litres)}</span>
@@ -2632,7 +2632,7 @@ function ProjectsTab({
                           <div key={wkStart} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
                             <span style={{ color: T.textSecondary, width: 140, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{label}</span>
                             <div style={{ flex: 1, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden" }}>
-                              <div style={{ width: `${(v.litres / maxWeekLitres) * 100}%`, height: "100%", background: T.accent }} />
+                              <div style={{ width: `${(v.litres / maxWeekLitres) * 100}%`, height: "100%", background: T.chart }} />
                             </div>
                             <span style={{ color: T.muted, fontSize: 11, fontVariantNumeric: "tabular-nums", minWidth: 50, textAlign: "right" }}>{v.deliveries} dlv</span>
                             <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 70, textAlign: "right" }}>{fmtL(v.litres)}</span>
@@ -4020,7 +4020,7 @@ function AnalyticsTab({
                   </div>
                 </div>
                 <div style={{ width: 140, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
-                  <div style={{ width: `${(m.litres / machineMaxLitres) * 100}%`, height: "100%", background: T.accent }} />
+                  <div style={{ width: `${(m.litres / machineMaxLitres) * 100}%`, height: "100%", background: T.chart }} />
                 </div>
                 <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   {fmtL(m.litres)}
@@ -4094,7 +4094,7 @@ function AnalyticsTab({
                   </div>
                 </div>
                 <div style={{ width: 140, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
-                  <div style={{ width: `${(p.litres / projectMaxLitres) * 100}%`, height: "100%", background: T.accent }} />
+                  <div style={{ width: `${(p.litres / projectMaxLitres) * 100}%`, height: "100%", background: T.chart }} />
                 </div>
                 <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   {fmtL(p.litres)}
