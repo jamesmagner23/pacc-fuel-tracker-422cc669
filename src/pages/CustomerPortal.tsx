@@ -1067,6 +1067,390 @@ function ProfileTab({
   );
 }
 
+// ── Subtab strip (used for Fleet + Reports groups) ──────────────────
+function SubtabBar({
+  options,
+  active,
+  onChange,
+}: {
+  options: string[];
+  active: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        gap: 0,
+        marginBottom: 16,
+        background: T.surface,
+        border: `1px solid ${T.border}`,
+        borderRadius: 999,
+        padding: 3,
+      }}
+    >
+      {options.map((opt) => {
+        const on = opt === active;
+        return (
+          <button
+            key={opt}
+            onClick={() => onChange(opt)}
+            style={{
+              padding: "7px 14px",
+              fontSize: 11,
+              fontFamily: T.sansHead,
+              fontWeight: on ? 700 : 500,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: on ? "#ffffff" : T.textSecondary,
+              background: on ? T.accent : "transparent",
+              border: "none",
+              borderRadius: 999,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Hero "Litres Used" — refined two-column visual ──────────────────
+function HeroLitres({
+  totalLitres,
+  deliveries,
+  sites,
+  transactions,
+}: {
+  totalLitres: number;
+  deliveries: number;
+  sites: number;
+  transactions: any[];
+}) {
+  // Compact daily series for sparkline (last ~30 days of activity)
+  const series = useMemo(() => {
+    const byDay = new Map<string, number>();
+    transactions.forEach((t) => {
+      const k = (t.date || "").slice(0, 10);
+      if (!k) return;
+      byDay.set(k, (byDay.get(k) || 0) + (t.cantidad || 0));
+    });
+    return Array.from(byDay.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-30)
+      .map(([day, litres]) => ({ day, litres }));
+  }, [transactions]);
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: 14,
+        border: `1px solid ${T.accent}40`,
+        background: `linear-gradient(135deg, ${T.accent}1f 0%, ${T.accent}08 45%, ${T.surface} 100%)`,
+        padding: "22px 22px 18px",
+      }}
+    >
+      {/* Decorative accent glyph */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: -40, right: -40,
+          width: 180, height: 180,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${T.accent}26 0%, transparent 70%)`,
+          pointerEvents: "none",
+        }}
+      />
+      <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr auto", gap: 16, alignItems: "end" }}>
+        <div>
+          <div style={{ ...labelStyle, marginBottom: 8, color: T.textSecondary }}>Litres Delivered</div>
+          <div
+            style={{
+              fontSize: "clamp(44px, 12vw, 76px)",
+              lineHeight: 0.95,
+              fontFamily: T.sansHead,
+              fontWeight: 700,
+              color: T.text,
+              fontVariantNumeric: "tabular-nums",
+              letterSpacing: "-0.035em",
+              display: "flex",
+              alignItems: "baseline",
+              gap: 4,
+            }}
+          >
+            {Math.round(totalLitres).toLocaleString()}
+            <span style={{ fontSize: "0.36em", fontWeight: 500, color: T.accent, letterSpacing: "-0.01em" }}>L</span>
+          </div>
+          <div style={{ ...muted(11), marginTop: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            <strong style={{ color: T.text, fontWeight: 600 }}>{deliveries.toLocaleString()}</strong> deliveries
+            <span style={{ margin: "0 8px", opacity: 0.4 }}>·</span>
+            <strong style={{ color: T.text, fontWeight: 600 }}>{sites}</strong> {sites === 1 ? "site" : "sites"}
+          </div>
+        </div>
+
+        {series.length > 1 && (
+          <div style={{ width: 140, height: 56, opacity: 0.85 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={series} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                <Bar dataKey="litres" fill={T.accent} radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Fuel Tax Credit report (Reports sub-tab) ────────────────────────
+function FtcReportTab({
+  transactions,
+  plantItems,
+  companyName,
+  periodLabel,
+}: {
+  transactions: any[];
+  plantItems: any[];
+  companyName: string;
+  periodLabel: string;
+}) {
+  const { data: rates = [] } = useFtcRates();
+
+  // Resolve placa → plant_item → ftc_rate
+  const placaToItem = useMemo(() => {
+    const m = new Map<string, any>();
+    (plantItems || []).forEach((pi: any) => {
+      if (pi?.placa) m.set(String(pi.placa), pi);
+    });
+    return m;
+  }, [plantItems]);
+
+  const rateById = useMemo(() => {
+    const m = new Map<string, FtcRate>();
+    (rates || []).forEach((r: FtcRate) => m.set(r.id, r));
+    return m;
+  }, [rates]);
+
+  // Fallback "off-road" rate for unmapped diesel (most generous, standard for plant)
+  const fallbackRate = useMemo(
+    () => rates.find((r) => /off-road|machinery|plant/i.test(r.equipment_type)) || rates[0],
+    [rates]
+  );
+
+  type Row = {
+    placa: string;
+    plantName: string;
+    category: string;
+    rate: number;
+    litres: number;
+    credit: number;
+    mapped: boolean;
+  };
+
+  const rows: Row[] = useMemo(() => {
+    const byKey = new Map<string, Row>();
+    transactions.forEach((t) => {
+      const placa = (t.placa || "").toString().trim() || "UNASSIGNED";
+      const item = placaToItem.get(placa);
+      const rate = item?.ftc_rate_id ? rateById.get(item.ftc_rate_id) : fallbackRate;
+      const category = rate?.equipment_type || "Unmapped (no FTC claim)";
+      const ratePerL = Number(rate?.rate_per_litre || 0);
+      const litres = Number(t.cantidad || 0);
+      const key = `${placa}::${category}`;
+      const existing = byKey.get(key);
+      if (existing) {
+        existing.litres += litres;
+        existing.credit += litres * ratePerL;
+      } else {
+        byKey.set(key, {
+          placa,
+          plantName: item?.name || (placa === "UNASSIGNED" ? "Unassigned" : placa),
+          category,
+          rate: ratePerL,
+          litres,
+          credit: litres * ratePerL,
+          mapped: !!item,
+        });
+      }
+    });
+    return Array.from(byKey.values()).sort((a, b) => b.credit - a.credit);
+  }, [transactions, placaToItem, rateById, fallbackRate]);
+
+  const totals = useMemo(() => {
+    const totalLitres = rows.reduce((s, r) => s + r.litres, 0);
+    const totalCredit = rows.reduce((s, r) => s + r.credit, 0);
+    const byCategory = new Map<string, { litres: number; credit: number; rate: number }>();
+    rows.forEach((r) => {
+      const cur = byCategory.get(r.category) || { litres: 0, credit: 0, rate: r.rate };
+      cur.litres += r.litres;
+      cur.credit += r.credit;
+      byCategory.set(r.category, cur);
+    });
+    return { totalLitres, totalCredit, byCategory: Array.from(byCategory.entries()) };
+  }, [rows]);
+
+  const exportCSV = () => {
+    const header = ["Plant", "Plate / ID", "FTC Category", "Rate ($/L)", "Litres", "Fuel Tax Credit ($)"];
+    const body = rows.map((r) => [
+      r.plantName,
+      r.placa,
+      r.category,
+      r.rate.toFixed(4),
+      Math.round(r.litres),
+      r.credit.toFixed(2),
+    ]);
+    body.push(["", "", "", "TOTAL", Math.round(totals.totalLitres), totals.totalCredit.toFixed(2)]);
+    const fname = `FTC-Report_${companyName.replace(/\s+/g, "-")}_${periodLabel.replace(/\s+/g, "-")}.csv`;
+    downloadCSV([header, ...body], fname);
+    logActivity("export", { type: "ftc-csv", rows: rows.length, period: periodLabel });
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Hero KPIs */}
+      <div
+        style={{
+          ...card,
+          background: `linear-gradient(135deg, ${T.accent}1a, ${T.accent}05)`,
+          borderColor: `${T.accent}55`,
+          padding: 20,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div style={{ ...labelStyle, marginBottom: 4 }}>Estimated Fuel Tax Credit</div>
+            <div
+              style={{
+                fontSize: "clamp(34px, 10vw, 56px)",
+                fontFamily: T.sansHead,
+                fontWeight: 700,
+                color: T.text,
+                fontVariantNumeric: "tabular-nums",
+                letterSpacing: "-0.025em",
+                lineHeight: 1,
+              }}
+            >
+              ${Math.round(totals.totalCredit).toLocaleString()}
+            </div>
+            <div style={{ ...muted(12), marginTop: 6 }}>
+              {Math.round(totals.totalLitres).toLocaleString()} L · {periodLabel}
+            </div>
+          </div>
+          <button
+            onClick={exportCSV}
+            style={{
+              background: T.accent,
+              color: "#ffffff",
+              border: "none",
+              borderRadius: 999,
+              padding: "10px 18px",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+            }}
+          >
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      {/* Per-category breakdown */}
+      <div style={card}>
+        <div style={{ ...labelStyle, marginBottom: 10 }}>By Category</div>
+        <div style={{ display: "grid", gap: 8 }}>
+          {totals.byCategory.map(([cat, v]) => (
+            <div
+              key={cat}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "10px 12px",
+                borderRadius: 8,
+                background: T.surface,
+                border: `1px solid ${T.border}`,
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{cat}</div>
+                <div style={{ ...muted(11), marginTop: 2 }}>
+                  {Math.round(v.litres).toLocaleString()} L × ${v.rate.toFixed(3)}/L
+                </div>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+                ${Math.round(v.credit).toLocaleString()}
+              </div>
+            </div>
+          ))}
+          {totals.byCategory.length === 0 && (
+            <p style={muted(12)}>No fuel usage in this period.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Per-plant detail table */}
+      <div style={card}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={labelStyle}>Per-Plant Detail</div>
+          <span style={{ ...muted(11), letterSpacing: "0.06em", textTransform: "uppercase" }}>{rows.length} plant items</span>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead>
+              <tr style={{ textAlign: "left", color: T.textSecondary }}>
+                <th style={ftcTh}>Plant</th>
+                <th style={ftcTh}>Plate</th>
+                <th style={ftcTh}>Category</th>
+                <th style={{ ...ftcTh, textAlign: "right" }}>Rate ($/L)</th>
+                <th style={{ ...ftcTh, textAlign: "right" }}>Litres</th>
+                <th style={{ ...ftcTh, textAlign: "right" }}>Credit ($)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={`${r.placa}-${i}`} style={{ borderTop: `1px solid ${T.border}` }}>
+                  <td style={ftcTd}>{r.plantName}</td>
+                  <td style={{ ...ftcTd, color: T.textSecondary, fontFamily: "monospace" }}>{r.placa}</td>
+                  <td style={ftcTd}>
+                    {r.category}
+                    {!r.mapped && (
+                      <span style={{ marginLeft: 6, fontSize: 10, padding: "1px 6px", borderRadius: 999, background: `${T.accent}22`, color: T.accent }}>
+                        unmapped
+                      </span>
+                    )}
+                  </td>
+                  <td style={{ ...ftcTd, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.rate.toFixed(3)}</td>
+                  <td style={{ ...ftcTd, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{Math.round(r.litres).toLocaleString()}</td>
+                  <td style={{ ...ftcTd, textAlign: "right", fontWeight: 600, color: T.accent, fontVariantNumeric: "tabular-nums" }}>
+                    ${Math.round(r.credit).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr><td colSpan={6} style={{ ...ftcTd, color: T.textSecondary, textAlign: "center", padding: 16 }}>No data.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p style={{ ...muted(11), marginTop: 10 }}>
+          Estimates based on current ATO rate schedule applied to delivered litres. Confirm with your accountant before lodging.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const ftcTh: React.CSSProperties = { fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", padding: "8px 10px", whiteSpace: "nowrap" };
+const ftcTd: React.CSSProperties = { padding: "10px", color: T.text, fontSize: 12, verticalAlign: "top" };
+
 function OverviewTab({
   transactions,
   demoSuffix,
