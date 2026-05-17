@@ -1551,6 +1551,26 @@ function OverviewTab({
             {ftcSavings > 0 ? `$${Math.round(ftcSavings).toLocaleString()}` : "—"}
           </div>
           <div style={{ ...muted(11), marginTop: 4 }}>Off-road rate × volume</div>
+          {onOpenFtcReport && (
+            <button
+              onClick={onOpenFtcReport}
+              style={{
+                marginTop: 10,
+                background: "transparent",
+                color: T.accent,
+                border: `1px solid ${T.accent}88`,
+                borderRadius: 999,
+                padding: "6px 12px",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              View Full Report →
+            </button>
+          )}
         </div>
         <div style={card}>
           <div style={labelStyle}>Top Plant</div>
