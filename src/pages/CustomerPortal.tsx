@@ -3156,6 +3156,7 @@ function PlantTab({
         assignments={assignments}
         clientAccountId={clientAccountId}
         tagsByItem={tagsByItem}
+        onItemClick={(id) => setSelectedItemId(id)}
       />
 
       <div className="glass-card p-5">
