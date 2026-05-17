@@ -926,7 +926,11 @@ export default function CustomerPortal() {
                   <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />
                 )}
                 {fleetSubtab === "Projects" && (
-                  <ProjectsTab transactions={periodTransactions} clientAccountId={clientAccountId} />
+                  <ProjectsTab
+                    transactions={periodTransactions}
+                    allTransactions={transactions}
+                    clientAccountId={clientAccountId}
+                  />
                 )}
               </>
             )}
