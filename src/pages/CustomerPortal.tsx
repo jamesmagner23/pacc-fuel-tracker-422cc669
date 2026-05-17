@@ -2263,9 +2263,11 @@ function FtcTab({ transactions }: { transactions: any[] }) {
 // ═══════════════════════════════════════════════════════════════════════
 function ProjectsTab({
   transactions,
+  allTransactions,
   clientAccountId,
 }: {
   transactions: any[];
+  allTransactions: any[];
   clientAccountId: number | null;
 }) {
   const { data: projects = [], isLoading: prLoading } = useProjects(clientAccountId);
