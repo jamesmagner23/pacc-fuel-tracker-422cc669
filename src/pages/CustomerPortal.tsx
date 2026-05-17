@@ -892,6 +892,7 @@ export default function CustomerPortal() {
                 demoSuffix={demoSuffix}
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
+                plantItems={plantItemsAll}
               />
             )}
             {activeTab === "02 Deliveries" && (
@@ -1035,16 +1036,24 @@ function OverviewTab({
   demoSuffix,
   speedsolNames,
   isDemo,
+  plantItems,
 }: {
   transactions: any[];
   demoSuffix: string;
   speedsolNames: string[];
   isDemo: boolean;
+  plantItems: any[];
 }) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
   const totalLitres = transactions.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const sites = new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean));
+  // "Sites" = unique delivery locations (estacion / ciudad), not the
+  // single customer name. Falls back to customer if nothing better.
+  const sites = new Set(
+    transactions
+      .map((t) => t.estacion || t.ciudad || t.nombre_cliente1)
+      .filter(Boolean),
+  );
 
   // FTC savings — apply off-road / plant rate to total litres as a conservative estimate
   const ftcRate = useMemo(() => {
@@ -1053,7 +1062,21 @@ function OverviewTab({
   }, [rates]);
   const ftcSavings = totalLitres * ftcRate;
 
-  // Plant breakdown — group by placa (plate / plant identifier)
+  // Plant breakdown — group by placa, then resolve to a friendly
+  // "Make Model (size)" label from the plant items list.
+  const placaLabel = useMemo(() => {
+    const map = new Map<string, string>();
+    (plantItems || []).forEach((pi: any) => {
+      if (!pi?.placa) return;
+      const make = pi.manufacturer ? `${pi.manufacturer} ` : "";
+      const model = pi.model || pi.name?.split(" (")[0] || "";
+      const size = pi.size ? ` (${pi.size})` : "";
+      const label = (make + model).trim() || pi.name || pi.placa;
+      map.set(String(pi.placa), `${label}${size}`.trim());
+    });
+    return map;
+  }, [plantItems]);
+
   const plantBreakdown = useMemo(() => {
     const map = new Map<string, number>();
     transactions.forEach((t) => {
@@ -1061,9 +1084,13 @@ function OverviewTab({
       map.set(key, (map.get(key) || 0) + (t.cantidad || 0));
     });
     return Array.from(map.entries())
-      .map(([name, litres]) => ({ name, litres }))
+      .map(([placa, litres]) => ({
+        name: placaLabel.get(placa) || placa,
+        placa,
+        litres,
+      }))
       .sort((a, b) => b.litres - a.litres);
-  }, [transactions]);
+  }, [transactions, placaLabel]);
   const topPlants = plantBreakdown.slice(0, 6);
   const topPlant = plantBreakdown[0];
 
