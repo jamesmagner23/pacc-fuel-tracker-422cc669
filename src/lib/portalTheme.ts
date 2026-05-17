@@ -15,9 +15,11 @@ export const LIGHT_TOKENS = {
   surfaceHover: "#F4EEDF",
   border: "#D9D2BF",
   borderSubtle: "#E4DDC9",
-  accent: "#3F6B36",            // dark green for action contrast on cream
-  accentHover: "#345A2C",
-  accentLight: "rgba(63,107,54,0.10)",
+  // Lime green pulled from the PACC landing-page hero CTA so the demo
+  // doc, light portal and marketing site all share one accent.
+  accent: "#C8F26A",
+  accentHover: "#B6E254",
+  accentLight: "rgba(200,242,106,0.22)",
   text: "#0E1F10",
   textSecondary: "#3F4A3A",
   textMuted: "#6B7565",
@@ -31,9 +33,9 @@ export const LIGHT_TOKENS = {
   mapBg: "#F4EEDF",
   // Pie palette tuned for cream
   // Harmonious sage/olive tonal palette with one warm accent
-  pie: ["#5C8A4E", "#A7C77A", "#D8B36A", "#7A9A8B", "#C28A5A", "#B8AE92"],
+  pie: ["#C8F26A", "#5C8A4E", "#A7C77A", "#D8B36A", "#7A9A8B", "#C28A5A"],
   badgePending: "#6B7565",
-  badgeConfirmed: "#3F6B36",
+  badgeConfirmed: "#C8F26A",
   badgeCompleted: "#0E1F10",
 } as const;
 
