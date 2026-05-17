@@ -215,9 +215,14 @@ export default function DeliveryDocket() {
            <div>
             <div style={{ lineHeight: 1 }}>
               {isDemo ? (
-                <div style={{ fontSize: 24, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
-                  {items[0]?.nombre_cliente1 ? "DELIVERY" : "FUELTRACK"}
-                </div>
+                <>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
+                    FUEL<span style={{ color: "#3B82F6" }}>TRACK</span>
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 500, color: "#666", letterSpacing: "0.15em", marginTop: 2 }}>
+                    DIESEL DELIVERY
+                  </div>
+                </>
               ) : (
                 <>
                   <div style={{ fontSize: 24, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>

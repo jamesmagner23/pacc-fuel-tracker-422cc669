@@ -52,6 +52,42 @@ export function useClientProfile(clientAccountId: number | null | undefined) {
     queryKey: ["client-profile", clientAccountId],
     enabled: !!clientAccountId,
     queryFn: async () => {
+      // Demo mode → return a fully-populated mock profile so the Profile
+      // tab looks polished in showcase sessions. Detect via URL param so we
+      // don't need to plumb demo context through every caller.
+      if (typeof window !== "undefined") {
+        const p = new URLSearchParams(window.location.search);
+        if (p.get("demo") === "true") {
+          const now = new Date().toISOString();
+          return {
+            id: "demo-profile-1",
+            client_account_id: clientAccountId!,
+            legal_business_name: "Kelly Excavation Pty Ltd",
+            abn: "62 148 902 117",
+            billing_address_line1: "Unit 4, 18 Industrial Drive",
+            billing_address_line2: null,
+            billing_suburb: "Dandenong South",
+            billing_state: "VIC",
+            billing_postcode: "3175",
+            billing_country: "Australia",
+            website: "https://kellyexcavation.com.au",
+            primary_contact_name: "Sean Kelly",
+            primary_contact_email: "sean@kellyexcavation.com.au",
+            primary_contact_phone: "0412 884 220",
+            ops_contact_name: "Marcus Reid",
+            ops_contact_email: "ops@kellyexcavation.com.au",
+            ops_contact_phone: "0419 220 884",
+            accounts_contact_name: "Lara Pham",
+            accounts_contact_email: "accounts@kellyexcavation.com.au",
+            accounts_contact_phone: "03 9799 4421",
+            site_contact_name: "Dean Whitfield",
+            site_contact_email: "dean@kellyexcavation.com.au",
+            site_contact_phone: "0438 117 902",
+            created_at: now,
+            updated_at: now,
+          } as ClientProfile;
+        }
+      }
       const { data, error } = await supabase
         .from("client_profiles")
         .select("*")

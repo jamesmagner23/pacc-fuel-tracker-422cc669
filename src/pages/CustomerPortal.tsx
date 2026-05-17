@@ -361,7 +361,28 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 
 // ─── Main component ──────────────────────────────────────────────────
 export default function CustomerPortal() {
-  const [activeTab, setActiveTab] = useState<Tab>("01 Overview");
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get("tab");
+  const initialTab: Tab = (tabs as readonly string[]).includes(tabParam || "")
+    ? (tabParam as Tab)
+    : "01 Overview";
+  const [activeTab, setActiveTabState] = useState<Tab>(initialTab);
+  // Keep ?tab= URL param in sync so sidebar links + back/forward work.
+  useEffect(() => {
+    if (tabParam !== activeTab) {
+      const next = new URLSearchParams(params);
+      next.set("tab", activeTab);
+      setParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+  useEffect(() => {
+    if (tabParam && (tabs as readonly string[]).includes(tabParam) && tabParam !== activeTab) {
+      setActiveTabState(tabParam as Tab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabParam]);
+  const setActiveTab = setActiveTabState;
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const isDemo = useDemo();
   const { theme: storedPortalTheme, vars: storedPortalVars, tokens: storedPortalTokens } = usePortalTheme();
@@ -372,7 +393,6 @@ export default function CustomerPortal() {
   // Sync the mutable T + style objects to the active theme BEFORE this
   // render's children evaluate inline T.* references.
   applyPortalTheme(portalTheme);
-  const [params] = useSearchParams();
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   const { data: profile } = useCustomerProfile();
@@ -872,6 +892,7 @@ export default function CustomerPortal() {
                 demoSuffix={demoSuffix}
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
+                plantItems={plantItemsAll}
               />
             )}
             {activeTab === "02 Deliveries" && (
@@ -1015,16 +1036,24 @@ function OverviewTab({
   demoSuffix,
   speedsolNames,
   isDemo,
+  plantItems,
 }: {
   transactions: any[];
   demoSuffix: string;
   speedsolNames: string[];
   isDemo: boolean;
+  plantItems: any[];
 }) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
   const totalLitres = transactions.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const sites = new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean));
+  // "Sites" = unique delivery locations (estacion / ciudad), not the
+  // single customer name. Falls back to customer if nothing better.
+  const sites = new Set(
+    transactions
+      .map((t) => t.estacion || t.ciudad || t.nombre_cliente1)
+      .filter(Boolean),
+  );
 
   // FTC savings — apply off-road / plant rate to total litres as a conservative estimate
   const ftcRate = useMemo(() => {
@@ -1033,7 +1062,21 @@ function OverviewTab({
   }, [rates]);
   const ftcSavings = totalLitres * ftcRate;
 
-  // Plant breakdown — group by placa (plate / plant identifier)
+  // Plant breakdown — group by placa, then resolve to a friendly
+  // "Make Model (size)" label from the plant items list.
+  const placaLabel = useMemo(() => {
+    const map = new Map<string, string>();
+    (plantItems || []).forEach((pi: any) => {
+      if (!pi?.placa) return;
+      const make = pi.manufacturer ? `${pi.manufacturer} ` : "";
+      const model = pi.model || pi.name?.split(" (")[0] || "";
+      const size = pi.size ? ` (${pi.size})` : "";
+      const label = (make + model).trim() || pi.name || pi.placa;
+      map.set(String(pi.placa), `${label}${size}`.trim());
+    });
+    return map;
+  }, [plantItems]);
+
   const plantBreakdown = useMemo(() => {
     const map = new Map<string, number>();
     transactions.forEach((t) => {
@@ -1041,9 +1084,13 @@ function OverviewTab({
       map.set(key, (map.get(key) || 0) + (t.cantidad || 0));
     });
     return Array.from(map.entries())
-      .map(([name, litres]) => ({ name, litres }))
+      .map(([placa, litres]) => ({
+        name: placaLabel.get(placa) || placa,
+        placa,
+        litres,
+      }))
       .sort((a, b) => b.litres - a.litres);
-  }, [transactions]);
+  }, [transactions, placaLabel]);
   const topPlants = plantBreakdown.slice(0, 6);
   const topPlant = plantBreakdown[0];
 

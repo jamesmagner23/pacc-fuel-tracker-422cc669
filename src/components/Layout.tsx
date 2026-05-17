@@ -23,6 +23,26 @@ const navItems = [
   { to: "/admin", label: "Admin" },
 ];
 
+// In demo mode the sidebar is rebuilt as the customer-portal tab list.
+// Each entry deep-links into /portal with a ?tab= param the page reads.
+const demoPortalNavItems = [
+  { to: "/portal", label: "Overview",   tab: "01 Overview" },
+  { to: "/portal", label: "Deliveries", tab: "02 Deliveries" },
+  { to: "/portal", label: "Projects",   tab: "03 Projects" },
+  { to: "/portal", label: "Plant",      tab: "04 Plant" },
+  { to: "/portal", label: "Analytics",  tab: "05 Analytics" },
+  { to: "/portal", label: "Emissions",  tab: "06 Emissions" },
+  { to: "/portal", label: "Profile",    tab: "07 Profile" },
+];
+
+/** Build sidebar link href, preserving demo params and optional ?tab=. */
+function buildHref(to: string, tab: string | undefined, demoSuffix: string, params: URLSearchParams) {
+  if (!tab) return `${to}${demoSuffix}`;
+  const next = new URLSearchParams(params);
+  next.set("tab", tab);
+  return `${to}?${next.toString()}`;
+}
+
 // PACC brand colors fall back to CSS theme tokens so light/dark flips work.
 const PACC_BG = "var(--background)";
 const PACC_BORDER = "var(--border)";
@@ -52,10 +72,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
     r === "/" ? location.pathname === "/" : location.pathname === r || location.pathname.startsWith(r + "/")
   );
 
-  // Email outreach demo: only expose Client Portal in the sidebar
-  const visibleNavItems = isEmailPortalDemo
-    ? navItems.filter(item => item.to === "/portal")
-    : navItems.filter(item => !item.demoOnly || isDemo);
+  // Demo mode (whether via ?demo=true or email portal showcase): replace
+  // the admin sidebar with the customer-portal tab list so the showcase
+  // matches what a real customer would see.
+  const visibleNavItems: Array<{ to: string; label: string; tab?: string }> = isDemo
+    ? demoPortalNavItems
+    : navItems.filter(item => !item.demoOnly);
 
   // PACC-branded demo keeps the production palette
   const useDemoPalette = isDemo && !isPaccBranded;
@@ -95,11 +117,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 16px" }}>
           {visibleNavItems.map((item, i) => {
-            const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
+            const currentTab = params.get("tab");
+            const isActive = item.tab
+              ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "01 Overview")
+              : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
             return (
               <RouterNavLink
-                key={item.to}
-                to={`${item.to}${demoSuffix}`}
+                key={item.label}
+                to={buildHref(item.to, item.tab, demoSuffix, params)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -209,11 +234,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
             {visibleNavItems.map((item, i) => {
-              const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
+              const currentTab = params.get("tab");
+              const isActive = item.tab
+                ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "01 Overview")
+                : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
               return (
                 <RouterNavLink
-                  key={item.to}
-                  to={`${item.to}${demoSuffix}`}
+                  key={item.label}
+                  to={buildHref(item.to, item.tab, demoSuffix, params)}
                   onClick={() => setMobileMenuOpen(false)}
                   style={{
                     display: "flex",
