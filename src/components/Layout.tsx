@@ -35,6 +35,14 @@ const demoPortalNavItems = [
   { to: "/portal", label: "Profile",    tab: "07 Profile" },
 ];
 
+/** Build sidebar link href, preserving demo params and optional ?tab=. */
+function buildHref(to: string, tab: string | undefined, demoSuffix: string, params: URLSearchParams) {
+  if (!tab) return `${to}${demoSuffix}`;
+  const next = new URLSearchParams(params);
+  next.set("tab", tab);
+  return `${to}?${next.toString()}`;
+}
+
 // PACC brand colors fall back to CSS theme tokens so light/dark flips work.
 const PACC_BG = "var(--background)";
 const PACC_BORDER = "var(--border)";
@@ -109,7 +117,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 16px" }}>
           {visibleNavItems.map((item, i) => {
-            const isActive = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
+            const currentTab = params.get("tab");
+            const isActive = item.tab
+              ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "01 Overview")
+              : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
             return (
               <RouterNavLink
                 key={item.to}
