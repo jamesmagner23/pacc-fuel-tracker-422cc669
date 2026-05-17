@@ -23,6 +23,18 @@ const navItems = [
   { to: "/admin", label: "Admin" },
 ];
 
+// In demo mode the sidebar is rebuilt as the customer-portal tab list.
+// Each entry deep-links into /portal with a ?tab= param the page reads.
+const demoPortalNavItems = [
+  { to: "/portal", label: "Overview",   tab: "01 Overview" },
+  { to: "/portal", label: "Deliveries", tab: "02 Deliveries" },
+  { to: "/portal", label: "Projects",   tab: "03 Projects" },
+  { to: "/portal", label: "Plant",      tab: "04 Plant" },
+  { to: "/portal", label: "Analytics",  tab: "05 Analytics" },
+  { to: "/portal", label: "Emissions",  tab: "06 Emissions" },
+  { to: "/portal", label: "Profile",    tab: "07 Profile" },
+];
+
 // PACC brand colors fall back to CSS theme tokens so light/dark flips work.
 const PACC_BG = "var(--background)";
 const PACC_BORDER = "var(--border)";
@@ -52,10 +64,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
     r === "/" ? location.pathname === "/" : location.pathname === r || location.pathname.startsWith(r + "/")
   );
 
-  // Email outreach demo: only expose Client Portal in the sidebar
-  const visibleNavItems = isEmailPortalDemo
-    ? navItems.filter(item => item.to === "/portal")
-    : navItems.filter(item => !item.demoOnly || isDemo);
+  // Demo mode (whether via ?demo=true or email portal showcase): replace
+  // the admin sidebar with the customer-portal tab list so the showcase
+  // matches what a real customer would see.
+  const visibleNavItems: Array<{ to: string; label: string; tab?: string }> = isDemo
+    ? demoPortalNavItems
+    : navItems.filter(item => !item.demoOnly);
 
   // PACC-branded demo keeps the production palette
   const useDemoPalette = isDemo && !isPaccBranded;
@@ -99,7 +113,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             return (
               <RouterNavLink
                 key={item.to}
-                to={`${item.to}${demoSuffix}`}
+                to={buildHref(item.to, item.tab, demoSuffix, params)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -213,7 +227,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               return (
                 <RouterNavLink
                   key={item.to}
-                  to={`${item.to}${demoSuffix}`}
+                  to={buildHref(item.to, item.tab, demoSuffix, params)}
                   onClick={() => setMobileMenuOpen(false)}
                   style={{
                     display: "flex",
