@@ -78,7 +78,7 @@ export function TagInput({
         {value.map((t, i) => (
           <span
             key={`${t}-${i}`}
-            className="inline-flex items-center gap-1 rounded bg-primary/15 text-primary text-xs font-medium px-2 py-0.5"
+            className="inline-flex items-center gap-1 rounded bg-primary/20 text-foreground border border-primary/40 text-xs font-medium px-2 py-0.5"
           >
             {t}
             <button
