@@ -3311,7 +3311,7 @@ function PlantTab({
           </div>
           <div className="text-right">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Claimable</div>
-            <div className="text-xl font-bold text-primary">${ftcRollup.totalClaim.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+            <div className="text-xl font-bold text-foreground">${ftcRollup.totalClaim.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
           </div>
         </div>
         {ftcRollup.rows.length === 0 ? (

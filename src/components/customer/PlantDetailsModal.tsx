@@ -159,7 +159,7 @@ export function PlantDetailsModal({ open, onClose, item, stats, tags = [], proje
                     padding: "3px 9px",
                     borderRadius: 999,
                     background: `${tokens.accent}22`,
-                    color: tokens.accent,
+                    color: tokens.text,
                     border: `1px solid ${tokens.accent}44`,
                   }}
                 >
@@ -205,7 +205,7 @@ function Stat({ label, value, tokens, accent }: { label: string; value: string; 
   return (
     <div style={{ background: tokens.surface, padding: "12px 14px" }}>
       <div style={{ fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: tokens.muted, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: accent ? tokens.accent : tokens.text, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: tokens.text, fontVariantNumeric: "tabular-nums" }}>{value}</div>
     </div>
   );
 }
