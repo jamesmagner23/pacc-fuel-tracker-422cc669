@@ -14,6 +14,7 @@ import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { usePlantItems } from "@/hooks/usePlantItems";
+import { PlantDetailsModal } from "@/components/customer/PlantDetailsModal";
 import { useProjects, useProjectAssignments } from "@/hooks/useProjects";
 import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttribution";
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
@@ -901,6 +902,10 @@ export default function CustomerPortal() {
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
                 plantItems={plantItemsAll}
+                onOpenFtcReport={() => {
+                  setReportsSubtab("Fuel Tax Credit");
+                  setActiveTab("Reports");
+                }}
               />
             )}
             {activeTab === "Deliveries" && (
@@ -925,7 +930,11 @@ export default function CustomerPortal() {
                   <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />
                 )}
                 {fleetSubtab === "Projects" && (
-                  <ProjectsTab transactions={periodTransactions} clientAccountId={clientAccountId} />
+                  <ProjectsTab
+                    transactions={periodTransactions}
+                    allTransactions={transactions}
+                    clientAccountId={clientAccountId}
+                  />
                 )}
               </>
             )}
@@ -1457,12 +1466,14 @@ function OverviewTab({
   speedsolNames,
   isDemo,
   plantItems,
+  onOpenFtcReport,
 }: {
   transactions: any[];
   demoSuffix: string;
   speedsolNames: string[];
   isDemo: boolean;
   plantItems: any[];
+  onOpenFtcReport?: () => void;
 }) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
@@ -1540,6 +1551,26 @@ function OverviewTab({
             {ftcSavings > 0 ? `$${Math.round(ftcSavings).toLocaleString()}` : "—"}
           </div>
           <div style={{ ...muted(11), marginTop: 4 }}>Off-road rate × volume</div>
+          {onOpenFtcReport && (
+            <button
+              onClick={onOpenFtcReport}
+              style={{
+                marginTop: 10,
+                background: "transparent",
+                color: T.accent,
+                border: `1px solid ${T.accent}88`,
+                borderRadius: 999,
+                padding: "6px 12px",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              View Full Report →
+            </button>
+          )}
         </div>
         <div style={card}>
           <div style={labelStyle}>Top Plant</div>
@@ -2258,9 +2289,11 @@ function FtcTab({ transactions }: { transactions: any[] }) {
 // ═══════════════════════════════════════════════════════════════════════
 function ProjectsTab({
   transactions,
+  allTransactions,
   clientAccountId,
 }: {
   transactions: any[];
+  allTransactions: any[];
   clientAccountId: number | null;
 }) {
   const { data: projects = [], isLoading: prLoading } = useProjects(clientAccountId);
@@ -2268,6 +2301,61 @@ function ProjectsTab({
   const { data: plantItems = [] } = usePlantItems(clientAccountId);
   const txnIds = useMemo(() => transactions.map((t) => t.id).filter(Boolean), [transactions]);
   const { data: overrides = {} } = useTransactionOverrides(txnIds);
+
+  // Track which project card the user has drilled into (full-history view).
+  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
+  const [granularity, setGranularity] = useState<"day" | "week" | "month">("week");
+
+  // ── Full-history attribution (for the drill-down panel) ─────────────
+  // Keyed: projectId → bucketKey ("yyyy-MM-dd" / "yyyy-Www" / "yyyy-MM")
+  // → { litres, deliveries }. Uses allTransactions, not the period slice.
+  const allTxnIds = useMemo(
+    () => allTransactions.map((t) => t.id).filter(Boolean),
+    [allTransactions],
+  );
+  const { data: allOverrides = {} } = useTransactionOverrides(allTxnIds);
+
+  const history = useMemo(() => {
+    const itemAssignments = groupAssignmentsByPlantItem(assignments as any);
+    const resolveProject = (itemId: string | undefined, isoDate: string | null) =>
+      projectForItemAt(itemAssignments, itemId, isoDate);
+    const placaToItemId: Record<string, string> = {};
+    plantItems.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (placa) placaToItemId[placa] = pi.id;
+    });
+
+    const out: Record<
+      string,
+      { day: Record<string, { litres: number; deliveries: number }>; week: Record<string, { litres: number; deliveries: number }>; month: Record<string, { litres: number; deliveries: number }> }
+    > = {};
+
+    allTransactions.forEach((t) => {
+      if (!t.date) return;
+      const placa = (t.placa || "").toString().trim();
+      const litres = t.cantidad || 0;
+      const txnDate = t.fecha || (t.date ? t.date + "T00:00:00.000Z" : null);
+      const ov = allOverrides[t.id];
+      let pid: string | undefined = ov?.project_id;
+      if (!pid && ov?.plant_item_id) pid = resolveProject(ov.plant_item_id, txnDate);
+      if (!pid) pid = resolveProject(placaToItemId[placa], txnDate);
+      if (!pid) return;
+      const d = parseISO(t.date);
+      const day = format(d, "yyyy-MM-dd");
+      const wk = format(startOfWeek(d, { weekStartsOn: 1 }), "yyyy-MM-dd");
+      const mo = format(d, "yyyy-MM");
+      if (!out[pid]) out[pid] = { day: {}, week: {}, month: {} };
+      const bump = (bucket: Record<string, { litres: number; deliveries: number }>, key: string) => {
+        if (!bucket[key]) bucket[key] = { litres: 0, deliveries: 0 };
+        bucket[key].litres += litres;
+        bucket[key].deliveries += 1;
+      };
+      bump(out[pid].day, day);
+      bump(out[pid].week, wk);
+      bump(out[pid].month, mo);
+    });
+    return out;
+  }, [allTransactions, allOverrides, assignments, plantItems]);
 
   const stats = useMemo(() => {
     // Group all assignment history by plant_item_id so we can look up the
@@ -2419,6 +2507,25 @@ function ProjectsTab({
                         {fmtNum(co2Tonnes, 2)}
                       </div>
                     </div>
+                    <button
+                      onClick={() => setExpandedProjectId((cur) => (cur === p.id ? null : p.id))}
+                      style={{
+                        alignSelf: "center",
+                        background: expandedProjectId === p.id ? T.accent : "transparent",
+                        color: expandedProjectId === p.id ? "#ffffff" : T.accent,
+                        border: `1px solid ${T.accent}88`,
+                        borderRadius: 999,
+                        padding: "8px 14px",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {expandedProjectId === p.id ? "Hide drill-down" : "Drill down"}
+                    </button>
                   </div>
                 </div>
 
@@ -2439,7 +2546,75 @@ function ProjectsTab({
                   </div>
                 )}
 
-                {weekly.length > 0 && (
+                {expandedProjectId === p.id ? (
+                  (() => {
+                    const buckets = history[p.id]?.[granularity] || {};
+                    const entries = Object.entries(buckets).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 24);
+                    const maxL = entries.reduce((m, [, v]) => Math.max(m, v.litres), 0) || 1;
+                    const totalL = entries.reduce((s, [, v]) => s + v.litres, 0);
+                    const totalD = entries.reduce((s, [, v]) => s + v.deliveries, 0);
+                    const labelFor = (k: string) => {
+                      if (granularity === "day") return format(parseISO(k), "EEE d MMM yyyy");
+                      if (granularity === "month") return format(parseISO(k + "-01"), "MMM yyyy");
+                      // week
+                      const wkEnd = format(addDays(parseISO(k), 6), "dd MMM");
+                      return `${format(parseISO(k), "dd MMM")} – ${wkEnd}`;
+                    };
+                    return (
+                      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 12, flexWrap: "wrap" }}>
+                          <div style={labelStyle}>Drill-down · All history</div>
+                          <div style={{ display: "inline-flex", border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
+                            {(["day", "week", "month"] as const).map((g) => (
+                              <button
+                                key={g}
+                                onClick={() => setGranularity(g)}
+                                style={{
+                                  padding: "6px 12px",
+                                  fontSize: 10,
+                                  fontFamily: T.sansHead,
+                                  fontWeight: granularity === g ? 700 : 500,
+                                  letterSpacing: "0.08em",
+                                  textTransform: "uppercase",
+                                  color: granularity === g ? "#ffffff" : T.textSecondary,
+                                  background: granularity === g ? T.accent : "transparent",
+                                  border: "none",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                {g === "day" ? "Daily" : g === "week" ? "Weekly" : "Monthly"}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {entries.length === 0 ? (
+                          <p style={muted(12)}>No fuel attributed to this project yet.</p>
+                        ) : (
+                          <>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              {entries.map(([k, v]) => (
+                                <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
+                                  <span style={{ color: T.textSecondary, width: 170, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{labelFor(k)}</span>
+                                  <div style={{ flex: 1, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden" }}>
+                                    <div style={{ width: `${(v.litres / maxL) * 100}%`, height: "100%", background: T.accent }} />
+                                  </div>
+                                  <span style={{ color: T.muted, fontSize: 11, fontVariantNumeric: "tabular-nums", minWidth: 50, textAlign: "right" }}>{v.deliveries} dlv</span>
+                                  <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 80, textAlign: "right" }}>{fmtL(v.litres)}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px dashed ${T.border}`, display: "flex", justifyContent: "space-between", fontSize: 11, color: T.muted }}>
+                              <span style={{ textTransform: "uppercase", letterSpacing: "0.06em" }}>Showing last {entries.length} {granularity === "day" ? "days" : granularity === "week" ? "weeks" : "months"}</span>
+                              <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                                {fmtL(totalL)} · {totalD} deliveries
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()
+                ) : weekly.length > 0 && (
                   <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
                     <div style={{ ...labelStyle, marginBottom: 8 }}>Weekly Breakdown</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -3035,6 +3210,7 @@ function PlantTab({
   const { data: ftcRates = [] } = useFtcRates();
   const { data: tagLibrary = [] } = usePlantTags(clientAccountId);
   const { data: tagLinks = [] } = usePlantItemTagLinks(clientAccountId);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const tagsByItem = useMemo(() => {
     const nameById: Record<string, string> = {};
@@ -3122,6 +3298,7 @@ function PlantTab({
         assignments={assignments}
         clientAccountId={clientAccountId}
         tagsByItem={tagsByItem}
+        onItemClick={(id) => setSelectedItemId(id)}
       />
 
       <div className="glass-card p-5">
@@ -3173,6 +3350,34 @@ function PlantTab({
           </p>
         )}
       </div>
+
+      <PlantDetailsModal
+        open={!!selectedItemId}
+        onClose={() => setSelectedItemId(null)}
+        item={plantItems.find((p) => p.id === selectedItemId) || null}
+        stats={(() => {
+          const it = plantItems.find((p) => p.id === selectedItemId);
+          if (!it?.placa) return null;
+          const eq = equipment.find((e) => e.placa === it.placa);
+          return eq ? { litres: eq.litres, deliveries: eq.deliveries } : null;
+        })()}
+        tags={selectedItemId ? tagsByItem[selectedItemId] || [] : []}
+        projectName={(() => {
+          if (!selectedItemId) return null;
+          const a = assignments.find((x: any) => x.plant_item_id === selectedItemId && !x.removed_at);
+          if (!a) return null;
+          return projects.find((p) => p.id === a.project_id)?.name || null;
+        })()}
+        tokens={{
+          surface: T.surface,
+          border: T.border,
+          text: T.text,
+          textSecondary: T.textSecondary,
+          muted: T.muted,
+          accent: T.accent,
+          bg: T.bg,
+        }}
+      />
     </div>
   );
 }
