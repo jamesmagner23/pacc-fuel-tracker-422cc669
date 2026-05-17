@@ -2302,6 +2302,61 @@ function ProjectsTab({
   const txnIds = useMemo(() => transactions.map((t) => t.id).filter(Boolean), [transactions]);
   const { data: overrides = {} } = useTransactionOverrides(txnIds);
 
+  // Track which project card the user has drilled into (full-history view).
+  const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
+  const [granularity, setGranularity] = useState<"day" | "week" | "month">("week");
+
+  // ── Full-history attribution (for the drill-down panel) ─────────────
+  // Keyed: projectId → bucketKey ("yyyy-MM-dd" / "yyyy-Www" / "yyyy-MM")
+  // → { litres, deliveries }. Uses allTransactions, not the period slice.
+  const allTxnIds = useMemo(
+    () => allTransactions.map((t) => t.id).filter(Boolean),
+    [allTransactions],
+  );
+  const { data: allOverrides = {} } = useTransactionOverrides(allTxnIds);
+
+  const history = useMemo(() => {
+    const itemAssignments = groupAssignmentsByPlantItem(assignments as any);
+    const resolveProject = (itemId: string | undefined, isoDate: string | null) =>
+      projectForItemAt(itemAssignments, itemId, isoDate);
+    const placaToItemId: Record<string, string> = {};
+    plantItems.forEach((pi) => {
+      const placa = (pi.placa || "").toString().trim();
+      if (placa) placaToItemId[placa] = pi.id;
+    });
+
+    const out: Record<
+      string,
+      { day: Record<string, { litres: number; deliveries: number }>; week: Record<string, { litres: number; deliveries: number }>; month: Record<string, { litres: number; deliveries: number }> }
+    > = {};
+
+    allTransactions.forEach((t) => {
+      if (!t.date) return;
+      const placa = (t.placa || "").toString().trim();
+      const litres = t.cantidad || 0;
+      const txnDate = t.fecha || (t.date ? t.date + "T00:00:00.000Z" : null);
+      const ov = allOverrides[t.id];
+      let pid: string | undefined = ov?.project_id;
+      if (!pid && ov?.plant_item_id) pid = resolveProject(ov.plant_item_id, txnDate);
+      if (!pid) pid = resolveProject(placaToItemId[placa], txnDate);
+      if (!pid) return;
+      const d = parseISO(t.date);
+      const day = format(d, "yyyy-MM-dd");
+      const wk = format(startOfWeek(d, { weekStartsOn: 1 }), "yyyy-MM-dd");
+      const mo = format(d, "yyyy-MM");
+      if (!out[pid]) out[pid] = { day: {}, week: {}, month: {} };
+      const bump = (bucket: Record<string, { litres: number; deliveries: number }>, key: string) => {
+        if (!bucket[key]) bucket[key] = { litres: 0, deliveries: 0 };
+        bucket[key].litres += litres;
+        bucket[key].deliveries += 1;
+      };
+      bump(out[pid].day, day);
+      bump(out[pid].week, wk);
+      bump(out[pid].month, mo);
+    });
+    return out;
+  }, [allTransactions, allOverrides, assignments, plantItems]);
+
   const stats = useMemo(() => {
     // Group all assignment history by plant_item_id so we can look up the
     // project that was active on the date of each transaction. Time-aware:
