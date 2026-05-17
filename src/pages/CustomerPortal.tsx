@@ -361,7 +361,28 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 
 // ─── Main component ──────────────────────────────────────────────────
 export default function CustomerPortal() {
-  const [activeTab, setActiveTab] = useState<Tab>("01 Overview");
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get("tab");
+  const initialTab: Tab = (tabs as readonly string[]).includes(tabParam || "")
+    ? (tabParam as Tab)
+    : "01 Overview";
+  const [activeTab, setActiveTabState] = useState<Tab>(initialTab);
+  // Keep ?tab= URL param in sync so sidebar links + back/forward work.
+  useEffect(() => {
+    if (tabParam !== activeTab) {
+      const next = new URLSearchParams(params);
+      next.set("tab", activeTab);
+      setParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+  useEffect(() => {
+    if (tabParam && (tabs as readonly string[]).includes(tabParam) && tabParam !== activeTab) {
+      setActiveTabState(tabParam as Tab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabParam]);
+  const setActiveTab = setActiveTabState;
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const isDemo = useDemo();
   const { theme: storedPortalTheme, vars: storedPortalVars, tokens: storedPortalTokens } = usePortalTheme();
@@ -372,7 +393,6 @@ export default function CustomerPortal() {
   // Sync the mutable T + style objects to the active theme BEFORE this
   // render's children evaluate inline T.* references.
   applyPortalTheme(portalTheme);
-  const [params] = useSearchParams();
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   const { data: profile } = useCustomerProfile();
