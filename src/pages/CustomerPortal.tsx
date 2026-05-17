@@ -1133,32 +1133,12 @@ function OverviewTab({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Hero — Litres used (visual focal point) */}
-      <div
-        style={{
-          ...card,
-          background: `linear-gradient(135deg, ${T.accent}1a, ${T.accent}05)`,
-          borderColor: `${T.accent}55`,
-          padding: 20,
-        }}
-      >
-        <div style={{ ...labelStyle, marginBottom: 6 }}>Litres Used</div>
-        <div
-          style={{
-            fontSize: "clamp(40px, 13vw, 64px)",
-            lineHeight: 1,
-            fontFamily: T.sansHead,
-            fontWeight: 800,
-            color: T.text,
-            fontVariantNumeric: "tabular-nums",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          {fmtL(totalLitres)}
-        </div>
-        <div style={{ ...muted(12), marginTop: 6 }}>
-          {transactions.length.toLocaleString()} deliveries · {sites.size} sites
-        </div>
-      </div>
+      <HeroLitres
+        totalLitres={totalLitres}
+        deliveries={transactions.length}
+        sites={sites.size}
+        transactions={transactions}
+      />
 
       {/* FTC savings — second visual headline */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
