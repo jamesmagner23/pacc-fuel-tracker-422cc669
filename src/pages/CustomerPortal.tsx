@@ -902,6 +902,10 @@ export default function CustomerPortal() {
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
                 plantItems={plantItemsAll}
+                onOpenFtcReport={() => {
+                  setReportsSubtab("Fuel Tax Credit");
+                  setActiveTab("Reports");
+                }}
               />
             )}
             {activeTab === "Deliveries" && (
