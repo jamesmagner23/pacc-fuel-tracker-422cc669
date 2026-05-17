@@ -3068,6 +3068,7 @@ function PlantTab({
   const { data: ftcRates = [] } = useFtcRates();
   const { data: tagLibrary = [] } = usePlantTags(clientAccountId);
   const { data: tagLinks = [] } = usePlantItemTagLinks(clientAccountId);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   const tagsByItem = useMemo(() => {
     const nameById: Record<string, string> = {};
