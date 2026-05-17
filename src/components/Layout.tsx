@@ -234,7 +234,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {visibleNavItems.map((item, i) => {
               const currentTab = params.get("tab");
               const isActive = item.tab
-                ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "01 Overview")
+                ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "Overview")
                 : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
               return (
                 <RouterNavLink
