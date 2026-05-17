@@ -371,7 +371,7 @@ export default function CustomerPortal() {
   const tabParam = params.get("tab");
   const initialTab: Tab = (tabs as readonly string[]).includes(tabParam || "")
     ? (tabParam as Tab)
-    : "01 Overview";
+    : "Overview";
   const [activeTab, setActiveTabState] = useState<Tab>(initialTab);
   // Keep ?tab= URL param in sync so sidebar links + back/forward work.
   useEffect(() => {
@@ -389,6 +389,8 @@ export default function CustomerPortal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam]);
   const setActiveTab = setActiveTabState;
+  const [fleetSubtab, setFleetSubtab] = useState<FleetSubtab>("Plant");
+  const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const isDemo = useDemo();
   const { theme: storedPortalTheme, vars: storedPortalVars, tokens: storedPortalTokens } = usePortalTheme();
@@ -791,12 +793,12 @@ export default function CustomerPortal() {
           })}
         </div>
 
-        {/* Day / Week / Month period toggle — applies to Overview, Deliveries,
-            Plant and Analytics tabs. */}
-        {(activeTab === "01 Overview" ||
-          activeTab === "02 Deliveries" ||
-          activeTab === "04 Plant" ||
-          activeTab === "05 Analytics") && (
+        {/* Day / Week / Month period toggle — applies to time-series tabs. */}
+        {(activeTab === "Overview" ||
+          activeTab === "Deliveries" ||
+          (activeTab === "Fleet" && fleetSubtab === "Plant") ||
+          (activeTab === "Reports" && reportsSubtab === "Analytics") ||
+          (activeTab === "Reports" && reportsSubtab === "Fuel Tax Credit")) && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
             <div style={{ display: "inline-flex", border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
               {(["day", "week", "month", "all"] as PortalPeriod[]).map((p) => (
@@ -829,9 +831,9 @@ export default function CustomerPortal() {
 
         {/* Shared filter bar — collapsed by default to save space.
             Active filter count surfaces as a pill on the summary row. */}
-        {(activeTab === "01 Overview" ||
-          activeTab === "02 Deliveries" ||
-          activeTab === "04 Plant") && (
+        {(activeTab === "Overview" ||
+          activeTab === "Deliveries" ||
+          (activeTab === "Fleet" && fleetSubtab === "Plant")) && (
           <details style={{ marginBottom: 16 }}>
             <summary
               style={{
@@ -888,11 +890,11 @@ export default function CustomerPortal() {
           </details>
         )}
 
-        {isLoading && activeTab !== "04 Plant" ? (
+        {isLoading && !(activeTab === "Fleet" && fleetSubtab === "Plant") ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
-            {activeTab === "01 Overview" && (
+            {activeTab === "Overview" && (
               <OverviewTab
                 transactions={filteredTransactions}
                 demoSuffix={demoSuffix}
@@ -901,7 +903,7 @@ export default function CustomerPortal() {
                 plantItems={plantItemsAll}
               />
             )}
-            {activeTab === "02 Deliveries" && (
+            {activeTab === "Deliveries" && (
               <DeliveriesTab
                 transactions={filteredTransactions}
                 allTransactionsCount={transactions.length}
@@ -912,22 +914,50 @@ export default function CustomerPortal() {
                 clientAccountId={clientAccountId}
               />
             )}
-            {activeTab === "03 Projects" && (
-              <ProjectsTab transactions={periodTransactions} clientAccountId={clientAccountId} />
+            {activeTab === "Fleet" && (
+              <>
+                <SubtabBar
+                  options={fleetSubtabs as unknown as string[]}
+                  active={fleetSubtab}
+                  onChange={(s) => setFleetSubtab(s as FleetSubtab)}
+                />
+                {fleetSubtab === "Plant" && (
+                  <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />
+                )}
+                {fleetSubtab === "Projects" && (
+                  <ProjectsTab transactions={periodTransactions} clientAccountId={clientAccountId} />
+                )}
+              </>
             )}
-            {activeTab === "04 Plant" && <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />}
-            {activeTab === "05 Analytics" && (
-              <AnalyticsTab
-                transactions={filteredTransactions}
-                clientAccountId={clientAccountId}
-                periodLabel={PERIOD_LABELS[period]}
-                companyName={companyName}
-              />
+            {activeTab === "Reports" && (
+              <>
+                <SubtabBar
+                  options={reportSubtabs as unknown as string[]}
+                  active={reportsSubtab}
+                  onChange={(s) => setReportsSubtab(s as ReportSubtab)}
+                />
+                {reportsSubtab === "Analytics" && (
+                  <AnalyticsTab
+                    transactions={filteredTransactions}
+                    clientAccountId={clientAccountId}
+                    periodLabel={PERIOD_LABELS[period]}
+                    companyName={companyName}
+                  />
+                )}
+                {reportsSubtab === "Emissions" && (
+                  <EmissionsTab transactions={transactions} companyName={companyName} />
+                )}
+                {reportsSubtab === "Fuel Tax Credit" && (
+                  <FtcReportTab
+                    transactions={filteredTransactions}
+                    plantItems={plantItemsAll}
+                    companyName={companyName}
+                    periodLabel={PERIOD_LABELS[period]}
+                  />
+                )}
+              </>
             )}
-            {activeTab === "06 Emissions" && (
-              <EmissionsTab transactions={transactions} companyName={companyName} />
-            )}
-            {activeTab === "07 Profile" && (
+            {activeTab === "Profile" && (
               <ProfileTab
                 clientAccountId={clientAccountId}
                 companyName={companyName}
