@@ -1355,7 +1355,7 @@ function FtcReportTab({
             onClick={exportCSV}
             style={{
               background: T.accent,
-              color: "#ffffff",
+              color: T.text,
               border: "none",
               borderRadius: 999,
               padding: "10px 18px",
