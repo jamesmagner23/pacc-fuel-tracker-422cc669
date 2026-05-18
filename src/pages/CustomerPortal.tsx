@@ -69,8 +69,14 @@ const T = {
  * new literal each call — never mutate the previous object (`Object.assign`
  * on a frozen target throws "Cannot assign to read only property").
  */
-function applyPortalTheme(theme: PortalTheme) {
+function applyPortalTheme(theme: PortalTheme, brandAccentOverride?: string | null) {
   const tk = tokensFor(theme);
+  const accent = (brandAccentOverride && /^#[0-9a-fA-F]{6}$/.test(brandAccentOverride))
+    ? brandAccentOverride
+    : tk.accent;
+  const accentHover = (brandAccentOverride && /^#[0-9a-fA-F]{6}$/.test(brandAccentOverride))
+    ? brandAccentOverride
+    : tk.accentHover;
 
   // 1. Replace T's contents with brand-new values. Because T itself is a
   //    `const` reference (still mutable shape) and is NEVER passed directly
@@ -80,12 +86,14 @@ function applyPortalTheme(theme: PortalTheme) {
   T.surfaceRaised = tk.surfaceRaised;
   T.border = tk.border;
   T.borderSubtle = tk.borderSubtle;
-  T.accent = tk.accent;
-  T.accentHover = tk.accentHover;
+  T.accent = accent;
+  T.accentHover = accentHover;
   // Dark themes can keep using lime for chart fills (good contrast on
   // forest-green canvas); light themes drop to a darker green so bars
   // remain legible without leaning on the lime UI accent.
-  T.chart = theme === "dark" ? tk.accent : "#3F6B36";
+  T.chart = brandAccentOverride && /^#[0-9a-fA-F]{6}$/.test(brandAccentOverride)
+    ? brandAccentOverride
+    : (theme === "dark" ? tk.accent : "#3F6B36");
   T.text = tk.text;
   T.textSecondary = tk.textSecondary;
   T.muted = tk.textMuted;
