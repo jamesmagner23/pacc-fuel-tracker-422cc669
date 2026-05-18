@@ -354,7 +354,7 @@ export default function MarketIntelligence() {
   const [activeMonth, setActiveMonth] = useState(0);
   const [tab, setTab] = useState("OVERVIEW");
 
-  const tabs = ["OVERVIEW", "SUPPLY CHAIN", "MONTH BY MONTH", "PACC IMPACT", "BOWSER AVG", "TGP COMPARE"];
+  const tabs = ["OVERVIEW", "SUPPLY CHAIN", "MONTH BY MONTH", "BOWSER AVG", "TGP COMPARE"];
 
   // ─── KPI data ───
   const kpis = [
@@ -465,7 +465,6 @@ export default function MarketIntelligence() {
           {[
             { color: "var(--negative)", icon: "⚠", text: "HORMUZ RESTRICTED — Gasoil inflows to Australia tracking -1.47M bbl vs January. April/May critical months." },
             { color: "var(--warning)", icon: "⏱", text: `EXCISE CLIFF IN ${daysToJuly} DAYS — Diesel TGP to spike +26–32¢/L on July 1 if not extended. All contracts must include escalation clauses.` },
-            { color: "var(--positive)", icon: "✓", text: "NEW TRUCK TIMING OPTIMAL — Mobile delivery demand at historic high as retail stations report shortages. Market conditions favour your expansion." },
           ].map((a, i) => (
             <div key={i} className="bg-surface border rounded-[10px] p-4 flex items-start gap-3" style={{ borderColor: `${a.color}33` }}>
               <div className="text-lg mt-0.5" style={{ color: a.color }}>{a.icon}</div>
@@ -581,7 +580,6 @@ export default function MarketIntelligence() {
             })}
           </div>
 
-          <AIBriefing data={data} trigger={briefingTrigger} />
         </div>
       )}
 
@@ -640,7 +638,7 @@ export default function MarketIntelligence() {
               ▸ DOMESTIC REFINERY STATUS
             </div>
             {[
-              { name: "Viva Energy — Geelong, VIC", cap: "120,000 bbl/day", status: "OPERATING", coverage: "~10% national demand", note: "Your local advantage. Closest terminal to PACC Dandenong operations." },
+            { name: "Viva Energy — Geelong, VIC", cap: "120,000 bbl/day", status: "OPERATING", coverage: "~10% national demand", note: "Closest major terminal to Melbourne metro deliveries." },
               { name: "Ampol Lytton — Brisbane, QLD", cap: "109,000 bbl/day", status: "OPERATING", coverage: "~10% national demand", note: "Full operation. Supplies QLD/NSW primarily." },
             ].map((r, i) => (
               <div key={i} className="bg-surface-raised rounded-[10px] p-3 mb-2">
@@ -660,7 +658,7 @@ export default function MarketIntelligence() {
       {tab === "MONTH BY MONTH" && (
         <div className="flex flex-col gap-3">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider" style={{ color: "var(--accent-text)" }}>
-            ▸ 4-MONTH OUTLOOK — DIESEL MARKET CONDITIONS FOR PACC FUEL
+            ▸ 4-MONTH OUTLOOK — MELBOURNE DIESEL MARKET CONDITIONS
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {MONTHS.map((m, i) => (
@@ -680,18 +678,6 @@ export default function MarketIntelligence() {
                   }}>{m.signal}</span>
                 </div>
                 <div className="text-[10px] leading-relaxed text-muted-foreground">{m.headline}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-surface-raised border border-surface-border rounded-[10px] p-4 sm:p-5">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3" style={{ color: "var(--accent-text)" }}>
-              {MONTHS[activeMonth].label} — ACTION ITEMS FOR PACC FUEL
-            </div>
-            {MONTHS[activeMonth].actions.map((a, i) => (
-              <div key={i} className="flex gap-2 py-1.5 text-[12px] text-muted-foreground">
-                <span style={{ color: "var(--accent-text)" }}>→</span>
-                <span>{a}</span>
               </div>
             ))}
           </div>
@@ -734,88 +720,6 @@ export default function MarketIntelligence() {
         </div>
       )}
 
-      {/* ── PACC IMPACT TAB ── */}
-      {tab === "PACC IMPACT" && (
-        <div className="flex flex-col gap-3">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider" style={{ color: "var(--accent-text)" }}>
-            ▸ DIRECT BUSINESS IMPACT ANALYSIS — PACC FUEL MELBOURNE
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[
-              {
-                title: "FUEL TAX CREDIT — UPDATE REQUIRED", color: "var(--positive)",
-                items: [
-                  { label: "FTC Rate (was)", value: "20.2¢/L", note: "on-road heavy vehicles" },
-                  { label: "FTC Rate (NOW)", value: "26.3¢/L", note: "effective 1 Apr – 30 Jun 2026", highlight: true },
-                  { label: "Extra claim per 1,000L", value: "+$61", note: "update your BAS immediately" },
-                  { label: "RUC (was)", value: "32.4¢/L", note: "heavy vehicle road user charge" },
-                  { label: "RUC (NOW)", value: "ZERO", note: "zeroed until June 30", highlight: true },
-                ],
-              },
-              {
-                title: "NEW TRUCK — MARKET TIMING", color: "var(--warning)",
-                items: [
-                  { label: "Retail station shortages (VIC)", value: "~10%", note: "of outlets reporting outages" },
-                  { label: "Demand spike vs normal", value: "+40-50%", note: "March peak, stabilising now" },
-                  { label: "Independent operators", value: "RATIONED", note: "non-contracted buyers cut first" },
-                  { label: "PACC contracted supply", value: "SECURED", note: "your moat vs competitors", highlight: true },
-                  { label: "Optimal launch window", value: "NOW → MAY", note: "before shortages ease and demand normalises" },
-                ],
-              },
-            ].map((panel, i) => (
-              <div key={i} className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-3" style={{ color: panel.color }}>▸ {panel.title}</div>
-                {panel.items.map((item, j) => (
-                  <div key={j} className="flex justify-between items-center py-2 border-b border-surface-border/50" style={{
-                    background: item.highlight ? `${panel.color}0A` : undefined,
-                  }}>
-                    <span className="text-[10px] text-muted-foreground">{item.label}</span>
-                    <div className="text-right">
-                      <div className="text-[13px] font-bold tabular-nums" style={{ color: item.highlight ? panel.color : "var(--text-primary)" }}>{item.value}</div>
-                      <div className="text-[10px] text-muted-foreground/50">{item.note}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* Checklist */}
-          <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3" style={{ color: "var(--accent-text)" }}>
-              ▸ CONTRACT PROTECTION CHECKLIST — BEFORE JULY 1
-            </div>
-            {[
-              { done: true, item: "Add AIP TGP-linked fuel escalation clause to all multi-month supply agreements" },
-              { done: true, item: "Update FTC line in BAS from 20.2¢ to 26.3¢/L for Q2 2026" },
-              { done: false, item: "Remove/zero heavy vehicle RUC in fuel surcharge matrix (temporary, revert Jul 1)" },
-              { done: false, item: "Brief civil construction customers on July 1 reversion (+26¢/L TGP overnight)" },
-              { done: false, item: "Model worst-case: Brent $120 + AUD 0.60 + full excise restored = ~241¢/L TGP" },
-              { done: false, item: "Secure forward supply agreements with Viva Geelong or Ampol before June 30" },
-              { done: false, item: "Build cash buffer for July 1 working capital spike (higher upfront TGP costs)" },
-            ].map((c, i) => (
-              <div key={i} className="flex gap-2.5 py-2 text-[12px] items-start border-b border-surface-border/50" style={{
-                color: c.done ? "var(--positive)" : "var(--text-secondary)",
-              }}>
-                <span className="font-bold w-4 shrink-0">{c.done ? "✓" : "○"}</span>
-                <span style={{ textDecoration: c.done ? "line-through" : undefined, opacity: c.done ? 0.6 : 1 }}>{c.item}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Social procurement */}
-          <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2" style={{ color: "var(--accent-text)" }}>
-              ▸ SOCIAL PROCUREMENT ANGLE — KELLER & CIVIL SECTOR
-            </div>
-            <p className="text-[12px] leading-relaxed text-muted-foreground">
-              Fuel shortages are hitting construction sites directly. Civil contractors (your Keller-type clients) are being charged 8–10% fuel surcharges by suppliers and are actively seeking guaranteed, on-site diesel delivery partners. Your mobile delivery model + social procurement certification = a compelling pitch during a shortage. Diesel-dependent plant — excavators, compactors, generators — cannot stop. You provide certainty when the servo down the road is dry.
-            </p>
-          </div>
-        </div>
-      )}
-
       {tab === "BOWSER AVG" && <MarketBowserAvgTab />}
       {tab === "TGP COMPARE" && <MarketTGPCompareTab />}
 
@@ -825,7 +729,7 @@ export default function MarketIntelligence() {
           Data: AIP TGP · EIA STEO · Argus Media · Vortexa · PM&C · DCCEEW · ACCC
         </div>
         <div className="text-[10px] text-muted-foreground/30 uppercase tracking-wider mt-1">
-          PACC FUEL INTELLIGENCE SYSTEM · {TODAY.getFullYear()} · AI BRIEFINGS VIA LOVABLE AI
+          MARKET INTELLIGENCE · {TODAY.getFullYear()}
         </div>
       </div>
     </div>
