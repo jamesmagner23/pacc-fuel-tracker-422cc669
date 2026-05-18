@@ -350,7 +350,6 @@ export default function MarketIntelligence() {
     return base;
   }, [tgpHistory, marketMetrics]);
 
-  const [briefingTrigger, setBriefingTrigger] = useState(0);
   const [activeMonth, setActiveMonth] = useState(0);
   const [tab, setTab] = useState("OVERVIEW");
 
