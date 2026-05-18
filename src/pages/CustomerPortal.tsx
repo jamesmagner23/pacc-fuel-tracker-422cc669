@@ -414,9 +414,6 @@ export default function CustomerPortal() {
   const portalTheme: PortalTheme = isDemo ? "light" : storedPortalTheme;
   const portalVars = isDemo ? themeVarsFor("light") : storedPortalVars;
   const portalTokens = isDemo ? tokensFor("light") : storedPortalTokens;
-  // Sync the mutable T + style objects to the active theme BEFORE this
-  // render's children evaluate inline T.* references.
-  applyPortalTheme(portalTheme);
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   const { data: profile } = useCustomerProfile();
@@ -433,6 +430,11 @@ export default function CustomerPortal() {
   const brandVars = (showCustomerBrand && isValidHex(brandAccent))
     ? brandAccentVars(brandAccent, portalTokens.surface)
     : {};
+  // Sync the mutable T + style objects to the active theme BEFORE this
+  // render's children evaluate inline T.* references. Apply the customer's
+  // brand accent so it cascades through every T.accent reference (buttons,
+  // tabs, charts, badges, etc.) — not just CSS variables.
+  applyPortalTheme(portalTheme, showCustomerBrand && isValidHex(brandAccent) ? brandAccent : null);
   const [accountOpen, setAccountOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
