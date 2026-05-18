@@ -99,6 +99,7 @@ export default function BrandingTab() {
       <div>
         {selected ? (
           <BrandingPanel
+            key={selected.id}
             account={{
               id: selected.id,
               company_name: selected.company_name,
