@@ -60,8 +60,9 @@ function useClientList() {
   });
 }
 
-function StopRow({ stop, idx, dragProps, itemStyle, clientNameById, truckNameById, onDelete, onComplete }: any) {
+function StopRow({ stop, idx, dragProps, itemStyle, clientNameById, truckNameById, onDelete, onComplete, onEndRecurring }: any) {
   const isDone = stop.status === "completed";
+  const isRecurring = !!stop.recurring_id;
   return (
     <div
       {...(isDone ? {} : dragProps)}
@@ -83,6 +84,11 @@ function StopRow({ stop, idx, dragProps, itemStyle, clientNameById, truckNameByI
           {clientNameById[stop.client_account_id] && (
             <span className="text-muted-foreground font-normal"> · {clientNameById[stop.client_account_id]}</span>
           )}
+          {isRecurring && (
+            <span className="ml-2 inline-flex items-center gap-1 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium align-middle">
+              <Repeat className="w-2.5 h-2.5" /> Recurring
+            </span>
+          )}
         </div>
         <div className="text-[11px] text-muted-foreground truncate">{stop.address || "—"}</div>
         <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-2">
@@ -96,7 +102,28 @@ function StopRow({ stop, idx, dragProps, itemStyle, clientNameById, truckNameByI
           <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => onComplete(stop.id)} title="Mark complete">
             <CheckCircle2 className="w-3.5 h-3.5" />
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => onDelete(stop.id)} title="Remove">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-destructive"
+            title={isRecurring ? "Remove (recurring)" : "Remove"}
+            onClick={() => {
+              if (isRecurring) {
+                const endSeries = window.confirm(
+                  `"${stop.site_name}" is part of a recurring order.\n\n` +
+                  `OK = End the whole recurring series and remove all future stops.\n` +
+                  `Cancel = Just remove this date (it WILL come back tomorrow).`
+                );
+                if (endSeries) {
+                  onEndRecurring(stop.recurring_id);
+                } else {
+                  onDelete(stop.id);
+                }
+              } else {
+                onDelete(stop.id);
+              }
+            }}
+          >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </>
@@ -272,6 +299,12 @@ export default function Dispatch() {
                   truckNameById={truckNameById}
                   onDelete={(id: string) => del.mutate(id)}
                   onComplete={(id: string) => updateStatus.mutate({ id, status: "completed" })}
+                  onEndRecurring={(rid: string) =>
+                    delRecurring.mutate(
+                      { id: rid, deleteFutureStops: true },
+                      { onSuccess: () => toast.success("Recurring order ended"), onError: (e: any) => toast.error(e.message) }
+                    )
+                  }
                 />
               ))}
             </div>
