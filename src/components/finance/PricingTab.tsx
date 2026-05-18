@@ -311,36 +311,52 @@ export default function PricingTab() {
   const generateQuotePdf = (q: Quote) => {
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const w = doc.internal.pageSize.getWidth();
+    const h = doc.internal.pageSize.getHeight();
     const margin = 20;
     const contentW = w - margin * 2;
     let y = 0;
 
-    // Header — brand dark brown with cream/orange
-    doc.setFillColor(61, 43, 26); // #0E1F10
+    // PACC Energy website palette
+    // bg deep green #0E1F10 (14,31,16), surface #142A16, lime accent #C8F26A (200,242,106),
+    // cream text #ECE4D2 (236,228,210), muted #8B8773, sage #3F6B36, border #2A4A2E
+    const cream = [236, 228, 210] as const;
+    const deepGreen = [14, 31, 16] as const;
+    const lime = [200, 242, 106] as const;
+    const sage = [63, 107, 54] as const;
+    const muted = [139, 135, 115] as const;
+    const border = [217, 210, 191] as const; // light cream border on white body
+    const textInk = [14, 31, 16] as const; // deep green ink on cream body
+
+    // Cream body background
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, w, h, "F");
+
+    // Header — deep green band
+    doc.setFillColor(...deepGreen);
     doc.rect(0, 0, w, 42, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(245, 230, 208); // cream
+    doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(...cream);
     doc.text("PACC", margin, 26);
     const paccW = doc.getTextWidth("PACC");
-    doc.setTextColor(232, 70, 30); doc.setFontSize(14); // accent orange
+    doc.setTextColor(...lime); doc.setFontSize(12);
     doc.text("®", margin + paccW + 1, 22);
-    doc.setFontSize(7); doc.setTextColor(196, 168, 130); // text-secondary
-    doc.text("FUEL", margin, 33);
+    doc.setFontSize(7); doc.setTextColor(...muted);
+    doc.text("ENERGY", margin, 33);
 
-    // Accent bar under header
-    doc.setFillColor(232, 70, 30);
+    // Lime accent bar under header
+    doc.setFillColor(...lime);
     doc.rect(0, 42, w, 1.5, "F");
 
     y = 58;
-    doc.setTextColor(17, 17, 17); doc.setFontSize(20); doc.setFont("helvetica", "bold");
+    doc.setTextColor(...textInk); doc.setFontSize(20); doc.setFont("helvetica", "bold");
     doc.text("Quote", margin, y);
     y += 10;
-    doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.setTextColor(102, 102, 102);
+    doc.setFontSize(11); doc.setFont("helvetica", "normal"); doc.setTextColor(...muted);
     doc.text("Prepared for ", margin, y);
     const prepW = doc.getTextWidth("Prepared for ");
-    doc.setFont("helvetica", "bold"); doc.setTextColor(17, 17, 17);
+    doc.setFont("helvetica", "bold"); doc.setTextColor(...textInk);
     doc.text(q.customer_name, margin + prepW, y);
     y += 6;
-    doc.setFont("helvetica", "normal"); doc.setTextColor(102, 102, 102); doc.setFontSize(9);
+    doc.setFont("helvetica", "normal"); doc.setTextColor(...muted); doc.setFontSize(9);
     doc.text(format(parseISO(q.created_at), "dd MMMM yyyy"), margin, y);
 
     // Line items table
@@ -358,19 +374,19 @@ export default function PricingTab() {
       total_ex: q.total_ex_gst,
     }];
 
-    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(102, 102, 102);
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(...muted);
     doc.text("Item", margin, y + 4);
     doc.text("Qty / Vol", margin + 60, y + 4);
     doc.text("Unit Price", margin + 95, y + 4);
     doc.text("Total (Ex GST)", margin + contentW, y + 4, { align: "right" });
     y += 8;
-    doc.setDrawColor(238, 238, 238); doc.line(margin, y, margin + contentW, y);
+    doc.setDrawColor(...border); doc.line(margin, y, margin + contentW, y);
     y += 4;
 
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
     displayItems.forEach((item: any, i: number) => {
       const isFuel = item.is_fuel === true || (!item.product_type || item.product_type === "Diesel");
-      doc.setTextColor(17, 17, 17);
+      doc.setTextColor(...textInk);
       doc.text(item.description || item.product_type || `Line ${i + 1}`, margin, y + 4);
       doc.text(isFuel ? `${Number(item.volume).toLocaleString()}L` : `× ${Number(item.volume).toLocaleString()}`, margin + 60, y + 4);
       doc.text(`$${Number(item.sell_price).toFixed(isFuel ? 4 : 2)}`, margin + 95, y + 4);
@@ -378,58 +394,62 @@ export default function PricingTab() {
       doc.text(`$${Number(item.total_ex).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, margin + contentW, y + 4, { align: "right" });
       doc.setFont("helvetica", "normal");
       y += 10;
-      doc.setDrawColor(238, 238, 238); doc.line(margin, y - 2, margin + contentW, y - 2);
+      doc.setDrawColor(...border); doc.line(margin, y - 2, margin + contentW, y - 2);
     });
     y += 2;
 
     // Subtotal + GST + Total
     y += 2;
-    doc.setDrawColor(238, 238, 238); doc.line(margin, y, margin + contentW, y);
+    doc.setDrawColor(...border); doc.line(margin, y, margin + contentW, y);
     y += 4;
-    doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(102, 102, 102);
+    doc.setFontSize(10); doc.setFont("helvetica", "normal"); doc.setTextColor(...muted);
     doc.text("Subtotal (Ex GST)", margin, y + 4);
-    doc.setFont("helvetica", "bold"); doc.setTextColor(17, 17, 17);
+    doc.setFont("helvetica", "bold"); doc.setTextColor(...textInk);
     doc.text(`$${Number(q.total_ex_gst).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, margin + contentW, y + 4, { align: "right" });
     y += 10;
-    doc.setFont("helvetica", "normal"); doc.setTextColor(102, 102, 102);
+    doc.setFont("helvetica", "normal"); doc.setTextColor(...muted);
     doc.text("GST (10%)", margin, y + 4);
-    doc.setFont("helvetica", "bold"); doc.setTextColor(17, 17, 17);
+    doc.setFont("helvetica", "bold"); doc.setTextColor(...textInk);
     doc.text(`$${(Number(q.total_inc_gst) - Number(q.total_ex_gst)).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, margin + contentW, y + 4, { align: "right" });
 
     y += 14;
-    doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.setTextColor(17, 17, 17);
+    // Total row — sage green band with cream ink to echo the header
+    doc.setFillColor(...sage);
+    doc.rect(margin, y - 2, contentW, 12, "F");
+    doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.setTextColor(...cream);
     doc.text("Total (Inc GST)", margin, y + 4);
-    doc.setTextColor(232, 70, 30); doc.setFontSize(16); // accent orange
+    doc.setFontSize(16);
     doc.text(`$${Number(q.total_inc_gst).toLocaleString(undefined, { maximumFractionDigits: 2 })}`, margin + contentW, y + 4, { align: "right" });
+    y += 8;
 
     if (q.notes) {
       y += 18;
-      doc.setFillColor(249, 249, 249); doc.roundedRect(margin, y - 4, contentW, 16, 3, 3, "F");
-      doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(102, 102, 102);
+      doc.setFillColor(244, 238, 223); doc.roundedRect(margin, y - 4, contentW, 16, 3, 3, "F");
+      doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(...textInk);
       doc.text(q.notes, margin + 6, y + 4, { maxWidth: contentW - 12 });
       y += 16;
     }
 
     // Validity & Melbourne metro
     if (q.valid_until) {
-      y += 10; doc.setFontSize(8); doc.setTextColor(153, 153, 153);
+      y += 10; doc.setFontSize(8); doc.setTextColor(...muted);
       doc.text(`This quote is valid for 1 day only — until ${format(parseISO(q.valid_until), "dd MMMM yyyy")}. Valid for Melbourne Metro delivery only.`, margin, y);
     }
 
     // Tagline & portal info
     y += 14;
-    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(232, 70, 30);
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(...sage);
     doc.text("You Ring, We Bring.", margin, y);
     y += 7;
-    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(120, 120, 120);
+    doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...muted);
     const portalLines = [
-      "As a PACC Fuel customer, you'll have access to our live Customer Portal — track your",
+      "As a PACC Energy customer, you'll have access to our live Customer Portal — track your",
       "machines, plant, and tank data updated in real time. Log in at paccenergy.com/portal.",
     ];
     portalLines.forEach((line) => { doc.text(line, margin, y); y += 4.5; });
 
-    y += 10; doc.setFontSize(8); doc.setTextColor(187, 187, 187);
-    doc.text("PACC Fuel · Melbourne, Australia", margin, y);
+    y += 10; doc.setFontSize(8); doc.setTextColor(...muted);
+    doc.text("PACC Energy · Melbourne, Australia", margin, y);
     doc.save(`PACC-Quote-${q.customer_name.replace(/\s+/g, "-")}-${format(parseISO(q.created_at), "yyyyMMdd")}.pdf`);
   };
 
