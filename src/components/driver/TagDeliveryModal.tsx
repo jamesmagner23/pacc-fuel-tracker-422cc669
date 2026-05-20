@@ -486,11 +486,7 @@ export function TagDeliveryModal({
           </Button>
           <Button
             onClick={handleReview}
-            disabled={
-              previewing ||
-              !clientId ||
-              (!plantItemId && !projectId)
-            }
+            disabled={previewing || !clientId}
           >
             {previewing ? (
               <>
