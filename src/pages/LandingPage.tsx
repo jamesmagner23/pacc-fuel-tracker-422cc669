@@ -423,6 +423,37 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── TRUSTED BY ── */}
+      <section style={{ background: "#0E1F10", borderBottom: "1px solid #2A4A2E" }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          <p className="text-center text-[11px] font-semibold uppercase tracking-widest mb-6" style={{ color: "#8B8773" }}>
+            Trusted by 50+ construction sites across Victoria
+          </p>
+          <div className="relative overflow-hidden">
+            <div className="flex items-center gap-10 animate-marquee whitespace-nowrap">
+              {["IRONSIDE", "TRACK WORKS", "KELLER", "COATES HIRE", "FULTON HOGAN", "GEARON", "PACC CIVIL", "MELBOURNE COMMERCIAL", "TYCORP", "YARRA CONTRACTING", "HIGH RISE PRODUCTIONS", "PENINSULA LOGISTICS"].map((name) => (
+                <span
+                  key={name}
+                  className="inline-block text-sm font-bold tracking-widest select-none"
+                  style={{ color: "rgba(139,135,115,0.35)", fontFamily: "'Archivo Narrow','Archivo','Inter',sans-serif" }}
+                >
+                  {name}
+                </span>
+              ))}
+              {["IRONSIDE", "TRACK WORKS", "KELLER", "COATES HIRE", "FULTON HOGAN", "GEARON", "PACC CIVIL", "MELBOURNE COMMERCIAL", "TYCORP", "YARRA CONTRACTING", "HIGH RISE PRODUCTIONS", "PENINSULA LOGISTICS"].map((name) => (
+                <span
+                  key={`dup-${name}`}
+                  className="inline-block text-sm font-bold tracking-widest select-none"
+                  style={{ color: "rgba(139,135,115,0.35)", fontFamily: "'Archivo Narrow','Archivo','Inter',sans-serif" }}
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── SERVICES ── */}
       <section id="services" className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
         <div className="text-center mb-12">
