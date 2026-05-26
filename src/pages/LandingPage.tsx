@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone, Phone, Menu, X, Check } from "lucide-react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone, Phone, Menu, X, Check, Building2, Music, Construction, Plug, Mountain, Ship } from "lucide-react";
 import { BoldPMark } from "@/components/BoldPMark";
 import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/hero-construction.webp";
@@ -67,12 +67,12 @@ const services = [
 ];
 
 const industries = [
-  "Construction & Civil Works",
-  "Events & Entertainment",
-  "Tower Crane Operations",
-  "Generators & Temporary Power",
-  "Mining & Quarries",
-  "Transport & Logistics",
+  { label: "Construction & Civil Works", icon: Building2 },
+  { label: "Events & Entertainment", icon: Music },
+  { label: "Tower Crane Operations", icon: Construction },
+  { label: "Generators & Temporary Power", icon: Plug },
+  { label: "Mining & Quarries", icon: Mountain },
+  { label: "Transport & Logistics", icon: Ship },
 ];
 
 const coverage = [
@@ -519,10 +519,10 @@ export default function LandingPage() {
           </h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {industries.map((ind) => (
-            <div key={ind} className="flex items-center gap-3 px-4 py-3.5 rounded-xl" style={{ background: "#142A16", border: "1px solid #2A4A2E" }}>
-              <Users className="w-4 h-4 flex-shrink-0" style={{ color: "#C8F26A" }} />
-              <span className="text-xs font-medium" style={{ color: "#ECE4D2" }}>{ind}</span>
+          {industries.map(({ label, icon: Icon }) => (
+            <div key={label} className="flex items-center gap-3 px-4 py-3.5 rounded-xl" style={{ background: "#142A16", border: "1px solid #2A4A2E" }}>
+              <Icon className="w-4 h-4 flex-shrink-0" style={{ color: "#C8F26A" }} />
+              <span className="text-xs font-medium" style={{ color: "#ECE4D2" }}>{label}</span>
             </div>
           ))}
         </div>
