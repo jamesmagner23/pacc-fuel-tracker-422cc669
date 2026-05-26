@@ -73,6 +73,11 @@ function DemoAwareRoutes() {
                 <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                 <Route path="/trucks" element={<TruckPortal />} />
                 <Route path="/portal" element={<CustomerPortal />} />
+                <Route path="/portal/deliveries" element={<CustomerPortal forcedTab="Deliveries" />} />
+                <Route path="/portal/fleet" element={<CustomerPortal forcedTab="Fleet" />} />
+                <Route path="/portal/reports" element={<CustomerPortal forcedTab="Reports" />} />
+                <Route path="/portal/profile" element={<CustomerPortal forcedTab="Profile" />} />
+                <Route path="/portal/help" element={<CustomerPortal forcedTab="Help" />} />
                 <Route path="/driver" element={<DriverPortal />} />
                 <Route path="/admin/outreach" element={<Outreach />} />
                 <Route path="/crm" element={<CRM />} />
@@ -85,6 +90,11 @@ function DemoAwareRoutes() {
       ) : (
         <>
           <Route path="/portal" element={<CustomerPortal />} />
+          <Route path="/portal/deliveries" element={<CustomerPortal forcedTab="Deliveries" />} />
+          <Route path="/portal/fleet" element={<CustomerPortal forcedTab="Fleet" />} />
+          <Route path="/portal/reports" element={<CustomerPortal forcedTab="Reports" />} />
+          <Route path="/portal/profile" element={<CustomerPortal forcedTab="Profile" />} />
+          <Route path="/portal/help" element={<CustomerPortal forcedTab="Help" />} />
           <Route path="/driver" element={<DriverPortal />} />
           <Route path="/operations" element={<Operations />} />
           <Route path="/operations/customers/:name" element={<CustomerHub />} />
