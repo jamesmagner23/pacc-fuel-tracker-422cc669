@@ -90,21 +90,42 @@ function QuoteForm() {
   const [site, setSite] = useState("");
   const [date, setDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     setSubmitting(true);
-    const subject = `Quote request — ${company || name || "New enquiry"}`;
-    const body =
-      `New quote request from the PACC Energy website\n\n` +
-      `Company:        ${company}\n` +
-      `Contact name:   ${name}\n` +
-      `Phone:          ${phone}\n` +
-      `Site address:   ${site}\n` +
-      `Delivery date:  ${date}\n`;
-    const href = `mailto:${BUSINESS_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = href;
-    setTimeout(() => setSubmitting(false), 1500);
+    setErrorMsg(null);
+    try {
+      const { error } = await supabase.from("quote_leads").insert({
+        company: company.trim().slice(0, 200),
+        contact_name: name.trim().slice(0, 200),
+        phone: phone.trim().slice(0, 40),
+        site_address: site.trim().slice(0, 400),
+        delivery_date: date || null,
+        source: "landing_page",
+        user_agent:
+          typeof navigator !== "undefined"
+            ? navigator.userAgent.slice(0, 500)
+            : null,
+      });
+      if (error) throw error;
+      setSubmitted(true);
+      setCompany("");
+      setName("");
+      setPhone("");
+      setSite("");
+      setDate("");
+    } catch (err) {
+      console.error("Quote lead submit failed", err);
+      setErrorMsg(
+        `Something went wrong sending your request. Please call ${BUSINESS_PHONE_DISPLAY} or email ${BUSINESS_EMAIL}.`,
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const inputStyle: React.CSSProperties = {
@@ -135,6 +156,35 @@ function QuoteForm() {
       className="text-left rounded-2xl p-6 sm:p-8 mx-auto"
       style={{ background: "#1B3520", border: "1px solid #2A4A2E", maxWidth: 560 }}
     >
+      {submitted ? (
+        <div className="text-center py-6">
+          <div
+            className="inline-flex items-center justify-center w-12 h-12 rounded-full mb-4"
+            style={{ background: "#C8F26A", color: "#0E1F10" }}
+          >
+            <Check className="w-6 h-6" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2" style={{ color: "#ECE4D2" }}>
+            Request received
+          </h3>
+          <p className="text-sm" style={{ color: "#A8A28F" }}>
+            Thanks — we'll be in touch shortly. For same-day delivery, call{" "}
+            <a href={`tel:${BUSINESS_PHONE_TEL}`} style={{ color: "#C8F26A", fontWeight: 600 }}>
+              {BUSINESS_PHONE_DISPLAY}
+            </a>
+            .
+          </p>
+          <button
+            type="button"
+            onClick={() => setSubmitted(false)}
+            className="mt-4 text-xs underline"
+            style={{ color: "#8B8773" }}
+          >
+            Submit another request
+          </button>
+        </div>
+      ) : (
+      <>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label style={labelStyle}>Company</label>
@@ -157,17 +207,28 @@ function QuoteForm() {
           <input style={inputStyle} required maxLength={250} value={site} onChange={(e) => setSite(e.target.value)} placeholder="123 Smith St, Melbourne VIC" />
         </div>
       </div>
+      {errorMsg && (
+        <p
+          role="alert"
+          className="text-xs mt-4 p-3 rounded-lg"
+          style={{ background: "#3a1f1f", border: "1px solid #6b2a2a", color: "#f4c8c8" }}
+        >
+          {errorMsg}
+        </p>
+      )}
       <button
         type="submit"
         disabled={submitting}
         className="mt-6 w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold cursor-pointer transition-all disabled:opacity-70"
         style={{ background: "#C8F26A", color: "#0E1F10", border: "none", boxShadow: "0 8px 32px rgba(200,242,106,0.3)", minHeight: 48 }}
       >
-        {submitting ? "Opening email…" : <>Send Quote Request <ChevronRight className="w-4 h-4" /></>}
+        {submitting ? "Sending…" : <>Send Quote Request <ChevronRight className="w-4 h-4" /></>}
       </button>
       <p className="text-[11px] mt-3 text-center" style={{ color: "#8B8773" }}>
         Or call <a href={`tel:${BUSINESS_PHONE_TEL}`} style={{ color: "#C8F26A", fontWeight: 600 }}>{BUSINESS_PHONE_DISPLAY}</a> for same-day delivery.
       </p>
+      </>
+      )}
     </form>
   );
 }
