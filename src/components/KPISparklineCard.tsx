@@ -45,7 +45,7 @@ export function KPISparklineCard({
         </div>
       </div>
       {showSpark && (
-        <div className="hidden xs:block shrink-0 mt-1" style={{ width: 64, height: 36 }}>
+        <div className="hidden sm:block shrink-0 mt-1" style={{ width: 64, height: 36 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trend} margin={{ top: 2, right: 4, left: 0, bottom: 2 }}>
               <Line
