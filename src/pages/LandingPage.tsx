@@ -174,6 +174,7 @@ function QuoteForm() {
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div style={{ background: "#0E1F10", color: "#ECE4D2", minHeight: "100vh" }}>
