@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
 import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, addDays, startOfWeek, subDays } from "date-fns";
+import { formatDate, formatDateTime, formatTime } from "@/lib/format";
 
 import { supabase } from "@/integrations/supabase/client";
 import { PACCLogo } from "@/components/PACCLogo";
@@ -1763,7 +1764,7 @@ function OverviewTab({
                   )}
                 </div>
                 <div style={muted(11)}>
-                  {t.date ? format(parseISO(t.date), "EEE dd MMM yyyy") : "—"}
+                  {t.date ? formatDate(parseISO(t.date)) : "—"}
                   {t.estacion ? <> · {t.estacion}</> : null}
                 </div>
               </div>
