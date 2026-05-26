@@ -5,6 +5,12 @@ import BuyPriceTab from "@/components/finance/BuyPriceTab";
 export default function Finance() {
   return (
     <div className="flex flex-col gap-5 max-w-[1100px]">
+      {/* Page heading */}
+      <div>
+        <h1 className="text-lg font-semibold">Finance</h1>
+        <p className="text-[11px] text-muted-foreground">P&L overview and fuel buy-price tracking</p>
+      </div>
+
       <Tabs defaultValue="pnl">
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap">
           {[

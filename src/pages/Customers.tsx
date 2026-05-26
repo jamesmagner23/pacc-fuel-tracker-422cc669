@@ -109,6 +109,12 @@ function CustomerList() {
 
   return (
     <div className="space-y-4">
+      {/* Page heading */}
+      <div>
+        <h1 className="text-lg font-semibold">Customers</h1>
+        <p className="text-[11px] text-muted-foreground">Browse, filter, and drill into customer delivery data</p>
+      </div>
+
       {/* Local date range filter — independent of global toggle */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="text-muted-foreground">Range</span>
