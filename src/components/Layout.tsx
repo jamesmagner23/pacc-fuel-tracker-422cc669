@@ -42,10 +42,12 @@ function buildHref(to: string, tab: string | undefined, demoSuffix: string, para
 
 // PACC brand colors fall back to CSS theme tokens so light/dark flips work.
 const PACC_BG = "var(--background)";
+const PACC_SIDEBAR_BG = "var(--muted)";
 const PACC_BORDER = "var(--border)";
 const PACC_ACCENT = "var(--accent)";
-const PACC_TEXT_DIM = "var(--text-secondary)";
-const PACC_TEXT_ACTIVE = "var(--text-primary)";
+const PACC_TEXT_DIM = "var(--muted-foreground)";
+const PACC_TEXT_ACTIVE = "var(--foreground)";
+const PACC_ACTIVE_BG = "var(--background)";
 
 // Neutral demo colors
 const DEMO_BG = "#1a1f2e";
@@ -79,6 +81,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // PACC-branded demo keeps the production palette
   const useDemoPalette = isDemo && !isPaccBranded;
   const BG = useDemoPalette ? DEMO_BG : PACC_BG;
+  const SIDEBAR_BG = useDemoPalette ? DEMO_BG : PACC_SIDEBAR_BG;
+  const ACTIVE_BG = useDemoPalette ? "rgba(255,255,255,0.04)" : PACC_ACTIVE_BG;
   const BORDER = useDemoPalette ? DEMO_BORDER : PACC_BORDER;
   const DEFAULT_ACCENT = useDemoPalette ? DEMO_ACCENT : PACC_ACCENT;
   const TEXT_DIM = useDemoPalette ? DEMO_TEXT_DIM : PACC_TEXT_DIM;
@@ -116,8 +120,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <aside
         className="hidden md:flex"
         style={{
-          width: 220,
-          background: BG,
+          width: 240,
+          background: SIDEBAR_BG,
           borderRight: `1px solid ${BORDER}`,
           flexDirection: "column",
           padding: `${28 + bannerOffset}px 0 28px`,
@@ -131,7 +135,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <PACCLogo size="md" />
         </div>
 
-        <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 16px" }}>
+        <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 12px", gap: 2 }}>
           {visibleNavItems.map((item, i) => {
             const currentTab = params.get("tab");
             const isActive = item.tab
@@ -144,15 +148,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 12,
-                  padding: "10px 8px",
+                  gap: 10,
+                  padding: "9px 12px",
                   textDecoration: "none",
-                  borderBottom: `1px solid ${BORDER}`,
-                  background: "transparent",
+                  borderRadius: 8,
+                  background: isActive ? ACTIVE_BG : "transparent",
+                  border: isActive ? `1px solid ${BORDER}` : "1px solid transparent",
+                  borderLeft: isActive ? `2px solid ${ACCENT}` : "2px solid transparent",
                   transition: "all 0.15s",
+                  minHeight: 36,
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
+                  if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)";
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent";
@@ -160,40 +167,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
               >
                 <span
                   style={{
-                    fontSize: 9,
-                    color: isActive ? ACCENT : TEXT_DIM,
-                    fontWeight: 600,
-                    width: 16,
-                    flexShrink: 0,
-                    fontVariantNumeric: "tabular-nums",
-                    letterSpacing: "0.05em",
-                  }}
-                  aria-hidden="true"
-                >
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span
-                  style={{
-                    fontSize: 13,
-                    fontWeight: isActive ? 500 : 400,
+                    fontSize: 14,
+                    fontWeight: isActive ? 600 : 500,
                     color: isActive ? TEXT_ACTIVE : TEXT_MID,
-                    letterSpacing: "-0.01em",
+                    letterSpacing: 0,
                   }}
                 >
                   {item.label}
                 </span>
-                {isActive && (
-                  <span
-                    style={{
-                      marginLeft: "auto",
-                      width: 4,
-                      height: 4,
-                      borderRadius: "50%",
-                      background: ACCENT,
-                      flexShrink: 0,
-                    }}
-                  />
-                )}
               </RouterNavLink>
             );
           })}
@@ -206,12 +187,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             onClick={async () => { sessionStorage.removeItem("demo_unlocked"); await supabase.auth.signOut(); window.location.href = isDemo ? "/landing" : "/login"; }}
             style={{
               display: "flex", alignItems: "center", gap: 8,
-              background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 8,
-              color: TEXT_DIM, fontSize: 12, cursor: "pointer", padding: "8px 12px",
+              background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 9999,
+              color: TEXT_ACTIVE, fontSize: 13, fontWeight: 500, cursor: "pointer", padding: "8px 14px",
               transition: "all 0.15s",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = TEXT_ACTIVE; e.currentTarget.style.borderColor = ACCENT; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = TEXT_DIM; e.currentTarget.style.borderColor = BORDER; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.04)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
           >
             <LogOut style={{ width: 14, height: 14 }} />
             Sign Out
@@ -226,7 +207,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             position: "fixed",
             inset: 0,
             zIndex: 100,
-            background: BG,
+            background: SIDEBAR_BG,
             display: "flex",
             flexDirection: "column",
           }}
@@ -270,37 +251,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     padding: "18px 24px",
                     textDecoration: "none",
                     borderBottom: `1px solid ${BORDER}`,
-                    background: isActive ? ACCENT_OVERLAY : "transparent",
+                    background: isActive ? ACTIVE_BG : "transparent",
+                    borderLeft: isActive ? `3px solid ${ACCENT}` : "3px solid transparent",
                   }}
                 >
                   <span
                     style={{
-                      fontSize: 10,
-                      color: isActive ? ACCENT : TEXT_DIM,
-                      fontWeight: 600,
-                      width: 20,
-                      flexShrink: 0,
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                    aria-hidden="true"
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 17,
-                      fontWeight: isActive ? 500 : 400,
+                      fontSize: 16,
+                      fontWeight: isActive ? 600 : 500,
                       color: isActive ? TEXT_ACTIVE : TEXT_MID,
-                      letterSpacing: "-0.01em",
+                      letterSpacing: 0,
                     }}
                   >
                     {item.label}
                   </span>
-                  {isActive && (
-                    <span
-                      style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: ACCENT }}
-                    />
-                  )}
                 </RouterNavLink>
               );
             })}

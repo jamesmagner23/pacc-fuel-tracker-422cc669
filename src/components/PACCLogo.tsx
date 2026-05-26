@@ -12,13 +12,22 @@ export function PACCLogo({
   const { isDemo, brand, accentColor, isPaccBranded } = useDemoContext();
 
   // Auto-detect global theme so the wordmark stays legible on cream/light surfaces.
+  // Default is LIGHT (white surfaces); opt into dark when the document is explicitly dark-themed.
   const [autoTone, setAutoTone] = useState<"dark" | "light">(() => {
-    if (typeof document === "undefined") return "dark";
-    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+    if (typeof document === "undefined") return "light";
+    return document.documentElement.dataset.theme === "dark" ||
+      document.documentElement.classList.contains("dark")
+      ? "dark"
+      : "light";
   });
   useEffect(() => {
     const update = () => {
-      setAutoTone(document.documentElement.dataset.theme === "light" ? "light" : "dark");
+      setAutoTone(
+        document.documentElement.dataset.theme === "dark" ||
+          document.documentElement.classList.contains("dark")
+          ? "dark"
+          : "light",
+      );
     };
     update();
     window.addEventListener("pacc:global-theme", update);
