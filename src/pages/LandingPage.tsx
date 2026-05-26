@@ -20,12 +20,12 @@ function PACCNavLogo() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <BoldPMark size={32} bg="#1A472A" fg="#C8F26A" rounded={8} />
-      <div style={{ lineHeight: 1.1 }}>
+        <div style={{ lineHeight: 1.1 }}>
         <div style={{ fontFamily: "'Archivo Narrow','Archivo','Inter',sans-serif", fontSize: 17, fontWeight: 800, color: "#ECE4D2", letterSpacing: "0.02em", textTransform: "uppercase" as const, lineHeight: 1 }}>
           PACC ENERGY
         </div>
         <div style={{ fontSize: 8, fontWeight: 600, color: "#8B8773", letterSpacing: "0.22em", marginTop: 3, textTransform: "uppercase" as const }}>
-          Powered by Progress
+          Fuel Delivery · Melbourne
         </div>
       </div>
     </div>
