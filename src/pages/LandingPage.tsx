@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone } from "lucide-react";
+import { useState } from "react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone, Phone } from "lucide-react";
 import { BoldPMark } from "@/components/BoldPMark";
 import heroImg from "@/assets/hero-construction.webp";
 import refuelImg from "@/assets/refuelling-closeup.webp";
@@ -8,6 +9,11 @@ import truckOnsiteImg from "@/assets/truck-onsite.webp";
 import truckDeliveryImg from "@/assets/truck-delivery.webp";
 import truckRefuelImg from "@/assets/truck-refuel.webp";
 import truckSiteImg from "@/assets/truck-site.webp";
+
+// Swap this constant to update the marketing phone everywhere.
+const BUSINESS_PHONE_DISPLAY = "0412 884 220";
+const BUSINESS_PHONE_TEL = "+61412884220";
+const BUSINESS_EMAIL = "fuel@paccvictoria.com";
 
 function PACCNavLogo() {
   return (
