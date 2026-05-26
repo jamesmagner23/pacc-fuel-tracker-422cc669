@@ -51,7 +51,7 @@ const services = [
 ];
 
 const trustStrip = [
-  "50+ active sites",
+  "Melbourne-wide coverage",
   "Family-run, local crews",
   "4–6 hr response",
   "24/7 emergency",
@@ -326,7 +326,7 @@ export default function LandingPage() {
               Same-day fuel delivery for Melbourne's construction and event sites.
             </h1>
             <p className="mt-5 text-[16px] leading-[1.55] text-muted-foreground max-w-[560px]">
-              On-site diesel for excavators, generators, cranes and events across Greater Melbourne. Trusted by 50+ sites.
+              On-site diesel for excavators, generators, cranes and events across Greater Melbourne. The fuel partner Melbourne builders and event crews rely on.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button size="lg" onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>
