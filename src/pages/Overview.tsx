@@ -159,8 +159,8 @@ export default function Overview() {
     <div className="flex flex-col gap-1 max-w-[1200px] w-full">
       {/* Page heading */}
       <div className="px-1 pt-1 pb-0">
-        <h1 className="text-lg font-semibold">Overview</h1>
-        <p className="text-[11px] text-muted-foreground">Real-time fuel delivery performance and insights</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Overview</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Real-time fuel delivery performance and insights</p>
       </div>
 
       {/* HERO SECTION */}
