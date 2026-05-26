@@ -52,7 +52,7 @@ const services = [
 
 const trustStrip = [
   "50+ active sites",
-  "20 years on the road",
+  "Family-run, local crews",
   "4–6 hr response",
   "24/7 emergency",
 ];
@@ -326,7 +326,7 @@ export default function LandingPage() {
               Same-day fuel delivery for Melbourne's construction and event sites.
             </h1>
             <p className="mt-5 text-[16px] leading-[1.55] text-muted-foreground max-w-[560px]">
-              On-site diesel for excavators, generators, cranes and events across Greater Melbourne. Trusted by 50+ sites, 20 years on the road.
+              On-site diesel for excavators, generators, cranes and events across Greater Melbourne. Trusted by 50+ sites.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button size="lg" onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>
@@ -365,15 +365,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─────────── LOGO STRIP ─────────── */}
+      {/* ─────────── LOGO STRIP (marquee) ─────────── */}
       <section className="bg-muted border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-          <div className="eyebrow text-center mb-6">Trusted by Melbourne builders</div>
-          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-[15px] font-medium text-muted-foreground">
-            {["Ironside", "Track Works", "Keller", "Coates", "Fulton Hogan", "Gearon"].map((name) => (
-              <span key={name} className="tracking-tight">{name}</span>
-            ))}
+          <div className="eyebrow text-center mb-6">Trusted by Melbourne businesses</div>
+          <div
+            className="relative overflow-hidden"
+            style={{
+              maskImage:
+                "linear-gradient(to right, transparent, #000 10%, #000 90%, transparent)",
+              WebkitMaskImage:
+                "linear-gradient(to right, transparent, #000 10%, #000 90%, transparent)",
+            }}
+          >
+            <div
+              className="flex gap-12 whitespace-nowrap text-[15px] font-medium text-muted-foreground will-change-transform"
+              style={{ animation: "pacc-marquee 28s linear infinite" }}
+            >
+              {[0, 1].map((dup) => (
+                <div key={dup} className="flex gap-12 shrink-0 pr-12" aria-hidden={dup === 1}>
+                  {["Ironside", "Track Works", "Keller", "Coates", "Fulton Hogan", "Gearon"].map((name) => (
+                    <span key={name + dup} className="tracking-tight">{name}</span>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
+          <style>{`@keyframes pacc-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
         </div>
       </section>
 
@@ -432,11 +450,26 @@ export default function LandingPage() {
       <section id="testimonials" className="border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
           <div className="eyebrow mb-3">Customers</div>
-          <h2 className="display-l max-w-[680px]">Trusted by Melbourne builders, every day.</h2>
+          <h2 className="display-l max-w-[680px]">Trusted by Melbourne businesses, every day.</h2>
           <div className="mt-12 grid md:grid-cols-3 gap-5">
             {testimonials.map((t) => (
-              <figure key={t.name} className="rounded-[12px] border border-border bg-card p-6">
-                <blockquote className="text-[15px] leading-[1.6] text-foreground">"{t.quote}"</blockquote>
+              <figure
+                key={t.name}
+                className="relative rounded-[12px] border border-border bg-card p-6 overflow-hidden"
+              >
+                <span
+                  aria-hidden
+                  className="absolute top-0 left-0 h-1 w-16 rounded-br-[6px]"
+                  style={{ background: "var(--accent)" }}
+                />
+                <div
+                  aria-hidden
+                  className="text-[40px] leading-none font-serif mb-1"
+                  style={{ color: "var(--accent)" }}
+                >
+                  “
+                </div>
+                <blockquote className="text-[15px] leading-[1.6] text-foreground">{t.quote}</blockquote>
                 <figcaption className="mt-5 pt-4 border-t border-border">
                   <div className="text-[14px] font-semibold text-foreground">{t.name}</div>
                   <div className="text-[13px] text-muted-foreground">{t.title}</div>
@@ -452,9 +485,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20 grid lg:grid-cols-12 gap-10 items-start">
           <div className="lg:col-span-5">
             <div className="eyebrow mb-3">Coverage</div>
-            <h2 className="display-l">Across Greater Melbourne, six days a week.</h2>
+            <h2 className="display-l">Across Greater Melbourne, around the clock.</h2>
             <p className="mt-4 text-[16px] leading-[1.55] text-muted-foreground max-w-[440px]">
-              Same-day across the metro, next-day regional. Emergency call-outs around the clock.
+              Same-day across the metro, next-day regional, and 24/7 emergency call-outs whenever a site needs us.
             </p>
           </div>
           <div className="lg:col-span-7">
@@ -480,9 +513,9 @@ export default function LandingPage() {
           </div>
           <div className="lg:col-span-6">
             <div className="eyebrow mb-3">About</div>
-            <h2 className="display-l">Twenty years quietly keeping Melbourne moving.</h2>
+            <h2 className="display-l">A family-run crew keeping Melbourne moving.</h2>
             <p className="mt-4 text-[16px] leading-[1.55] text-muted-foreground">
-              PACC Energy is a family-run Melbourne fuel business. We've spent two decades on the road, supplying diesel to the sites and events that don't get to stop. We answer the phone, we turn up, and we account for every litre.
+              PACC Energy is a family-run Melbourne fuel business supplying diesel to the sites and events that don't get to stop. We answer the phone, we turn up, and we account for every litre.
             </p>
           </div>
         </div>
