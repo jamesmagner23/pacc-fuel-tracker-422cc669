@@ -30,8 +30,9 @@ Refactor the marketing landing page, the internal operations dashboard, and the 
 - `Tabs`: underline-only with 2px lime indicator on active.
 - `Table`: muted header row, hover `#FAFBF7`, tabular-nums on numeric cells.
 - `Sidebar`: 240px, muted bg, ghost nav items, active = white card with 2px lime left border. Remove "01–08" numeric prefixes.
+- `PACCLogo`: light-tone default (dark-green wordmark on white).
 
-**Status:** Button + Badge done. Tabs / Table / Sidebar to follow as part of Phase 5 chrome pass.
+**Status:** Button, Badge, Sidebar chrome, PACCLogo done. Tabs / Table refinement still to do during full page passes.
 
 ---
 
