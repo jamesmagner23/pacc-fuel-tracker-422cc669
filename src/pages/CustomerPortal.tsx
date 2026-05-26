@@ -21,7 +21,7 @@ import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { useClientProfile } from "@/hooks/useClientProfile";
-import { User as UserIcon, ChevronDown, LogOut, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePortalFilters,
@@ -32,9 +32,8 @@ import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
-import { usePortalTheme, tokensFor, themeVarsFor, type PortalTheme } from "@/lib/portalTheme";
-import { PortalThemeToggle } from "@/components/portal/PortalThemeToggle";
-import { brandAccentVars, isValidHex } from "@/lib/brandTheme";
+import { PortalLayout } from "@/components/portal/PortalLayout";
+import { PageHeader } from "@/components/PageHeader";
 
 // ─── Theme tokens — light "showcase email" palette ──────────────────
 // Mutable holder. Properties get re-assigned by applyPortalTheme() below
