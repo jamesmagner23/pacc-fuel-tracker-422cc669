@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone, Phone } from "lucide-react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone, Phone, Menu, X } from "lucide-react";
 import { BoldPMark } from "@/components/BoldPMark";
 import heroImg from "@/assets/hero-construction.webp";
 import refuelImg from "@/assets/refuelling-closeup.webp";
@@ -174,6 +174,7 @@ function QuoteForm() {
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div style={{ background: "#0E1F10", color: "#ECE4D2", minHeight: "100vh" }}>
@@ -181,13 +182,17 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50" style={{ background: "rgba(14,31,16,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(42,74,46,0.6)", paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16 sm:h-[68px]">
           <PACCNavLogo />
+
+          {/* Desktop links */}
           <div className="hidden md:flex items-center gap-6">
             <a href="#services" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C7BFAC" }}>Services</a>
             <a href="#testimonials" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C7BFAC" }}>Testimonials</a>
             <a href="#coverage" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C7BFAC" }}>Coverage</a>
             <a href="#contact" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C7BFAC" }}>Contact</a>
           </div>
+
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Phone pill (desktop) */}
             <a
               href={`tel:${BUSINESS_PHONE_TEL}`}
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-all"
@@ -196,6 +201,8 @@ export default function LandingPage() {
             >
               <Phone className="w-3.5 h-3.5" /> {BUSINESS_PHONE_DISPLAY}
             </a>
+
+            {/* Phone icon (mobile only) */}
             <a
               href={`tel:${BUSINESS_PHONE_TEL}`}
               className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-full"
@@ -204,9 +211,11 @@ export default function LandingPage() {
             >
               <Phone className="w-4 h-4" />
             </a>
+
+            {/* Desktop CTAs */}
             <button
               onClick={() => navigate("/?demo=true")}
-              className="hidden sm:inline-flex px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all items-center gap-1.5"
+              className="hidden md:inline-flex px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all items-center gap-1.5"
               style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.14)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.08)"; }}
@@ -215,15 +224,83 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => navigate("/login")}
-              className="px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all"
+              className="hidden md:inline-flex px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all"
               style={{ background: "#C8F26A", color: "#0E1F10", border: "none" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "#B6E254"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "#C8F26A"; }}
             >
               Client Login
             </button>
+
+            {/* Hamburger (tablet/mobile only) */}
+            <button
+              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-full"
+              style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileOpen && (
+          <div
+            className="md:hidden border-t px-4 py-4 space-y-1"
+            style={{ borderColor: "rgba(42,74,46,0.6)", background: "rgba(14,31,16,0.98)" }}
+          >
+            <a
+              href="#services"
+              onClick={() => setMobileOpen(false)}
+              className="block px-3 py-2.5 rounded-lg text-sm font-medium uppercase tracking-wide"
+              style={{ color: "#C7BFAC" }}
+            >
+              Services
+            </a>
+            <a
+              href="#testimonials"
+              onClick={() => setMobileOpen(false)}
+              className="block px-3 py-2.5 rounded-lg text-sm font-medium uppercase tracking-wide"
+              style={{ color: "#C7BFAC" }}
+            >
+              Testimonials
+            </a>
+            <a
+              href="#coverage"
+              onClick={() => setMobileOpen(false)}
+              className="block px-3 py-2.5 rounded-lg text-sm font-medium uppercase tracking-wide"
+              style={{ color: "#C7BFAC" }}
+            >
+              Coverage
+            </a>
+            <a
+              href="#contact"
+              onClick={() => setMobileOpen(false)}
+              className="block px-3 py-2.5 rounded-lg text-sm font-medium uppercase tracking-wide"
+              style={{ color: "#C7BFAC" }}
+            >
+              Contact
+            </a>
+            <div className="pt-2 border-t flex flex-col gap-2" style={{ borderColor: "rgba(42,74,46,0.6)" }}>
+              <button
+                onClick={() => { setMobileOpen(false); navigate("/?demo=true"); }}
+                className="w-full px-3 py-2.5 rounded-lg text-sm font-semibold text-left flex items-center gap-2"
+                style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
+              >
+                <Eye className="w-3.5 h-3.5" /> Try Demo
+              </button>
+              <button
+                onClick={() => { setMobileOpen(false); navigate("/login"); }}
+                className="w-full px-3 py-2.5 rounded-lg text-sm font-semibold text-left flex items-center gap-2"
+                style={{ background: "#C8F26A", color: "#0E1F10", border: "none" }}
+              >
+                <Smartphone className="w-3.5 h-3.5" /> Client Login
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ── HERO ── */}
