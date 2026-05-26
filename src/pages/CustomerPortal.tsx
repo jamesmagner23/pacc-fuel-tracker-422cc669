@@ -542,267 +542,20 @@ export default function CustomerPortal() {
     });
   }, [isDemo, activeTab]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
+  const breadcrumbFor = (tab: Tab) => [
+    { label: "PACC Energy", href: "/portal" },
+    { label: "Portal", href: "/portal" },
+    { label: tab },
+  ];
 
-  return (
-    <div style={{ ...portalVars, ...brandVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
-      {/* Hide the welcome/onboarding modal in demo mode — recipients want to explore, not be onboarded. */}
-      {!isDemo && <WelcomeModal />}
-      {!isDemo && (
-        <div
-          style={{
-            borderBottom: `1px solid ${T.border}`,
-            padding: "14px 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          {showCustomerBrand ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <img
-                src={brandLogoUrl!}
-                alt={companyName}
-                style={{ height: 36, maxWidth: 160, objectFit: "contain" }}
-              />
-              <span style={{ fontSize: 12, color: T.muted }}>powered by PACC</span>
-            </div>
-          ) : (
-            <PACCLogo tone={portalTheme === "dark" ? "dark" : "light"} />
-          )}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <PortalThemeToggle />
-          <div style={{ position: "relative" }}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen((o) => !o);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                background: "transparent",
-                border: `1px solid ${T.border}`,
-                borderRadius: 999,
-                padding: "6px 12px 6px 6px",
-                cursor: "pointer",
-                color: T.text,
-              }}
-              aria-label="Account menu"
-            >
-              <span
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  background: T.accent,
-                  color: T.text,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 11,
-                  fontFamily: T.sansHead,
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {initials}
-              </span>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontFamily: T.sansHead,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: T.textSecondary,
-                  maxWidth: 160,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {companyName}
-              </span>
-              <ChevronDown size={14} style={{ color: T.muted }} />
-            </button>
+  // The body of the portal — same in standalone and in demo mode (where the
+  // admin Layout already provides the sidebar/topbar chrome).
+  const body = (
+    <>
+      <PageHeader title={activeTab} breadcrumb={breadcrumbFor(activeTab)} showPeriod={false} />
 
-            {menuOpen && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  position: "absolute",
-                  right: 0,
-                  top: "calc(100% + 8px)",
-                  background: T.surface,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: 8,
-                  minWidth: 220,
-                  boxShadow: "0 10px 30px rgba(61,43,26,0.12)",
-                  zIndex: 60,
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}` }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontFamily: T.sansHead,
-                      fontWeight: 600,
-                      color: T.text,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {companyName}
-                  </div>
-                  {userEmail && (
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: T.muted,
-                        marginTop: 2,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {userEmail}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setAccountOpen(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 14px",
-                    background: "transparent",
-                    border: "none",
-                    color: T.text,
-                    fontSize: 12,
-                    fontFamily: T.sansBody,
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <UserIcon size={14} style={{ color: T.muted }} />
-                  My Account
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 14px",
-                    background: "transparent",
-                    border: "none",
-                    borderTop: `1px solid ${T.border}`,
-                    color: T.text,
-                    fontSize: 12,
-                    fontFamily: T.sansBody,
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <LogOut size={14} style={{ color: T.muted }} />
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-          </div>
-        </div>
-      )}
-
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 40px" }}>
-        {/* Page heading */}
-        <div style={{ marginBottom: 24 }}>
-          <h1
-            style={{
-              fontSize: "clamp(20px, 6vw, 28px)",
-              lineHeight: 1.05,
-              fontFamily: T.sansHead,
-              fontWeight: 700,
-              letterSpacing: "0.01em",
-              margin: 0,
-              textTransform: "uppercase",
-              wordBreak: "break-word",
-              overflowWrap: "anywhere",
-            }}
-          >
-            {companyName}
-          </h1>
-          <p style={{ ...muted(12), margin: "4px 0 0", letterSpacing: "0.04em" }}>
-            Customer portal — volume &amp; compliance
-          </p>
-        </div>
-
-        {/* Tab strip — horizontal scroll on mobile */}
-        <div
-          style={{
-            display: "flex",
-            gap: 0,
-            borderBottom: `1px solid ${T.border}`,
-            marginBottom: 16,
-            overflowX: "auto",
-            scrollbarWidth: "none",
-          }}
-        >
-          {tabs.map((tab) => {
-            const active = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                ref={(el) => {
-                  if (el && active) {
-                    el.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
-                  }
-                }}
-                onClick={(e) => {
-                  setActiveTab(tab);
-                  (e.currentTarget as HTMLButtonElement).scrollIntoView({
-                    behavior: "smooth",
-                    inline: "nearest",
-                    block: "nearest",
-                  });
-                }}
-                style={{
-                  padding: "12px 14px",
-                  fontSize: 11,
-                  fontFamily: T.sansHead,
-                  fontWeight: active ? 600 : 500,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: active ? T.text : T.muted,
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: `2px solid ${active ? T.accent : "transparent"}`,
-                  cursor: "pointer",
-                  marginBottom: -1,
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Day / Week / Month period toggle — applies to time-series tabs. */}
-        {(activeTab === "Overview" ||
+      {/* Day / Week / Month period toggle — applies to time-series tabs. */}
+      {(activeTab === "Overview" ||
           activeTab === "Deliveries" ||
           (activeTab === "Fleet" && fleetSubtab === "Plant") ||
           (activeTab === "Reports" && reportsSubtab === "Analytics") ||
@@ -905,6 +658,8 @@ export default function CustomerPortal() {
             {activeTab === "Overview" && (
               <OverviewTab
                 transactions={filteredTransactions}
+                allTransactions={transactions}
+                period={period}
                 demoSuffix={demoSuffix}
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
@@ -986,7 +741,6 @@ export default function CustomerPortal() {
             )}
           </>
         )}
-      </div>
 
       <AccountModal
         open={accountOpen}
@@ -995,7 +749,25 @@ export default function CustomerPortal() {
         companyName={companyName}
         userEmail={userEmail}
       />
-    </div>
+    </>
+  );
+
+  // In demo mode the admin Layout already provides the sidebar/topbar chrome,
+  // so we render the body bare. In real client mode we wrap with PortalLayout.
+  if (isDemo) {
+    return <div className="max-w-[1400px] mx-auto">{body}</div>;
+  }
+
+  return (
+    <PortalLayout
+      activeTab={activeTab}
+      onTabChange={(t) => setActiveTab(t as Tab)}
+      brandLogoUrl={showCustomerBrand ? brandLogoUrl : null}
+      brandCaption={companyName}
+    >
+      <WelcomeModal />
+      {body}
+    </PortalLayout>
   );
 }
 
