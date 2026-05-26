@@ -805,6 +805,9 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
       onTabChange={(t) => setActiveTab(t as Tab)}
       brandLogoUrl={showCustomerBrand ? brandLogoUrl : null}
       brandCaption={companyName}
+      customerName={isDemo ? "Demo Customer" : companyName}
+      accountNumber={clientAccountId ? `Account #C${clientAccountId}` : null}
+      isDemo={isDemo}
     >
       <WelcomeModal />
       {body}
