@@ -5,8 +5,8 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line,
 } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
-import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 import { format, parseISO } from "date-fns";
 import { Droplets, TrendingUp, TrendingDown, Clock, Truck, MapPin, Fuel } from "lucide-react";
 import { useChartPalette } from "@/lib/chartPalette";
@@ -88,18 +88,21 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
 
 export default function Overview() {
   const { range } = useDateRange();
-  const { data: filtered = [], isLoading } = useTransactions(range);
-  const { data: previous = [] } = usePreviousTransactions(range);
+  const {
+    filtered,
+    previous,
+    isLoading,
+    totalRevenue,
+    prevRevenue,
+  } = useRevenueCalc(range);
   const { data: buyPrices = [] } = useBuyPrices(90);
   const tc = useThemeColors();
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const totalRevenue = filtered.reduce((s, t) => s + (t.dinero_total || 0), 0);
   const numDeliveries = filtered.length;
   const avgSize = numDeliveries > 0 ? totalLitres / numDeliveries : 0;
 
   const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevRevenue = previous.reduce((s, t) => s + (t.dinero_total || 0), 0);
   const prevDeliveries = previous.length;
   const prevAvgSize = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
 
