@@ -120,6 +120,7 @@ function DemoAwareRoutes() {
 type UserRole = "admin" | "client" | "driver" | "operations" | null;
 
 const PUBLIC_PATHS = ["/login", "/landing", "/reset-password"];
+const ALWAYS_PUBLIC_PATHS = ["/landing"];
 
 async function getUserRole(userId: string): Promise<UserRole> {
   const { data, error } = await supabase
@@ -229,6 +230,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   const isPublicAuthPath = PUBLIC_PATHS.includes(location.pathname);
+
+  // /landing is the canonical marketing URL — always render it, regardless of session
+  if (ALWAYS_PUBLIC_PATHS.includes(location.pathname)) {
+    return <>{children}</>;
+  }
 
   if (role === "admin" && isPublicAuthPath) {
     return <Navigate to="/" replace />;
