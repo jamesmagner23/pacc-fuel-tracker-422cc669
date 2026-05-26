@@ -11,12 +11,12 @@ import { GlobalThemeToggle } from "./GlobalThemeToggle";
 
 const navItems = [
   { to: "/", label: "Overview" },
+  { to: "/dispatch", label: "Dispatch" },
   { to: "/customers", label: "Customers" },
   { to: "/finance", label: "Finance" },
+  { to: "/trucks", label: "Trucks" },
   { to: "/suppliers", label: "Suppliers" },
   { to: "/market", label: "Market Intel" },
-  { to: "/dispatch", label: "Dispatch" },
-  { to: "/trucks", label: "Trucks" },
   { to: "/portal", label: "Client Portal", demoOnly: true },
   { to: "/driver", label: "Driver Portal", demoOnly: true },
   { to: "/admin", label: "Admin" },
@@ -93,6 +93,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", background: BG, color: TEXT_ACTIVE }}>
+      {/* Skip-link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only"
+        style={{
+          position: "absolute",
+          left: 8,
+          top: 8,
+          zIndex: 200,
+          background: BG,
+          color: TEXT_ACTIVE,
+          border: `1px solid ${ACCENT}`,
+          padding: "8px 12px",
+          borderRadius: 6,
+          fontSize: 12,
+        }}
+      >
+        Skip to main content
+      </a>
       {/* ── DESKTOP SIDEBAR ── */}
       <aside
         className="hidden md:flex"
@@ -149,6 +168,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     fontVariantNumeric: "tabular-nums",
                     letterSpacing: "0.05em",
                   }}
+                  aria-hidden="true"
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
@@ -182,6 +202,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div style={{ padding: "16px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
           <SyncStatus />
           <button
+            type="button"
             onClick={async () => { sessionStorage.removeItem("demo_unlocked"); await supabase.auth.signOut(); window.location.href = isDemo ? "/landing" : "/login"; }}
             style={{
               display: "flex", alignItems: "center", gap: 8,
@@ -222,6 +243,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             <PACCLogo size="sm" />
             <button
+              type="button"
+              aria-label="Close menu"
               onClick={() => setMobileMenuOpen(false)}
               style={{ background: "transparent", border: "none", color: TEXT_MID, cursor: "pointer", padding: 4 }}
             >
@@ -259,6 +282,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       flexShrink: 0,
                       fontVariantNumeric: "tabular-nums",
                     }}
+                    aria-hidden="true"
                   >
                     {String(i + 1).padStart(2, "0")}
                   </span>
@@ -285,6 +309,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div style={{ padding: "20px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
             <SyncStatus />
             <button
+              type="button"
               onClick={async () => { sessionStorage.removeItem("demo_unlocked"); await supabase.auth.signOut(); window.location.href = isDemo ? "/landing" : "/login"; }}
               style={{
                 display: "flex", alignItems: "center", gap: 8,
@@ -327,6 +352,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Mobile header */}
             <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
             <button
+              type="button"
+              aria-label="Open menu"
               onClick={() => setMobileMenuOpen(true)}
               style={{
                 background: "transparent",
@@ -375,6 +402,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main
+          id="main-content"
           style={{ flex: 1, overflowY: "auto", paddingBottom: 80 }}
           className="px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8"
         >

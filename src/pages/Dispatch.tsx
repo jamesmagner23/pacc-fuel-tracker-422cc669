@@ -201,7 +201,7 @@ export default function Dispatch() {
       {/* Header */}
       <div className="card p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold">Dispatch</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Dispatch</h1>
           <p className="text-[11px] text-muted-foreground">Plan stops, assign trucks, and route your day</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

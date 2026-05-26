@@ -111,8 +111,8 @@ function CustomerList() {
     <div className="space-y-4">
       {/* Page heading */}
       <div>
-        <h1 className="text-lg font-semibold">Customers</h1>
-        <p className="text-[11px] text-muted-foreground">Browse, filter, and drill into customer delivery data</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Customers</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Browse, filter, and drill into customer delivery data</p>
       </div>
 
       {/* Local date range filter — independent of global toggle */}

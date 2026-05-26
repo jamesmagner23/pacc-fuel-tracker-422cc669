@@ -5,8 +5,8 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line,
 } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
-import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 import { format, parseISO } from "date-fns";
 import { Droplets, TrendingUp, TrendingDown, Clock, Truck, MapPin, Fuel } from "lucide-react";
 import { useChartPalette } from "@/lib/chartPalette";
@@ -41,6 +41,8 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
       <div className="flex items-center justify-between mb-1">
         <div className="text-sm font-medium" style={{ color: tc.textPrimary }}>Top Customers</div>
         <button
+          type="button"
+          aria-label={showPct ? "Show customer share in litres" : "Show customer share in percent"}
           onClick={() => setShowPct((p) => !p)}
           className="text-[10px] px-2 py-0.5 rounded-full border transition-colors"
           style={{ borderColor: tc.textSecondary, color: tc.textSecondary, background: "transparent", cursor: "pointer" }}
@@ -88,18 +90,21 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
 
 export default function Overview() {
   const { range } = useDateRange();
-  const { data: filtered = [], isLoading } = useTransactions(range);
-  const { data: previous = [] } = usePreviousTransactions(range);
+  const {
+    filtered,
+    previous,
+    isLoading,
+    totalRevenue,
+    prevRevenue,
+  } = useRevenueCalc(range);
   const { data: buyPrices = [] } = useBuyPrices(90);
   const tc = useThemeColors();
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const totalRevenue = filtered.reduce((s, t) => s + (t.dinero_total || 0), 0);
   const numDeliveries = filtered.length;
   const avgSize = numDeliveries > 0 ? totalLitres / numDeliveries : 0;
 
   const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevRevenue = previous.reduce((s, t) => s + (t.dinero_total || 0), 0);
   const prevDeliveries = previous.length;
   const prevAvgSize = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
 
@@ -156,8 +161,8 @@ export default function Overview() {
     <div className="flex flex-col gap-1 max-w-[1200px] w-full">
       {/* Page heading */}
       <div className="px-1 pt-1 pb-0">
-        <h1 className="text-lg font-semibold">Overview</h1>
-        <p className="text-[11px] text-muted-foreground">Real-time fuel delivery performance and insights</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Overview</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Real-time fuel delivery performance and insights</p>
       </div>
 
       {/* HERO SECTION */}

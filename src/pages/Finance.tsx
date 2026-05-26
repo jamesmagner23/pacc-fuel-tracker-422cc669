@@ -7,8 +7,8 @@ export default function Finance() {
     <div className="flex flex-col gap-5 max-w-[1100px]">
       {/* Page heading */}
       <div>
-        <h1 className="text-lg font-semibold">Finance</h1>
-        <p className="text-[11px] text-muted-foreground">P&L overview and fuel buy-price tracking</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Finance</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">P&L overview and fuel buy-price tracking</p>
       </div>
 
       <Tabs defaultValue="pnl">
