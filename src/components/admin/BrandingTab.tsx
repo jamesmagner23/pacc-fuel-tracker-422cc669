@@ -62,7 +62,7 @@ export default function BrandingTab() {
                 className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 border-b border-border last:border-b-0 transition-colors"
                 style={{
                   background: active ? "var(--accent-light)" : "transparent",
-                  color: active ? "var(--accent)" : "var(--text-primary)",
+                  color: active ? "var(--primary)" : "var(--text-primary)",
                 }}
               >
                 <div

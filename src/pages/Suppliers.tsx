@@ -9,7 +9,7 @@ import { Trophy, RefreshCw, Mail, Gauge } from "lucide-react";
 import { toast } from "sonner";
 
 const SUPPLIER_COLORS: Record<string, string> = {
-  Pacific: "var(--accent)",
+  Pacific: "var(--primary)",
   "Pro Fusion": "#9C6ADE",
 };
 const DIFF_COLOR = "#9C6ADE";
@@ -450,7 +450,7 @@ export default function Suppliers() {
                   <YAxis tick={{ fontSize: 10, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                   <Tooltip contentStyle={{ background: "var(--background)", border: "1px solid var(--surface-border)", borderRadius: 8, fontSize: 11 }} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="litres" name="Litres" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="litres" name="Litres" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="spend" name="Spend $" fill="#5B9BD5" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

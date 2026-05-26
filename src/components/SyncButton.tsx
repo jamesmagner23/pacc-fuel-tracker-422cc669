@@ -38,7 +38,7 @@ export function SyncButton() {
         alignItems: "center",
         gap: 6,
         borderRadius: 20,
-        background: "var(--accent)",
+        background: "var(--primary)",
         color: "var(--primary-foreground)",
         fontWeight: 600,
         border: "none",
@@ -50,7 +50,7 @@ export function SyncButton() {
         if (!syncing) (e.currentTarget as HTMLElement).style.background = "var(--accent-hover)";
       }}
       onMouseLeave={(e) => {
-        if (!syncing) (e.currentTarget as HTMLElement).style.background = "var(--accent)";
+        if (!syncing) (e.currentTarget as HTMLElement).style.background = "var(--primary)";
       }}
     >
       <span className="flex md:hidden" style={{ padding: "7px 10px", alignItems: "center" }}>

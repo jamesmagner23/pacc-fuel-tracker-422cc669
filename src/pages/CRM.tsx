@@ -32,7 +32,7 @@ export default function CRM() {
           <h1 className="text-xl font-semibold text-foreground">CRM</h1>
           <p className="text-xs text-muted-foreground">Acquisition + retention pipeline. All comms logged. Templates avoid double-contact.</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} style={{ background: "var(--accent)", color: "var(--accent-foreground, #fff)" }} className="h-10">
+        <Button onClick={() => setCreateOpen(true)} style={{ background: "var(--primary)", color: "var(--primary-foreground, #fff)" }} className="h-10">
           <Plus className="w-4 h-4 mr-1.5" /> New customer / lead
         </Button>
       </header>

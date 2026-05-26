@@ -57,7 +57,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: Props) 
         </SheetHeader>
 
         <div className="flex gap-2 mt-3 flex-wrap">
-          <Button onClick={() => { setEmailContactId(null); setEmailOpen(true); }} disabled={!contacts.some(c => c.email)} className="h-9" style={{ background: "var(--accent)", color: "var(--accent-foreground, #fff)" }}>
+          <Button onClick={() => { setEmailContactId(null); setEmailOpen(true); }} disabled={!contacts.some(c => c.email)} className="h-9" style={{ background: "var(--primary)", color: "var(--primary-foreground, #fff)" }}>
             <Mail className="w-3.5 h-3.5 mr-1.5" /> Email
           </Button>
           <Button variant="outline" onClick={() => setLogOpen(true)} className="h-9 border-surface-border"><Plus className="w-3.5 h-3.5 mr-1.5" /> Log activity</Button>

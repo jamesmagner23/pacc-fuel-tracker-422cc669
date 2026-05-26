@@ -74,7 +74,7 @@ export default function ContactEditor({ open, customerId, initial, onClose, onSa
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="border-surface-border">Cancel</Button>
-          <Button onClick={save} style={{ background: "var(--accent)", color: "var(--accent-foreground, #fff)" }}>Save</Button>
+          <Button onClick={save} style={{ background: "var(--primary)", color: "var(--primary-foreground, #fff)" }}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

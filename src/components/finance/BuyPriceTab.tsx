@@ -18,7 +18,7 @@ export default function BuyPriceTab() {
   const { data: todayPrices = [] } = useTodayBuyPrices();
   const PRIMARY_SUPPLIER = "Pacific";
   const SUPPLIER_COLORS: Record<string, string> = {
-    Pacific: "var(--accent)",
+    Pacific: "var(--primary)",
     "Pro Fusion": "#5B9BD5",
   };
   const FALLBACK_COLORS = ["#E0A458", "#9C6ADE", "#48B5A6", "#D96C6C"];
@@ -302,7 +302,7 @@ export default function BuyPriceTab() {
                           formatter={(v: number, name: string) => [`$${v?.toFixed(4)}/L ex GST`, name === "tgp" ? "TGP (AIP)" : "Your Buy"]}
                         />
                         <Line type="monotone" dataKey="tgp" stroke="var(--text-secondary)" strokeWidth={1.5} dot={false} connectNulls />
-                        <Line type="monotone" dataKey="buy" stroke="var(--accent)" strokeWidth={2} dot={false} connectNulls />
+                        <Line type="monotone" dataKey="buy" stroke="var(--primary)" strokeWidth={2} dot={false} connectNulls />
                       </LineChart>
                     </ResponsiveContainer>
                     <div className="flex items-center justify-center gap-4 mt-1">
@@ -382,7 +382,7 @@ export default function BuyPriceTab() {
                 <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 9, fill: "var(--text-secondary)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                 <Tooltip
-                  contentStyle={{ background: "var(--background)", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: "var(--background)", border: "1px solid var(--primary)", borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: "var(--text-primary)" }}
                   itemStyle={{ color: "var(--text-primary)" }}
                   formatter={(v: number, name: string) => [`$${v.toFixed(4)}/L`, name]}

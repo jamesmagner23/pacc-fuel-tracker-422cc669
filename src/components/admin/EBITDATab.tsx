@@ -202,7 +202,7 @@ export default function EBITDATab() {
               onClick={() => setPeriod(p.v as any)}
               className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
               style={{
-                background: period === p.v ? "var(--accent)" : "transparent",
+                background: period === p.v ? "var(--primary)" : "transparent",
                 color: period === p.v ? "#0E1F10" : "var(--text-secondary)",
               }}
             >

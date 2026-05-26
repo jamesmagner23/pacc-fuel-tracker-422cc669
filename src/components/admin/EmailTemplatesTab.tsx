@@ -168,7 +168,7 @@ export default function EmailTemplatesTab() {
               className="w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition-all min-h-[44px] flex flex-col gap-0.5"
               style={{
                 background: active ? "var(--accent-light)" : "transparent",
-                color: active ? "var(--accent)" : "var(--text-secondary)",
+                color: active ? "var(--primary)" : "var(--text-secondary)",
               }}
             >
               <span>{t.name}</span>
@@ -298,7 +298,7 @@ export default function EmailTemplatesTab() {
                     className="px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all min-h-[36px]"
                     style={{
                       background: previewTheme === theme ? "var(--accent-light)" : "transparent",
-                      color: previewTheme === theme ? "var(--accent)" : "var(--text-secondary)",
+                      color: previewTheme === theme ? "var(--primary)" : "var(--text-secondary)",
                     }}
                   >
                     {theme === "light" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
