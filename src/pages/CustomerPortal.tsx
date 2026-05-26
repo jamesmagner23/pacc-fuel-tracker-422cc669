@@ -21,7 +21,7 @@ import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { useClientProfile } from "@/hooks/useClientProfile";
-import { Filter, Droplet, DollarSign, Truck, Gauge } from "lucide-react";
+import { Filter, Droplet, DollarSign, Truck, Gauge, Receipt, MapPin, Download, HelpCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePortalFilters,
@@ -35,6 +35,13 @@ import { WelcomeModal } from "@/components/customer/WelcomeModal";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { KPISparklineCard } from "@/components/KPISparklineCard";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 // ─── Theme tokens — light "showcase email" palette ──────────────────
 // Mutable holder. Properties get re-assigned by applyPortalTheme() below
@@ -384,15 +391,25 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 }
 
 // ─── Main component ──────────────────────────────────────────────────
-export default function CustomerPortal() {
+export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help" } = {}) {
   const [params, setParams] = useSearchParams();
   const tabParam = params.get("tab");
-  const initialTab: Tab = (tabs as readonly string[]).includes(tabParam || "")
-    ? (tabParam as Tab)
-    : "Overview";
-  const [activeTab, setActiveTabState] = useState<Tab>(initialTab);
-  // Keep ?tab= URL param in sync so sidebar links + back/forward work.
+  const initialTab: Tab | "Help" = forcedTab
+    ? forcedTab
+    : (tabs as readonly string[]).includes(tabParam || "")
+      ? (tabParam as Tab)
+      : "Overview";
+  const [activeTab, setActiveTabState] = useState<Tab | "Help">(initialTab);
+  // When the URL-driven forcedTab changes (sub-route nav), follow it.
   useEffect(() => {
+    if (forcedTab && forcedTab !== activeTab) {
+      setActiveTabState(forcedTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forcedTab]);
+  // Legacy ?tab= support — only honoured when no forcedTab is supplied.
+  useEffect(() => {
+    if (forcedTab) return;
     if (tabParam !== activeTab) {
       const next = new URLSearchParams(params);
       next.set("tab", activeTab);
@@ -401,12 +418,13 @@ export default function CustomerPortal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
   useEffect(() => {
+    if (forcedTab) return;
     if (tabParam && (tabs as readonly string[]).includes(tabParam) && tabParam !== activeTab) {
       setActiveTabState(tabParam as Tab);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam]);
-  const setActiveTab = setActiveTabState;
+  const setActiveTab = setActiveTabState as (t: Tab) => void;
   const [fleetSubtab, setFleetSubtab] = useState<FleetSubtab>("Plant");
   const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
   const [period, setPeriod] = useState<PortalPeriod>("month");
@@ -539,11 +557,11 @@ export default function CustomerPortal() {
     if (!isDemo) return;
     logDemoEvent({
       eventType: "section_viewed",
-      section: activeTab,
+      section: activeTab as Tab,
     });
   }, [isDemo, activeTab]);
 
-  const breadcrumbFor = (tab: Tab) => [
+  const breadcrumbFor = (tab: Tab | "Help") => [
     { label: "PACC Energy", href: "/portal" },
     { label: "Portal", href: "/portal" },
     { label: tab },
@@ -585,9 +603,68 @@ export default function CustomerPortal() {
                 </button>
               ))}
             </div>
-            <span style={{ ...muted(11), letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Showing {periodTransactions.length.toLocaleString()} deliveries · {PERIOD_LABELS[period]}
-            </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span style={{ ...muted(11), letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Showing {periodTransactions.length.toLocaleString()} deliveries · {PERIOD_LABELS[period]}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:opacity-90"
+                    style={{ height: 36, padding: "0 16px", fontSize: 13, fontWeight: 600 }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download statement
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const header = ["Date", "Site", "Plant", "Rego", "Litres", "Spend"];
+                      const rows = filteredTransactions.map((t: any) => [
+                        t.date || "",
+                        t.estacion || t.ciudad || t.nombre_cliente1 || "",
+                        t.identificador_cliente1 || "",
+                        t.placa || "",
+                        (t.cantidad || 0).toFixed(2),
+                        (t.dinero_total || 0).toFixed(2),
+                      ]);
+                      const safeName = (companyName || "deliveries").replace(/[^A-Za-z0-9]+/g, "-");
+                      const safePeriod = (PERIOD_LABELS[period] || "current").replace(/\s+/g, "-");
+                      downloadCSV([header, ...rows], `${safeName}-statement-${safePeriod}.csv`);
+                    }}
+                  >
+                    Statement (this period)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const header = ["Date", "Site", "Plant", "Rego", "Litres", "Docket"];
+                      const rows = filteredTransactions.map((t: any) => [
+                        t.date || "",
+                        t.estacion || t.ciudad || t.nombre_cliente1 || "",
+                        t.identificador_cliente1 || "",
+                        t.placa || "",
+                        (t.cantidad || 0).toFixed(2),
+                        t.id ?? "",
+                      ]);
+                      const safeName = (companyName || "deliveries").replace(/[^A-Za-z0-9]+/g, "-");
+                      const safePeriod = (PERIOD_LABELS[period] || "current").replace(/\s+/g, "-");
+                      downloadCSV([header, ...rows], `${safeName}-deliveries-${safePeriod}.csv`);
+                    }}
+                  >
+                    Deliveries CSV (this period)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setReportsSubtab("Fuel Tax Credit"); setActiveTab("Reports"); }}>
+                    Tax-credits report (YTD)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled>
+                    Custom date range… (coming soon)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         )}
 
@@ -740,6 +817,28 @@ export default function CustomerPortal() {
                 onOpenEdit={() => setAccountOpen(true)}
               />
             )}
+            {activeTab === "Help" && (
+              <div className="bg-card border border-border rounded-[14px] p-6 max-w-2xl">
+                <div className="flex items-start gap-3">
+                  <div className="inline-flex items-center justify-center shrink-0"
+                       style={{ width: 40, height: 40, borderRadius: 12, background: "#EAEEFC", color: "#2B3D8E" }}>
+                    <HelpCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground">Need a hand?</h2>
+                    <p className="mt-1 text-[13px] text-muted-foreground">
+                      Dispatch is available Monday–Friday, 7am–5pm AEST.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <a href="mailto:fuel@paccvictoria.com"
+                         className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium bg-foreground text-background hover:opacity-90">
+                        <Mail className="w-3.5 h-3.5" /> fuel@paccvictoria.com
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -765,6 +864,9 @@ export default function CustomerPortal() {
       onTabChange={(t) => setActiveTab(t as Tab)}
       brandLogoUrl={showCustomerBrand ? brandLogoUrl : null}
       brandCaption={companyName}
+      customerName={isDemo ? "Demo Customer" : companyName}
+      accountNumber={clientAccountId ? `Account #C${clientAccountId}` : null}
+      isDemo={isDemo}
     >
       <WelcomeModal />
       {body}
@@ -1464,24 +1566,30 @@ function OverviewTab({
           tintColor="#7A5300"
         />
         <KPISparklineCard
-          label="Deliveries"
-          value={numDeliveries.toLocaleString()}
-          deltaPct={pct(numDeliveries, prevDeliveries)}
-          trend={sparkDeliveries}
-          fallbackContext="Comparison resumes with previous period data"
-          icon={Truck}
-          tintBg="#EAEEFC"
-          tintColor="#2B3D8E"
+          label="Est. FTC Savings"
+          value={ftcSavings > 0 ? `$${ftcSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+          deltaPct={null}
+          trend={sparkLitres}
+          fallbackContext="ATO off-road rate × volume"
+          icon={Receipt}
+          tintBg="#C8F26A"
+          tintColor="#0E1F10"
+          customPill={
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-muted text-muted-foreground">
+              YTD
+            </span>
+          }
+          subLine="ATO off-road rate × volume"
         />
         <KPISparklineCard
-          label="Avg Drop Size"
-          value={Math.round(avgDrop).toLocaleString() + " L"}
-          deltaPct={pct(avgDrop, prevAvg)}
-          trend={sparkAvg}
-          fallbackContext="Comparison resumes with previous period data"
-          icon={Gauge}
-          tintBg="#F4F5F1"
-          tintColor="#5F6B61"
+          label="Active Sites"
+          value={sites.size.toLocaleString()}
+          deltaPct={null}
+          trend={sparkDeliveries}
+          fallbackContext="— no change"
+          icon={MapPin}
+          tintBg="#EAEEFC"
+          tintColor="#2B3D8E"
         />
       </div>
 
