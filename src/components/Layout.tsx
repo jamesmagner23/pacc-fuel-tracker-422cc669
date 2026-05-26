@@ -202,6 +202,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div style={{ padding: "16px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
           <SyncStatus />
           <button
+            type="button"
             onClick={async () => { sessionStorage.removeItem("demo_unlocked"); await supabase.auth.signOut(); window.location.href = isDemo ? "/landing" : "/login"; }}
             style={{
               display: "flex", alignItems: "center", gap: 8,
@@ -242,6 +243,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             <PACCLogo size="sm" />
             <button
+              type="button"
+              aria-label="Close menu"
               onClick={() => setMobileMenuOpen(false)}
               style={{ background: "transparent", border: "none", color: TEXT_MID, cursor: "pointer", padding: 4 }}
             >
@@ -306,6 +309,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div style={{ padding: "20px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
             <SyncStatus />
             <button
+              type="button"
               onClick={async () => { sessionStorage.removeItem("demo_unlocked"); await supabase.auth.signOut(); window.location.href = isDemo ? "/landing" : "/login"; }}
               style={{
                 display: "flex", alignItems: "center", gap: 8,
@@ -348,6 +352,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Mobile header */}
             <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
             <button
+              type="button"
+              aria-label="Open menu"
               onClick={() => setMobileMenuOpen(true)}
               style={{
                 background: "transparent",
