@@ -758,6 +758,28 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 onOpenEdit={() => setAccountOpen(true)}
               />
             )}
+            {activeTab === "Help" && (
+              <div className="bg-card border border-border rounded-[14px] p-6 max-w-2xl">
+                <div className="flex items-start gap-3">
+                  <div className="inline-flex items-center justify-center shrink-0"
+                       style={{ width: 40, height: 40, borderRadius: 12, background: "#EAEEFC", color: "#2B3D8E" }}>
+                    <HelpCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground">Need a hand?</h2>
+                    <p className="mt-1 text-[13px] text-muted-foreground">
+                      Dispatch is available Monday–Friday, 7am–5pm AEST.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <a href="mailto:fuel@paccvictoria.com"
+                         className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium bg-foreground text-background hover:opacity-90">
+                        <Mail className="w-3.5 h-3.5" /> fuel@paccvictoria.com
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 
