@@ -156,7 +156,7 @@ export default function Overview() {
               <LineChart data={dailyData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                   axisLine={false}
                   tickLine={false}
                   interval="preserveStartEnd"
@@ -165,24 +165,24 @@ export default function Overview() {
                 <YAxis hide />
                 <ReferenceLine
                   y={median(dailyData.map((d) => d.litres))}
-                  stroke="hsl(var(--border))"
+                  stroke="var(--border)"
                   strokeDasharray="3 3"
                 />
                 <Tooltip
-                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 13 }}
-                  labelStyle={{ color: "hsl(var(--foreground))" }}
-                  itemStyle={{ color: "hsl(var(--foreground))" }}
+                  contentStyle={{ background: "var(--card, #fff)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13 }}
+                  labelStyle={{ color: "var(--foreground)" }}
+                  itemStyle={{ color: "var(--foreground)" }}
                   formatter={(v: number) => [`${v.toLocaleString()} L`, "Litres"]}
                   cursor={{ stroke: "rgba(0,0,0,0.06)", strokeWidth: 1 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="litres"
-                  stroke="hsl(var(--foreground))"
+                  stroke="var(--foreground)"
                   strokeWidth={1.5}
                   dot={(props: any) => {
                     if (props.index !== dailyData.length - 1) return null as any;
-                    return <circle key="last" cx={props.cx} cy={props.cy} r={4} fill="hsl(var(--accent))" stroke="none" />;
+                    return <circle key="last" cx={props.cx} cy={props.cy} r={4} fill="var(--accent)" stroke="none" />;
                   }}
                   isAnimationActive={false}
                 />
