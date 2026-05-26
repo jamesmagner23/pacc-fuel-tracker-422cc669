@@ -1,8 +1,9 @@
-import { useEffect, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  Menu, X, LogOut,
-  LayoutDashboard, Truck, Bus, TrendingUp, User as UserIcon,
+  Menu, X,
+  LayoutDashboard, Truck, Wrench, FileBarChart, User as UserIcon,
+  Phone, HelpCircle,
 } from "lucide-react";
 import { PACCLogo } from "../PACCLogo";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,33 +13,33 @@ import { NotificationsBell } from "../topbar/NotificationsBell";
 import { PortalSyncPill } from "./PortalSyncPill";
 import { UserMenu } from "../UserMenu";
 
-type NavItem = { tab: string; label: string; icon: ComponentType<{ className?: string }> };
+type NavItem = {
+  tab: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  /** When set, render as an external/route link instead of toggling a tab. */
+  href?: string;
+  external?: boolean;
+};
 type NavGroup = { label: string; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
   {
-    label: "Overview",
-    items: [
-      { tab: "Overview", label: "Overview", icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { tab: "Deliveries", label: "Deliveries", icon: Truck },
-      { tab: "Fleet",      label: "Fleet",      icon: Bus },
-    ],
-  },
-  {
-    label: "Insights",
-    items: [
-      { tab: "Reports",    label: "Reports",    icon: TrendingUp },
-    ],
-  },
-  {
     label: "Account",
     items: [
-      { tab: "Profile",    label: "Profile",    icon: UserIcon },
+      { tab: "Overview", label: "Overview", icon: LayoutDashboard },
+      { tab: "Deliveries", label: "Deliveries", icon: Truck },
+      { tab: "Fleet", label: "Fleet", icon: Wrench },
+      { tab: "Reports", label: "Reports", icon: FileBarChart },
+      { tab: "Profile", label: "Profile", icon: UserIcon },
+    ],
+  },
+  {
+    label: "Support",
+    items: [
+      { tab: "ContactDispatch", label: "Contact dispatch", icon: Phone,
+        href: "mailto:fuel@paccvictoria.com", external: true },
+      { tab: "Help", label: "Help", icon: HelpCircle, href: "/portal/help" },
     ],
   },
 ];
@@ -50,6 +51,12 @@ export interface PortalLayoutProps {
   brandLogoUrl?: string | null;
   /** Customer-facing brand caption when logo is shown. */
   brandCaption?: string;
+  /** Customer company name for the sidebar context card. */
+  customerName?: string;
+  /** Optional account # shown under the customer name. */
+  accountNumber?: string | null;
+  /** Render the demo badge next to the customer name. */
+  isDemo?: boolean;
   children: ReactNode;
 }
 
@@ -58,6 +65,9 @@ export function PortalLayout({
   onTabChange,
   brandLogoUrl,
   brandCaption,
+  customerName,
+  accountNumber,
+  isDemo,
   children,
 }: PortalLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,37 +80,60 @@ export function PortalLayout({
     return () => window.removeEventListener("pacc:open-nav", open);
   }, []);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
-
-  // Build the in-portal href that preserves any extra query params.
+  // Map a tab name to its real URL under /portal.
   const tabHref = (tab: string) => {
+    const slug: Record<string, string> = {
+      Overview: "",
+      Deliveries: "deliveries",
+      Fleet: "fleet",
+      Reports: "reports",
+      Profile: "profile",
+    };
     const next = new URLSearchParams(params);
-    next.set("tab", tab);
-    return `/portal?${next.toString()}`;
+    // Drop the legacy ?tab= param if present.
+    next.delete("tab");
+    const qs = next.toString();
+    const base = `/portal${slug[tab] ? "/" + slug[tab] : ""}`;
+    return qs ? `${base}?${qs}` : base;
   };
 
   const NavLinkRow = ({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) => {
     const Icon = item.icon;
     const active = activeTab === item.tab;
+    const rowClass = [
+      "group flex items-center gap-2.5 rounded-lg text-[14px] transition-colors",
+      "h-9 pr-3",
+      active
+        ? "bg-card text-foreground font-semibold border-l-2 border-accent pl-3"
+        : "bg-transparent text-muted-foreground hover:bg-card hover:text-foreground border-l-2 border-transparent pl-3",
+    ].join(" ");
+
+    // External/route link (mailto, /portal/help, etc.) — no tab toggling.
+    if (item.href) {
+      if (item.external) {
+        return (
+          <a href={item.href} onClick={onNavigate} className={rowClass}>
+            <Icon className="w-4 h-4 shrink-0" />
+            <span className="truncate">{item.label}</span>
+          </a>
+        );
+      }
+      return (
+        <Link to={item.href} onClick={onNavigate} className={rowClass}>
+          <Icon className="w-4 h-4 shrink-0" />
+          <span className="truncate">{item.label}</span>
+        </Link>
+      );
+    }
+
     return (
       <Link
         to={tabHref(item.tab)}
         onClick={(e) => {
-          // Let react-router handle navigation, but also surface the tab
-          // change synchronously so the parent doesn't wait on URL effects.
           onTabChange(item.tab);
           onNavigate?.();
         }}
-        className={[
-          "group flex items-center gap-2.5 rounded-lg text-[14px] transition-colors",
-          "h-9 pr-3",
-          active
-            ? "bg-card text-foreground font-semibold border-l-2 border-accent pl-3"
-            : "bg-transparent text-muted-foreground hover:bg-card hover:text-foreground border-l-2 border-transparent pl-3",
-        ].join(" ")}
+        className={rowClass}
       >
         <Icon className="w-4 h-4 shrink-0" />
         <span className="truncate">{item.label}</span>
@@ -133,17 +166,74 @@ export function PortalLayout({
   );
 
   const SidebarHeader = () => (
-    <div className="px-4 py-5 border-b border-border flex items-center gap-2">
-      {brandLogoUrl ? (
-        <>
-          <img src={brandLogoUrl} alt={brandCaption || ""} className="h-8 max-w-[140px] object-contain" />
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">by PACC</span>
-        </>
-      ) : (
-        <PACCLogo size="sm" tone="light" />
-      )}
+    <div className="px-4 pt-5 pb-4 border-b border-border">
+      <div className="flex items-center gap-2">
+        {brandLogoUrl ? (
+          <>
+            <img src={brandLogoUrl} alt={brandCaption || ""} className="h-8 max-w-[140px] object-contain" />
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">by PACC</span>
+          </>
+        ) : (
+          <PACCLogo size="sm" tone="light" />
+        )}
+      </div>
+      <div
+        className="mt-1 text-[11px] font-medium text-muted-foreground"
+        style={{ letterSpacing: "0.02em" }}
+      >
+        Customer portal
+      </div>
     </div>
   );
+
+  const initials = useMemo(() => {
+    const name = (customerName || "").trim();
+    if (!name) return "";
+    const parts = name.split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }, [customerName]);
+
+  // Deterministic soft tint from the company name hash.
+  const avatarBg = useMemo(() => {
+    const name = customerName || "PACC";
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    const hue = h % 360;
+    return `hsl(${hue} 40% 88%)`;
+  }, [customerName]);
+
+  const CustomerContextCard = () =>
+    !customerName ? null : (
+      <div className="px-3 pt-3 pb-4 border-b border-border">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="shrink-0 inline-flex items-center justify-center text-[13px] font-bold text-foreground"
+            style={{ width: 32, height: 32, borderRadius: 8, background: avatarBg }}
+          >
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="truncate text-[12px] font-bold uppercase text-foreground" style={{ letterSpacing: "0.02em" }}>
+                {customerName}
+              </span>
+              {isDemo && (
+                <span
+                  className="shrink-0 inline-flex items-center rounded-full text-[10px] font-bold uppercase text-foreground"
+                  style={{ padding: "2px 8px", background: "hsl(var(--accent) / 0.3)", letterSpacing: "0.04em" }}
+                >
+                  Demo
+                </span>
+              )}
+            </div>
+            {accountNumber && (
+              <div className="text-[11px] font-medium text-muted-foreground truncate">{accountNumber}</div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
 
   return (
     <div className="min-h-screen flex w-full bg-background text-foreground">
@@ -160,6 +250,7 @@ export function PortalLayout({
         style={{ width: 240, background: "var(--muted)", borderRight: "1px solid var(--border)" }}
       >
         <SidebarHeader />
+        <CustomerContextCard />
         <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-4">{renderGroups()}</nav>
         <div className="border-t border-border mb-4">
           <SidebarUserCard />
@@ -183,6 +274,7 @@ export function PortalLayout({
               <X className="w-5 h-5" />
             </button>
           </div>
+          <CustomerContextCard />
           <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3">
             {renderGroups(() => setMobileMenuOpen(false))}
           </nav>
