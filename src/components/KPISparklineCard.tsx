@@ -51,7 +51,7 @@ export function KPISparklineCard({
               <Line
                 type="monotone"
                 dataKey="v"
-                stroke="hsl(var(--foreground))"
+                stroke="var(--foreground)"
                 strokeWidth={1.5}
                 dot={(props: any) => {
                   if (props.index !== trend.length - 1) return null as any;
@@ -61,7 +61,7 @@ export function KPISparklineCard({
                       cx={props.cx}
                       cy={props.cy}
                       r={3}
-                      fill="hsl(var(--accent))"
+                      fill="var(--accent)"
                       stroke="none"
                     />
                   );
