@@ -33,6 +33,7 @@ export type ChartPalette = {
 
 function buildPalette(): ChartPalette {
   const accent = readVar("--accent", "#C8F26A");
+  const primaryVar = readVar("--primary", "#0E1F10");
   const surface = readVar("--surface", "#142A16");
   const surfaceRaised = readVar("--surface-raised", "#1B3520");
   const border = readVar("--surface-border", "#2A4A2E");
@@ -43,20 +44,25 @@ function buildPalette(): ChartPalette {
   const warning = readVar("--warning", "#F5C25B");
 
   // Light vs dark is determined by the html dataset we set in globalTheme.ts.
+  // Default to light because the global theme is light-first.
   const isLight =
-    typeof document !== "undefined" &&
-    document.documentElement.dataset.theme === "light";
+    typeof document === "undefined"
+      ? true
+      : document.documentElement.dataset.theme !== "dark" &&
+        !document.documentElement.classList.contains("dark");
 
   const categorical = isLight
-    ? ["#5C8A4E", "#A7C77A", "#D8B36A", "#7A9A8B", "#C28A5A", "#B8AE92"]
+    ? ["#0E1F10", "#3F6B36", "#7A9A6B", "#C8A24A", "#7A5B3A", "#A7B1A4"]
     : ["#C8F26A", "#9BC36A", "#ECE4D2", "#7A9A6B", "#F5C25B", "#C7BFAC"];
 
-  // Secondary/tertiary tuned per mode for readable stacks.
-  const secondary = isLight ? "#A7C77A" : "#3F6B36";
-  const tertiary = isLight ? "#D8B36A" : "#1B3520";
+  // Primary line/bar = deep green in light mode (readable on white),
+  // lime in dark mode. Secondary/tertiary tuned per mode for stacks.
+  const primary = isLight ? primaryVar : accent;
+  const secondary = isLight ? "#3F6B36" : "#3F6B36";
+  const tertiary = isLight ? "#C8A24A" : "#1B3520";
 
   return {
-    primary: accent,
+    primary,
     secondary,
     tertiary,
     positive,
