@@ -232,7 +232,7 @@ export default function Overview() {
       {range === "today" && (
         <div style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12, padding: "20px 24px", marginTop: 1 }}>
           <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4" style={{ color: tc.accent }} />
+            <Clock className="w-4 h-4" style={{ color: tc.textPrimary }} />
             <div className="text-sm font-medium" style={{ color: tc.textPrimary }}>Today's Deliveries</div>
           </div>
           <div className="text-[11px] mb-4" style={{ color: tc.textSecondary }}>Live feed — most recent first</div>
