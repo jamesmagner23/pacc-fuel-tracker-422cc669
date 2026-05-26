@@ -254,17 +254,17 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const lastUpdatedLabel = locationTimestamp
     ? isToday
       ? locationTimestamp.toLocaleTimeString("en-AU", {
-          hour: "2-digit",
+          hour: "numeric",
           minute: "2-digit",
           timeZone: "Australia/Melbourne",
-        })
+        }).replace(/\s?(am|pm|AM|PM)/, (m) => m.trim().toLowerCase())
       : locationTimestamp.toLocaleString("en-AU", {
           day: "2-digit",
           month: "short",
-          hour: "2-digit",
+          hour: "numeric",
           minute: "2-digit",
           timeZone: "Australia/Melbourne",
-        })
+        }).replace(/\s?(am|pm|AM|PM)/, (m) => m.trim().toLowerCase())
     : null;
 
   const mapHeight = expanded ? 520 : height;
