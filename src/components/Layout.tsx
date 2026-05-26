@@ -255,7 +255,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     textDecoration: "none",
                     borderBottom: `1px solid ${BORDER}`,
                     background: isActive ? ACTIVE_BG : "transparent",
-                    borderLeft: isActive ? `3px solid ${ACCENT}` : "3px solid transparent",
+                    borderLeft: isActive ? `2px solid ${ACCENT}` : "2px solid transparent",
                   }}
                 >
                   <span
