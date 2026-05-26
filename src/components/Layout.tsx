@@ -350,13 +350,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Mobile second row: one date range toggle, full-width and touch-friendly */}
+          {/* Mobile second row: date range toggle aligned right to mirror the
+              breadcrumb pattern (next to page H1 rather than its own band). */}
           {showDateRange && (
             <div
               className="flex md:hidden"
               style={{
-                justifyContent: "center",
-                padding: "8px 12px 10px",
+                justifyContent: "flex-end",
+                padding: "4px 12px 6px",
                 borderTop: `1px solid ${BORDER}`,
               }}
             >
