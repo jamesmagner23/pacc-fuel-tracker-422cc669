@@ -953,6 +953,9 @@ export default function CustomerPortal() {
                   setReportsSubtab("Fuel Tax Credit");
                   setActiveTab("Reports");
                 }}
+                onOpenDeliveries={() => setActiveTab("Deliveries")}
+                periodLabel={PERIOD_LABELS[period]}
+                companyName={companyName}
               />
             )}
             {activeTab === "Deliveries" && (
