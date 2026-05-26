@@ -17,7 +17,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Overview() {
   const isMobile = useIsMobile();
-  if (isMobile) return <MobileOverview />;
   const { range } = useDateRange();
   const {
     filtered,
@@ -76,6 +75,8 @@ export default function Overview() {
 
   // Inline page wrapper bg uses --muted so cards pop.
   const pageBg = "bg-muted/60";
+
+  if (isMobile) return <MobileOverview />;
 
   if (isLoading) {
     return (
