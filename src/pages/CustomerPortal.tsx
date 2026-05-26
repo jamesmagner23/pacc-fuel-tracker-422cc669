@@ -1271,6 +1271,69 @@ function OverviewTab({
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
   const totalLitres = transactions.reduce((s, t) => s + (t.cantidad || 0), 0);
+  const numDeliveries = transactions.length;
+  const avgDrop = numDeliveries > 0 ? totalLitres / numDeliveries : 0;
+  const totalSpend = transactions.reduce((s, t) => s + (t.dinero_total || 0), 0);
+
+  // Previous-period comparison: same window length, immediately preceding.
+  const previousTransactions = useMemo(() => {
+    const days = PERIOD_DAYS[period];
+    if (days == null) return [];
+    const cutoffEnd = subDays(new Date(), days);
+    const cutoffStart = subDays(cutoffEnd, days);
+    const endStr = format(cutoffEnd, "yyyy-MM-dd");
+    const startStr = format(cutoffStart, "yyyy-MM-dd");
+    return allTransactions.filter((t: any) => {
+      const d = t.date || "";
+      return d >= startStr && d < endStr;
+    });
+  }, [allTransactions, period]);
+  const prevLitres = previousTransactions.reduce((s: number, t: any) => s + (t.cantidad || 0), 0);
+  const prevSpend = previousTransactions.reduce((s: number, t: any) => s + (t.dinero_total || 0), 0);
+  const prevDeliveries = previousTransactions.length;
+  const prevAvg = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
+  const pct = (curr: number, prev: number): number | null =>
+    prev === 0 ? null : ((curr - prev) / prev) * 100;
+
+  // Daily trend series for the sparklines + growth chart.
+  const dailyTrend = useMemo(() => {
+    const m: Record<string, { l: number; r: number; c: number }> = {};
+    transactions.forEach((t: any) => {
+      const d = (t.date || "").slice(0, 10);
+      if (!d) return;
+      (m[d] ||= { l: 0, r: 0, c: 0 });
+      m[d].l += t.cantidad || 0;
+      m[d].r += t.dinero_total || 0;
+      m[d].c += 1;
+    });
+    return Object.entries(m)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([d, v]) => ({ date: format(parseISO(d), "d MMM"), litres: v.l, revenue: v.r, deliveries: v.c }));
+  }, [transactions]);
+  const sparkLitres = dailyTrend.map((d) => ({ v: d.litres }));
+  const sparkRevenue = dailyTrend.map((d) => ({ v: d.revenue }));
+  const sparkDeliveries = dailyTrend.map((d) => ({ v: d.deliveries }));
+  const sparkAvg = dailyTrend.map((d) => ({ v: d.deliveries ? d.litres / d.deliveries : 0 }));
+
+  // Donut: volume by site (top 5 + Other).
+  const donutData = useMemo(() => {
+    const m: Record<string, number> = {};
+    transactions.forEach((t: any) => {
+      const k = t.estacion || t.ciudad || t.nombre_cliente1 || "Unknown";
+      m[k] = (m[k] || 0) + (t.cantidad || 0);
+    });
+    const sorted = Object.entries(m).sort(([, a], [, b]) => b - a);
+    const top5 = sorted.slice(0, 5);
+    const other = sorted.slice(5).reduce((s, [, v]) => s + v, 0);
+    const rows = top5.map(([name, value]) => ({ name, value }));
+    if (other > 0) rows.push({ name: "Other", value: other });
+    const total = rows.reduce((s, r) => s + r.value, 0);
+    return { rows, total };
+  }, [transactions]);
+
+  const DONUT_COLORS = ["#2A6A2E", "#7A5300", "#2B3D8E", "#5F6B61", "#B43A2E", "#C7CCC1"];
+  const prefix = period === "day" ? "Daily" : period === "week" ? "Weekly" : period === "month" ? "Monthly" : "All-time";
+
   // "Sites" = unique delivery locations (estacion / ciudad), not the
   // single customer name. Falls back to customer if nothing better.
   const sites = new Set(
@@ -1378,69 +1441,140 @@ function OverviewTab({
         </div>
       )}
 
-      {/* Hero — Litres used (visual focal point) */}
-      <HeroLitres
-        totalLitres={totalLitres}
-        deliveries={transactions.length}
-        sites={sites.size}
-        transactions={transactions}
-      />
+      {/* KPI sparkline tiles — matches admin Overview pattern */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <KPISparklineCard
+          label={`${prefix} Litres Delivered`}
+          value={totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`}
+          deltaPct={pct(totalLitres, prevLitres)}
+          trend={sparkLitres}
+          fallbackContext="Comparison resumes with previous period data"
+          icon={Droplet}
+          tintBg="#E8EDE5"
+          tintColor="#2A6A2E"
+        />
+        <KPISparklineCard
+          label={`${prefix} Spend (inc GST)`}
+          value={totalSpend > 0 ? `$${totalSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+          deltaPct={pct(totalSpend, prevSpend)}
+          trend={sparkRevenue}
+          fallbackContext="Comparison resumes with previous period data"
+          icon={DollarSign}
+          tintBg="#F4F0E6"
+          tintColor="#7A5300"
+        />
+        <KPISparklineCard
+          label="Deliveries"
+          value={numDeliveries.toLocaleString()}
+          deltaPct={pct(numDeliveries, prevDeliveries)}
+          trend={sparkDeliveries}
+          fallbackContext="Comparison resumes with previous period data"
+          icon={Truck}
+          tintBg="#EAEEFC"
+          tintColor="#2B3D8E"
+        />
+        <KPISparklineCard
+          label="Avg Drop Size"
+          value={Math.round(avgDrop).toLocaleString() + " L"}
+          deltaPct={pct(avgDrop, prevAvg)}
+          trend={sparkAvg}
+          fallbackContext="Comparison resumes with previous period data"
+          icon={Gauge}
+          tintBg="#F4F5F1"
+          tintColor="#5F6B61"
+        />
+      </div>
 
-      {/* FTC savings — second visual headline */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
-        <div style={card}>
-          <div style={labelStyle}>Est. FTC Savings</div>
-          <div
-            style={{
-              fontSize: 28,
-              fontFamily: T.sansHead,
-              fontWeight: 700,
-              color: ftcSavings > 0 ? T.text : T.muted,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {ftcSavings > 0 ? `$${Math.round(ftcSavings).toLocaleString()}` : "—"}
+      {/* Litres growth + Volume by site row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-card border border-border rounded-[14px] p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-foreground">Litres growth</h2>
+            <span className="text-[11px] font-medium text-muted-foreground">{periodLabel}</span>
           </div>
-          <div style={{ ...muted(11), marginTop: 4 }}>Off-road rate × volume</div>
-          {onOpenFtcReport && (
-            <button
-              onClick={onOpenFtcReport}
-              style={{
-                marginTop: 10,
-                background: "transparent",
-                color: T.text,
-                border: `1px solid ${T.accent}88`,
-                borderRadius: 999,
-                padding: "6px 12px",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-              }}
-            >
-              View Full Report →
-            </button>
-          )}
+          <div className="mt-3 flex items-center gap-4 text-[11px] font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#2A6A2E" }} />
+              Litres delivered
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#2B3D8E" }} />
+              Deliveries (count)
+            </span>
+          </div>
+          <div style={{ height: 280 }} className="mt-2">
+            {dailyTrend.length >= 2 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={dailyTrend} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="portal-litres-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#2A6A2E" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#2A6A2E" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" strokeOpacity={0.4} vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={{ stroke: "var(--border)" }} tickLine={false} minTickGap={32} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`)} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13, padding: "8px 12px" }}
+                    formatter={(v: number, name: string) => name === "litres" ? [`${v.toLocaleString()} L`, "Litres"] : [v.toLocaleString(), "Deliveries"]}
+                  />
+                  <Area yAxisId="left" type="monotone" dataKey="litres" stroke="#2A6A2E" strokeWidth={1.75} fill="url(#portal-litres-fill)" isAnimationActive={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="deliveries" stroke="#2B3D8E" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-center text-sm text-muted-foreground">
+                Trend appears with 2+ data points.
+              </div>
+            )}
+          </div>
         </div>
-        <div style={card}>
-          <div style={labelStyle}>Top Plant</div>
-          <div
-            style={{
-              fontSize: 16,
-              fontFamily: T.sansHead,
-              fontWeight: 700,
-              color: T.text,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {topPlant?.name || "—"}
+
+        <div className="bg-card border border-border rounded-[14px] p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-foreground">Volume by site</h2>
+            <span className="text-[11px] font-medium text-muted-foreground">{periodLabel}</span>
           </div>
-          <div style={{ fontSize: 22, fontFamily: T.sansHead, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
-            {topPlant ? fmtL(topPlant.litres) : "—"}
+          <div style={{ height: 240 }} className="flex flex-col">
+            <div className="relative flex-1 min-h-0">
+              {donutData.rows.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-muted-foreground">No data</div>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={donutData.rows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="60%" outerRadius="90%" stroke="none" isAnimationActive={false}>
+                        {donutData.rows.map((_, i) => (
+                          <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div className="text-[22px] font-semibold tabular-nums text-foreground leading-tight">
+                      {donutData.total >= 1000 ? `${(donutData.total / 1000).toFixed(1)}k` : donutData.total.toFixed(0)}
+                    </div>
+                    <div className="text-[11px] font-medium text-muted-foreground">Total litres</div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+          {donutData.rows.length > 0 && (
+            <ul className="mt-4 space-y-1.5">
+              {donutData.rows.map((r, i) => (
+                <li key={r.name} className="flex items-center gap-2 text-[13px] text-foreground">
+                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                  <span className="flex-1 font-medium truncate">{r.name}</span>
+                  <span className="font-semibold tabular-nums">
+                    {donutData.total ? `${((r.value / donutData.total) * 100).toFixed(0)}%` : "0%"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
