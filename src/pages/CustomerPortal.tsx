@@ -12,7 +12,7 @@ import { logActivity } from "@/hooks/useActivityLog";
 import { logDemoEvent } from "@/lib/demoAnalytics";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
-import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
+import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, ComposedChart, Area, Line, CartesianGrid } from "recharts";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { usePlantItems } from "@/hooks/usePlantItems";
 import { PlantDetailsModal } from "@/components/customer/PlantDetailsModal";
@@ -21,7 +21,7 @@ import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { useClientProfile } from "@/hooks/useClientProfile";
-import { Filter } from "lucide-react";
+import { Filter, Droplet, DollarSign, Truck, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePortalFilters,
@@ -34,6 +34,7 @@ import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PageHeader } from "@/components/PageHeader";
+import { KPISparklineCard } from "@/components/KPISparklineCard";
 
 // ─── Theme tokens — light "showcase email" palette ──────────────────
 // Mutable holder. Properties get re-assigned by applyPortalTheme() below
