@@ -1755,10 +1755,16 @@ function OverviewTab({
                 borderTop: i > 0 ? `1px solid ${T.border}` : "none",
               }}
             >
-              <div>
-                <div style={{ fontSize: 13, color: T.text }}>{t.nombre_cliente1}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: T.text, fontWeight: 500, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span>{t.placa || t.nombre_cliente1 || "—"}</span>
+                  {t.producto && (
+                    <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: T.accent + "1f", color: T.textSecondary, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>{t.producto}</span>
+                  )}
+                </div>
                 <div style={muted(11)}>
                   {t.date ? format(parseISO(t.date), "EEE dd MMM yyyy") : "—"}
+                  {t.estacion ? <> · {t.estacion}</> : null}
                 </div>
               </div>
               <div style={{ fontSize: 14, fontFamily: T.sansHead, fontWeight: 600, color: T.text, fontVariantNumeric: "tabular-nums" }}>
