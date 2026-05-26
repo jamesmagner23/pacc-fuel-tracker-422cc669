@@ -537,6 +537,22 @@ export default function CustomerPortal() {
     const cutoffStr = format(cutoff, "yyyy-MM-dd");
     return transactions.filter((t: any) => (t.date || "") >= cutoffStr);
   }, [transactions, period]);
+
+  // First-paint guard: if the default "This Month" window is empty but the
+  // customer DOES have deliveries on file, auto-fall back to "All Time" so
+  // the KPI tiles never greet the user with "0 L". Only fires once per
+  // session and only from the default "month" position.
+  const autoFellBackRef = useRef(false);
+  useEffect(() => {
+    if (autoFellBackRef.current) return;
+    if (isLoading) return;
+    if (period !== "month") return;
+    if (transactions.length === 0) return;
+    if (periodTransactions.length > 0) return;
+    autoFellBackRef.current = true;
+    setPeriod("all");
+  }, [isLoading, period, transactions.length, periodTransactions.length]);
+
   const filteredTransactions = useMemo(
     () => filterTransactions(periodTransactions, portalFilters.filters, lookups),
     [periodTransactions, portalFilters.filters, lookups]
