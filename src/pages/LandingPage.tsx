@@ -404,7 +404,7 @@ export default function LandingPage() {
             {services.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="rounded-[12px] border border-border bg-card p-6">
                 <div className="w-9 h-9 rounded-md bg-primary/10 inline-flex items-center justify-center text-primary mb-5">
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-6 h-6" />
                 </div>
                 <h3 className="text-[16px] font-semibold leading-snug mb-2">{title}</h3>
                 <p className="text-[14px] leading-[1.55] text-muted-foreground">{desc}</p>
