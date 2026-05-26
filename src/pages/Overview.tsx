@@ -5,11 +5,13 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line,
 } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
+import { DateRangeToggle } from "@/components/DateRangeToggle";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 import { format, parseISO } from "date-fns";
 import { Droplets, Clock, Truck, MapPin, Fuel } from "lucide-react";
 import { useChartPalette } from "@/lib/chartPalette";
+import { formatTime } from "@/lib/format";
 
 /** Read a CSS variable at render time so charts pick up theme overrides */
 function cssVar(name: string, fallback = ""): string {
@@ -178,10 +180,13 @@ export default function Overview() {
 
   return (
     <div className="flex flex-col gap-1 max-w-[1200px] w-full">
-      {/* Page heading */}
-      <div className="px-1 pt-1 pb-0">
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Overview</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Real-time fuel delivery performance and insights</p>
+      {/* Page heading — period selector inline on desktop, stacked on mobile */}
+      <div className="px-1 pt-1 pb-0 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Overview</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Real-time fuel delivery performance and insights</p>
+        </div>
+        <div className="self-start md:self-end"><DateRangeToggle /></div>
       </div>
 
       {/* HERO SECTION */}
@@ -207,24 +212,23 @@ export default function Overview() {
         ))}
       </div>
 
-      {/* Sparkline as its own block — suppressed on single-day ranges where a
-          one-point chart just renders a floating dot. */}
-      {dailyData.length >= 2 && (
-        <div
-          className="px-4 pt-4 pb-2 sm:px-6 mt-3"
-          style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12 }}
-        >
-          <div className="text-[11px] uppercase tracking-wider mb-2" style={{ color: tc.textSecondary }}>Litres trend</div>
-          <div className="-mx-4 sm:-mx-6" style={{ height: 160 }}>
+      {/* Trend chart — full-width card. With < 2 points show an inline
+          empty state instead of a broken single-dot line. */}
+      <div
+        className="px-6 py-5 mt-3"
+        style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12 }}
+      >
+        <div className="flex items-baseline justify-between mb-3">
+          <div className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: tc.textSecondary, letterSpacing: "0.08em" }}>Litres Delivered — Trend</div>
+          <div className="text-[11px]" style={{ color: tc.textSecondary }}>
+            {range === "today" ? "Today" : range === "week" ? "This Week" : "This Month"}
+          </div>
+        </div>
+        <div style={{ height: 200 }}>
+          {dailyData.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={palette.primary} stopOpacity={0.18} />
-                    <stop offset="100%" stopColor={palette.primary} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: tc.textSecondary }} axisLine={false} tickLine={false} />
+              <LineChart data={dailyData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: tc.textSecondary }} axisLine={false} tickLine={false} />
                 <YAxis hide />
                 <Tooltip
                   contentStyle={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 8, fontSize: 12 }}
@@ -233,12 +237,16 @@ export default function Overview() {
                   formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
                   cursor={{ stroke: "rgba(0,0,0,0.06)", strokeWidth: 1 }}
                 />
-                <Area type="monotone" dataKey="litres" stroke={palette.primary} strokeWidth={1.75} fill="url(#litresGrad)" dot={false} />
-              </AreaChart>
+                <Line type="monotone" dataKey="litres" stroke={tc.textPrimary} strokeWidth={1.5} dot={false} />
+              </LineChart>
             </ResponsiveContainer>
-          </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-center px-6" style={{ color: tc.textSecondary, fontSize: 13 }}>
+              Trend appears with 2+ data points. Switch to This Week or This Month to see history.
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       <TruckMap height={260} showStops={true} />
 
@@ -259,8 +267,8 @@ export default function Overview() {
                   onMouseEnter={(e) => e.currentTarget.style.background = tc.surfaceHover}
                   onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                 >
-                  <div className="w-[40px] sm:w-[52px] text-[11px] tabular-nums shrink-0 pt-0.5" style={{ color: tc.textSecondary }}>
-                    {format(new Date(t.fecha), "HH:mm")}
+                  <div className="w-[52px] sm:w-[64px] text-[11px] tabular-nums shrink-0 pt-0.5" style={{ color: tc.textSecondary }}>
+                    {formatTime(t.fecha)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-medium truncate" style={{ color: tc.textPrimary }}>{t.nombre_cliente1 || "Walk-in"}</div>
