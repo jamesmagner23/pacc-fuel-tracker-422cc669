@@ -557,7 +557,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     if (!isDemo) return;
     logDemoEvent({
       eventType: "section_viewed",
-      section: activeTab,
+      section: activeTab as Tab,
     });
   }, [isDemo, activeTab]);
 
