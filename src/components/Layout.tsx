@@ -1,6 +1,6 @@
 import { NavLink as RouterNavLink, useLocation, useSearchParams } from "react-router-dom";
 import { DateRangeToggle } from "./DateRangeToggle";
-import { useState, type ComponentType } from "react";
+import { useState, useEffect, type ComponentType } from "react";
 import {
   Menu, X, LogOut,
   LayoutDashboard, Truck, Building2, DollarSign, Package, TrendingUp, Settings, Bus,
@@ -66,6 +66,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isDemo, isPaccBranded } = useDemoContext();
   const [params] = useSearchParams();
+
+  // Pages (currently the mobile Overview) can request the drawer be opened
+  // without prop-drilling. Listen globally and react.
+  useEffect(() => {
+    const open = () => setMobileMenuOpen(true);
+    window.addEventListener("pacc:open-nav", open);
+    return () => window.removeEventListener("pacc:open-nav", open);
+  }, []);
+
+  // Mobile Overview ("/" at < lg) renders its own page chrome and edge-to-edge
+  // background, so hide the default header and remove main padding.
+  const isOverviewMobile = location.pathname === "/";
 
   // Date range toggle is global state — only show it on routes whose pages
   // actually consume it. Otherwise clicking Today/Week/Month does nothing
@@ -201,7 +213,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* ── MAIN COLUMN ── */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-60">
         <header
-          className="sticky top-0 z-30 border-b border-border bg-background"
+          className={
+            "sticky top-0 z-30 border-b border-border bg-background " +
+            (isOverviewMobile ? "hidden lg:block" : "")
+          }
         >
           <div className="h-14 flex items-center justify-between px-4 sm:px-6 gap-3">
             {/* Mobile left: hamburger + small logo */}
@@ -237,7 +252,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <main
           id="main-content"
-          className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 pb-20"
+          className={
+            "flex-1 overflow-y-auto " +
+            (isOverviewMobile
+              ? "p-0 lg:px-8 lg:py-8 lg:pb-20"
+              : "px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 pb-20")
+          }
         >
           {children}
         </main>
