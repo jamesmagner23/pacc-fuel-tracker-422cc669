@@ -63,7 +63,7 @@ export default function AdminOverview() {
     { label: "Client Accounts", value: clientCount, icon: <Database className="w-4 h-4" /> },
   ];
 
-  const accent = "var(--accent)";
+  const accent = "hsl(var(--primary))";
   const muted = "var(--text-secondary)";
 
   return (

@@ -15,7 +15,7 @@ export default function Drivers() {
   const border = cssVar("--surface-border", "#2A4A2E");
   const textPrimary = cssVar("--text-primary", "#ECE4D2");
   const textSecondary = cssVar("--text-secondary", "#C7BFAC");
-  const accent = cssVar("--accent", "#C8F26A");
+  const accent = cssVar("--primary", "#0E1F10");
 
   const tooltipStyle = { backgroundColor: surface, border: `1px solid ${border}`, borderRadius: "8px", fontSize: 12 };
   const tooltipLabelStyle = { color: textPrimary };
