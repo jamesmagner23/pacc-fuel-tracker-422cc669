@@ -109,12 +109,30 @@ export default function Overview() {
   const prevDeliveries = previous.length;
   const prevAvgSize = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
 
-  const pct = (curr: number, prev: number) => (prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100);
+  // Return null when there's no prior baseline to compare to. Otherwise we'd
+  // show "+100%" on every metric the first time a customer loads data, which
+  // trains users to ignore the delta chip entirely.
+  const pct = (curr: number, prev: number): number | null =>
+    prev === 0 ? null : ((curr - prev) / prev) * 100;
 
   const litresPct = pct(totalLitres, prevLitres);
   const revPct = pct(totalRevenue, prevRevenue);
   const delPct = pct(numDeliveries, prevDeliveries);
   const avgPct = pct(avgSize, prevAvgSize);
+
+  const Delta = ({ p }: { p: number | null }) => {
+    if (p === null) {
+      return (
+        <span className="text-[11px]" style={{ color: tc.textSecondary }}>—</span>
+      );
+    }
+    const up = p >= 0;
+    return (
+      <span className={`text-[11px] font-medium ${up ? "text-emerald-500" : "text-red-500"}`}>
+        {up ? "+" : ""}{p.toFixed(1)}%
+      </span>
+    );
+  };
 
   const dailyData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -167,65 +185,60 @@ export default function Overview() {
       </div>
 
       {/* HERO SECTION */}
-      <div
-        className="px-4 pt-5 pb-0 sm:px-8 sm:pt-7"
-        style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12, overflow: "hidden" }}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-4">
-          <div>
-            <div className="text-[11px] uppercase tracking-wider mb-1.5" style={{ color: tc.textSecondary }}>Total Litres Delivered</div>
-            <div className="text-3xl sm:text-[56px] font-light tracking-tighter leading-none tabular-nums" style={{ color: tc.textPrimary }}>
-              {totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2.5">
-              {litresPct >= 0 ? <TrendingUp className="w-3 h-3 text-emerald-500" /> : <TrendingDown className="w-3 h-3 text-red-500" />}
-              <span className={`text-xs font-medium ${litresPct >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                {litresPct >= 0 ? "+" : ""}{litresPct.toFixed(1)}%
-              </span>
-              <span className="text-xs" style={{ color: tc.textSecondary }}>vs previous period</span>
+      {/* 4 equal KPI tiles — easier to scan than the old hero+supporting hybrid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+        {[
+          { label: "Total Litres", value: totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`, p: litresPct },
+          { label: "Revenue", value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }), p: revPct },
+          { label: "Deliveries", value: numDeliveries.toLocaleString(), p: delPct },
+          { label: "Avg Size", value: Math.round(avgSize).toLocaleString() + "L", p: avgPct },
+        ].map((k) => (
+          <div
+            key={k.label}
+            style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12, padding: "16px 18px" }}
+          >
+            <div className="text-[10px] uppercase tracking-wider mb-1.5" style={{ color: tc.textSecondary }}>{k.label}</div>
+            <div className="text-2xl sm:text-[28px] font-semibold tracking-tight tabular-nums" style={{ color: tc.textPrimary }}>{k.value}</div>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <Delta p={k.p} />
+              <span className="text-[11px]" style={{ color: tc.textSecondary }}>vs prev</span>
             </div>
           </div>
-
-          <div className="grid grid-cols-3 gap-3 sm:gap-8 sm:flex pt-1">
-            {[
-              { label: "Revenue", value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }), p: revPct },
-              { label: "Deliveries", value: numDeliveries.toString(), p: delPct },
-              { label: "Avg Size", value: Math.round(avgSize) + "L", p: avgPct },
-            ].map((k) => (
-              <div key={k.label} className="text-left sm:text-right">
-                <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: tc.textSecondary }}>{k.label}</div>
-                <div className="text-lg sm:text-xl font-medium tracking-tight tabular-nums" style={{ color: tc.textPrimary }}>{k.value}</div>
-                <div className={`text-[11px] mt-0.5 ${k.p >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                  {k.p >= 0 ? "+" : ""}{k.p.toFixed(1)}%
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="-mx-4 sm:-mx-8" style={{ height: 160 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={palette.primary} stopOpacity={0.18} />
-                  <stop offset="100%" stopColor={palette.primary} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: tc.textSecondary }} axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip
-                contentStyle={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 8, fontSize: 12 }}
-                labelStyle={{ color: tc.textPrimary }}
-                itemStyle={{ color: tc.textPrimary }}
-                formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
-                cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
-              />
-              <Area type="monotone" dataKey="litres" stroke={palette.primary} strokeWidth={1.75} fill="url(#litresGrad)" dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        ))}
       </div>
+
+      {/* Sparkline as its own block — suppressed on single-day ranges where a
+          one-point chart just renders a floating dot. */}
+      {dailyData.length >= 2 && (
+        <div
+          className="px-4 pt-4 pb-2 sm:px-6 mt-3"
+          style={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 12 }}
+        >
+          <div className="text-[11px] uppercase tracking-wider mb-2" style={{ color: tc.textSecondary }}>Litres trend</div>
+          <div className="-mx-4 sm:-mx-6" style={{ height: 160 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={palette.primary} stopOpacity={0.18} />
+                    <stop offset="100%" stopColor={palette.primary} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: tc.textSecondary }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{ background: tc.surface, border: `1px solid ${tc.border}`, borderRadius: 8, fontSize: 12 }}
+                  labelStyle={{ color: tc.textPrimary }}
+                  itemStyle={{ color: tc.textPrimary }}
+                  formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
+                  cursor={{ stroke: "rgba(0,0,0,0.06)", strokeWidth: 1 }}
+                />
+                <Area type="monotone" dataKey="litres" stroke={palette.primary} strokeWidth={1.75} fill="url(#litresGrad)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       <TruckMap height={260} showStops={true} />
 
