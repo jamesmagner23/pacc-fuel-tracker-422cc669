@@ -21,7 +21,7 @@ import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { useClientProfile } from "@/hooks/useClientProfile";
-import { Filter, Droplet, DollarSign, Truck, Gauge } from "lucide-react";
+import { Filter, Droplet, DollarSign, Truck, Gauge, Receipt, MapPin, Download, HelpCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePortalFilters,
@@ -35,6 +35,13 @@ import { WelcomeModal } from "@/components/customer/WelcomeModal";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { KPISparklineCard } from "@/components/KPISparklineCard";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 // ─── Theme tokens — light "showcase email" palette ──────────────────
 // Mutable holder. Properties get re-assigned by applyPortalTheme() below
