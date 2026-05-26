@@ -157,6 +157,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     };
 
     const redirectByRole = (userRole: UserRole, path: string) => {
+      // Always allow viewing the public marketing page
+      if (ALWAYS_PUBLIC_PATHS.includes(path)) return;
       if (userRole === "client" && !path.startsWith("/portal") && !path.startsWith("/docket")) {
         navigate("/portal", { replace: true });
       }
