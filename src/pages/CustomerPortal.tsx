@@ -12,7 +12,7 @@ import { logActivity } from "@/hooks/useActivityLog";
 import { logDemoEvent } from "@/lib/demoAnalytics";
 import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
-import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
+import { ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, ComposedChart, Area, Line, CartesianGrid } from "recharts";
 import { PlantBoard } from "@/components/customer/PlantBoard";
 import { usePlantItems } from "@/hooks/usePlantItems";
 import { PlantDetailsModal } from "@/components/customer/PlantDetailsModal";
@@ -21,7 +21,7 @@ import { groupAssignmentsByPlantItem, projectForItemAt } from "@/lib/projectAttr
 import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { useClientProfile } from "@/hooks/useClientProfile";
-import { User as UserIcon, ChevronDown, LogOut, Filter } from "lucide-react";
+import { Filter, Droplet, DollarSign, Truck, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import {
   usePortalFilters,
@@ -32,9 +32,9 @@ import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
-import { usePortalTheme, tokensFor, themeVarsFor, type PortalTheme } from "@/lib/portalTheme";
-import { PortalThemeToggle } from "@/components/portal/PortalThemeToggle";
-import { brandAccentVars, isValidHex } from "@/lib/brandTheme";
+import { PortalLayout } from "@/components/portal/PortalLayout";
+import { PageHeader } from "@/components/PageHeader";
+import { KPISparklineCard } from "@/components/KPISparklineCard";
 
 // ─── Theme tokens — light "showcase email" palette ──────────────────
 // Mutable holder. Properties get re-assigned by applyPortalTheme() below
@@ -70,37 +70,24 @@ const T = {
  * new literal each call — never mutate the previous object (`Object.assign`
  * on a frozen target throws "Cannot assign to read only property").
  */
-function applyPortalTheme(theme: PortalTheme, brandAccentOverride?: string | null) {
-  const tk = tokensFor(theme);
-  const accent = (brandAccentOverride && /^#[0-9a-fA-F]{6}$/.test(brandAccentOverride))
-    ? brandAccentOverride
-    : tk.accent;
-  const accentHover = (brandAccentOverride && /^#[0-9a-fA-F]{6}$/.test(brandAccentOverride))
-    ? brandAccentOverride
-    : tk.accentHover;
-
-  // 1. Replace T's contents with brand-new values. Because T itself is a
-  //    `const` reference (still mutable shape) and is NEVER passed directly
-  //    as a React `style` prop, it is safe to overwrite each key.
-  T.bg = tk.bg;
-  T.surface = tk.surface;
-  T.surfaceRaised = tk.surfaceRaised;
-  T.border = tk.border;
-  T.borderSubtle = tk.borderSubtle;
-  T.accent = accent;
-  T.accentHover = accentHover;
-  // Dark themes can keep using lime for chart fills (good contrast on
-  // forest-green canvas); light themes drop to a darker green so bars
-  // remain legible without leaning on the lime UI accent.
-  T.chart = brandAccentOverride && /^#[0-9a-fA-F]{6}$/.test(brandAccentOverride)
-    ? brandAccentOverride
-    : (theme === "dark" ? tk.accent : "#3F6B36");
-  T.text = tk.text;
-  T.textSecondary = tk.textSecondary;
-  T.muted = tk.textMuted;
-  T.badgePending = tk.badgePending;
-  T.badgeConfirmed = tk.badgeConfirmed;
-  T.badgeCompleted = tk.badgeCompleted;
+function applyPortalTheme() {
+  // Locked to the PACC admin palette so the client portal matches the
+  // operations dashboard exactly (off-white surface, dark-green text,
+  // lime accent). The previous light/dark toggle has been removed.
+  T.bg = "#F4F5F1";
+  T.surface = "#FFFFFF";
+  T.surfaceRaised = "#FFFFFF";
+  T.border = "#E5E7DF";
+  T.borderSubtle = "#EFEFE9";
+  T.accent = "#C8F26A";
+  T.accentHover = "#B6E254";
+  T.chart = "#2A6A2E";
+  T.text = "#0E1F10";
+  T.textSecondary = "#3A4A3C";
+  T.muted = "#6B7268";
+  T.badgePending = "#8B8773";
+  T.badgeConfirmed = "#C8F26A";
+  T.badgeCompleted = "#2A6A2E";
 
   // 2. Build *fresh* style literals from scratch. We do not spread the
   //    previous (potentially frozen) objects — every property is rewritten.
@@ -424,11 +411,6 @@ export default function CustomerPortal() {
   const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const isDemo = useDemo();
-  const { theme: storedPortalTheme, vars: storedPortalVars, tokens: storedPortalTokens } = usePortalTheme();
-  // Demo mode is locked to light theme so the marketing/demo experience is consistent.
-  const portalTheme: PortalTheme = isDemo ? "light" : storedPortalTheme;
-  const portalVars = isDemo ? themeVarsFor("light") : storedPortalVars;
-  const portalTokens = isDemo ? tokensFor("light") : storedPortalTokens;
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   const { data: profile } = useCustomerProfile();
@@ -439,35 +421,13 @@ export default function CustomerPortal() {
 
   // Customer branding: only kicks in when admin has uploaded + enabled it.
   const brandLogoUrl: string | null = (profile as any)?.logo_url || null;
-  const brandAccent: string | null = (profile as any)?.brand_accent || null;
   const brandingEnabled: boolean = !!(profile as any)?.branding_enabled;
   const showCustomerBrand = !isDemo && brandingEnabled && !!brandLogoUrl;
-  const brandVars = (showCustomerBrand && isValidHex(brandAccent))
-    ? brandAccentVars(brandAccent, portalTokens.surface)
-    : {};
-  // Sync the mutable T + style objects to the active theme BEFORE this
-  // render's children evaluate inline T.* references. Apply the customer's
-  // brand accent so it cascades through every T.accent reference (buttons,
-  // tabs, charts, badges, etc.) — not just CSS variables.
-  applyPortalTheme(portalTheme, showCustomerBrand && isValidHex(brandAccent) ? brandAccent : null);
+  // Portal palette is now locked to the admin PACC palette (lime / dark-green
+  // / off-white) regardless of customer branding. The sidebar logo is the
+  // only place the customer brand still surfaces.
+  applyPortalTheme();
   const [accountOpen, setAccountOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onClick = () => setMenuOpen(false);
-    window.addEventListener("click", onClick);
-    return () => window.removeEventListener("click", onClick);
-  }, [menuOpen]);
-
-  const initials = (companyName || "?")
-    .split(/\s+/)
-    .map((w) => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 
   const { data: transactions = [], isLoading } = useCustomerTransactions(speedsolNames);
 
@@ -583,267 +543,20 @@ export default function CustomerPortal() {
     });
   }, [isDemo, activeTab]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
+  const breadcrumbFor = (tab: Tab) => [
+    { label: "PACC Energy", href: "/portal" },
+    { label: "Portal", href: "/portal" },
+    { label: tab },
+  ];
 
-  return (
-    <div style={{ ...portalVars, ...brandVars, minHeight: isDemo ? undefined : "100vh", background: T.bg, color: T.text, fontFamily: T.sansBody }}>
-      {/* Hide the welcome/onboarding modal in demo mode — recipients want to explore, not be onboarded. */}
-      {!isDemo && <WelcomeModal />}
-      {!isDemo && (
-        <div
-          style={{
-            borderBottom: `1px solid ${T.border}`,
-            padding: "14px 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          {showCustomerBrand ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <img
-                src={brandLogoUrl!}
-                alt={companyName}
-                style={{ height: 36, maxWidth: 160, objectFit: "contain" }}
-              />
-              <span style={{ fontSize: 12, color: T.muted }}>powered by PACC</span>
-            </div>
-          ) : (
-            <PACCLogo tone={portalTheme === "dark" ? "dark" : "light"} />
-          )}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <PortalThemeToggle />
-          <div style={{ position: "relative" }}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen((o) => !o);
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                background: "transparent",
-                border: `1px solid ${T.border}`,
-                borderRadius: 999,
-                padding: "6px 12px 6px 6px",
-                cursor: "pointer",
-                color: T.text,
-              }}
-              aria-label="Account menu"
-            >
-              <span
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  background: T.accent,
-                  color: T.text,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 11,
-                  fontFamily: T.sansHead,
-                  fontWeight: 700,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {initials}
-              </span>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontFamily: T.sansHead,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: T.textSecondary,
-                  maxWidth: 160,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {companyName}
-              </span>
-              <ChevronDown size={14} style={{ color: T.muted }} />
-            </button>
+  // The body of the portal — same in standalone and in demo mode (where the
+  // admin Layout already provides the sidebar/topbar chrome).
+  const body = (
+    <>
+      <PageHeader title={activeTab} breadcrumb={breadcrumbFor(activeTab)} showPeriod={false} />
 
-            {menuOpen && (
-              <div
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  position: "absolute",
-                  right: 0,
-                  top: "calc(100% + 8px)",
-                  background: T.surface,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: 8,
-                  minWidth: 220,
-                  boxShadow: "0 10px 30px rgba(61,43,26,0.12)",
-                  zIndex: 60,
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{ padding: "12px 14px", borderBottom: `1px solid ${T.border}` }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontFamily: T.sansHead,
-                      fontWeight: 600,
-                      color: T.text,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {companyName}
-                  </div>
-                  {userEmail && (
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: T.muted,
-                        marginTop: 2,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {userEmail}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setAccountOpen(true);
-                  }}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 14px",
-                    background: "transparent",
-                    border: "none",
-                    color: T.text,
-                    fontSize: 12,
-                    fontFamily: T.sansBody,
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <UserIcon size={14} style={{ color: T.muted }} />
-                  My Account
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 14px",
-                    background: "transparent",
-                    border: "none",
-                    borderTop: `1px solid ${T.border}`,
-                    color: T.text,
-                    fontSize: 12,
-                    fontFamily: T.sansBody,
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <LogOut size={14} style={{ color: T.muted }} />
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-          </div>
-        </div>
-      )}
-
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: "24px 16px 40px" }}>
-        {/* Page heading */}
-        <div style={{ marginBottom: 24 }}>
-          <h1
-            style={{
-              fontSize: "clamp(20px, 6vw, 28px)",
-              lineHeight: 1.05,
-              fontFamily: T.sansHead,
-              fontWeight: 700,
-              letterSpacing: "0.01em",
-              margin: 0,
-              textTransform: "uppercase",
-              wordBreak: "break-word",
-              overflowWrap: "anywhere",
-            }}
-          >
-            {companyName}
-          </h1>
-          <p style={{ ...muted(12), margin: "4px 0 0", letterSpacing: "0.04em" }}>
-            Customer portal — volume &amp; compliance
-          </p>
-        </div>
-
-        {/* Tab strip — horizontal scroll on mobile */}
-        <div
-          style={{
-            display: "flex",
-            gap: 0,
-            borderBottom: `1px solid ${T.border}`,
-            marginBottom: 16,
-            overflowX: "auto",
-            scrollbarWidth: "none",
-          }}
-        >
-          {tabs.map((tab) => {
-            const active = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                ref={(el) => {
-                  if (el && active) {
-                    el.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
-                  }
-                }}
-                onClick={(e) => {
-                  setActiveTab(tab);
-                  (e.currentTarget as HTMLButtonElement).scrollIntoView({
-                    behavior: "smooth",
-                    inline: "nearest",
-                    block: "nearest",
-                  });
-                }}
-                style={{
-                  padding: "12px 14px",
-                  fontSize: 11,
-                  fontFamily: T.sansHead,
-                  fontWeight: active ? 600 : 500,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: active ? T.text : T.muted,
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: `2px solid ${active ? T.accent : "transparent"}`,
-                  cursor: "pointer",
-                  marginBottom: -1,
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Day / Week / Month period toggle — applies to time-series tabs. */}
-        {(activeTab === "Overview" ||
+      {/* Day / Week / Month period toggle — applies to time-series tabs. */}
+      {(activeTab === "Overview" ||
           activeTab === "Deliveries" ||
           (activeTab === "Fleet" && fleetSubtab === "Plant") ||
           (activeTab === "Reports" && reportsSubtab === "Analytics") ||
@@ -946,6 +659,8 @@ export default function CustomerPortal() {
             {activeTab === "Overview" && (
               <OverviewTab
                 transactions={filteredTransactions}
+                allTransactions={transactions}
+                period={period}
                 demoSuffix={demoSuffix}
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
@@ -1027,7 +742,6 @@ export default function CustomerPortal() {
             )}
           </>
         )}
-      </div>
 
       <AccountModal
         open={accountOpen}
@@ -1036,7 +750,25 @@ export default function CustomerPortal() {
         companyName={companyName}
         userEmail={userEmail}
       />
-    </div>
+    </>
+  );
+
+  // In demo mode the admin Layout already provides the sidebar/topbar chrome,
+  // so we render the body bare. In real client mode we wrap with PortalLayout.
+  if (isDemo) {
+    return <div className="max-w-[1400px] mx-auto">{body}</div>;
+  }
+
+  return (
+    <PortalLayout
+      activeTab={activeTab}
+      onTabChange={(t) => setActiveTab(t as Tab)}
+      brandLogoUrl={showCustomerBrand ? brandLogoUrl : null}
+      brandCaption={companyName}
+    >
+      <WelcomeModal />
+      {body}
+    </PortalLayout>
   );
 }
 
@@ -1513,6 +1245,8 @@ const ftcTd: React.CSSProperties = { padding: "10px", color: T.text, fontSize: 1
 
 function OverviewTab({
   transactions,
+  allTransactions,
+  period,
   demoSuffix,
   speedsolNames,
   isDemo,
@@ -1523,6 +1257,8 @@ function OverviewTab({
   companyName,
 }: {
   transactions: any[];
+  allTransactions: any[];
+  period: PortalPeriod;
   demoSuffix: string;
   speedsolNames: string[];
   isDemo: boolean;
@@ -1535,6 +1271,69 @@ function OverviewTab({
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
   const totalLitres = transactions.reduce((s, t) => s + (t.cantidad || 0), 0);
+  const numDeliveries = transactions.length;
+  const avgDrop = numDeliveries > 0 ? totalLitres / numDeliveries : 0;
+  const totalSpend = transactions.reduce((s, t) => s + (t.dinero_total || 0), 0);
+
+  // Previous-period comparison: same window length, immediately preceding.
+  const previousTransactions = useMemo(() => {
+    const days = PERIOD_DAYS[period];
+    if (days == null) return [];
+    const cutoffEnd = subDays(new Date(), days);
+    const cutoffStart = subDays(cutoffEnd, days);
+    const endStr = format(cutoffEnd, "yyyy-MM-dd");
+    const startStr = format(cutoffStart, "yyyy-MM-dd");
+    return allTransactions.filter((t: any) => {
+      const d = t.date || "";
+      return d >= startStr && d < endStr;
+    });
+  }, [allTransactions, period]);
+  const prevLitres = previousTransactions.reduce((s: number, t: any) => s + (t.cantidad || 0), 0);
+  const prevSpend = previousTransactions.reduce((s: number, t: any) => s + (t.dinero_total || 0), 0);
+  const prevDeliveries = previousTransactions.length;
+  const prevAvg = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
+  const pct = (curr: number, prev: number): number | null =>
+    prev === 0 ? null : ((curr - prev) / prev) * 100;
+
+  // Daily trend series for the sparklines + growth chart.
+  const dailyTrend = useMemo(() => {
+    const m: Record<string, { l: number; r: number; c: number }> = {};
+    transactions.forEach((t: any) => {
+      const d = (t.date || "").slice(0, 10);
+      if (!d) return;
+      (m[d] ||= { l: 0, r: 0, c: 0 });
+      m[d].l += t.cantidad || 0;
+      m[d].r += t.dinero_total || 0;
+      m[d].c += 1;
+    });
+    return Object.entries(m)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([d, v]) => ({ date: format(parseISO(d), "d MMM"), litres: v.l, revenue: v.r, deliveries: v.c }));
+  }, [transactions]);
+  const sparkLitres = dailyTrend.map((d) => ({ v: d.litres }));
+  const sparkRevenue = dailyTrend.map((d) => ({ v: d.revenue }));
+  const sparkDeliveries = dailyTrend.map((d) => ({ v: d.deliveries }));
+  const sparkAvg = dailyTrend.map((d) => ({ v: d.deliveries ? d.litres / d.deliveries : 0 }));
+
+  // Donut: volume by site (top 5 + Other).
+  const donutData = useMemo(() => {
+    const m: Record<string, number> = {};
+    transactions.forEach((t: any) => {
+      const k = t.estacion || t.ciudad || t.nombre_cliente1 || "Unknown";
+      m[k] = (m[k] || 0) + (t.cantidad || 0);
+    });
+    const sorted = Object.entries(m).sort(([, a], [, b]) => b - a);
+    const top5 = sorted.slice(0, 5);
+    const other = sorted.slice(5).reduce((s, [, v]) => s + v, 0);
+    const rows = top5.map(([name, value]) => ({ name, value }));
+    if (other > 0) rows.push({ name: "Other", value: other });
+    const total = rows.reduce((s, r) => s + r.value, 0);
+    return { rows, total };
+  }, [transactions]);
+
+  const DONUT_COLORS = ["#2A6A2E", "#7A5300", "#2B3D8E", "#5F6B61", "#B43A2E", "#C7CCC1"];
+  const prefix = period === "day" ? "Daily" : period === "week" ? "Weekly" : period === "month" ? "Monthly" : "All-time";
+
   // "Sites" = unique delivery locations (estacion / ciudad), not the
   // single customer name. Falls back to customer if nothing better.
   const sites = new Set(
@@ -1642,69 +1441,140 @@ function OverviewTab({
         </div>
       )}
 
-      {/* Hero — Litres used (visual focal point) */}
-      <HeroLitres
-        totalLitres={totalLitres}
-        deliveries={transactions.length}
-        sites={sites.size}
-        transactions={transactions}
-      />
+      {/* KPI sparkline tiles — matches admin Overview pattern */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <KPISparklineCard
+          label={`${prefix} Litres Delivered`}
+          value={totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`}
+          deltaPct={pct(totalLitres, prevLitres)}
+          trend={sparkLitres}
+          fallbackContext="Comparison resumes with previous period data"
+          icon={Droplet}
+          tintBg="#E8EDE5"
+          tintColor="#2A6A2E"
+        />
+        <KPISparklineCard
+          label={`${prefix} Spend (inc GST)`}
+          value={totalSpend > 0 ? `$${totalSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+          deltaPct={pct(totalSpend, prevSpend)}
+          trend={sparkRevenue}
+          fallbackContext="Comparison resumes with previous period data"
+          icon={DollarSign}
+          tintBg="#F4F0E6"
+          tintColor="#7A5300"
+        />
+        <KPISparklineCard
+          label="Deliveries"
+          value={numDeliveries.toLocaleString()}
+          deltaPct={pct(numDeliveries, prevDeliveries)}
+          trend={sparkDeliveries}
+          fallbackContext="Comparison resumes with previous period data"
+          icon={Truck}
+          tintBg="#EAEEFC"
+          tintColor="#2B3D8E"
+        />
+        <KPISparklineCard
+          label="Avg Drop Size"
+          value={Math.round(avgDrop).toLocaleString() + " L"}
+          deltaPct={pct(avgDrop, prevAvg)}
+          trend={sparkAvg}
+          fallbackContext="Comparison resumes with previous period data"
+          icon={Gauge}
+          tintBg="#F4F5F1"
+          tintColor="#5F6B61"
+        />
+      </div>
 
-      {/* FTC savings — second visual headline */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
-        <div style={card}>
-          <div style={labelStyle}>Est. FTC Savings</div>
-          <div
-            style={{
-              fontSize: 28,
-              fontFamily: T.sansHead,
-              fontWeight: 700,
-              color: ftcSavings > 0 ? T.text : T.muted,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {ftcSavings > 0 ? `$${Math.round(ftcSavings).toLocaleString()}` : "—"}
+      {/* Litres growth + Volume by site row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-card border border-border rounded-[14px] p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-foreground">Litres growth</h2>
+            <span className="text-[11px] font-medium text-muted-foreground">{periodLabel}</span>
           </div>
-          <div style={{ ...muted(11), marginTop: 4 }}>Off-road rate × volume</div>
-          {onOpenFtcReport && (
-            <button
-              onClick={onOpenFtcReport}
-              style={{
-                marginTop: 10,
-                background: "transparent",
-                color: T.text,
-                border: `1px solid ${T.accent}88`,
-                borderRadius: 999,
-                padding: "6px 12px",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-              }}
-            >
-              View Full Report →
-            </button>
-          )}
+          <div className="mt-3 flex items-center gap-4 text-[11px] font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#2A6A2E" }} />
+              Litres delivered
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#2B3D8E" }} />
+              Deliveries (count)
+            </span>
+          </div>
+          <div style={{ height: 280 }} className="mt-2">
+            {dailyTrend.length >= 2 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={dailyTrend} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="portal-litres-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#2A6A2E" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#2A6A2E" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" strokeOpacity={0.4} vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={{ stroke: "var(--border)" }} tickLine={false} minTickGap={32} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`)} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13, padding: "8px 12px" }}
+                    formatter={(v: number, name: string) => name === "litres" ? [`${v.toLocaleString()} L`, "Litres"] : [v.toLocaleString(), "Deliveries"]}
+                  />
+                  <Area yAxisId="left" type="monotone" dataKey="litres" stroke="#2A6A2E" strokeWidth={1.75} fill="url(#portal-litres-fill)" isAnimationActive={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="deliveries" stroke="#2B3D8E" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-center text-sm text-muted-foreground">
+                Trend appears with 2+ data points.
+              </div>
+            )}
+          </div>
         </div>
-        <div style={card}>
-          <div style={labelStyle}>Top Plant</div>
-          <div
-            style={{
-              fontSize: 16,
-              fontFamily: T.sansHead,
-              fontWeight: 700,
-              color: T.text,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {topPlant?.name || "—"}
+
+        <div className="bg-card border border-border rounded-[14px] p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-foreground">Volume by site</h2>
+            <span className="text-[11px] font-medium text-muted-foreground">{periodLabel}</span>
           </div>
-          <div style={{ fontSize: 22, fontFamily: T.sansHead, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
-            {topPlant ? fmtL(topPlant.litres) : "—"}
+          <div style={{ height: 240 }} className="flex flex-col">
+            <div className="relative flex-1 min-h-0">
+              {donutData.rows.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-muted-foreground">No data</div>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={donutData.rows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="60%" outerRadius="90%" stroke="none" isAnimationActive={false}>
+                        {donutData.rows.map((_, i) => (
+                          <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div className="text-[22px] font-semibold tabular-nums text-foreground leading-tight">
+                      {donutData.total >= 1000 ? `${(donutData.total / 1000).toFixed(1)}k` : donutData.total.toFixed(0)}
+                    </div>
+                    <div className="text-[11px] font-medium text-muted-foreground">Total litres</div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+          {donutData.rows.length > 0 && (
+            <ul className="mt-4 space-y-1.5">
+              {donutData.rows.map((r, i) => (
+                <li key={r.name} className="flex items-center gap-2 text-[13px] text-foreground">
+                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                  <span className="flex-1 font-medium truncate">{r.name}</span>
+                  <span className="font-semibold tabular-nums">
+                    {donutData.total ? `${((r.value / donutData.total) * 100).toFixed(0)}%` : "0%"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
