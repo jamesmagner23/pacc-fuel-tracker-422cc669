@@ -99,9 +99,25 @@ export default function LandingPage() {
             <a href="#contact" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C7BFAC" }}>Contact</a>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <a
+              href={`tel:${BUSINESS_PHONE_TEL}`}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-all"
+              style={{ background: "rgba(200,242,106,0.12)", color: "#C8F26A", border: "1px solid rgba(200,242,106,0.3)" }}
+              aria-label={`Call PACC Energy on ${BUSINESS_PHONE_DISPLAY}`}
+            >
+              <Phone className="w-3.5 h-3.5" /> {BUSINESS_PHONE_DISPLAY}
+            </a>
+            <a
+              href={`tel:${BUSINESS_PHONE_TEL}`}
+              className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-full"
+              style={{ background: "rgba(200,242,106,0.12)", color: "#C8F26A", border: "1px solid rgba(200,242,106,0.3)" }}
+              aria-label={`Call PACC Energy on ${BUSINESS_PHONE_DISPLAY}`}
+            >
+              <Phone className="w-4 h-4" />
+            </a>
             <button
               onClick={() => navigate("/?demo=true")}
-              className="px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5"
+              className="hidden sm:inline-flex px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all items-center gap-1.5"
               style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.14)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.08)"; }}
