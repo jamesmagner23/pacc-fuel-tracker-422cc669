@@ -34,6 +34,7 @@ import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 import BrandCheck from "./pages/BrandCheck";
 import { DemoBanner } from "./components/DemoBanner";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -275,6 +276,7 @@ const App = () => (
         <DemoProvider>
           <AuthGate>
             <DateRangeProvider>
+              <ScrollToTop />
               <DemoBanner />
               <DemoAwareRoutes />
             </DateRangeProvider>
