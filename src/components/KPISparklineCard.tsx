@@ -1,4 +1,3 @@
-import { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
@@ -74,7 +73,6 @@ export function KPISparklineCard({
           </ResponsiveContainer>
         </div>
       )}
-      {!showSpark && lastValue}
     </div>
   );
 
@@ -107,6 +105,3 @@ function DeltaPill({ pct }: { pct: number }) {
     </span>
   );
 }
-
-// (Imported for type completeness)
-export type _ReactNodeAlias = ReactNode;
