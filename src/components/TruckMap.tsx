@@ -280,15 +280,16 @@ export function TruckMap({
   return (
     <div
       style={{
-        background: mapBg,
-        border: `1px solid ${mapBorder}`,
-        borderRadius: 10,
+        background: bare ? "transparent" : mapBg,
+        border: bare ? "none" : `1px solid ${mapBorder}`,
+        borderRadius: bare ? 0 : 10,
         overflow: "hidden",
         position: "relative",
         transition: "all 0.3s ease",
+        height: bare ? "100%" : undefined,
       }}
     >
-      {!compact && (
+      {!compact && !bare && (
         <div
           style={{
             display: "flex",
