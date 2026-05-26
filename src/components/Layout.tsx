@@ -168,6 +168,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     fontVariantNumeric: "tabular-nums",
                     letterSpacing: "0.05em",
                   }}
+                  aria-hidden="true"
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
@@ -278,6 +279,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       flexShrink: 0,
                       fontVariantNumeric: "tabular-nums",
                     }}
+                    aria-hidden="true"
                   >
                     {String(i + 1).padStart(2, "0")}
                   </span>
@@ -394,6 +396,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         <main
+          id="main-content"
           style={{ flex: 1, overflowY: "auto", paddingBottom: 80 }}
           className="px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8"
         >
