@@ -99,6 +99,7 @@ export default function Overview() {
   } = useRevenueCalc(range);
   const { data: buyPrices = [] } = useBuyPrices(90);
   const tc = useThemeColors();
+  const palette = useChartPalette();
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const numDeliveries = filtered.length;
@@ -207,8 +208,8 @@ export default function Overview() {
             <AreaChart data={dailyData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="litresGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={tc.accent} stopOpacity={0.2} />
-                  <stop offset="100%" stopColor={tc.accent} stopOpacity={0} />
+                  <stop offset="0%" stopColor={palette.primary} stopOpacity={0.18} />
+                  <stop offset="100%" stopColor={palette.primary} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: tc.textSecondary }} axisLine={false} tickLine={false} />
@@ -220,7 +221,7 @@ export default function Overview() {
                 formatter={(v: number) => [`${v.toLocaleString()}L`, "Litres"]}
                 cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }}
               />
-              <Area type="monotone" dataKey="litres" stroke={tc.accent} strokeWidth={1.5} fill="url(#litresGrad)" dot={false} />
+              <Area type="monotone" dataKey="litres" stroke={palette.primary} strokeWidth={1.75} fill="url(#litresGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -289,7 +290,7 @@ export default function Overview() {
                     itemStyle={{ color: tc.textPrimary }}
                     formatter={(v: number) => [`$${v.toFixed(2)}/L`, "Price"]}
                   />
-                  <Line type="monotone" dataKey="price" stroke={tc.accent} strokeWidth={2} dot={{ r: 3, fill: tc.accent }} />
+                  <Line type="monotone" dataKey="price" stroke={palette.primary} strokeWidth={2} dot={{ r: 3, fill: palette.primary }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
