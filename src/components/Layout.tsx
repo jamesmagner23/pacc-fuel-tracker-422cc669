@@ -67,9 +67,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // actually consume it. Otherwise clicking Today/Week/Month does nothing
   // visible and that's confusing UX.
   const dateRangeRoutes = ["/", "/customers", "/transactions", "/trucks", "/performance", "/finance"];
+  // Pages that render the period selector inline next to their H1 — don't
+  // also show it in the global header on those routes.
+  const inlinePeriodRoutes = ["/"];
   const showDateRange = dateRangeRoutes.some((r) =>
     r === "/" ? location.pathname === "/" : location.pathname === r || location.pathname.startsWith(r + "/")
-  );
+  ) && !inlinePeriodRoutes.includes(location.pathname);
 
   // Demo mode (whether via ?demo=true or email portal showcase): replace
   // the admin sidebar with the customer-portal tab list so the showcase
