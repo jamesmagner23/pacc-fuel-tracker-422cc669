@@ -13,16 +13,22 @@ export function KPICard({ title, value, change, icon, delay = 0 }: KPICardProps)
 
   return (
     <div
-      className="glass-card p-4 sm:p-5 animate-fade-in"
+      className="relative overflow-hidden rounded-[12px] border border-border bg-card p-4 sm:p-5 animate-fade-in transition-all duration-300 hover:border-primary/40 hover:shadow-[0_6px_24px_-12px_hsl(var(--primary)/0.35)] hover:-translate-y-0.5"
       style={{ animationDelay: `${delay}ms` }}
     >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+      />
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           {title}
         </span>
-        <span className="text-muted-foreground">{icon}</span>
+        <span className="inline-flex w-7 h-7 rounded-md bg-primary/10 text-primary items-center justify-center">
+          {icon}
+        </span>
       </div>
-      <div className="text-2xl sm:text-3xl font-bold tracking-tight">{value}</div>
+      <div className="text-2xl sm:text-3xl font-bold tracking-tight tabular-nums text-foreground">{value}</div>
       <div className="flex items-center gap-1 mt-2">
         {isUp ? (
           <TrendingUp className="w-3.5 h-3.5 text-kpi-up" />
