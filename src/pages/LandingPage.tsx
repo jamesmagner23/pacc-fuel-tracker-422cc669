@@ -11,8 +11,8 @@ import truckRefuelImg from "@/assets/truck-refuel.webp";
 import truckSiteImg from "@/assets/truck-site.webp";
 
 // Swap this constant to update the marketing phone everywhere.
-const BUSINESS_PHONE_DISPLAY = "0412 884 220";
-const BUSINESS_PHONE_TEL = "+61412884220";
+const BUSINESS_PHONE_DISPLAY = "0409 704 327";
+const BUSINESS_PHONE_TEL = "+61409704327";
 const BUSINESS_EMAIL = "fuel@paccvictoria.com";
 
 function PACCNavLogo() {
