@@ -240,6 +240,20 @@ function useCustomerProfile() {
           (data as any).branding_enabled = ca.branding_enabled;
         }
       }
+      // Fallback: if no company is linked yet, derive a friendlier label
+      // from the user's email (e.g. "ops@ironside.com" → "Ironside") so
+      // the portal never reads "YOUR ACCOUNT" / "YA" to a real customer.
+      if (companyName === "Your Account" && user.email) {
+        const local = user.email.split("@")[0] || "";
+        const domain = (user.email.split("@")[1] || "").split(".")[0] || "";
+        const guess = (domain || local).replace(/[._-]+/g, " ").trim();
+        if (guess) {
+          companyName = guess
+            .split(/\s+/)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(" ");
+        }
+      }
       return { ...data, companyName, speedsolNames, email: user.email || "" };
     },
   });
