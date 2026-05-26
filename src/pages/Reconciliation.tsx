@@ -613,9 +613,9 @@ function SettingsTab() {
               onClick={() => update("alert_sensitivity", level)}
               className="px-4 py-2 rounded-lg text-xs font-medium capitalize border transition-colors cursor-pointer"
               style={{
-                background: settings.alert_sensitivity === level ? "var(--accent)" : "transparent",
+                background: settings.alert_sensitivity === level ? "var(--primary)" : "transparent",
                 color: settings.alert_sensitivity === level ? "#fff" : "var(--text-secondary)",
-                borderColor: settings.alert_sensitivity === level ? "var(--accent)" : "var(--surface-border)",
+                borderColor: settings.alert_sensitivity === level ? "var(--primary)" : "var(--surface-border)",
               }}
             >
               {level}
