@@ -22,6 +22,11 @@ interface TruckMapProps {
   height?: number;
   showStops?: boolean;
   compact?: boolean;
+  /** Hide the built-in card chrome (border, header bar). Used when embedded
+   *  inside another panel that supplies its own header. */
+  bare?: boolean;
+  /** Mapbox style — defaults to light-v11. */
+  mapStyle?: string;
 }
 
 function cssVar(name: string, fallback = "", el?: Element | null): string {
@@ -30,7 +35,13 @@ function cssVar(name: string, fallback = "", el?: Element | null): string {
   return getComputedStyle(target).getPropertyValue(name).trim() || fallback;
 }
 
-export function TruckMap({ height = 280, showStops = false, compact = false }: TruckMapProps) {
+export function TruckMap({
+  height = 280,
+  showStops = false,
+  compact = false,
+  bare = false,
+  mapStyle = "mapbox://styles/mapbox/light-v11",
+}: TruckMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
@@ -96,7 +107,7 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
     try {
       const map = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: mapStyle,
         center: [MELB.lng, MELB.lat],
         zoom: 10,
         attributionControl: false,
