@@ -23,7 +23,6 @@ export function KPISparklineCard({
   href,
 }: KPISparklineProps) {
   const showSpark = trend.length >= 2;
-  const lastValue = showSpark ? trend[trend.length - 1].v : null;
 
   const body = (
     <div className="flex items-start justify-between gap-4 h-full">
