@@ -275,7 +275,7 @@ export function TruckMap({
       : formatDateTime(locationTimestamp)
     : null;
 
-  const mapHeight = expanded ? 520 : height;
+  const mapHeight = bare ? "100%" : (expanded ? 520 : height);
 
   return (
     <div
@@ -349,7 +349,14 @@ export function TruckMap({
         </div>
       )}
 
-      <div ref={mapContainer} style={{ height: mapHeight, width: "100%", transition: "height 0.3s ease" }} />
+      <div
+        ref={mapContainer}
+        style={{
+          height: mapHeight,
+          width: "100%",
+          transition: "height 0.3s ease",
+        }}
+      />
 
       {!hasLocation && !isFetching && mapReady && (
         <div
