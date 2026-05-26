@@ -146,7 +146,7 @@ export default function RecurringExpensesPanel({ periodDays, onPeriodTotalChange
         <button
           onClick={startAdd}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-accent text-accent-foreground hover:opacity-90 transition-opacity"
-          style={{ background: "var(--accent)", color: "#fff" }}
+          style={{ background: "var(--primary)", color: "#fff" }}
         >
           <Plus className="w-3.5 h-3.5" /> Add expense
         </button>
@@ -344,7 +344,7 @@ function ExpenseEditor({
           onClick={onSave}
           disabled={saving || !draft.name.trim()}
           className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md text-white disabled:opacity-50"
-          style={{ background: "var(--accent)" }}
+          style={{ background: "var(--primary)" }}
         >
           <Check className="w-3.5 h-3.5" /> {saving ? "Saving…" : "Save"}
         </button>

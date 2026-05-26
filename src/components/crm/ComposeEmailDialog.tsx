@@ -175,7 +175,7 @@ export default function ComposeEmailDialog({ open, customer, contacts, preselect
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="border-surface-border">Cancel</Button>
-          <Button onClick={send} disabled={sending} style={{ background: "var(--accent)", color: "var(--accent-foreground, #fff)" }}>
+          <Button onClick={send} disabled={sending} style={{ background: "var(--primary)", color: "var(--primary-foreground, #fff)" }}>
             {sending ? "Sending…" : "Send via Gmail"}
           </Button>
         </DialogFooter>

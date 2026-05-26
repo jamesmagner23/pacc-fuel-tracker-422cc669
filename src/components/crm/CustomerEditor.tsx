@@ -82,7 +82,7 @@ export default function CustomerEditor({ open, initial, onClose, onSaved }: Prop
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="border-surface-border">Cancel</Button>
-          <Button onClick={save} disabled={saving} style={{ background: "var(--accent)", color: "var(--accent-foreground, #fff)" }}>
+          <Button onClick={save} disabled={saving} style={{ background: "var(--primary)", color: "var(--primary-foreground, #fff)" }}>
             {saving ? "Saving…" : "Save"}
           </Button>
         </DialogFooter>

@@ -39,7 +39,7 @@ export default function Admin() {
             className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer min-h-[44px] sm:min-h-0 whitespace-nowrap shrink-0"
             style={{
               background: activeTab === tab.id ? "var(--accent-light)" : "transparent",
-              color: activeTab === tab.id ? "var(--accent)" : "var(--text-secondary)",
+              color: activeTab === tab.id ? "var(--primary)" : "var(--text-secondary)",
               border: "none",
             }}
           >
