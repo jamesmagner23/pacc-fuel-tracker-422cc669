@@ -69,37 +69,24 @@ const T = {
  * new literal each call — never mutate the previous object (`Object.assign`
  * on a frozen target throws "Cannot assign to read only property").
  */
-function applyPortalTheme(theme: PortalTheme, brandAccentOverride?: string | null) {
-  const tk = tokensFor(theme);
-  const accent = (brandAccentOverride && /^#[0-9a-fA-F]{6}$/.test(brandAccentOverride))
-    ? brandAccentOverride
-    : tk.accent;
-  const accentHover = (brandAccentOverride && /^#[0-9a-fA-F]{6}$/.test(brandAccentOverride))
-    ? brandAccentOverride
-    : tk.accentHover;
-
-  // 1. Replace T's contents with brand-new values. Because T itself is a
-  //    `const` reference (still mutable shape) and is NEVER passed directly
-  //    as a React `style` prop, it is safe to overwrite each key.
-  T.bg = tk.bg;
-  T.surface = tk.surface;
-  T.surfaceRaised = tk.surfaceRaised;
-  T.border = tk.border;
-  T.borderSubtle = tk.borderSubtle;
-  T.accent = accent;
-  T.accentHover = accentHover;
-  // Dark themes can keep using lime for chart fills (good contrast on
-  // forest-green canvas); light themes drop to a darker green so bars
-  // remain legible without leaning on the lime UI accent.
-  T.chart = brandAccentOverride && /^#[0-9a-fA-F]{6}$/.test(brandAccentOverride)
-    ? brandAccentOverride
-    : (theme === "dark" ? tk.accent : "#3F6B36");
-  T.text = tk.text;
-  T.textSecondary = tk.textSecondary;
-  T.muted = tk.textMuted;
-  T.badgePending = tk.badgePending;
-  T.badgeConfirmed = tk.badgeConfirmed;
-  T.badgeCompleted = tk.badgeCompleted;
+function applyPortalTheme() {
+  // Locked to the PACC admin palette so the client portal matches the
+  // operations dashboard exactly (off-white surface, dark-green text,
+  // lime accent). The previous light/dark toggle has been removed.
+  T.bg = "#F4F5F1";
+  T.surface = "#FFFFFF";
+  T.surfaceRaised = "#FFFFFF";
+  T.border = "#E5E7DF";
+  T.borderSubtle = "#EFEFE9";
+  T.accent = "#C8F26A";
+  T.accentHover = "#B6E254";
+  T.chart = "#2A6A2E";
+  T.text = "#0E1F10";
+  T.textSecondary = "#3A4A3C";
+  T.muted = "#6B7268";
+  T.badgePending = "#8B8773";
+  T.badgeConfirmed = "#C8F26A";
+  T.badgeCompleted = "#2A6A2E";
 
   // 2. Build *fresh* style literals from scratch. We do not spread the
   //    previous (potentially frozen) objects — every property is rewritten.
