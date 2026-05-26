@@ -43,7 +43,7 @@ function PACCLogoLarge() {
             textTransform: "uppercase",
           }}
         >
-          Powered by Progress
+          Fuel logistics, simplified
         </div>
       </div>
     </div>
