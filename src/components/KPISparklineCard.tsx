@@ -1,4 +1,4 @@
-import { ComponentType } from "react";
+import { ComponentType, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
@@ -19,6 +19,10 @@ export interface KPISparklineProps {
   tintBg: string;
   /** Hex line/icon colour. */
   tintColor: string;
+  /** Optional pill that replaces the delta pill entirely (e.g. "YTD"). */
+  customPill?: ReactNode;
+  /** Optional italic context sub-line shown directly under the pill row. */
+  subLine?: string;
 }
 
 export function KPISparklineCard({
@@ -31,6 +35,8 @@ export function KPISparklineCard({
   icon: Icon,
   tintBg,
   tintColor,
+  customPill,
+  subLine,
 }: KPISparklineProps) {
   const showSpark = trend.length >= 2;
 
@@ -43,7 +49,9 @@ export function KPISparklineCard({
             {value}
           </div>
           <div className="mt-1.5">
-            {deltaPct !== null ? (
+            {customPill ? (
+              customPill
+            ) : deltaPct !== null ? (
               <DeltaPill pct={deltaPct} />
             ) : (
               <span
@@ -53,6 +61,9 @@ export function KPISparklineCard({
               </span>
             )}
           </div>
+          {subLine && (
+            <div className="mt-1 text-[11px] italic text-muted-foreground">{subLine}</div>
+          )}
         </div>
         <div
           className="inline-flex items-center justify-center shrink-0"
