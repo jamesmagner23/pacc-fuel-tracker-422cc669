@@ -1276,7 +1276,7 @@ function AnalyticsTab({
   assignments: any[];
   overrides: Record<number, { project_id: string | null; plant_item_id: string | null }>;
 }) {
-  const accent = "var(--accent)";
+  const accent = "var(--primary)";
   const muted = "var(--text-secondary)";
 
   const equipmentChart = equipment.slice(0, 10).map((e) => ({

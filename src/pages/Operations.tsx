@@ -84,7 +84,7 @@ function OperationsOverview() {
       .sort((a, b) => b.litres - a.litres);
   }, [filtered]);
 
-  const accent = "var(--accent)";
+  const accent = "var(--primary)";
   const muted = "var(--text-secondary)";
 
   const kpis = [
