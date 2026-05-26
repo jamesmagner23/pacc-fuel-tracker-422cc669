@@ -1516,6 +1516,51 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_leads: {
+        Row: {
+          company: string
+          contact_name: string
+          created_at: string
+          delivery_date: string | null
+          id: string
+          notes: string | null
+          phone: string
+          site_address: string
+          source: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          company: string
+          contact_name: string
+          created_at?: string
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          phone: string
+          site_address: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          company?: string
+          contact_name?: string
+          created_at?: string
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          phone?: string
+          site_address?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       quotes: {
         Row: {
           buy_price_per_litre: number
