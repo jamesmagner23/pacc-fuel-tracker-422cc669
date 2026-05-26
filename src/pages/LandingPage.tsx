@@ -341,7 +341,7 @@ export default function LandingPage() {
             <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2">
               {trustStrip.map((label) => (
                 <div key={label} className="inline-flex items-center gap-2 text-[13px] text-foreground">
-                  <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                   {label}
                 </div>
               ))}
@@ -385,7 +385,7 @@ export default function LandingPage() {
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {services.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="rounded-[12px] border border-border bg-card p-6">
-                <div className="w-9 h-9 rounded-md bg-[rgba(200,242,106,0.35)] inline-flex items-center justify-center text-foreground mb-5">
+                <div className="w-9 h-9 rounded-md bg-primary/10 inline-flex items-center justify-center text-primary mb-5">
                   <Icon className="w-4 h-4" />
                 </div>
                 <h3 className="text-[16px] font-semibold leading-snug mb-2">{title}</h3>
