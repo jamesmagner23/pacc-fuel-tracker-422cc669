@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone, Phone, Menu, X } from "lucide-react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone, Phone, Menu, X, Check } from "lucide-react";
 import { BoldPMark } from "@/components/BoldPMark";
+import { supabase } from "@/integrations/supabase/client";
 import heroImg from "@/assets/hero-construction.webp";
 import refuelImg from "@/assets/refuelling-closeup.webp";
 import truckSideImg from "@/assets/truck-side.webp";
