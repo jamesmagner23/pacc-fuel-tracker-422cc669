@@ -1,117 +1,33 @@
-import { useMemo, useCallback } from "react";
+import { useMemo } from "react";
 import { format, parseISO, startOfWeek, getISOWeek } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
-import { useTransactions, usePreviousTransactions } from "@/hooks/useTransactions";
-import { useBuyPrices } from "@/hooks/useBuyPrices";
-import { useCustomerPricing, findTierForVolume } from "@/hooks/useCustomerPricing";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useDemo } from "@/hooks/useDemo";
-import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
+import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 
 export default function PLOverview() {
   const { range } = useDateRange();
-  const { data: filtered = [], isLoading } = useTransactions(range);
-  const { data: previous = [] } = usePreviousTransactions(range);
-  const { data: buyPrices = [] } = useBuyPrices(365);
-  const { data: customerPricing = [] } = useCustomerPricing();
-  const isDemo = useDemo();
-  const { data: clients = [] } = useQuery({
-    queryKey: ["client-accounts", isDemo],
-    queryFn: async () => {
-      if (isDemo) {
-        return DEMO_CLIENT_ACCOUNTS.map(c => ({
-          id: c.id,
-          company_name: c.company_name,
-          speedsol_name: c.speedsol_name,
-          speedsol_names: c.speedsol_names,
-        }));
-      }
-      const { data, error } = await supabase
-        .from("client_accounts")
-        .select("id, company_name, speedsol_name, speedsol_names")
-        .order("company_name");
-      if (error) throw error;
-      return data || [];
-    },
-  });
+  const {
+    filtered,
+    previous,
+    isLoading,
+    latestBuyPrice,
+    customerPricing,
+    clients,
+    getTxPricing,
+    totalRevenue,
+    pricedLitres,
+    prevRevenue,
+    prevPricedLitres,
+  } = useRevenueCalc(range);
 
-  const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
-
-  // Build speedsol → client mapping for revenue calculation
-  const speedsolToClientId = useMemo(() => {
-    const map = new Map<string, number>();
-    clients.forEach((c: any) => {
-      const names: string[] = c.speedsol_names || [];
-      names.forEach((n: string) => { if (n) map.set(n.toLowerCase(), c.id); });
-      if (c.speedsol_name) map.set(c.speedsol_name.toLowerCase(), c.id);
-      map.set(c.company_name.toLowerCase(), c.id);
-    });
-    return map;
-  }, [clients]);
-
-  // Calculate average weekly litres per client from current period transactions
-  const clientWeeklyVolumes = useMemo(() => {
-    const clientWeeks = new Map<number, Map<string, number>>(); // clientId → weekKey → litres
-    const allTxs = [...filtered, ...previous];
-    allTxs.forEach((t: any) => {
-      const clientId = speedsolToClientId.get((t.nombre_cliente1 || "").toLowerCase());
-      if (!clientId) return;
-      const txDate = t.fecha ? new Date(t.fecha) : null;
-      if (!txDate) return;
-      const weekKey = `${txDate.getFullYear()}-W${getISOWeek(txDate)}`;
-      if (!clientWeeks.has(clientId)) clientWeeks.set(clientId, new Map());
-      const weeks = clientWeeks.get(clientId)!;
-      weeks.set(weekKey, (weeks.get(weekKey) || 0) + (t.cantidad || 0));
-    });
-    // Average weekly volume per client
-    const result = new Map<number, number>();
-    clientWeeks.forEach((weeks, clientId) => {
-      const totalLitres = Array.from(weeks.values()).reduce((s, v) => s + v, 0);
-      const numWeeks = weeks.size || 1;
-      result.set(clientId, totalLitres / numWeeks);
-    });
-    return result;
-  }, [filtered, previous, speedsolToClientId]);
-
-  // Helper: get sell price for a transaction based on client's weekly volume tier
-  const getTxPricing = useCallback((t: any) => {
-    if (t.ppu && t.ppu > 0) return { hasPricing: true, sellPPL: t.ppu };
-    const clientId = speedsolToClientId.get((t.nombre_cliente1 || "").toLowerCase());
-    if (!clientId) return { hasPricing: false, sellPPL: 0 };
-    const weeklyVol = clientWeeklyVolumes.get(clientId) || 0;
-    const tier = findTierForVolume(customerPricing, clientId, weeklyVol);
-    if (!tier) return { hasPricing: false, sellPPL: 0 };
-    const sell = tier.pricing_type === "markup"
-      ? latestBuyPrice + tier.margin_percent / 100
-      : latestBuyPrice * (1 + tier.margin_percent / 100);
-    return { hasPricing: true, sellPPL: sell };
-  }, [speedsolToClientId, customerPricing, latestBuyPrice, clientWeeklyVolumes]);
-
-  // Only include priced transactions in revenue/profit KPIs
-  const pricedTxs = filtered.filter((t) => getTxPricing(t).hasPricing);
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const pricedLitres = pricedTxs.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const totalRevenue = pricedTxs.reduce((s, t) => {
-    const litres = t.cantidad || 0;
-    const { sellPPL } = getTxPricing(t);
-    return s + (t.dinero_total && t.dinero_total > 0 ? t.dinero_total : litres * sellPPL);
-  }, 0);
   const numDeliveries = filtered.length;
   const totalCost = pricedLitres * latestBuyPrice;
   const grossProfit = totalRevenue - totalCost;
   const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
-  const pricedPrev = previous.filter((t) => getTxPricing(t).hasPricing);
   const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevPricedLitres = pricedPrev.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevRevenue = pricedPrev.reduce((s, t) => {
-    const litres = t.cantidad || 0;
-    const { sellPPL } = getTxPricing(t);
-    return s + (t.dinero_total && t.dinero_total > 0 ? t.dinero_total : litres * sellPPL);
-  }, 0);
   const prevCost = prevPricedLitres * latestBuyPrice;
   const prevGrossProfit = prevRevenue - prevCost;
 
