@@ -1,35 +1,40 @@
 import { NavLink as RouterNavLink, useLocation, useSearchParams } from "react-router-dom";
 import { DateRangeToggle } from "./DateRangeToggle";
-import { SyncButton } from "./SyncButton";
-import { SyncStatus } from "./SyncStatus";
-import { useState } from "react";
-import { Menu, X, LogOut } from "lucide-react";
+import { useState, type ComponentType } from "react";
+import {
+  Menu, X, LogOut,
+  LayoutDashboard, Truck, Building2, DollarSign, Package, TrendingUp, Settings, Bus,
+} from "lucide-react";
 import { PACCLogo } from "./PACCLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemoContext } from "@/hooks/useDemo";
 import { GlobalThemeToggle } from "./GlobalThemeToggle";
+import { UserMenu } from "./UserMenu";
+import { SidebarSyncCard } from "./SidebarSyncCard";
 
-const navItems = [
-  { to: "/", label: "Overview" },
-  { to: "/dispatch", label: "Dispatch" },
-  { to: "/customers", label: "Customers" },
-  { to: "/finance", label: "Finance" },
-  { to: "/trucks", label: "Trucks" },
-  { to: "/suppliers", label: "Suppliers" },
-  { to: "/market", label: "Market Intel" },
-  { to: "/portal", label: "Client Portal", demoOnly: true },
-  { to: "/driver", label: "Driver Portal", demoOnly: true },
-  { to: "/admin", label: "Admin" },
+type NavItem = { to: string; label: string; icon: ComponentType<{ className?: string }>; demoOnly?: boolean };
+
+const navItems: NavItem[] = [
+  { to: "/", label: "Overview", icon: LayoutDashboard },
+  { to: "/dispatch", label: "Dispatch", icon: Truck },
+  { to: "/customers", label: "Customers", icon: Building2 },
+  { to: "/finance", label: "Finance", icon: DollarSign },
+  { to: "/trucks", label: "Trucks", icon: Bus },
+  { to: "/suppliers", label: "Suppliers", icon: Package },
+  { to: "/market", label: "Market intel", icon: TrendingUp },
+  { to: "/portal", label: "Client Portal", icon: Building2, demoOnly: true },
+  { to: "/driver", label: "Driver Portal", icon: Truck, demoOnly: true },
+  { to: "/admin", label: "Admin", icon: Settings },
 ];
 
 // In demo mode the sidebar is rebuilt as the customer-portal tab list.
 // Each entry deep-links into /portal with a ?tab= param the page reads.
-const demoPortalNavItems = [
-  { to: "/portal", label: "Overview",   tab: "Overview" },
-  { to: "/portal", label: "Deliveries", tab: "Deliveries" },
-  { to: "/portal", label: "Fleet",      tab: "Fleet" },
-  { to: "/portal", label: "Reports",    tab: "Reports" },
-  { to: "/portal", label: "Profile",    tab: "Profile" },
+const demoPortalNavItems: Array<NavItem & { tab?: string }> = [
+  { to: "/portal", label: "Overview",   tab: "Overview",   icon: LayoutDashboard },
+  { to: "/portal", label: "Deliveries", tab: "Deliveries", icon: Truck },
+  { to: "/portal", label: "Fleet",      tab: "Fleet",      icon: Bus },
+  { to: "/portal", label: "Reports",    tab: "Reports",    icon: TrendingUp },
+  { to: "/portal", label: "Profile",    tab: "Profile",    icon: Settings },
 ];
 
 /** Build sidebar link href, preserving demo params and optional ?tab=. */
@@ -59,311 +64,172 @@ const DEMO_TEXT_ACTIVE = "#e8eaf0";
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isDemo, accentColor, isPaccBranded, isEmailPortalDemo } = useDemoContext();
+  const { isDemo, isPaccBranded } = useDemoContext();
   const [params] = useSearchParams();
-  const bannerOffset = 0;
 
   // Date range toggle is global state — only show it on routes whose pages
   // actually consume it. Otherwise clicking Today/Week/Month does nothing
   // visible and that's confusing UX.
-  const dateRangeRoutes = ["/", "/customers", "/transactions", "/trucks", "/performance", "/finance"];
-  // Pages that render the period selector inline next to their H1 — don't
-  // also show it in the global header on those routes.
-  const inlinePeriodRoutes = ["/"];
+  // Date-range toggle in the legacy header — kept ONLY for routes that don't
+  // render an inline PageHeader on their own (Overview/Customers/Finance/etc.
+  // render their own inline period selector).
+  const dateRangeRoutes = ["/transactions", "/performance"];
   const showDateRange = dateRangeRoutes.some((r) =>
-    r === "/" ? location.pathname === "/" : location.pathname === r || location.pathname.startsWith(r + "/")
-  ) && !inlinePeriodRoutes.includes(location.pathname);
+    location.pathname === r || location.pathname.startsWith(r + "/")
+  );
 
-  // Demo mode (whether via ?demo=true or email portal showcase): replace
-  // the admin sidebar with the customer-portal tab list so the showcase
-  // matches what a real customer would see.
-  const visibleNavItems: Array<{ to: string; label: string; tab?: string }> = isDemo
+  const visibleNavItems = isDemo
     ? demoPortalNavItems
-    : navItems.filter(item => !item.demoOnly);
+    : navItems.filter((item) => !item.demoOnly);
 
-  // PACC-branded demo keeps the production palette
-  const useDemoPalette = isDemo && !isPaccBranded;
-  const BG = useDemoPalette ? DEMO_BG : PACC_BG;
-  const SIDEBAR_BG = useDemoPalette ? DEMO_BG : PACC_SIDEBAR_BG;
-  const ACTIVE_BG = useDemoPalette ? "rgba(255,255,255,0.04)" : PACC_ACTIVE_BG;
-  const BORDER = useDemoPalette ? DEMO_BORDER : PACC_BORDER;
-  const DEFAULT_ACCENT = useDemoPalette ? DEMO_ACCENT : PACC_ACCENT;
-  const TEXT_DIM = useDemoPalette ? DEMO_TEXT_DIM : PACC_TEXT_DIM;
-  const TEXT_MID = TEXT_DIM;
-  const TEXT_ACTIVE = useDemoPalette ? DEMO_TEXT_ACTIVE : PACC_TEXT_ACTIVE;
-
-  const ACCENT = (accentColor && useDemoPalette) ? `hsl(${accentColor})` : DEFAULT_ACCENT;
-  // For inline-style backgrounds that need an alpha overlay we can't use a
-  // CSS var directly inside `${ACCENT}11`. Use accent-light token instead.
-  const ACCENT_OVERLAY = useDemoPalette ? `${ACCENT}11` : "var(--accent-light)";
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
+  function isItemActive(item: NavItem & { tab?: string }): boolean {
+    if (item.tab) {
+      const currentTab = params.get("tab");
+      return location.pathname.startsWith(item.to) &&
+        (currentTab ? currentTab === item.tab : item.tab === "Overview");
+    }
+    return item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
+  }
+
+  const NavLinkRow = ({ item, onNavigate }: { item: NavItem & { tab?: string }; onNavigate?: () => void }) => {
+    const Icon = item.icon;
+    const active = isItemActive(item);
+    return (
+      <RouterNavLink
+        to={buildHref(item.to, item.tab, demoSuffix, params)}
+        onClick={onNavigate}
+        className={[
+          "group flex items-center gap-2.5 rounded-lg text-[14px] transition-colors",
+          "h-9 pr-3",
+          active
+            ? "bg-card text-foreground font-semibold border-l-2 border-accent pl-3"
+            : "bg-transparent text-muted-foreground hover:bg-card hover:text-foreground border-l-2 border-transparent pl-3",
+        ].join(" ")}
+      >
+        <Icon className="w-4 h-4 shrink-0" />
+        <span className="truncate">{item.label}</span>
+      </RouterNavLink>
+    );
+  };
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: BG, color: TEXT_ACTIVE }}>
+    <div className="min-h-screen flex w-full bg-background text-foreground">
       {/* Skip-link for keyboard users */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only"
-        style={{
-          position: "absolute",
-          left: 8,
-          top: 8,
-          zIndex: 200,
-          background: BG,
-          color: TEXT_ACTIVE,
-          border: `1px solid ${ACCENT}`,
-          padding: "8px 12px",
-          borderRadius: 6,
-          fontSize: 12,
-        }}
+        className="sr-only focus:not-sr-only absolute left-2 top-2 z-[200] rounded-md border border-accent bg-background text-foreground px-3 py-2 text-xs"
       >
         Skip to main content
       </a>
-      {/* ── DESKTOP SIDEBAR ── */}
+
+      {/* ── DESKTOP SIDEBAR (>= lg) ── */}
       <aside
-        className="hidden md:flex"
-        style={{
-          width: 240,
-          background: SIDEBAR_BG,
-          borderRight: `1px solid ${BORDER}`,
-          flexDirection: "column",
-          padding: `${28 + bannerOffset}px 0 28px`,
-          flexShrink: 0,
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-        }}
+        className="hidden lg:flex fixed inset-y-0 left-0 z-40 flex-col"
+        style={{ width: 240, background: "var(--muted)", borderRight: "1px solid var(--border)" }}
       >
-        <div style={{ padding: "0 24px", marginBottom: 40 }}>
-          <PACCLogo size="md" />
+        <div className="px-4 py-5 border-b border-border">
+          <PACCLogo size="sm" tone="light" />
         </div>
-
-        <nav style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 12px", gap: 2 }}>
-          {visibleNavItems.map((item, i) => {
-            const currentTab = params.get("tab");
-            const isActive = item.tab
-              ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "Overview")
-              : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
-            return (
-              <RouterNavLink
-                key={item.label}
-                to={buildHref(item.to, item.tab, demoSuffix, params)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "9px 12px",
-                  textDecoration: "none",
-                  borderRadius: 8,
-                  background: isActive ? ACTIVE_BG : "transparent",
-                  border: isActive ? `1px solid ${BORDER}` : "1px solid transparent",
-                  borderLeft: isActive ? `2px solid ${ACCENT}` : "2px solid transparent",
-                  transition: "all 0.15s",
-                  minHeight: 36,
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent";
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: isActive ? 600 : 500,
-                    color: isActive ? TEXT_ACTIVE : TEXT_MID,
-                    letterSpacing: 0,
-                  }}
-                >
-                  {item.label}
-                </span>
-              </RouterNavLink>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1">
+          {visibleNavItems.map((item) => (
+            <NavLinkRow key={item.label} item={item} />
+          ))}
         </nav>
-
-        <div style={{ padding: "16px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
-          <SyncStatus />
+        <div className="border-t border-border px-3 pt-2">
+          <SidebarSyncCard />
+        </div>
+        <div className="px-3 pb-4">
           <button
             type="button"
-            onClick={async () => { sessionStorage.removeItem("demo_unlocked"); await supabase.auth.signOut(); window.location.href = isDemo ? "/landing" : "/login"; }}
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 9999,
-              color: TEXT_ACTIVE, fontSize: 13, fontWeight: 500, cursor: "pointer", padding: "8px 14px",
-              transition: "all 0.15s",
+            onClick={async () => {
+              sessionStorage.removeItem("demo_unlocked");
+              await supabase.auth.signOut();
+              window.location.href = isDemo ? "/landing" : "/login";
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.04)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            className="w-full inline-flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-[14px] font-medium text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
           >
-            <LogOut style={{ width: 14, height: 14 }} />
-            Sign Out
+            <LogOut className="w-4 h-4" />
+            Sign out
           </button>
         </div>
       </aside>
 
-      {/* ── MOBILE FULL-SCREEN MENU ── */}
+      {/* ── MOBILE FULL-SCREEN MENU (< lg) ── */}
       {mobileMenuOpen && (
         <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 100,
-            background: SIDEBAR_BG,
-            display: "flex",
-            flexDirection: "column",
-          }}
-          className="md:hidden"
+          className="lg:hidden fixed inset-0 z-[100] flex flex-col"
+          style={{ background: "var(--muted)" }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "16px 20px",
-              borderBottom: `1px solid ${BORDER}`,
-            }}
-          >
-            <PACCLogo size="sm" />
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <PACCLogo size="sm" tone="light" />
             <button
               type="button"
               aria-label="Close menu"
               onClick={() => setMobileMenuOpen(false)}
-              style={{ background: "transparent", border: "none", color: TEXT_MID, cursor: "pointer", padding: 4 }}
+              className="inline-flex items-center justify-center w-11 h-11 rounded-md text-muted-foreground hover:text-foreground hover:bg-card"
             >
-              <X style={{ width: 20, height: 20 }} />
+              <X className="w-5 h-5" />
             </button>
           </div>
-
-          <nav style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
-            {visibleNavItems.map((item, i) => {
-              const currentTab = params.get("tab");
-              const isActive = item.tab
-                ? location.pathname.startsWith(item.to) && (currentTab ? currentTab === item.tab : item.tab === "Overview")
-                : item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
-              return (
-                <RouterNavLink
-                  key={item.label}
-                  to={buildHref(item.to, item.tab, demoSuffix, params)}
-                  onClick={() => setMobileMenuOpen(false)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 16,
-                    padding: "18px 24px",
-                    textDecoration: "none",
-                    borderBottom: `1px solid ${BORDER}`,
-                    background: isActive ? ACTIVE_BG : "transparent",
-                    borderLeft: isActive ? `2px solid ${ACCENT}` : "2px solid transparent",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 16,
-                      fontWeight: isActive ? 600 : 500,
-                      color: isActive ? TEXT_ACTIVE : TEXT_MID,
-                      letterSpacing: 0,
-                    }}
-                  >
-                    {item.label}
-                  </span>
-                </RouterNavLink>
-              );
-            })}
+          <nav className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1">
+            {visibleNavItems.map((item) => (
+              <NavLinkRow key={item.label} item={item} onNavigate={() => setMobileMenuOpen(false)} />
+            ))}
           </nav>
-
-          <div style={{ padding: "20px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
-            <SyncStatus />
+          <div className="border-t border-border px-3 pt-2">
+            <SidebarSyncCard />
+          </div>
+          <div className="px-3 pb-5">
             <button
               type="button"
-              onClick={async () => { sessionStorage.removeItem("demo_unlocked"); await supabase.auth.signOut(); window.location.href = isDemo ? "/landing" : "/login"; }}
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 8,
-                color: TEXT_DIM, fontSize: 13, cursor: "pointer", padding: "10px 16px",
+              onClick={async () => {
+                sessionStorage.removeItem("demo_unlocked");
+                await supabase.auth.signOut();
+                window.location.href = isDemo ? "/landing" : "/login";
               }}
+              className="w-full inline-flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-card hover:text-foreground"
             >
-              <LogOut style={{ width: 14, height: 14 }} />
-              Sign Out
+              <LogOut className="w-4 h-4" />
+              Sign out
             </button>
           </div>
         </div>
       )}
 
-      {/* ── MAIN CONTENT ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      {/* ── MAIN COLUMN ── */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-60">
         <header
-          style={{
-            background: BG,
-            borderBottom: `1px solid ${BORDER}`,
-            display: "flex",
-            flexDirection: "column",
-            flexShrink: 0,
-            position: "sticky",
-            top: bannerOffset,
-            zIndex: 50,
-          }}
+          className="sticky top-0 z-30 border-b border-border bg-background"
         >
-          <div
-            style={{
-              height: 52,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0 16px",
-              gap: 8,
-              minWidth: 0,
-            }}
-          >
-            {/* Mobile header */}
-            <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-            <button
-              type="button"
-              aria-label="Open menu"
-              onClick={() => setMobileMenuOpen(true)}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: TEXT_MID,
-                cursor: "pointer",
-                padding: 4,
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              <Menu style={{ width: 16, height: 16 }} />
-            </button>
-            <PACCLogo size="sm" />
+          <div className="h-14 flex items-center justify-between px-4 sm:px-6 gap-3">
+            {/* Mobile left: hamburger + small logo */}
+            <div className="flex items-center gap-3 lg:hidden min-w-0">
+              <button
+                type="button"
+                aria-label="Open menu"
+                onClick={() => setMobileMenuOpen(true)}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              <PACCLogo size="sm" />
             </div>
 
-            <div className="hidden md:block" />
+            <div className="hidden lg:block" />
 
-            {/* Desktop right cluster */}
-            <div className="hidden md:flex" style={{ alignItems: "center", gap: 8 }}>
-              <SyncButton />
-              {showDateRange && <DateRangeToggle />}
+            {/* Right cluster */}
+            <div className="flex items-center gap-2">
+              {showDateRange && (
+                <div className="hidden md:block"><DateRangeToggle /></div>
+              )}
               <GlobalThemeToggle compact />
-            </div>
-
-            {/* Mobile right cluster */}
-            <div className="flex md:hidden" style={{ alignItems: "center", gap: 8, flexShrink: 0 }}>
-              <SyncButton />
-              <GlobalThemeToggle compact />
+              <UserMenu />
             </div>
           </div>
-
-          {/* Mobile second row: date range toggle aligned right to mirror the
-              breadcrumb pattern (next to page H1 rather than its own band). */}
           {showDateRange && (
-            <div
-              className="flex md:hidden"
-              style={{
-                justifyContent: "flex-end",
-                padding: "4px 12px 6px",
-                borderTop: `1px solid ${BORDER}`,
-              }}
-            >
+            <div className="md:hidden flex justify-end px-4 py-2 border-t border-border">
               <DateRangeToggle />
             </div>
           )}
@@ -371,8 +237,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <main
           id="main-content"
-          style={{ flex: 1, overflowY: "auto", paddingBottom: 80 }}
-          className="px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8"
+          className="flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 pb-20"
         >
           {children}
         </main>
