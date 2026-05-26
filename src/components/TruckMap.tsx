@@ -23,9 +23,10 @@ interface TruckMapProps {
   compact?: boolean;
 }
 
-function cssVar(name: string, fallback = ""): string {
+function cssVar(name: string, fallback = "", el?: Element | null): string {
   if (typeof window === "undefined") return fallback;
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+  const target = el || document.documentElement;
+  return getComputedStyle(target).getPropertyValue(name).trim() || fallback;
 }
 
 export function TruckMap({ height = 280, showStops = false, compact = false }: TruckMapProps) {
@@ -40,6 +41,10 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const [mapError, setMapError] = useState(false);
   const [mapAttempt, setMapAttempt] = useState(0);
   const [expanded, setExpanded] = useState(false);
+  // Forces a re-read of CSS vars after the container is mounted so we
+  // pick up portal-scoped overrides (light theme) rather than :root.
+  const [, setVarTick] = useState(0);
+  useEffect(() => { setVarTick((n) => n + 1); }, []);
 
   const isDemo = useDemo();
   const { data: ping, isFetching, refetch } = useLatestTruckLocation();
@@ -52,12 +57,13 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const route = null as null | { completed: number; total: number };
   const hasLocation = isDemo ? true : !!(driver?.lat && driver?.lng);
 
-  const mapBg = cssVar("--map-bg", "#0A1A0C");
-  const mapBorder = cssVar("--map-border", "#1A301D");
-  const accent = cssVar("--accent", "#C8F26A");
-  const textMuted = cssVar("--text-muted", "#8B8773");
-  const textSecondary = cssVar("--text-secondary", "#C7BFAC");
-  const textPrimary = cssVar("--text-primary", "#ECE4D2");
+  const scopeEl = mapContainer.current?.parentElement || null;
+  const mapBg = cssVar("--map-bg", "#0A1A0C", scopeEl);
+  const mapBorder = cssVar("--map-border", "#1A301D", scopeEl);
+  const accent = cssVar("--accent", "#C8F26A", scopeEl);
+  const textMuted = cssVar("--text-muted", "#8B8773", scopeEl);
+  const textSecondary = cssVar("--text-secondary", "#C7BFAC", scopeEl);
+  const textPrimary = cssVar("--text-primary", "#ECE4D2", scopeEl);
 
   useEffect(() => {
     if (mapRef.current && mapReady) {
