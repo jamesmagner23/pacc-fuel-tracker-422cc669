@@ -391,15 +391,25 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 }
 
 // ─── Main component ──────────────────────────────────────────────────
-export default function CustomerPortal() {
+export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help" } = {}) {
   const [params, setParams] = useSearchParams();
   const tabParam = params.get("tab");
-  const initialTab: Tab = (tabs as readonly string[]).includes(tabParam || "")
-    ? (tabParam as Tab)
-    : "Overview";
-  const [activeTab, setActiveTabState] = useState<Tab>(initialTab);
-  // Keep ?tab= URL param in sync so sidebar links + back/forward work.
+  const initialTab: Tab | "Help" = forcedTab
+    ? forcedTab
+    : (tabs as readonly string[]).includes(tabParam || "")
+      ? (tabParam as Tab)
+      : "Overview";
+  const [activeTab, setActiveTabState] = useState<Tab | "Help">(initialTab);
+  // When the URL-driven forcedTab changes (sub-route nav), follow it.
   useEffect(() => {
+    if (forcedTab && forcedTab !== activeTab) {
+      setActiveTabState(forcedTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forcedTab]);
+  // Legacy ?tab= support — only honoured when no forcedTab is supplied.
+  useEffect(() => {
+    if (forcedTab) return;
     if (tabParam !== activeTab) {
       const next = new URLSearchParams(params);
       next.set("tab", activeTab);
@@ -408,12 +418,13 @@ export default function CustomerPortal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
   useEffect(() => {
+    if (forcedTab) return;
     if (tabParam && (tabs as readonly string[]).includes(tabParam) && tabParam !== activeTab) {
       setActiveTabState(tabParam as Tab);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam]);
-  const setActiveTab = setActiveTabState;
+  const setActiveTab = setActiveTabState as (t: Tab) => void;
   const [fleetSubtab, setFleetSubtab] = useState<FleetSubtab>("Plant");
   const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
   const [period, setPeriod] = useState<PortalPeriod>("month");
