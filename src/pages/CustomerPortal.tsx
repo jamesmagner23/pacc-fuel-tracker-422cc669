@@ -1482,24 +1482,30 @@ function OverviewTab({
           tintColor="#7A5300"
         />
         <KPISparklineCard
-          label="Deliveries"
-          value={numDeliveries.toLocaleString()}
-          deltaPct={pct(numDeliveries, prevDeliveries)}
-          trend={sparkDeliveries}
-          fallbackContext="Comparison resumes with previous period data"
-          icon={Truck}
-          tintBg="#EAEEFC"
-          tintColor="#2B3D8E"
+          label="Est. FTC Savings"
+          value={ftcSavings > 0 ? `$${ftcSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+          deltaPct={null}
+          trend={sparkLitres}
+          fallbackContext="ATO off-road rate × volume"
+          icon={Receipt}
+          tintBg="#C8F26A"
+          tintColor="#0E1F10"
+          customPill={
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-muted text-muted-foreground">
+              YTD
+            </span>
+          }
+          subLine="ATO off-road rate × volume"
         />
         <KPISparklineCard
-          label="Avg Drop Size"
-          value={Math.round(avgDrop).toLocaleString() + " L"}
-          deltaPct={pct(avgDrop, prevAvg)}
-          trend={sparkAvg}
-          fallbackContext="Comparison resumes with previous period data"
-          icon={Gauge}
-          tintBg="#F4F5F1"
-          tintColor="#5F6B61"
+          label="Active Sites"
+          value={sites.size.toLocaleString()}
+          deltaPct={null}
+          trend={sparkDeliveries}
+          fallbackContext="— no change"
+          icon={MapPin}
+          tintBg="#EAEEFC"
+          tintColor="#2B3D8E"
         />
       </div>
 
