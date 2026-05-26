@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
@@ -238,6 +238,20 @@ function useCustomerProfile() {
           (data as any).logo_url = ca.logo_url;
           (data as any).brand_accent = ca.brand_accent;
           (data as any).branding_enabled = ca.branding_enabled;
+        }
+      }
+      // Fallback: if no company is linked yet, derive a friendlier label
+      // from the user's email (e.g. "ops@ironside.com" → "Ironside") so
+      // the portal never reads "YOUR ACCOUNT" / "YA" to a real customer.
+      if (companyName === "Your Account" && user.email) {
+        const local = user.email.split("@")[0] || "";
+        const domain = (user.email.split("@")[1] || "").split(".")[0] || "";
+        const guess = (domain || local).replace(/[._-]+/g, " ").trim();
+        if (guess) {
+          companyName = guess
+            .split(/\s+/)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(" ");
         }
       }
       return { ...data, companyName, speedsolNames, email: user.email || "" };
@@ -523,6 +537,22 @@ export default function CustomerPortal() {
     const cutoffStr = format(cutoff, "yyyy-MM-dd");
     return transactions.filter((t: any) => (t.date || "") >= cutoffStr);
   }, [transactions, period]);
+
+  // First-paint guard: if the default "This Month" window is empty but the
+  // customer DOES have deliveries on file, auto-fall back to "All Time" so
+  // the KPI tiles never greet the user with "0 L". Only fires once per
+  // session and only from the default "month" position.
+  const autoFellBackRef = useRef(false);
+  useEffect(() => {
+    if (autoFellBackRef.current) return;
+    if (isLoading) return;
+    if (period !== "month") return;
+    if (transactions.length === 0) return;
+    if (periodTransactions.length > 0) return;
+    autoFellBackRef.current = true;
+    setPeriod("all");
+  }, [isLoading, period, transactions.length, periodTransactions.length]);
+
   const filteredTransactions = useMemo(
     () => filterTransactions(periodTransactions, portalFilters.filters, lookups),
     [periodTransactions, portalFilters.filters, lookups]
@@ -923,6 +953,9 @@ export default function CustomerPortal() {
                   setReportsSubtab("Fuel Tax Credit");
                   setActiveTab("Reports");
                 }}
+                onOpenDeliveries={() => setActiveTab("Deliveries")}
+                periodLabel={PERIOD_LABELS[period]}
+                companyName={companyName}
               />
             )}
             {activeTab === "Deliveries" && (
@@ -1484,6 +1517,9 @@ function OverviewTab({
   isDemo,
   plantItems,
   onOpenFtcReport,
+  onOpenDeliveries,
+  periodLabel,
+  companyName,
 }: {
   transactions: any[];
   demoSuffix: string;
@@ -1491,6 +1527,9 @@ function OverviewTab({
   isDemo: boolean;
   plantItems: any[];
   onOpenFtcReport?: () => void;
+  onOpenDeliveries?: () => void;
+  periodLabel?: string;
+  companyName?: string;
 }) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
@@ -1544,6 +1583,64 @@ function OverviewTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Quick actions — surfaced from Overview so the customer can grab a
+          CSV or jump into Deliveries without hunting through Reports. */}
+      {transactions.length > 0 && (
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => {
+              const header = ["Date", "Site", "Plant", "Rego", "Litres", "Docket"];
+              const rows = transactions.map((t: any) => [
+                t.date || "",
+                t.estacion || t.ciudad || t.nombre_cliente1 || "",
+                t.identificador_cliente1 || "",
+                t.placa || "",
+                (t.cantidad || 0).toFixed(2),
+                t.id ?? "",
+              ]);
+              const safeName = (companyName || "deliveries").replace(/[^A-Za-z0-9]+/g, "-");
+              const safePeriod = (periodLabel || "current").replace(/\s+/g, "-");
+              downloadCSV([header, ...rows], `${safeName}-deliveries-${safePeriod}.csv`);
+            }}
+            style={{
+              background: "transparent",
+              color: T.text,
+              border: `1px solid ${T.border}`,
+              borderRadius: 999,
+              padding: "6px 12px",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+            }}
+          >
+            ↓ Export Deliveries CSV
+          </button>
+          {onOpenDeliveries && (
+            <button
+              type="button"
+              onClick={onOpenDeliveries}
+              style={{
+                background: "transparent",
+                color: T.text,
+                border: `1px solid ${T.accent}88`,
+                borderRadius: 999,
+                padding: "6px 12px",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              View &amp; download dockets →
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Hero — Litres used (visual focal point) */}
       <HeroLitres
         totalLitres={totalLitres}
