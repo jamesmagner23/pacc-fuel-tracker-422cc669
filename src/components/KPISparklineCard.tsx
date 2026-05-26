@@ -1,6 +1,7 @@
+import { ComponentType } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { Area, AreaChart, ResponsiveContainer } from "recharts";
 
 export interface KPISparklineProps {
   label: string;
@@ -12,6 +13,12 @@ export interface KPISparklineProps {
   /** Contextual line shown when deltaPct is null. */
   fallbackContext: string;
   href?: string;
+  /** Lucide icon component for the tinted square. */
+  icon: ComponentType<{ className?: string }>;
+  /** Hex bg for the tinted icon container AND area-fill base colour. */
+  tintBg: string;
+  /** Hex line/icon colour. */
+  tintColor: string;
 }
 
 export function KPISparklineCard({
@@ -21,62 +28,72 @@ export function KPISparklineCard({
   trend = [],
   fallbackContext,
   href,
+  icon: Icon,
+  tintBg,
+  tintColor,
 }: KPISparklineProps) {
   const showSpark = trend.length >= 2;
 
   const body = (
-    <div className="flex items-start justify-between gap-4 h-full">
-      <div className="flex-1 min-w-0">
-        <div className="text-[12px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">
-          {label}
-        </div>
-        <div className="mt-1 text-[32px] leading-none font-medium tabular-nums text-foreground">
-          {value}
-        </div>
-        <div className="mt-2 flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
-          {deltaPct !== null ? (
-            <>
+    <div className="flex flex-col h-full">
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
+        <div className="flex-1 min-w-0">
+          <div className="text-[12px] font-medium text-muted-foreground">{label}</div>
+          <div className="mt-1 text-[32px] leading-[1.05] font-semibold tabular-nums text-foreground" style={{ letterSpacing: "-0.01em" }}>
+            {value}
+          </div>
+          <div className="mt-1.5">
+            {deltaPct !== null ? (
               <DeltaPill pct={deltaPct} />
-              <span>vs previous period</span>
-            </>
-          ) : (
-            <span className="text-[12px] text-muted-foreground">{fallbackContext}</span>
-          )}
+            ) : (
+              <span
+                className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-muted text-muted-foreground"
+              >
+                — no comparison
+              </span>
+            )}
+          </div>
+        </div>
+        <div
+          className="inline-flex items-center justify-center shrink-0"
+          style={{ width: 40, height: 40, borderRadius: 12, background: tintBg, color: tintColor }}
+        >
+          <Icon className="w-5 h-5" />
         </div>
       </div>
-      {showSpark && (
-        <div className="hidden sm:block shrink-0 mt-1" style={{ width: 64, height: 36 }}>
+      {showSpark ? (
+        <div style={{ height: 80 }} aria-hidden>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trend} margin={{ top: 2, right: 4, left: 0, bottom: 2 }}>
-              <Line
+            <AreaChart data={trend} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id={`kpi-grad-${tintColor.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={tintColor} stopOpacity={0.25} />
+                  <stop offset="100%" stopColor={tintColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area
                 type="monotone"
                 dataKey="v"
-                stroke="var(--foreground)"
+                stroke={tintColor}
                 strokeWidth={1.5}
-                dot={(props: any) => {
-                  if (props.index !== trend.length - 1) return null as any;
-                  return (
-                    <circle
-                      key="last"
-                      cx={props.cx}
-                      cy={props.cy}
-                      r={3}
-                      fill="var(--accent)"
-                      stroke="none"
-                    />
-                  );
-                }}
+                fill={`url(#kpi-grad-${tintColor.replace("#", "")})`}
                 isAnimationActive={false}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="px-5 pb-4" style={{ height: 60 }}>
+          <div className="h-full flex items-center justify-center text-center text-[12px] text-muted-foreground">
+            Trend appears with 2+ data points.
+          </div>
         </div>
       )}
     </div>
   );
 
   const wrapClass =
-    "block bg-card text-foreground border border-border rounded-xl p-5 transition-colors hover:border-[#C7CCC1] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    "block bg-card text-foreground border border-border rounded-[14px] overflow-hidden transition-colors hover:border-[#C7CCC1] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   if (href) {
     return (
@@ -90,6 +107,7 @@ export function KPISparklineCard({
 
 function DeltaPill({ pct }: { pct: number }) {
   const up = pct >= 0;
+  const formatted = `${up ? "+" : "\u2212"}${Math.abs(pct).toFixed(1)}%`;
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums"
@@ -98,9 +116,8 @@ function DeltaPill({ pct }: { pct: number }) {
         color: up ? "#2A6A2E" : "#8C2A1F",
       }}
     >
-      {up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-      {up ? "+" : ""}
-      {pct.toFixed(1)}%
+      {up ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+      {formatted}
     </span>
   );
 }

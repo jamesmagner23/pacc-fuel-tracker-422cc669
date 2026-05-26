@@ -10,21 +10,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { useDemoContext } from "@/hooks/useDemo";
 import { GlobalThemeToggle } from "./GlobalThemeToggle";
 import { UserMenu } from "./UserMenu";
-import { SidebarSyncCard } from "./SidebarSyncCard";
+import { SidebarUserCard } from "./SidebarUserCard";
+import { SearchCommand } from "./topbar/SearchCommand";
+import { TopSyncPill } from "./topbar/TopSyncPill";
+import { NotificationsBell } from "./topbar/NotificationsBell";
 
 type NavItem = { to: string; label: string; icon: ComponentType<{ className?: string }>; demoOnly?: boolean };
+type NavGroup = { label: string; items: NavItem[] };
 
-const navItems: NavItem[] = [
-  { to: "/", label: "Overview", icon: LayoutDashboard },
-  { to: "/dispatch", label: "Dispatch", icon: Truck },
-  { to: "/customers", label: "Customers", icon: Building2 },
-  { to: "/finance", label: "Finance", icon: DollarSign },
-  { to: "/trucks", label: "Trucks", icon: Bus },
-  { to: "/suppliers", label: "Suppliers", icon: Package },
-  { to: "/market", label: "Market intel", icon: TrendingUp },
-  { to: "/portal", label: "Client Portal", icon: Building2, demoOnly: true },
-  { to: "/driver", label: "Driver Portal", icon: Truck, demoOnly: true },
-  { to: "/admin", label: "Admin", icon: Settings },
+const navGroups: NavGroup[] = [
+  {
+    label: "Operations",
+    items: [
+      { to: "/", label: "Overview", icon: LayoutDashboard },
+      { to: "/dispatch", label: "Dispatch", icon: Truck },
+      { to: "/customers", label: "Customers", icon: Building2 },
+    ],
+  },
+  {
+    label: "Analytics",
+    items: [
+      { to: "/finance", label: "Finance", icon: DollarSign },
+      { to: "/trucks", label: "Trucks", icon: Bus },
+      { to: "/suppliers", label: "Suppliers", icon: Package },
+      { to: "/market", label: "Market intel", icon: TrendingUp },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { to: "/admin", label: "Admin", icon: Settings },
+    ],
+  },
 ];
 
 // In demo mode the sidebar is rebuilt as the customer-portal tab list.
@@ -90,9 +107,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
     location.pathname === r || location.pathname.startsWith(r + "/")
   );
 
-  const visibleNavItems = isDemo
-    ? demoPortalNavItems
-    : navItems.filter((item) => !item.demoOnly);
+  const visibleGroups: NavGroup[] = isDemo
+    ? [{ label: "Portal", items: demoPortalNavItems }]
+    : navGroups;
+  // Flat list still useful for the mobile drawer header
+  const visibleNavItems = visibleGroups.flatMap((g) => g.items);
 
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
@@ -126,6 +145,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const SectionDivider = ({ label }: { label: string }) => (
+    <div
+      className="mt-4 mb-1.5 pl-1 text-[10px] font-bold uppercase text-muted-foreground/70"
+      style={{ letterSpacing: "0.1em" }}
+    >
+      {label}
+    </div>
+  );
+
+  const renderGroups = (onNavigate?: () => void) => (
+    <>
+      {visibleGroups.map((g, idx) => (
+        <div key={g.label} className={idx === 0 ? "" : ""}>
+          <SectionDivider label={g.label} />
+          <div className="flex flex-col gap-1">
+            {g.items.map((item) => (
+              <NavLinkRow key={item.label + item.to + (("tab" in item ? (item as any).tab : ""))} item={item} onNavigate={onNavigate} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+
   return (
     <div className="min-h-screen flex w-full bg-background text-foreground">
       {/* Skip-link for keyboard users */}
@@ -144,27 +187,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="px-4 py-5 border-b border-border">
           <PACCLogo size="sm" tone="light" />
         </div>
-        <nav className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1">
-          {visibleNavItems.map((item) => (
-            <NavLinkRow key={item.label} item={item} />
-          ))}
+        <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-4">
+          {renderGroups()}
         </nav>
-        <div className="border-t border-border px-3 pt-2">
-          <SidebarSyncCard />
-        </div>
-        <div className="px-3 pb-4">
-          <button
-            type="button"
-            onClick={async () => {
-              sessionStorage.removeItem("demo_unlocked");
-              await supabase.auth.signOut();
-              window.location.href = isDemo ? "/landing" : "/login";
-            }}
-            className="w-full inline-flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-[14px] font-medium text-muted-foreground hover:bg-card hover:text-foreground transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign out
-          </button>
+        <div className="border-t border-border mb-4">
+          <SidebarUserCard />
         </div>
       </aside>
 
@@ -185,27 +212,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <nav className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1">
-            {visibleNavItems.map((item) => (
-              <NavLinkRow key={item.label} item={item} onNavigate={() => setMobileMenuOpen(false)} />
-            ))}
+          <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3">
+            {renderGroups(() => setMobileMenuOpen(false))}
           </nav>
-          <div className="border-t border-border px-3 pt-2">
-            <SidebarSyncCard />
-          </div>
-          <div className="px-3 pb-5">
-            <button
-              type="button"
-              onClick={async () => {
-                sessionStorage.removeItem("demo_unlocked");
-                await supabase.auth.signOut();
-                window.location.href = isDemo ? "/landing" : "/login";
-              }}
-              className="w-full inline-flex items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-card hover:text-foreground"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </button>
+          <div className="border-t border-border mb-3">
+            <SidebarUserCard />
           </div>
         </div>
       )}
@@ -219,27 +230,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
           }
         >
           <div className="h-14 flex items-center justify-between px-4 sm:px-6 gap-3">
-            {/* Mobile left: hamburger + small logo */}
-            <div className="flex items-center gap-3 lg:hidden min-w-0">
+            {/* Left cluster */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <button
                 type="button"
                 aria-label="Open menu"
                 onClick={() => setMobileMenuOpen(true)}
-                className="inline-flex items-center justify-center w-10 h-10 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
+                className="inline-flex lg:hidden items-center justify-center w-10 h-10 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <PACCLogo size="sm" />
+              <div className="lg:hidden"><PACCLogo size="sm" /></div>
+              <div className="hidden md:block"><SearchCommand /></div>
             </div>
-
-            <div className="hidden lg:block" />
 
             {/* Right cluster */}
             <div className="flex items-center gap-2">
               {showDateRange && (
                 <div className="hidden md:block"><DateRangeToggle /></div>
               )}
+              <TopSyncPill />
               <GlobalThemeToggle compact />
+              <NotificationsBell />
               <UserMenu />
             </div>
           </div>
