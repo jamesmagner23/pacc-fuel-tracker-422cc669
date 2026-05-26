@@ -11,6 +11,7 @@ import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 import { format, parseISO } from "date-fns";
 import { Droplets, Clock, Truck, MapPin, Fuel } from "lucide-react";
 import { useChartPalette } from "@/lib/chartPalette";
+import { formatTime } from "@/lib/format";
 
 /** Read a CSS variable at render time so charts pick up theme overrides */
 function cssVar(name: string, fallback = ""): string {
@@ -266,8 +267,8 @@ export default function Overview() {
                   onMouseEnter={(e) => e.currentTarget.style.background = tc.surfaceHover}
                   onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                 >
-                  <div className="w-[40px] sm:w-[52px] text-[11px] tabular-nums shrink-0 pt-0.5" style={{ color: tc.textSecondary }}>
-                    {format(new Date(t.fecha), "HH:mm")}
+                  <div className="w-[52px] sm:w-[64px] text-[11px] tabular-nums shrink-0 pt-0.5" style={{ color: tc.textSecondary }}>
+                    {formatTime(t.fecha)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-medium truncate" style={{ color: tc.textPrimary }}>{t.nombre_cliente1 || "Walk-in"}</div>
