@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone } from "lucide-react";
+import { useState } from "react";
+import { Clock, Shield, Truck, MapPin, ChevronRight, Star, Droplets, Zap, Users, Mail, Eye, BarChart3, FileText, Layers, Smartphone, Phone } from "lucide-react";
 import { BoldPMark } from "@/components/BoldPMark";
 import heroImg from "@/assets/hero-construction.webp";
 import refuelImg from "@/assets/refuelling-closeup.webp";
@@ -8,6 +9,11 @@ import truckOnsiteImg from "@/assets/truck-onsite.webp";
 import truckDeliveryImg from "@/assets/truck-delivery.webp";
 import truckRefuelImg from "@/assets/truck-refuel.webp";
 import truckSiteImg from "@/assets/truck-site.webp";
+
+// Swap this constant to update the marketing phone everywhere.
+const BUSINESS_PHONE_DISPLAY = "0412 884 220";
+const BUSINESS_PHONE_TEL = "+61412884220";
+const BUSINESS_EMAIL = "fuel@paccvictoria.com";
 
 function PACCNavLogo() {
   return (
@@ -77,6 +83,95 @@ const coverage = [
   "Regional Victoria (by arrangement)",
 ];
 
+function QuoteForm() {
+  const [company, setCompany] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [site, setSite] = useState("");
+  const [date, setDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const subject = `Quote request — ${company || name || "New enquiry"}`;
+    const body =
+      `New quote request from the PACC Energy website\n\n` +
+      `Company:        ${company}\n` +
+      `Contact name:   ${name}\n` +
+      `Phone:          ${phone}\n` +
+      `Site address:   ${site}\n` +
+      `Delivery date:  ${date}\n`;
+    const href = `mailto:${BUSINESS_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = href;
+    setTimeout(() => setSubmitting(false), 1500);
+  };
+
+  const inputStyle: React.CSSProperties = {
+    background: "#0E1F10",
+    border: "1px solid #2A4A2E",
+    borderRadius: 10,
+    padding: "12px 14px",
+    color: "#ECE4D2",
+    fontSize: 14,
+    outline: "none",
+    width: "100%",
+    minHeight: 44,
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: "#8B8773",
+    marginBottom: 6,
+    display: "block",
+    textAlign: "left",
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="text-left rounded-2xl p-6 sm:p-8 mx-auto"
+      style={{ background: "#1B3520", border: "1px solid #2A4A2E", maxWidth: 560 }}
+    >
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label style={labelStyle}>Company</label>
+          <input style={inputStyle} required maxLength={120} value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Construction" />
+        </div>
+        <div>
+          <label style={labelStyle}>Your name</label>
+          <input style={inputStyle} required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Smith" />
+        </div>
+        <div>
+          <label style={labelStyle}>Phone</label>
+          <input style={inputStyle} required type="tel" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0400 000 000" />
+        </div>
+        <div>
+          <label style={labelStyle}>Delivery date</label>
+          <input style={inputStyle} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div className="sm:col-span-2">
+          <label style={labelStyle}>Site address</label>
+          <input style={inputStyle} required maxLength={250} value={site} onChange={(e) => setSite(e.target.value)} placeholder="123 Smith St, Melbourne VIC" />
+        </div>
+      </div>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="mt-6 w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold cursor-pointer transition-all disabled:opacity-70"
+        style={{ background: "#C8F26A", color: "#0E1F10", border: "none", boxShadow: "0 8px 32px rgba(200,242,106,0.3)", minHeight: 48 }}
+      >
+        {submitting ? "Opening email…" : <>Send Quote Request <ChevronRight className="w-4 h-4" /></>}
+      </button>
+      <p className="text-[11px] mt-3 text-center" style={{ color: "#8B8773" }}>
+        Or call <a href={`tel:${BUSINESS_PHONE_TEL}`} style={{ color: "#C8F26A", fontWeight: 600 }}>{BUSINESS_PHONE_DISPLAY}</a> for same-day delivery.
+      </p>
+    </form>
+  );
+}
+
 export default function LandingPage() {
   const navigate = useNavigate();
 
@@ -93,9 +188,25 @@ export default function LandingPage() {
             <a href="#contact" className="text-xs font-medium tracking-wide uppercase" style={{ color: "#C7BFAC" }}>Contact</a>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <a
+              href={`tel:${BUSINESS_PHONE_TEL}`}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-all"
+              style={{ background: "rgba(200,242,106,0.12)", color: "#C8F26A", border: "1px solid rgba(200,242,106,0.3)" }}
+              aria-label={`Call PACC Energy on ${BUSINESS_PHONE_DISPLAY}`}
+            >
+              <Phone className="w-3.5 h-3.5" /> {BUSINESS_PHONE_DISPLAY}
+            </a>
+            <a
+              href={`tel:${BUSINESS_PHONE_TEL}`}
+              className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-full"
+              style={{ background: "rgba(200,242,106,0.12)", color: "#C8F26A", border: "1px solid rgba(200,242,106,0.3)" }}
+              aria-label={`Call PACC Energy on ${BUSINESS_PHONE_DISPLAY}`}
+            >
+              <Phone className="w-4 h-4" />
+            </a>
             <button
               onClick={() => navigate("/?demo=true")}
-              className="px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5"
+              className="hidden sm:inline-flex px-3 sm:px-4 py-2 rounded-full text-xs font-semibold cursor-pointer transition-all items-center gap-1.5"
               style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.14)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(245,230,208,0.08)"; }}
@@ -374,25 +485,23 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#C8F26A" }}>Get Started</p>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4" style={{ color: "#ECE4D2" }}>
-            Ready to Simplify Your Fuel Supply?
+            Request a Quote
           </h2>
           <p className="text-sm mb-8 max-w-md mx-auto" style={{ color: "#8B8773" }}>
-            Get a competitive quote for your site. No hidden fees, no lock-in contracts.
+            Tell us about your site — we'll come back with pricing the same day. No hidden fees, no lock-in contracts.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="mailto:fuel@paccvictoria.com"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all"
-              style={{ background: "#C8F26A", color: "#0E1F10", boxShadow: "0 8px 32px rgba(200,242,106,0.3)" }}
-            >
-              <Mail className="w-4 h-4" /> fuel@paccvictoria.com
+          <QuoteForm />
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8 text-xs" style={{ color: "#8B8773" }}>
+            <a href={`tel:${BUSINESS_PHONE_TEL}`} className="inline-flex items-center justify-center gap-1.5" style={{ color: "#ECE4D2" }}>
+              <Phone className="w-3.5 h-3.5" style={{ color: "#C8F26A" }} /> {BUSINESS_PHONE_DISPLAY}
             </a>
-            <button
-              onClick={() => navigate("/login")}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-medium cursor-pointer transition-all"
-              style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
-            >
-              Client Portal Login <ChevronRight className="w-4 h-4" />
+            <span className="hidden sm:inline">·</span>
+            <a href={`mailto:${BUSINESS_EMAIL}`} className="inline-flex items-center justify-center gap-1.5" style={{ color: "#ECE4D2" }}>
+              <Mail className="w-3.5 h-3.5" style={{ color: "#C8F26A" }} /> {BUSINESS_EMAIL}
+            </a>
+            <span className="hidden sm:inline">·</span>
+            <button onClick={() => navigate("/login")} className="inline-flex items-center justify-center gap-1.5 bg-transparent border-none cursor-pointer" style={{ color: "#ECE4D2" }}>
+              Client Portal Login <ChevronRight className="w-3 h-3" />
             </button>
           </div>
         </div>
