@@ -410,11 +410,6 @@ export default function CustomerPortal() {
   const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const isDemo = useDemo();
-  const { theme: storedPortalTheme, vars: storedPortalVars, tokens: storedPortalTokens } = usePortalTheme();
-  // Demo mode is locked to light theme so the marketing/demo experience is consistent.
-  const portalTheme: PortalTheme = isDemo ? "light" : storedPortalTheme;
-  const portalVars = isDemo ? themeVarsFor("light") : storedPortalVars;
-  const portalTokens = isDemo ? tokensFor("light") : storedPortalTokens;
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
   const { data: profile } = useCustomerProfile();
@@ -425,35 +420,13 @@ export default function CustomerPortal() {
 
   // Customer branding: only kicks in when admin has uploaded + enabled it.
   const brandLogoUrl: string | null = (profile as any)?.logo_url || null;
-  const brandAccent: string | null = (profile as any)?.brand_accent || null;
   const brandingEnabled: boolean = !!(profile as any)?.branding_enabled;
   const showCustomerBrand = !isDemo && brandingEnabled && !!brandLogoUrl;
-  const brandVars = (showCustomerBrand && isValidHex(brandAccent))
-    ? brandAccentVars(brandAccent, portalTokens.surface)
-    : {};
-  // Sync the mutable T + style objects to the active theme BEFORE this
-  // render's children evaluate inline T.* references. Apply the customer's
-  // brand accent so it cascades through every T.accent reference (buttons,
-  // tabs, charts, badges, etc.) — not just CSS variables.
-  applyPortalTheme(portalTheme, showCustomerBrand && isValidHex(brandAccent) ? brandAccent : null);
+  // Portal palette is now locked to the admin PACC palette (lime / dark-green
+  // / off-white) regardless of customer branding. The sidebar logo is the
+  // only place the customer brand still surfaces.
+  applyPortalTheme();
   const [accountOpen, setAccountOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onClick = () => setMenuOpen(false);
-    window.addEventListener("click", onClick);
-    return () => window.removeEventListener("click", onClick);
-  }, [menuOpen]);
-
-  const initials = (companyName || "?")
-    .split(/\s+/)
-    .map((w) => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 
   const { data: transactions = [], isLoading } = useCustomerTransactions(speedsolNames);
 
