@@ -485,25 +485,23 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#C8F26A" }}>Get Started</p>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4" style={{ color: "#ECE4D2" }}>
-            Ready to Simplify Your Fuel Supply?
+            Request a Quote
           </h2>
           <p className="text-sm mb-8 max-w-md mx-auto" style={{ color: "#8B8773" }}>
-            Get a competitive quote for your site. No hidden fees, no lock-in contracts.
+            Tell us about your site — we'll come back with pricing the same day. No hidden fees, no lock-in contracts.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="mailto:fuel@paccvictoria.com"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold transition-all"
-              style={{ background: "#C8F26A", color: "#0E1F10", boxShadow: "0 8px 32px rgba(200,242,106,0.3)" }}
-            >
-              <Mail className="w-4 h-4" /> fuel@paccvictoria.com
+          <QuoteForm />
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8 text-xs" style={{ color: "#8B8773" }}>
+            <a href={`tel:${BUSINESS_PHONE_TEL}`} className="inline-flex items-center justify-center gap-1.5" style={{ color: "#ECE4D2" }}>
+              <Phone className="w-3.5 h-3.5" style={{ color: "#C8F26A" }} /> {BUSINESS_PHONE_DISPLAY}
             </a>
-            <button
-              onClick={() => navigate("/login")}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-medium cursor-pointer transition-all"
-              style={{ background: "rgba(245,230,208,0.08)", color: "#ECE4D2", border: "1px solid rgba(42,74,46,0.7)" }}
-            >
-              Client Portal Login <ChevronRight className="w-4 h-4" />
+            <span className="hidden sm:inline">·</span>
+            <a href={`mailto:${BUSINESS_EMAIL}`} className="inline-flex items-center justify-center gap-1.5" style={{ color: "#ECE4D2" }}>
+              <Mail className="w-3.5 h-3.5" style={{ color: "#C8F26A" }} /> {BUSINESS_EMAIL}
+            </a>
+            <span className="hidden sm:inline">·</span>
+            <button onClick={() => navigate("/login")} className="inline-flex items-center justify-center gap-1.5 bg-transparent border-none cursor-pointer" style={{ color: "#ECE4D2" }}>
+              Client Portal Login <ChevronRight className="w-3 h-3" />
             </button>
           </div>
         </div>
