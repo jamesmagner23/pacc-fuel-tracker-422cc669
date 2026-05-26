@@ -1244,6 +1244,8 @@ const ftcTd: React.CSSProperties = { padding: "10px", color: T.text, fontSize: 1
 
 function OverviewTab({
   transactions,
+  allTransactions,
+  period,
   demoSuffix,
   speedsolNames,
   isDemo,
@@ -1254,6 +1256,8 @@ function OverviewTab({
   companyName,
 }: {
   transactions: any[];
+  allTransactions: any[];
+  period: PortalPeriod;
   demoSuffix: string;
   speedsolNames: string[];
   isDemo: boolean;
