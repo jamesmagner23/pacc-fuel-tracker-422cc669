@@ -603,9 +603,68 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 </button>
               ))}
             </div>
-            <span style={{ ...muted(11), letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Showing {periodTransactions.length.toLocaleString()} deliveries · {PERIOD_LABELS[period]}
-            </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span style={{ ...muted(11), letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Showing {periodTransactions.length.toLocaleString()} deliveries · {PERIOD_LABELS[period]}
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:opacity-90"
+                    style={{ height: 36, padding: "0 16px", fontSize: 13, fontWeight: 600 }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download statement
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const header = ["Date", "Site", "Plant", "Rego", "Litres", "Spend"];
+                      const rows = filteredTransactions.map((t: any) => [
+                        t.date || "",
+                        t.estacion || t.ciudad || t.nombre_cliente1 || "",
+                        t.identificador_cliente1 || "",
+                        t.placa || "",
+                        (t.cantidad || 0).toFixed(2),
+                        (t.dinero_total || 0).toFixed(2),
+                      ]);
+                      const safeName = (companyName || "deliveries").replace(/[^A-Za-z0-9]+/g, "-");
+                      const safePeriod = (PERIOD_LABELS[period] || "current").replace(/\s+/g, "-");
+                      downloadCSV([header, ...rows], `${safeName}-statement-${safePeriod}.csv`);
+                    }}
+                  >
+                    Statement (this period)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const header = ["Date", "Site", "Plant", "Rego", "Litres", "Docket"];
+                      const rows = filteredTransactions.map((t: any) => [
+                        t.date || "",
+                        t.estacion || t.ciudad || t.nombre_cliente1 || "",
+                        t.identificador_cliente1 || "",
+                        t.placa || "",
+                        (t.cantidad || 0).toFixed(2),
+                        t.id ?? "",
+                      ]);
+                      const safeName = (companyName || "deliveries").replace(/[^A-Za-z0-9]+/g, "-");
+                      const safePeriod = (PERIOD_LABELS[period] || "current").replace(/\s+/g, "-");
+                      downloadCSV([header, ...rows], `${safeName}-deliveries-${safePeriod}.csv`);
+                    }}
+                  >
+                    Deliveries CSV (this period)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setReportsSubtab("Fuel Tax Credit"); setActiveTab("Reports"); }}>
+                    Tax-credits report (YTD)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled>
+                    Custom date range… (coming soon)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         )}
 
