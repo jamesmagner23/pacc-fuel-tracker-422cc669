@@ -8,7 +8,7 @@ import { useDateRange } from "@/hooks/useDateRange";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 import { format, parseISO } from "date-fns";
-import { Droplets, TrendingUp, TrendingDown, Clock, Truck, MapPin, Fuel } from "lucide-react";
+import { Droplets, Clock, Truck, MapPin, Fuel } from "lucide-react";
 import { useChartPalette } from "@/lib/chartPalette";
 
 /** Read a CSS variable at render time so charts pick up theme overrides */
