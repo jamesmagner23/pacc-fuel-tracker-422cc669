@@ -83,6 +83,95 @@ const coverage = [
   "Regional Victoria (by arrangement)",
 ];
 
+function QuoteForm() {
+  const [company, setCompany] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [site, setSite] = useState("");
+  const [date, setDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const subject = `Quote request — ${company || name || "New enquiry"}`;
+    const body =
+      `New quote request from the PACC Energy website\n\n` +
+      `Company:        ${company}\n` +
+      `Contact name:   ${name}\n` +
+      `Phone:          ${phone}\n` +
+      `Site address:   ${site}\n` +
+      `Delivery date:  ${date}\n`;
+    const href = `mailto:${BUSINESS_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = href;
+    setTimeout(() => setSubmitting(false), 1500);
+  };
+
+  const inputStyle: React.CSSProperties = {
+    background: "#0E1F10",
+    border: "1px solid #2A4A2E",
+    borderRadius: 10,
+    padding: "12px 14px",
+    color: "#ECE4D2",
+    fontSize: 14,
+    outline: "none",
+    width: "100%",
+    minHeight: 44,
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    color: "#8B8773",
+    marginBottom: 6,
+    display: "block",
+    textAlign: "left",
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="text-left rounded-2xl p-6 sm:p-8 mx-auto"
+      style={{ background: "#1B3520", border: "1px solid #2A4A2E", maxWidth: 560 }}
+    >
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label style={labelStyle}>Company</label>
+          <input style={inputStyle} required maxLength={120} value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Construction" />
+        </div>
+        <div>
+          <label style={labelStyle}>Your name</label>
+          <input style={inputStyle} required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Smith" />
+        </div>
+        <div>
+          <label style={labelStyle}>Phone</label>
+          <input style={inputStyle} required type="tel" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0400 000 000" />
+        </div>
+        <div>
+          <label style={labelStyle}>Delivery date</label>
+          <input style={inputStyle} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <div className="sm:col-span-2">
+          <label style={labelStyle}>Site address</label>
+          <input style={inputStyle} required maxLength={250} value={site} onChange={(e) => setSite(e.target.value)} placeholder="123 Smith St, Melbourne VIC" />
+        </div>
+      </div>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="mt-6 w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-semibold cursor-pointer transition-all disabled:opacity-70"
+        style={{ background: "#C8F26A", color: "#0E1F10", border: "none", boxShadow: "0 8px 32px rgba(200,242,106,0.3)", minHeight: 48 }}
+      >
+        {submitting ? "Opening email…" : <>Send Quote Request <ChevronRight className="w-4 h-4" /></>}
+      </button>
+      <p className="text-[11px] mt-3 text-center" style={{ color: "#8B8773" }}>
+        Or call <a href={`tel:${BUSINESS_PHONE_TEL}`} style={{ color: "#C8F26A", fontWeight: 600 }}>{BUSINESS_PHONE_DISPLAY}</a> for same-day delivery.
+      </p>
+    </form>
+  );
+}
+
 export default function LandingPage() {
   const navigate = useNavigate();
 
