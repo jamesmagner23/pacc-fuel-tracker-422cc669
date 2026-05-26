@@ -41,6 +41,8 @@ function DonutCard({ topCustomers }: { topCustomers: { name: string; litres: num
       <div className="flex items-center justify-between mb-1">
         <div className="text-sm font-medium" style={{ color: tc.textPrimary }}>Top Customers</div>
         <button
+          type="button"
+          aria-label={showPct ? "Show customer share in litres" : "Show customer share in percent"}
           onClick={() => setShowPct((p) => !p)}
           className="text-[10px] px-2 py-0.5 rounded-full border transition-colors"
           style={{ borderColor: tc.textSecondary, color: tc.textSecondary, background: "transparent", cursor: "pointer" }}
