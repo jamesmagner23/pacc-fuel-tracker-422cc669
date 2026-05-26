@@ -59,27 +59,28 @@ export const GLOBAL_DARK: Tokens = {
 
 // Light palette derived from the brand cream/dark-green system.
 export const GLOBAL_LIGHT: Tokens = {
-  background: "#EFE9DC",
+  // Breadcrumb-inspired: white ground, deep-green type/primary, lime accent.
+  background: "#FFFFFF",
   surface: "#FFFFFF",
-  surfaceRaised: "#FFFFFF",
-  surfaceBorder: "#D9D2BF",
-  surfaceHover: "#F4EEDF",
-  accent: "#3F6B36",
-  accentHover: "#345A2C",
-  accentLight: "rgba(63,107,54,0.10)",
+  surfaceRaised: "#F4F5F1",
+  surfaceBorder: "#E5E7E0",
+  surfaceHover: "#FAFBF7",
+  accent: "#C8F26A",
+  accentHover: "#B6E254",
+  accentLight: "rgba(200,242,106,0.18)",
   textPrimary: "#0E1F10",
-  textSecondary: "#3F4A3A",
-  textMuted: "#6B7565",
-  positive: "#3F6B36",
-  positiveBg: "rgba(63,107,54,0.10)",
-  negative: "#A82E1E",
-  negativeBg: "rgba(168,46,30,0.08)",
-  warning: "#B45309",
-  warningBg: "rgba(180,83,9,0.10)",
-  border: "#D9D2BF",
-  borderSubtle: "#E4DDC9",
+  textSecondary: "#5F6B61",
+  textMuted: "#8A9085",
+  positive: "#2A6A2E",
+  positiveBg: "#E6F3E1",
+  negative: "#B43A2E",
+  negativeBg: "#FBE5E2",
+  warning: "#7A5300",
+  warningBg: "#FFF4D9",
+  border: "#E5E7E0",
+  borderSubtle: "#EEF0EA",
   primaryForeground: "#FFFFFF",
-  destructive: "#A82E1E",
+  destructive: "#B43A2E",
   destructiveForeground: "#FFFFFF",
 };
 
@@ -122,9 +123,22 @@ export const CSS_VAR_MAP: Record<string, keyof Tokens> = {
   "--muted-foreground": "textSecondary",
   "--destructive": "destructive",
   "--destructive-foreground": "destructiveForeground",
-  "--ring": "accent",
+  "--ring": "textPrimary",
   "--input": "surfaceBorder",
 };
+
+// In light mode, --primary should be the deep-green type colour, not lime.
+// We override after the generic map application.
+function applyLightOverrides(root: HTMLElement, tk: Tokens) {
+  root.style.setProperty("--primary", tk.textPrimary);
+  root.style.setProperty("--primary-foreground", "#FFFFFF");
+  root.style.setProperty("--card", "#FFFFFF");
+  root.style.setProperty("--popover", "#FFFFFF");
+  root.style.setProperty("--secondary", "#F4F5F1");
+  root.style.setProperty("--muted", "#F4F5F1");
+  root.style.setProperty("--muted-foreground", tk.textSecondary);
+  root.style.setProperty("--ring", tk.textPrimary);
+}
 
 /** Apply theme to <html> and update <meta name="theme-color">. */
 export function applyGlobalTheme(theme: GlobalTheme): void {
@@ -133,6 +147,12 @@ export function applyGlobalTheme(theme: GlobalTheme): void {
   const root = document.documentElement;
   for (const [cssVar, tokenKey] of Object.entries(CSS_VAR_MAP)) {
     root.style.setProperty(cssVar, tk[tokenKey]);
+  }
+  if (theme === "light") {
+    applyLightOverrides(root, tk);
+    root.classList.remove("dark");
+  } else {
+    root.classList.add("dark");
   }
   root.dataset.theme = theme;
   let meta = document.querySelector(`meta[name="${META_NAME}"]`) as HTMLMetaElement | null;
@@ -145,12 +165,12 @@ export function applyGlobalTheme(theme: GlobalTheme): void {
 }
 
 function readStored(): GlobalTheme {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    return v === "light" ? "light" : "dark";
+    return v === "dark" ? "dark" : "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 
