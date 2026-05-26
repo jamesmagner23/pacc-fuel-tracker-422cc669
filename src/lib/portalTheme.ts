@@ -15,11 +15,12 @@ export const LIGHT_TOKENS = {
   surfaceHover: "#F4EEDF",
   border: "#D9D2BF",
   borderSubtle: "#E4DDC9",
-  // Lime green pulled from the PACC landing-page hero CTA so the demo
-  // doc, light portal and marketing site all share one accent.
-  accent: "#C8F26A",
-  accentHover: "#B6E254",
-  accentLight: "rgba(200,242,106,0.22)",
+  // Light portal accent: deep sage green (matches chart leads + admin
+  // primary). Lime is reserved for dark mode where it pops; on cream it
+  // washes out and fails contrast on text/buttons.
+  accent: "#3F6B36",
+  accentHover: "#2F5128",
+  accentLight: "rgba(63,107,54,0.12)",
   text: "#0E1F10",
   textSecondary: "#3F4A3A",
   textMuted: "#6B7565",
@@ -38,7 +39,7 @@ export const LIGHT_TOKENS = {
   // readability on cream backgrounds.
   pie: ["#3F6B36", "#5C8A4E", "#A7C77A", "#7A9A8B", "#D8B36A", "#C28A5A"],
   badgePending: "#6B7565",
-  badgeConfirmed: "#C8F26A",
+  badgeConfirmed: "#3F6B36",
   badgeCompleted: "#0E1F10",
 } as const;
 
