@@ -51,7 +51,7 @@ const services = [
 ];
 
 const trustStrip = [
-  "50+ active sites",
+  "Melbourne-wide coverage",
   "Family-run, local crews",
   "4–6 hr response",
   "24/7 emergency",
