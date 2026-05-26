@@ -21,6 +21,7 @@ import truckOnsiteImg1200 from "@/assets/truck-onsite-1200.webp";
 import truckOnsiteImg800 from "@/assets/truck-onsite-800.webp";
 import truckRefuelImg from "@/assets/truck-refuel.webp";
 import refuelImg from "@/assets/refuelling-closeup.webp";
+import paccTruckSiteImg from "@/assets/pacc-truck-site.jpg";
 
 // Single source of truth for the marketing phone / email.
 const BUSINESS_PHONE_DISPLAY = "0409 704 327";
@@ -435,8 +436,8 @@ export default function LandingPage() {
           <div className="lg:col-span-7">
             <div className="rounded-[16px] overflow-hidden border border-[#2A4A2E] aspect-[16/10]">
               <img
-                src={refuelImg}
-                alt="Customer portal showing a live delivery dashboard"
+                src={paccTruckSiteImg}
+                alt="PACC fuel truck on a Melbourne construction site"
                 className="w-full h-full object-cover"
                 loading="lazy"
                 decoding="async"
