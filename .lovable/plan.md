@@ -1,79 +1,133 @@
-## Goal
+# PACC Energy — Corporate B2B Redesign
 
-Add two sub-tabs to **Market Intelligence** (`/market`) — keep `/suppliers` untouched.
-
-1. **BOWSER AVG** — Melbourne metro average retail diesel (what trucks pay at the pump)
-2. **TGP COMPARE** — Melbourne terminal gate prices side-by-side across brands
-
-Both default to last 7 days, Inc/Ex GST toggle.
+Refactor the marketing landing page, the internal operations dashboard, and the customer portal to a light, corporate, Australian B2B aesthetic modelled on breadcrumb.co. Rolled out in 7 sequential phases inside a single working session.
 
 ---
 
-## 1. BOWSER AVG — Melbourne retail diesel
+## Phase 1 — Tokens & typography
 
-**Two data sources merged on one chart:**
+**Goal:** flip the whole app from dark-only to light-first.
 
-- **AIP weekly retail** (trusted baseline, weekly, ex-GST → convert) — scrape `https://www.aip.com.au/pricing/retail-diesel`, store as `source='AIP_Retail'`, `location='Melbourne'`
-- **PetrolSpy daily aggregator** (live signal, daily) — call PetrolSpy API for diesel stations within Melbourne metro bounding box, compute mean price, store as `source='PetrolSpy'`, `location='Melbourne'`
+- Rewrite `src/index.css` with new light tokens (`--background: #FFFFFF`, `--foreground: #0E1F10`, `--muted: #F4F5F1`, `--primary: #0E1F10`, `--accent: #C8F26A` restricted to badges/keylines, `--destructive: #B43A2E`).
+- Add proper dark-mode mapping under `.dark`.
+- Pill radius variable `--radius-pill: 9999px`; soft `--radius: 12px` for cards; `--radius-sm: 6px` for inputs.
+- Inter only (drop Archivo). Type scale: Display XL/L/M, Heading L/M/S, Body L/Body/Body S, Caption.
+- Sentence-case headings, all-caps only on `.eyebrow`.
+- Add `tailwind.config.ts` `pill` radius and updated font-size scale.
+- Keep legacy `--surface*` / `--text-*` aliases so dependent pages don't shatter before Phase 5.
 
-**New table** `retail_bowser_prices`:
-- `price_date date`, `source text`, `location text`, `product text` (default `'Diesel'`), `price_inc_gst numeric`, `sample_size integer`, `notes text`
-- Unique on `(price_date, location, product, source)`
-- RLS: admins manage, authenticated read
-
-**New edge function** `fetch-retail-bowser`:
-- Fetches both sources, upserts daily
-- Scheduled via `pg_cron` daily at 09:00 UTC
-- Bonus: also pulls **driver intake** average (`fuel_intake_logs.bowser_retail_price`) by date — already in DB, no scrape needed; chart renders this as a third line straight from existing data
-
-**UI on BOWSER AVG tab:**
-- 3-line chart: AIP weekly · PetrolSpy daily · Our actual driver fills
-- KPI tiles: today's avg, 7-day avg, vs our buy price spread
-- Inc/Ex GST toggle, 7d / 30d / 90d range
+**Status:** done.
 
 ---
 
-## 2. TGP COMPARE — Melbourne, all brands
+## Phase 2 — Shared components
 
-Existing `terminal_gate_prices` already has `source` column. Today it stores `AIP` (city-average) and `Viva` (brand-specific). To compare brands properly we need each major's published TGP.
+**Goal:** every shadcn primitive matches the spec.
 
-**Brand scrapers** (all Melbourne diesel, store with `source='<Brand>'`, `location='Melbourne'`):
-- **Viva** — already scraped daily by `fetch-viva-tgp`
-- **Ampol** — extend with `fetch-ampol-tgp`: scrapes `https://www.ampol.com.au/about-ampol/fuel-pricing/terminal-gate-pricing`
-- **BP** — `fetch-bp-tgp`: scrapes `https://www.bp.com/en_au/australia/home/products-and-services/bp-fuels/fuel-pricing.html`
-- **Mobil** — `fetch-mobil-tgp`: scrapes Mobil Australia TGP page
-- **7-Eleven** — `fetch-711-tgp`: scrapes 7-Eleven TGP page
-- All use `r.jina.ai` proxy (same trick as Viva) to avoid CDN blocks
-- All scheduled daily 20:15 UTC via `pg_cron`
+- `Button`: pill radius, 40px default / 32 sm / 48 lg, primary dark-green on white, ghost transparent, secondary muted, destructive clay-red.
+- `Badge`: pill radius, new variants `accent`, `success`, `warning`, plus restyled defaults.
+- `Input`, `Select`, `Textarea`: 40px height, 6px radius, ring on focus (handled by global `:focus-visible`).
+- `Tabs`: underline-only with 2px lime indicator on active.
+- `Table`: muted header row, hover `#FAFBF7`, tabular-nums on numeric cells.
+- `Sidebar`: 240px, muted bg, ghost nav items, active = white card with 2px lime left border. Remove "01–08" numeric prefixes.
 
-Keep existing AIP city-avg as a "market" reference line.
-
-**UI on TGP COMPARE tab:**
-- Multi-line chart: one line per brand, AIP city-avg as dashed reference
-- Today snapshot: tile per brand with current price + delta vs city avg + cheapest highlighted in green
-- 7d default range, Inc/Ex GST toggle (data stored ex-GST)
-- Empty-state per brand if scrape hasn't landed yet (don't fail loudly)
+**Status:** Button + Badge done. Tabs / Table / Sidebar to follow as part of Phase 5 chrome pass.
 
 ---
 
-## Scope I'm NOT doing in this pass
-- Other cities (you said Melbourne only)
-- Per-station retail breakdown (only city avg)
-- Historical backfill — charts grow as scrapers run forward
+## Phase 3 — Landing page rebuild (`/landing`)
+
+**Goal:** breadcrumb-style marketing site.
+
+- Sticky white nav with PACC wordmark, ghost section links, phone pill, Demo (ghost), "Get a quote" (primary).
+- Mobile hamburger sheet with the same items + phone + both CTAs.
+- Hero: 60/40 two-column. Eyebrow accent pill, Display XL headline ending in a full stop, 2-sentence subhead, primary + secondary CTAs, 4-stat trust strip, hero photo at 4:3 with 1px border.
+- Logo strip on muted panel (Ironside, Track Works, Keller, Coates, Fulton Hogan, Gearon).
+- Services: 4-up card grid, lime-tinted icon chip, sentence-case headings.
+- Dark "Customer portal" feature section — the one dramatic dark band.
+- Testimonials: 3 cards with real quotes (Mark Webb, Mohamed Hamed, Mo Haider).
+- Coverage: 2-col tick list on muted panel.
+- About + photo.
+- Contact / quote: split layout with phone + email left, QuoteForm card right.
+- Footer: wordmark, contact, platform links, copyright row.
+- Phone `0409 704 327`, email `fuel@paccvictoria.com` — wired everywhere via two constants.
+- `/landing` route remains public regardless of auth state.
+
+**Status:** done.
 
 ---
 
-## Technical Details
+## Phase 4 — Move dashboard to `/app/*`
 
-**Files to add**
-- Migration: `retail_bowser_prices` table + RLS
-- Edge functions: `fetch-retail-bowser`, `fetch-ampol-tgp`, `fetch-bp-tgp`, `fetch-mobil-tgp`, `fetch-711-tgp`
-- `pg_cron` schedules (insert tool, not migration — contains anon key)
-- Hook: `useRetailBowserPrices.ts`
-- Tab components: `MarketBowserAvgTab.tsx`, `MarketTGPCompareTab.tsx`
-- Wire into `MarketIntelligence.tsx` tabs array
+**Goal:** stop hijacking `/` from the marketing site.
 
-**Files to edit**
-- `src/pages/MarketIntelligence.tsx` — add 2 tabs
+- Move admin routes from `/`, `/customers`, `/finance`, … to `/app`, `/app/customers`, `/app/finance`, …
+- Root `/` redirects: signed-in admin → `/app`, signed-in client → `/portal`, signed-in driver → `/driver`, anon → `/landing`.
+- Update sidebar `Link` targets, breadcrumbs, internal `navigate(...)` calls, and the `?demo=true` href builder so the demo flag survives navigation.
+- Update `LandingPage` "Try Demo" to `/app?demo=true`.
+- Update `sitemap.xml` entries.
 
-**Risk**: brand TGP pages may change HTML/block scrapers. The `r.jina.ai` markdown proxy pattern (already proven for Viva) handles most cases. Each scraper logs to a `scrape_attempts`-style audit so failures are visible.
+**Status:** pending.
+
+---
+
+## Phase 5 — Dashboard + customer portal restyle
+
+**Goal:** apply tokens and spec rules to every dashboard page and the portal.
+
+- Per-page H1 (Display M) + Body S subtitle on Overview, Customers, Finance, Suppliers, Market Intel, Dispatch, Trucks, Admin.
+- Period filter → segmented pill control, right-aligned in page header.
+- KPI tile spec applied uniformly (label, value, optional delta pill, optional sparkline).
+- Recharts palette swapped to `--foreground` line + `--muted-foreground` axes; lime reserved for highlight points only.
+- Mapbox style → `mapbox/light-v11` everywhere it's used.
+- Top customers donut → horizontal bar chart.
+- **Overview revenue tile**: fix the calculation mismatch between Overview header KPI and Finance gross-revenue figure — they must share one selector (`useFinancialSummary` ex-GST × 1.1 for inc-GST display).
+- Customer portal (`/portal`): apply identical chrome — white shell, muted left nav, dark-green primary buttons. Keep the existing theme toggle.
+- Driver portal: same chrome but with 44px touch targets preserved.
+
+**Status:** pending.
+
+---
+
+## Phase 6 — Quote form backend
+
+**Goal:** the landing-page quote form actually delivers.
+
+- Confirm `quote_leads` table + RLS already exists; if missing, migration to add it (id, company, contact_name, phone, site_address, delivery_date nullable, source, user_agent, created_at).
+- Anon role: INSERT only (no SELECT). Admin role: SELECT.
+- Edge function `notify-quote-lead`: trigger on INSERT via `pg_net` webhook or call directly from client after insert. Sends email to `notifyhq@paccvictoria.com` via existing Gmail connector flow (per session decision; switch to Lovable Emails later if deliverability becomes an issue).
+- Surface incoming leads in `/app/admin` under a "Quote requests" tab with status (new / contacted / quoted / won / lost).
+
+**Status:** pending.
+
+---
+
+## Phase 7 — SEO, assets, demo data sanitize
+
+**Goal:** ship-ready public surface.
+
+- `index.html`: tighten `<title>` + `<meta name="description">` to keyword-rich Melbourne-focused copy, set Open Graph + Twitter card with the new hero image, set `theme-color` to `#FFFFFF`.
+- JSON-LD `LocalBusiness` schema in `index.html` head with phone, address, opening hours, areas served.
+- `sitemap.xml`: include `/landing`, `/portal`, `/login`, no `/app/*` routes.
+- Compress hero JPG to WebP @ 1200w / 800w / 400w (already partial — finish the set and add `<picture>` everywhere).
+- Compress gallery JPGs (truck-side, truck-refuel, truck-delivery) to WebP under 200KB each.
+- Anonymise `src/data/demoData.ts`: replace any names that mirror real customer names with fully neutral placeholders (Kelly Excavation, Metro Cranes, Citywide Earthworks, etc.) — already mostly neutral, audit and confirm.
+- Add `<link rel="preload">` for the LCP hero WebP.
+
+**Status:** pending.
+
+---
+
+## Decisions locked
+
+- **Phone:** `0409 704 327` (real, from existing site constant).
+- **Email:** `fuel@paccvictoria.com` (existing).
+- **Quote-form delivery:** existing Gmail connector flow (fastest). Lovable Emails on `paccenergy.com` deferred.
+- **Demo dataset:** already synthetic; Phase 7 does a confirmation audit, not a rewrite.
+- **Dark mode:** preserved under `.dark` class for the existing portal theme toggle. Default is light.
+
+## Out of scope this pass
+
+- RLS audit on `transactions`, `client_accounts`, `buy_prices` (Phase 7b, if needed).
+- New brand TGP scrapers (separate plan, see git history).
+- Bringing back the Archivo display font.
