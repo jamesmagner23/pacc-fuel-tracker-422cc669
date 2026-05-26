@@ -421,8 +421,8 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
           <span style={{ fontSize: 10, color: textSecondary, fontWeight: 500 }}>
             {driver?.lastUpdate
               ? isStaleLocation
-                ? `Last known ${new Date(driver.lastUpdate).toLocaleString("en-AU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Australia/Melbourne" })}`
-                : `Live ${new Date(driver.lastUpdate).toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", timeZone: "Australia/Melbourne" }).replace(/\s?(am|pm|AM|PM)/, (m) => m.trim().toLowerCase())}`
+                ? `Last known ${formatDateTime(driver.lastUpdate)}`
+                : `Live ${formatTime(driver.lastUpdate)}`
               : "LAST KNOWN"}
           </span>
         </div>
