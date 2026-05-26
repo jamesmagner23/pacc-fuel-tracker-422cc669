@@ -11,12 +11,12 @@ import { GlobalThemeToggle } from "./GlobalThemeToggle";
 
 const navItems = [
   { to: "/", label: "Overview" },
+  { to: "/dispatch", label: "Dispatch" },
   { to: "/customers", label: "Customers" },
   { to: "/finance", label: "Finance" },
+  { to: "/trucks", label: "Trucks" },
   { to: "/suppliers", label: "Suppliers" },
   { to: "/market", label: "Market Intel" },
-  { to: "/dispatch", label: "Dispatch" },
-  { to: "/trucks", label: "Trucks" },
   { to: "/portal", label: "Client Portal", demoOnly: true },
   { to: "/driver", label: "Driver Portal", demoOnly: true },
   { to: "/admin", label: "Admin" },
@@ -93,6 +93,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", background: BG, color: TEXT_ACTIVE }}>
+      {/* Skip-link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only"
+        style={{
+          position: "absolute",
+          left: 8,
+          top: 8,
+          zIndex: 200,
+          background: BG,
+          color: TEXT_ACTIVE,
+          border: `1px solid ${ACCENT}`,
+          padding: "8px 12px",
+          borderRadius: 6,
+          fontSize: 12,
+        }}
+      >
+        Skip to main content
+      </a>
       {/* ── DESKTOP SIDEBAR ── */}
       <aside
         className="hidden md:flex"
