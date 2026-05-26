@@ -384,7 +384,10 @@ export default function LandingPage() {
               for Construction & Events
             </h1>
             <p className="mt-4 text-sm sm:text-base leading-relaxed max-w-xl" style={{ color: "#C7BFAC" }}>
-              Same-day diesel delivery to your site. Servicing excavators, generators, cranes, and events across Greater Melbourne. Trusted by 50+ construction sites with 20+ years experience.
+              Same-day diesel delivery to construction and event sites across Greater Melbourne.
+            </p>
+            <p className="mt-2 text-sm max-w-xl" style={{ color: "#8B8773" }}>
+              No spreadsheets, no waiting for end-of-month invoices — every drop tracked in real time.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mt-8">
               <a
