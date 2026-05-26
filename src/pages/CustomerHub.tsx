@@ -498,7 +498,7 @@ function ProjectTrends({
                 }}
                 formatter={(v: any) => [`${Number(v).toLocaleString()}L`, "Litres"]}
               />
-              <Line type="monotone" dataKey="litres" stroke="var(--accent)" strokeWidth={2} dot={{ r: 2 }} />
+              <Line type="monotone" dataKey="litres" stroke="var(--primary)" strokeWidth={2} dot={{ r: 2 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>

@@ -47,7 +47,7 @@ export function SyncButton() {
         transition: "background 0.15s",
       }}
       onMouseEnter={(e) => {
-        if (!syncing) (e.currentTarget as HTMLElement).style.background = "var(--accent-hover)";
+        if (!syncing) (e.currentTarget as HTMLElement).style.background = "var(--primary)";
       }}
       onMouseLeave={(e) => {
         if (!syncing) (e.currentTarget as HTMLElement).style.background = "var(--primary)";
