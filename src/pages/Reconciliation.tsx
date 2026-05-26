@@ -375,8 +375,8 @@ function DayDrillDown({
                 onClick={() => onViewChange(opt.id)}
                 className="px-2.5 py-1 rounded-[6px] text-[11px] font-medium transition-colors border-none cursor-pointer"
                 style={{
-                  background: view === opt.id ? "var(--accent-light)" : "transparent",
-                  color: view === opt.id ? "var(--accent)" : "var(--text-secondary)",
+                  background: view === opt.id ? "var(--muted)" : "transparent",
+                  color: view === opt.id ? "var(--primary)" : "var(--text-secondary)",
                 }}
               >
                 {opt.label}
@@ -613,9 +613,9 @@ function SettingsTab() {
               onClick={() => update("alert_sensitivity", level)}
               className="px-4 py-2 rounded-lg text-xs font-medium capitalize border transition-colors cursor-pointer"
               style={{
-                background: settings.alert_sensitivity === level ? "var(--accent)" : "transparent",
+                background: settings.alert_sensitivity === level ? "var(--primary)" : "transparent",
                 color: settings.alert_sensitivity === level ? "#fff" : "var(--text-secondary)",
-                borderColor: settings.alert_sensitivity === level ? "var(--accent)" : "var(--surface-border)",
+                borderColor: settings.alert_sensitivity === level ? "var(--primary)" : "var(--surface-border)",
               }}
             >
               {level}
@@ -931,8 +931,8 @@ export default function Reconciliation() {
             onClick={() => setTruckScope(s.id)}
             className="px-3 sm:px-4 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap border-none"
             style={{
-              background: truckScope === s.id ? "var(--accent-light)" : "transparent",
-              color: truckScope === s.id ? "var(--accent)" : "var(--text-secondary)",
+              background: truckScope === s.id ? "var(--muted)" : "transparent",
+              color: truckScope === s.id ? "var(--primary)" : "var(--text-secondary)",
             }}
           >
             {s.label}
@@ -950,7 +950,7 @@ export default function Reconciliation() {
             onClick={() => setActiveTab(tab.id)}
             className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium transition-colors border-b-2 bg-transparent cursor-pointer"
             style={{
-              borderColor: activeTab === tab.id ? "var(--accent)" : "transparent",
+              borderColor: activeTab === tab.id ? "var(--primary)" : "transparent",
               color: activeTab === tab.id ? "var(--text-primary)" : "var(--text-secondary)",
             }}
           >

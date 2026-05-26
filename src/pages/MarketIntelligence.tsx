@@ -497,7 +497,7 @@ export default function MarketIntelligence() {
                   <Line
                     type="monotone"
                     dataKey={(d: any) => d.isForecast ? d.price : null}
-                    stroke="var(--accent)"
+                    stroke="var(--primary)"
                     strokeWidth={2}
                     strokeDasharray="6 4"
                     dot={false}
@@ -509,7 +509,7 @@ export default function MarketIntelligence() {
             </div>
             <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 rounded inline-block bg-positive" /> Actual</span>
-              <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 rounded inline-block bg-primary" style={{ borderTop: "2px dashed var(--accent)" }} /> Forecast</span>
+              <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 rounded inline-block bg-primary" style={{ borderTop: "2px dashed var(--primary)" }} /> Forecast</span>
             </div>
           </div>
 
@@ -525,7 +525,7 @@ export default function MarketIntelligence() {
                   <YAxis tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} domain={["auto", "auto"]} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(1)} USD/BBL`, "Brent"]} />
                   <ReferenceLine x={BRENT_90_DAY.find(d => d.rawDate >= "2026-02-28")?.date} stroke="var(--negative)" strokeDasharray="4 4" strokeWidth={1} label={{ value: "CONFLICT START", position: "top", fontSize: 9, fill: "var(--negative)" }} />
-                  <Line type="monotone" dataKey="price" stroke="var(--accent)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="price" stroke="var(--primary)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
