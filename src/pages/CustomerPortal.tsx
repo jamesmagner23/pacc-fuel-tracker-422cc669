@@ -561,7 +561,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     });
   }, [isDemo, activeTab]);
 
-  const breadcrumbFor = (tab: Tab) => [
+  const breadcrumbFor = (tab: Tab | "Help") => [
     { label: "PACC Energy", href: "/portal" },
     { label: "Portal", href: "/portal" },
     { label: tab },
