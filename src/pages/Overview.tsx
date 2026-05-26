@@ -1,12 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { TruckMap } from "@/components/TruckMap";
 import {
-  XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, ReferenceLine,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Area, Line,
+  PieChart, Pie, Cell,
 } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
-import { format, parseISO } from "date-fns";
-import { Droplets } from "lucide-react";
+import { useAllTransactions } from "@/hooks/useTransactions";
+import { format, parseISO, subDays } from "date-fns";
+import { Droplet, DollarSign, Truck, Gauge, Droplets } from "lucide-react";
 import { formatTime } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { KPISparklineCard } from "@/components/KPISparklineCard";
@@ -14,6 +16,15 @@ import { TodaysDeliveriesPanel } from "@/components/TodaysDeliveriesPanel";
 import { useSyncLog } from "@/hooks/useTransactions";
 import { MobileOverview } from "@/components/mobile/MobileOverview";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const TILE_THEMES = {
+  litres:    { icon: Droplet,     bg: "#E8EDE5", fg: "#2A6A2E" },
+  revenue:   { icon: DollarSign,  bg: "#F4F0E6", fg: "#7A5300" },
+  delivery:  { icon: Truck,       bg: "#EAEEFC", fg: "#2B3D8E" },
+  avg:       { icon: Gauge,       bg: "#F4F5F1", fg: "#5F6B61" },
+} as const;
+
+const DONUT_COLORS = ["#2A6A2E", "#7A5300", "#2B3D8E", "#5F6B61", "#B43A2E", "#C7CCC1"];
 
 export default function Overview() {
   const isMobile = useIsMobile();
@@ -26,6 +37,8 @@ export default function Overview() {
     prevRevenue,
   } = useRevenueCalc(range);
   const { data: lastSync } = useSyncLog();
+  const { data: allTxns = [] } = useAllTransactions();
+  const [growthRange, setGrowthRange] = useState<"7d" | "30d" | "90d">("30d");
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const numDeliveries = filtered.length;
@@ -35,9 +48,6 @@ export default function Overview() {
   const prevDeliveries = previous.length;
   const prevAvgSize = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
 
-  // Return null when there's no prior baseline to compare to. Otherwise we'd
-  // show "+100%" on every metric the first time a customer loads data, which
-  // trains users to ignore the delta chip entirely.
   const pct = (curr: number, prev: number): number | null =>
     prev === 0 ? null : ((curr - prev) / prev) * 100;
 
@@ -53,6 +63,60 @@ export default function Overview() {
   }, [filtered]);
 
   const trendForTile = useMemo(() => dailyData.map((d) => ({ v: d.litres })), [dailyData]);
+  const trendForRevenue = useMemo(() => {
+    const map: Record<string, number> = {};
+    filtered.forEach((t) => { if (t.date) map[t.date] = (map[t.date] || 0) + (t.dinero_total || 0); });
+    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => ({ v }));
+  }, [filtered]);
+  const trendForDeliveries = useMemo(() => {
+    const map: Record<string, number> = {};
+    filtered.forEach((t) => { if (t.date) map[t.date] = (map[t.date] || 0) + 1; });
+    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).map(([, v]) => ({ v }));
+  }, [filtered]);
+  const trendForAvg = useMemo(() => {
+    const lMap: Record<string, number> = {};
+    const cMap: Record<string, number> = {};
+    filtered.forEach((t) => {
+      if (!t.date) return;
+      lMap[t.date] = (lMap[t.date] || 0) + (t.cantidad || 0);
+      cMap[t.date] = (cMap[t.date] || 0) + 1;
+    });
+    return Object.entries(lMap).sort(([a], [b]) => a.localeCompare(b)).map(([d, l]) => ({ v: cMap[d] ? l / cMap[d] : 0 }));
+  }, [filtered]);
+
+  // Growth chart: trailing window
+  const growthData = useMemo(() => {
+    const days = growthRange === "7d" ? 7 : growthRange === "30d" ? 30 : 90;
+    const cutoff = format(subDays(new Date(), days), "yyyy-MM-dd");
+    const litres: Record<string, number> = {};
+    const counts: Record<string, number> = {};
+    allTxns.forEach((t) => {
+      if (!t.date || t.date < cutoff) return;
+      litres[t.date] = (litres[t.date] || 0) + (t.cantidad || 0);
+      counts[t.date] = (counts[t.date] || 0) + 1;
+    });
+    return Object.keys(litres).sort().map((d) => ({
+      date: format(parseISO(d), "d MMM"),
+      litres: litres[d],
+      deliveries: counts[d],
+    }));
+  }, [allTxns, growthRange]);
+
+  // Volume-by-customer for the donut
+  const donutData = useMemo(() => {
+    const map: Record<string, number> = {};
+    filtered.forEach((t) => {
+      const key = t.nombre_cliente1 || "Unknown";
+      map[key] = (map[key] || 0) + (t.cantidad || 0);
+    });
+    const sorted = Object.entries(map).sort(([, a], [, b]) => b - a);
+    const top5 = sorted.slice(0, 5);
+    const other = sorted.slice(5).reduce((s, [, v]) => s + v, 0);
+    const rows = top5.map(([name, value]) => ({ name, value }));
+    if (other > 0) rows.push({ name: "Other", value: other });
+    const total = rows.reduce((s, r) => s + r.value, 0);
+    return { rows, total };
+  }, [filtered]);
 
   const lastSyncTime = lastSync?.synced_at ? formatTime(lastSync.synced_at) : null;
 
@@ -71,17 +135,28 @@ export default function Overview() {
   })();
   const avgFallback = "Comparison resumes with previous period data";
 
+  // Eyebrow prefix reflects period scope.
+  const prefix = range === "today" ? "Daily" : range === "week" ? "Weekly" : "Monthly";
+  const litresLabel    = `${prefix} Litres Delivered`;
+  const revenueLabel   = `${prefix} Revenue`;
+  const deliveriesLabel = range === "today" ? "Deliveries today" : range === "week" ? "Deliveries this week" : "Deliveries this month";
+  const avgLabel        = "Avg Drop Size";
+
   const periodLabel = range === "today" ? "Today" : range === "week" ? "This Week" : "This Month";
 
-  // Inline page wrapper bg uses --muted so cards pop.
   const pageBg = "bg-muted/60";
+  const breadcrumb = [
+    { label: "PACC Energy", href: "/" },
+    { label: "Dashboard", href: "/" },
+    { label: "Overview" },
+  ];
 
   if (isMobile) return <MobileOverview />;
 
   if (isLoading) {
     return (
       <div className={`-mx-3 sm:-mx-6 md:-mx-8 -my-4 sm:-my-6 md:-my-8 px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 ${pageBg} min-h-full`}>
-        <PageHeader title="Overview" subtitle="Real-time fuel delivery performance and insights" />
+        <PageHeader title="Overview" breadcrumb={breadcrumb} />
         <div className="text-sm text-muted-foreground">Loading…</div>
       </div>
     );
@@ -90,7 +165,7 @@ export default function Overview() {
   if (filtered.length === 0) {
     return (
       <div className={`-mx-3 sm:-mx-6 md:-mx-8 -my-4 sm:-my-6 md:-my-8 px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 ${pageBg} min-h-full`}>
-        <PageHeader title="Overview" subtitle="Real-time fuel delivery performance and insights" />
+        <PageHeader title="Overview" breadcrumb={breadcrumb} />
         <div className="flex flex-col items-center justify-center text-muted-foreground gap-3 py-12">
           <Droplets className="w-6 h-6" />
           <p className="text-sm">No transactions. Use <strong className="text-foreground">Sync now</strong> in the sidebar to pull data.</p>
@@ -101,42 +176,153 @@ export default function Overview() {
 
   return (
     <div className={`-mx-3 sm:-mx-6 md:-mx-8 -my-4 sm:-my-6 md:-my-8 px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 ${pageBg} min-h-full`}>
-      <PageHeader title="Overview" subtitle="Real-time fuel delivery performance and insights" />
+      <PageHeader title="Overview" breadcrumb={breadcrumb} />
 
-      {/* KPI grid — 4 across at xl */}
+      {/* KPI grid — 2 cols on md/lg, 4 cols at xl */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KPISparklineCard
-          label="Total Litres Delivered"
+          label={litresLabel}
           value={totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`}
           deltaPct={litresPct}
           trend={trendForTile}
           fallbackContext={litresFallback}
           href="/finance"
+          icon={TILE_THEMES.litres.icon}
+          tintBg={TILE_THEMES.litres.bg}
+          tintColor={TILE_THEMES.litres.fg}
         />
         <KPISparklineCard
-          label="Revenue"
+          label={revenueLabel}
           value={"$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           deltaPct={revPct}
-          trend={trendForTile}
+          trend={trendForRevenue}
           fallbackContext={revenueFallback}
           href="/finance"
+          icon={TILE_THEMES.revenue.icon}
+          tintBg={TILE_THEMES.revenue.bg}
+          tintColor={TILE_THEMES.revenue.fg}
         />
         <KPISparklineCard
-          label="Deliveries"
+          label={deliveriesLabel}
           value={numDeliveries.toLocaleString()}
           deltaPct={delPct}
-          trend={trendForTile}
+          trend={trendForDeliveries}
           fallbackContext={deliveryFallback}
           href="/dispatch"
+          icon={TILE_THEMES.delivery.icon}
+          tintBg={TILE_THEMES.delivery.bg}
+          tintColor={TILE_THEMES.delivery.fg}
         />
         <KPISparklineCard
-          label="Avg Size"
+          label={avgLabel}
           value={Math.round(avgSize).toLocaleString() + " L"}
           deltaPct={avgPct}
-          trend={trendForTile}
+          trend={trendForAvg}
           fallbackContext={avgFallback}
           href="/dispatch"
+          icon={TILE_THEMES.avg.icon}
+          tintBg={TILE_THEMES.avg.bg}
+          tintColor={TILE_THEMES.avg.fg}
         />
+      </div>
+
+      {/* Litres growth + Volume by customer */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+        <div className="lg:col-span-2 bg-card border border-border rounded-[14px] p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-foreground">Litres growth</h2>
+            <GrowthRangePills value={growthRange} onChange={setGrowthRange} />
+          </div>
+          <div className="mt-3 flex items-center gap-4 text-[11px] font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#2A6A2E" }} />
+              Litres delivered
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#2B3D8E" }} />
+              Deliveries (count)
+            </span>
+          </div>
+          <div style={{ height: 320 }} className="mt-2">
+            {growthData.length >= 2 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={growthData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="litres-growth-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#2A6A2E" stopOpacity={0.18} />
+                      <stop offset="100%" stopColor="#2A6A2E" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" strokeOpacity={0.4} vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={{ stroke: "var(--border)" }} tickLine={false} minTickGap={32} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`)} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13, padding: "8px 12px" }}
+                    labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
+                    formatter={(v: number, name: string) => name === "litres" ? [`${v.toLocaleString()} L`, "Litres"] : [v.toLocaleString(), "Deliveries"]}
+                  />
+                  <Area yAxisId="left" type="monotone" dataKey="litres" stroke="#2A6A2E" strokeWidth={1.75} fill="url(#litres-growth-fill)" isAnimationActive={false}
+                    dot={(props: any) => {
+                      if (props.index !== growthData.length - 1) return null as any;
+                      return <circle key="last" cx={props.cx} cy={props.cy} r={5} fill="var(--accent)" stroke="none" />;
+                    }}
+                  />
+                  <Line yAxisId="right" type="monotone" dataKey="deliveries" stroke="#2B3D8E" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-center text-sm text-muted-foreground">
+                Trend appears with 2+ data points.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-card border border-border rounded-[14px] p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-foreground">Volume by customer</h2>
+            <span className="text-[11px] font-medium text-muted-foreground">{periodLabel}</span>
+          </div>
+          <div style={{ height: 320 }} className="flex flex-col">
+            <div className="relative flex-1 min-h-0">
+              {donutData.rows.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-sm text-muted-foreground">No data</div>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={donutData.rows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="60%" outerRadius="90%" stroke="none" isAnimationActive={false}>
+                        {donutData.rows.map((_, i) => (
+                          <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div className="text-[22px] font-semibold tabular-nums text-foreground leading-tight">
+                      {donutData.total >= 1000 ? `${(donutData.total / 1000).toFixed(1)}k` : donutData.total.toFixed(0)}
+                    </div>
+                    <div className="text-[11px] font-medium text-muted-foreground">Total litres</div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          {donutData.rows.length > 0 && (
+            <ul className="mt-4 space-y-1.5">
+              {donutData.rows.map((r, i) => (
+                <li key={r.name} className="flex items-center gap-2 text-[13px] text-foreground">
+                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                  <span className="flex-1 font-medium truncate">{r.name}</span>
+                  <span className="font-semibold tabular-nums">
+                    {donutData.total ? `${((r.value / donutData.total) * 100).toFixed(0)}%` : "0%"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* Today's operations: deliveries + map */}
@@ -148,67 +334,32 @@ export default function Overview() {
           <LiveTruckPanel lastSyncTime={lastSyncTime} />
         </div>
       </div>
-
-      {/* Bottom trend chart */}
-      <div className="mt-4 bg-card border border-border rounded-xl p-6">
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-base font-semibold text-foreground">Litres delivered</h2>
-          <span className="text-sm text-muted-foreground">{periodLabel}</span>
-        </div>
-        <div style={{ height: 200 }}>
-          {dailyData.length >= 2 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dailyData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval="preserveStartEnd"
-                  minTickGap={32}
-                />
-                <YAxis hide />
-                <ReferenceLine
-                  y={median(dailyData.map((d) => d.litres))}
-                  stroke="var(--border)"
-                  strokeDasharray="3 3"
-                />
-                <Tooltip
-                  contentStyle={{ background: "var(--card, #fff)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13 }}
-                  labelStyle={{ color: "var(--foreground)" }}
-                  itemStyle={{ color: "var(--foreground)" }}
-                  formatter={(v: number) => [`${v.toLocaleString()} L`, "Litres"]}
-                  cursor={{ stroke: "rgba(0,0,0,0.06)", strokeWidth: 1 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="litres"
-                  stroke="var(--foreground)"
-                  strokeWidth={1.5}
-                  dot={(props: any) => {
-                    if (props.index !== dailyData.length - 1) return null as any;
-                    return <circle key="last" cx={props.cx} cy={props.cy} r={4} fill="var(--accent)" stroke="none" />;
-                  }}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center text-center px-6 text-muted-foreground text-sm">
-              Trend appears with 2+ data points. Switch to This Week or This Month to see history.
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
 
-function median(nums: number[]): number {
-  if (!nums.length) return 0;
-  const s = [...nums].sort((a, b) => a - b);
-  const mid = Math.floor(s.length / 2);
-  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+function GrowthRangePills({ value, onChange }: { value: "7d" | "30d" | "90d"; onChange: (v: "7d" | "30d" | "90d") => void }) {
+  const opts: Array<"7d" | "30d" | "90d"> = ["7d", "30d", "90d"];
+  return (
+    <div className="inline-flex items-center gap-1 rounded-full bg-muted p-1">
+      {opts.map((o) => {
+        const active = value === o;
+        return (
+          <button
+            key={o}
+            type="button"
+            onClick={() => onChange(o)}
+            className={
+              "h-7 px-3 rounded-full text-[12px] font-semibold transition-colors " +
+              (active ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            {o}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function LiveTruckPanel({ lastSyncTime }: { lastSyncTime: string | null }) {
