@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import { useDemoContext } from "@/hooks/useDemo";
 import { BoldPMark } from "@/components/BoldPMark";
+import { useGlobalTheme } from "@/lib/globalTheme";
 
 export function PACCLogo({
   size = "md",
@@ -10,34 +10,11 @@ export function PACCLogo({
   tone?: "dark" | "light";
 }) {
   const { isDemo, brand, accentColor, isPaccBranded } = useDemoContext();
-
-  // Auto-detect global theme so the wordmark stays legible on cream/light surfaces.
-  // Default is LIGHT (white surfaces); opt into dark when the document is explicitly dark-themed.
-  const [autoTone, setAutoTone] = useState<"dark" | "light">(() => {
-    if (typeof document === "undefined") return "light";
-    return document.documentElement.dataset.theme === "dark" ||
-      document.documentElement.classList.contains("dark")
-      ? "dark"
-      : "light";
-  });
-  useEffect(() => {
-    const update = () => {
-      setAutoTone(
-        document.documentElement.dataset.theme === "dark" ||
-          document.documentElement.classList.contains("dark")
-          ? "dark"
-          : "light",
-      );
-    };
-    update();
-    window.addEventListener("pacc:global-theme", update);
-    window.addEventListener("storage", update);
-    return () => {
-      window.removeEventListener("pacc:global-theme", update);
-      window.removeEventListener("storage", update);
-    };
-  }, []);
-  const effectiveTone = tone ?? autoTone;
+  // Use the canonical theme hook so the wordmark colour can never drift from
+  // the active global theme (the previous data-attribute polling approach had
+  // race conditions that left the header logo cream-on-white in light mode).
+  const { isDark } = useGlobalTheme();
+  const effectiveTone: "dark" | "light" = tone ?? (isDark ? "dark" : "light");
 
   const showPaccChrome = !isDemo || isPaccBranded;
   const displayName = showPaccChrome ? "PACC ENERGY" : brand || "FuelTrack";
@@ -61,8 +38,6 @@ export function PACCLogo({
       ? "#ECE4D2"
       : "#e8eaf0";
 
-  const subtitleColor = effectiveTone === "light" ? "#3F4A3A" : "#8B8773";
-
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
       {showPaccChrome && <BoldPMark size={markSize} bg={markBg} fg={markFg} rounded={6} />}
@@ -80,21 +55,6 @@ export function PACCLogo({
         >
           {displayName}
         </div>
-        {showPaccChrome && (
-          <div
-            style={{
-              fontSize: size === "sm" ? 7 : 8,
-              fontWeight: 600,
-              color: subtitleColor,
-              letterSpacing: "0.22em",
-              marginTop: 4,
-              textTransform: "uppercase",
-              fontFamily: "'Inter', system-ui, sans-serif",
-            }}
-          >
-            POWERED BY PROGRESS
-          </div>
-        )}
       </div>
     </div>
   );
