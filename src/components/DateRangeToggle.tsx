@@ -19,9 +19,9 @@ export function DateRangeToggle() {
         flex: "0 0 auto",
         minWidth: 0,
         maxWidth: "100%",
-        background: "var(--surface)",
-        border: "1px solid var(--surface-border)",
-        borderRadius: 20,
+        background: "var(--muted)",
+        border: "1px solid var(--border)",
+        borderRadius: 9999,
         padding: 3,
         gap: 2,
       }}
@@ -33,12 +33,12 @@ export function DateRangeToggle() {
             key={opt.value}
             onClick={() => setRange(opt.value)}
             style={{
-              padding: "4px 12px",
-              borderRadius: 16,
+              padding: "6px 14px",
+              borderRadius: 9999,
               fontSize: 12,
-              fontWeight: isActive ? 500 : 400,
-              color: isActive ? "var(--primary-foreground)" : "var(--text-secondary)",
-              background: isActive ? "var(--accent)" : "transparent",
+              fontWeight: isActive ? 600 : 500,
+              color: isActive ? "var(--primary-foreground)" : "var(--muted-foreground)",
+              background: isActive ? "var(--primary)" : "transparent",
               border: "none",
               cursor: "pointer",
               transition: "all 0.15s",
