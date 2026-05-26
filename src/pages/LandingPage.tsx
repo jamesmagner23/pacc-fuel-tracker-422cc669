@@ -519,10 +519,10 @@ export default function LandingPage() {
           </h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {industries.map((ind) => (
-            <div key={ind} className="flex items-center gap-3 px-4 py-3.5 rounded-xl" style={{ background: "#142A16", border: "1px solid #2A4A2E" }}>
-              <Users className="w-4 h-4 flex-shrink-0" style={{ color: "#C8F26A" }} />
-              <span className="text-xs font-medium" style={{ color: "#ECE4D2" }}>{ind}</span>
+          {industries.map(({ label, icon: Icon }) => (
+            <div key={label} className="flex items-center gap-3 px-4 py-3.5 rounded-xl" style={{ background: "#142A16", border: "1px solid #2A4A2E" }}>
+              <Icon className="w-4 h-4 flex-shrink-0" style={{ color: "#C8F26A" }} />
+              <span className="text-xs font-medium" style={{ color: "#ECE4D2" }}>{label}</span>
             </div>
           ))}
         </div>
