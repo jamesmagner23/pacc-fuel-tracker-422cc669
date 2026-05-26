@@ -67,12 +67,12 @@ const services = [
 ];
 
 const industries = [
-  "Construction & Civil Works",
-  "Events & Entertainment",
-  "Tower Crane Operations",
-  "Generators & Temporary Power",
-  "Mining & Quarries",
-  "Transport & Logistics",
+  { label: "Construction & Civil Works", icon: Building2 },
+  { label: "Events & Entertainment", icon: Music },
+  { label: "Tower Crane Operations", icon: Construction },
+  { label: "Generators & Temporary Power", icon: Plug },
+  { label: "Mining & Quarries", icon: Mountain },
+  { label: "Transport & Logistics", icon: Ship },
 ];
 
 const coverage = [
