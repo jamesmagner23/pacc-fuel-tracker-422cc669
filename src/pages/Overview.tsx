@@ -12,8 +12,12 @@ import { PageHeader } from "@/components/PageHeader";
 import { KPISparklineCard } from "@/components/KPISparklineCard";
 import { TodaysDeliveriesPanel } from "@/components/TodaysDeliveriesPanel";
 import { useSyncLog } from "@/hooks/useTransactions";
+import { MobileOverview } from "@/components/mobile/MobileOverview";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Overview() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileOverview />;
   const { range } = useDateRange();
   const {
     filtered,
