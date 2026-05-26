@@ -5,6 +5,7 @@ import { useMapboxToken } from "@/hooks/useMapboxToken";
 import { useLatestTruckLocation } from "@/hooks/useLatestTruckLocation";
 import { MapPin, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 import { useDemo } from "@/hooks/useDemo";
+import { formatTime, formatDateTime } from "@/lib/format";
 
 const MELB = { lng: 144.9631, lat: -37.8136 };
 
@@ -259,18 +260,8 @@ export function TruckMap({ height = 280, showStops = false, compact = false }: T
   const isStaleLocation = !locationTimestamp || locationAgeMs === null || locationAgeMs > 1000 * 60 * 60;
   const lastUpdatedLabel = locationTimestamp
     ? isToday
-      ? locationTimestamp.toLocaleTimeString("en-AU", {
-          hour: "numeric",
-          minute: "2-digit",
-          timeZone: "Australia/Melbourne",
-        }).replace(/\s?(am|pm|AM|PM)/, (m) => m.trim().toLowerCase())
-      : locationTimestamp.toLocaleString("en-AU", {
-          day: "2-digit",
-          month: "short",
-          hour: "numeric",
-          minute: "2-digit",
-          timeZone: "Australia/Melbourne",
-        }).replace(/\s?(am|pm|AM|PM)/, (m) => m.trim().toLowerCase())
+      ? formatTime(locationTimestamp)
+      : formatDateTime(locationTimestamp)
     : null;
 
   const mapHeight = expanded ? 520 : height;
