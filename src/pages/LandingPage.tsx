@@ -7,6 +7,8 @@ import heroImg from "@/assets/hero-construction.webp";
 import refuelImg from "@/assets/refuelling-closeup.webp";
 import truckSideImg from "@/assets/truck-side.webp";
 import truckOnsiteImg from "@/assets/truck-onsite.webp";
+import truckOnsiteImg1200 from "@/assets/truck-onsite-1200.webp";
+import truckOnsiteImg800 from "@/assets/truck-onsite-800.webp";
 import truckDeliveryImg from "@/assets/truck-delivery.webp";
 import truckRefuelImg from "@/assets/truck-refuel.webp";
 import truckSiteImg from "@/assets/truck-site.webp";
@@ -368,7 +370,17 @@ export default function LandingPage() {
       {/* ── HERO ── */}
       <section className="relative overflow-hidden" style={{ minHeight: "min(85vh, 700px)" }}>
         <div className="absolute inset-0">
-          <img src={truckOnsiteImg} alt="PACC Energy fuel tanker delivering diesel to a Melbourne construction site" width={1920} height={1080} className="w-full h-full object-cover" />
+          <img
+            src={truckOnsiteImg1200}
+            srcSet={`${truckOnsiteImg800} 800w, ${truckOnsiteImg1200} 1200w, ${truckOnsiteImg} 1435w`}
+            sizes="100vw"
+            alt="PACC Energy fuel tanker delivering diesel to a Melbourne construction site"
+            width={1435}
+            height={1080}
+            fetchPriority="high"
+            decoding="async"
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(14,31,16,0.55) 0%, rgba(14,31,16,0.35) 40%, rgba(14,31,16,0.85) 100%)" }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 flex flex-col justify-center" style={{ minHeight: "min(85vh, 700px)" }}>
