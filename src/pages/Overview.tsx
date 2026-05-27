@@ -352,20 +352,54 @@ export default function Overview() {
           </div>
 
           <div className="relative px-5 sm:px-6 py-5 sm:py-6 bg-background/5">
-            <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Truck split</div>
-                <div className="mt-1 text-sm font-semibold text-background/85">Truck 1 and Truck 2 sales attribution</div>
+                <div className="mt-1 text-sm font-semibold text-background/85">
+                  {selectedTruck === "all"
+                    ? "Tap a truck to focus the KPIs and charts"
+                    : `Showing ${selectedTruck} only — tap All to reset`}
+                </div>
               </div>
-              <span className="rounded-full border border-background/15 px-3 py-1 text-[11px] font-semibold text-background/80">
-                {lastSyncTime ? `Synced ${lastSyncTime}` : "Awaiting sync"}
-              </span>
+              <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-background/15 bg-background/10 p-1">
+                {(["all", ...truckBreakdown.map((t) => t.name)] as string[]).map((opt) => {
+                  const active = selectedTruck === opt;
+                  const label = opt === "all" ? "All trucks" : opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setSelectedTruck(opt)}
+                      className={
+                        "h-7 px-3 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors " +
+                        (active
+                          ? "bg-accent text-accent-foreground"
+                          : "text-background/80 hover:text-background")
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               {truckBreakdown.slice(0, Math.max(2, Math.min(4, truckBreakdown.length))).map((t, i) => {
-                const share = totalLitres > 0 ? Math.round((t.litres / totalLitres) * 100) : 0;
+                const splitTotal = truckBreakdown.reduce((s, x) => s + x.litres, 0);
+                const share = splitTotal > 0 ? Math.round((t.litres / splitTotal) * 100) : 0;
+                const isActive = selectedTruck === t.name;
                 return (
-                  <div key={t.name} className="rounded-[14px] border border-background/10 bg-background/10 p-4">
+                  <button
+                    key={t.name}
+                    type="button"
+                    onClick={() => setSelectedTruck(isActive ? "all" : t.name)}
+                    className={
+                      "text-left rounded-[14px] border p-4 transition-colors " +
+                      (isActive
+                        ? "border-accent bg-accent/15"
+                        : "border-background/10 bg-background/10 hover:bg-background/15")
+                    }
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2">
                         <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: TRUCK_TINTS[i % TRUCK_TINTS.length] }} />
@@ -382,7 +416,7 @@ export default function Overview() {
                     <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background/15">
                       <div className="h-full rounded-full bg-accent" style={{ width: `${share}%` }} />
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
