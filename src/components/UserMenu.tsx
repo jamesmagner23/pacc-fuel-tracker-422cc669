@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, LogOut, Settings, FlaskConical, BookOpen } from "lucide-react";
+import { ChevronDown, LogOut, Settings, FlaskConical, BookOpen, User } from "lucide-react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 
 function initialsFor(name: string | null, email: string | null): string {
@@ -27,6 +28,7 @@ export function UserMenu() {
   const location = useLocation();
   const [params] = useSearchParams();
   const isDemo = params.get("demo") === "true";
+  const isPortal = location.pathname.startsWith("/portal");
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +62,10 @@ export function UserMenu() {
     navigate(`${location.pathname}${q ? `?${q}` : ""}`);
   };
 
+  const profileHref = isPortal ? "/portal/profile" : "/admin";
+  const helpHref = isPortal ? "/portal/help" : "https://paccenergy.com";
+  const isExternalHelp = !isPortal;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -80,18 +86,31 @@ export function UserMenu() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={() => navigate("/admin")}>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-0.5">
+            <p className="text-sm font-medium text-foreground truncate">{name || display}</p>
+            {email && <p className="text-xs text-muted-foreground truncate">{email}</p>}
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate(profileHref)}>
           <Settings className="w-4 h-4 mr-2" /> Profile settings
         </DropdownMenuItem>
         <DropdownMenuItem onClick={toggleDemo}>
           <FlaskConical className="w-4 h-4 mr-2" />
           {isDemo ? "Exit demo data" : "Switch to demo data"}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => window.open("https://paccenergy.com", "_blank", "noopener")}
-        >
-          <BookOpen className="w-4 h-4 mr-2" /> Help / docs
-        </DropdownMenuItem>
+        {isExternalHelp ? (
+          <DropdownMenuItem
+            onClick={() => window.open(helpHref, "_blank", "noopener")}
+          >
+            <BookOpen className="w-4 h-4 mr-2" /> Help
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem onClick={() => navigate(helpHref)}>
+            <BookOpen className="w-4 h-4 mr-2" /> Help
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="w-4 h-4 mr-2" /> Sign out
