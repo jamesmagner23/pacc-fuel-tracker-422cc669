@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, A
 import { toast } from "sonner";
 import {
   Truck as TruckIcon, FileText, Wrench, ShieldAlert, BarChart3,
-  Plus, Trash2, Download, Loader2, Pencil, Upload,
+  Plus, Trash2, Download, Loader2, Pencil, Upload, RefreshCcw,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
