@@ -1,7 +1,7 @@
 import { ComponentType, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 export interface KPISparklineProps {
   label: string;
@@ -39,6 +39,13 @@ export function KPISparklineCard({
   subLine,
 }: KPISparklineProps) {
   const showSpark = trend.length >= 2;
+  // Detect a flat series (all zeros / identical values) so we can render a
+  // subtle baseline instead of a misleading "flat" area.
+  const sparkValues = trend.map((t) => t.v);
+  const sparkMin = sparkValues.length ? Math.min(...sparkValues) : 0;
+  const sparkMax = sparkValues.length ? Math.max(...sparkValues) : 0;
+  const isFlat = showSpark && sparkMax - sparkMin < 1e-6;
+  const gradId = `kpi-grad-${tintColor.replace("#", "")}`;
 
   const body = (
     <div className="flex flex-col h-full">
@@ -56,8 +63,9 @@ export function KPISparklineCard({
             ) : (
               <span
                 className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-muted text-muted-foreground"
+                title="No prior period to compare against"
               >
-                — no comparison
+                New
               </span>
             )}
           </div>
@@ -72,31 +80,40 @@ export function KPISparklineCard({
           <Icon className="w-5 h-5" />
         </div>
       </div>
-      {showSpark ? (
+      {showSpark && !isFlat ? (
         <div style={{ height: 80 }} aria-hidden>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={trend} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+            <AreaChart data={trend} margin={{ top: 6, right: 8, left: 8, bottom: 0 }}>
               <defs>
-                <linearGradient id={`kpi-grad-${tintColor.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={tintColor} stopOpacity={0.25} />
+                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={tintColor} stopOpacity={0.28} />
                   <stop offset="100%" stopColor={tintColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
+              <YAxis hide domain={[sparkMin - (sparkMax - sparkMin) * 0.1, sparkMax + (sparkMax - sparkMin) * 0.1]} />
               <Area
                 type="monotone"
                 dataKey="v"
                 stroke={tintColor}
-                strokeWidth={1.5}
-                fill={`url(#kpi-grad-${tintColor.replace("#", "")})`}
+                strokeWidth={1.75}
+                fill={`url(#${gradId})`}
                 isAnimationActive={false}
+                dot={false}
+                activeDot={false}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="px-5 pb-4" style={{ height: 60 }}>
-          <div className="h-full flex items-center justify-center text-center text-[12px] text-muted-foreground">
-            Trend appears with 2+ data points.
+        <div className="px-5 pb-5 pt-1" style={{ height: 80 }} aria-hidden>
+          <div className="h-full w-full flex items-end">
+            <div
+              className="w-full"
+              style={{
+                height: 1,
+                background: `repeating-linear-gradient(to right, ${tintColor}55 0 4px, transparent 4px 8px)`,
+              }}
+            />
           </div>
         </div>
       )}
