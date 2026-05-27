@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { TruckMap } from "@/components/TruckMap";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Area, Line,
@@ -34,17 +34,87 @@ export default function Overview() {
   const isMobile = useIsMobile();
   const { range } = useDateRange();
   const {
-    filtered,
-    previous,
+    filtered: allFiltered,
+    previous: allPrevious,
     isLoading,
-    totalRevenue,
-    prevRevenue,
+    totalRevenue: totalRevenueAll,
+    prevRevenue: prevRevenueAll,
+    getTxPricing,
   } = useRevenueCalc(range);
   const { syncing, handleSync, lastSyncTime } = useSyncTransactions({ autoSync: true });
-  const { data: allTxns = [] } = useAllTransactions();
+  const { data: allTxnsRaw = [] } = useAllTransactions();
   const { data: buyPrices = [] } = useBuyPrices(60);
   const { data: trucks = [] } = useTrucks();
   const [growthRange, setGrowthRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [selectedTruck, setSelectedTruck] = useState<string>("all");
+
+  const truckNameLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    trucks.forEach((truck) => {
+      [truck.name, truck.speedsol_estacion].forEach((value) => {
+        const key = value?.toString().trim().toLowerCase();
+        if (key) map.set(key, truck.name);
+      });
+    });
+    return map;
+  }, [trucks]);
+
+  const matchTxnTruck = useCallback(
+    (t: any) => {
+      const candidates = [t.estacion, t.nombre_flota, t.nombre_vendedor]
+        .map((value) => value?.toString().trim())
+        .filter(Boolean) as string[];
+      return (
+        candidates
+          .map((value) => truckNameLookup.get(value.toLowerCase()))
+          .find(Boolean) || null
+      );
+    },
+    [truckNameLookup],
+  );
+
+  const filtered = useMemo(
+    () =>
+      selectedTruck === "all"
+        ? allFiltered
+        : allFiltered.filter((t) => matchTxnTruck(t) === selectedTruck),
+    [allFiltered, selectedTruck, matchTxnTruck],
+  );
+  const previous = useMemo(
+    () =>
+      selectedTruck === "all"
+        ? allPrevious
+        : allPrevious.filter((t) => matchTxnTruck(t) === selectedTruck),
+    [allPrevious, selectedTruck, matchTxnTruck],
+  );
+  const allTxns = useMemo(
+    () =>
+      selectedTruck === "all"
+        ? allTxnsRaw
+        : allTxnsRaw.filter((t: any) => matchTxnTruck(t) === selectedTruck),
+    [allTxnsRaw, selectedTruck, matchTxnTruck],
+  );
+
+  const sumRevenueLocal = useCallback(
+    (txs: any[]) => {
+      let revenue = 0;
+      txs.forEach((t) => {
+        if (t.dinero_total && t.dinero_total > 0) {
+          revenue += t.dinero_total;
+        } else {
+          const { hasPricing, sellPPL } = getTxPricing(t);
+          if (hasPricing) revenue += (t.cantidad || 0) * sellPPL;
+        }
+      });
+      return revenue;
+    },
+    [getTxPricing],
+  );
+
+  const totalRevenue =
+    selectedTruck === "all" ? totalRevenueAll : sumRevenueLocal(filtered);
+  const prevRevenue =
+    selectedTruck === "all" ? prevRevenueAll : sumRevenueLocal(previous);
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const numDeliveries = filtered.length;
@@ -62,17 +132,6 @@ export default function Overview() {
   const delPct = pct(numDeliveries, prevDeliveries);
   const avgPct = pct(avgSize, prevAvgSize);
 
-  const truckNameLookup = useMemo(() => {
-    const map = new Map<string, string>();
-    trucks.forEach((truck) => {
-      [truck.name, truck.speedsol_estacion].forEach((value) => {
-        const key = value?.toString().trim().toLowerCase();
-        if (key) map.set(key, truck.name);
-      });
-    });
-    return map;
-  }, [trucks]);
-
   // Per-truck breakdown for the current window — SpeedSol's `nombre_flota`
   // currently carries the client/fleet, so prefer estación to avoid hiding
   // Truck 1 / Truck 2 behind a single "PACC Civil" total.
@@ -82,7 +141,7 @@ export default function Overview() {
       .filter((truck) => truck.is_active)
       .forEach((truck) => { totals[truck.name] = { litres: 0, deliveries: 0, revenue: 0 }; });
 
-    filtered.forEach((t) => {
+    allFiltered.forEach((t) => {
       const candidates = [t.estacion, t.nombre_flota, t.nombre_vendedor]
         .map((value) => value?.toString().trim())
         .filter(Boolean) as string[];
@@ -95,14 +154,16 @@ export default function Overview() {
       totals[k].deliveries += 1;
       totals[k].revenue += t.dinero_total || 0;
     });
+    const allFilteredLitres = allFiltered.reduce((s, t) => s + (t.cantidad || 0), 0);
+    const allFilteredRevenue = allFiltered.reduce((s, t) => s + (t.dinero_total || 0), 0);
     return Object.entries(totals)
       .map(([name, v]) => ({
         name,
         ...v,
-        revenue: v.revenue > 0 ? v.revenue : totalLitres > 0 ? (v.litres / totalLitres) * totalRevenue : 0,
+        revenue: v.revenue > 0 ? v.revenue : allFilteredLitres > 0 ? (v.litres / allFilteredLitres) * allFilteredRevenue : 0,
       }))
       .sort((a, b) => b.litres - a.litres);
-  }, [filtered, totalLitres, totalRevenue, truckNameLookup, trucks]);
+  }, [allFiltered, truckNameLookup, trucks]);
 
   const activeTruckCount = trucks.filter((truck) => truck.is_active).length || truckBreakdown.filter((truck) => truck.litres > 0).length;
   const formatLitresShort = (v: number) =>
