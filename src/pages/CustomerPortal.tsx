@@ -1397,21 +1397,54 @@ function OverviewTab({
   const pct = (curr: number, prev: number): number | null =>
     prev === 0 ? null : ((curr - prev) / prev) * 100;
 
+  // Identify trucks in the visible window — prefer SCA fleet name, fall back
+  // to driver name, then a generic label. Keep top 4 by litres; the rest
+  // roll into "Other".
+  const truckSeries = useMemo(() => {
+    const truckOf = (t: any) =>
+      (t.nombre_flota || t.nombre_vendedor || "Fleet").toString().trim() || "Fleet";
+    const totals: Record<string, number> = {};
+    transactions.forEach((t: any) => {
+      const k = truckOf(t);
+      totals[k] = (totals[k] || 0) + (t.cantidad || 0);
+    });
+    const ranked = Object.entries(totals).sort(([, a], [, b]) => b - a);
+    const top = ranked.slice(0, 4).map(([k]) => k);
+    const otherSet = new Set(ranked.slice(4).map(([k]) => k));
+    return { truckOf, top, otherSet, hasOther: otherSet.size > 0, totals };
+  }, [transactions]);
+
   // Daily trend series for the sparklines + growth chart.
+  // Each row carries one numeric key per truck (e.g. row["BOWSR-01"]) so the
+  // stacked area chart can render every truck as its own coloured band.
   const dailyTrend = useMemo(() => {
-    const m: Record<string, { l: number; r: number; c: number }> = {};
+    const keys = [...truckSeries.top, ...(truckSeries.hasOther ? ["Other"] : [])];
+    const m: Record<string, any> = {};
     transactions.forEach((t: any) => {
       const d = (t.date || "").slice(0, 10);
       if (!d) return;
-      (m[d] ||= { l: 0, r: 0, c: 0 });
-      m[d].l += t.cantidad || 0;
-      m[d].r += t.dinero_total || 0;
-      m[d].c += 1;
+      if (!m[d]) {
+        m[d] = { litres: 0, revenue: 0, deliveries: 0 };
+        keys.forEach((k) => (m[d][k] = 0));
+      }
+      const litres = t.cantidad || 0;
+      m[d].litres += litres;
+      m[d].revenue += t.dinero_total || 0;
+      m[d].deliveries += 1;
+      const truck = truckSeries.truckOf(t);
+      const bucket = truckSeries.top.includes(truck) ? truck : (truckSeries.hasOther ? "Other" : truck);
+      if (bucket in m[d]) m[d][bucket] += litres;
     });
     return Object.entries(m)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([d, v]) => ({ date: format(parseISO(d), "d MMM"), litres: v.l, revenue: v.r, deliveries: v.c }));
-  }, [transactions]);
+      .map(([d, v]: [string, any]) => ({ date: format(parseISO(d), "d MMM"), ...v }));
+  }, [transactions, truckSeries]);
+  const truckKeys = useMemo(
+    () => [...truckSeries.top, ...(truckSeries.hasOther ? ["Other"] : [])],
+    [truckSeries],
+  );
+  // Vivid, distinct palette so multiple trucks read clearly on the cream surface.
+  const TRUCK_COLORS = ["#2A6A2E", "#2563EB", "#E85D1E", "#7A5300", "#5F6B61"];
   const sparkLitres = dailyTrend.map((d) => ({ v: d.litres }));
   const sparkRevenue = dailyTrend.map((d) => ({ v: d.revenue }));
   const sparkDeliveries = dailyTrend.map((d) => ({ v: d.deliveries }));
