@@ -1687,19 +1687,25 @@ function OverviewTab({
         <div className="lg:col-span-2 bg-card border border-border/60 rounded-3xl p-6 md:p-8 shadow-sm">
           <div className="flex items-start justify-between gap-3 mb-6">
             <div>
-              <h2 className="font-display text-lg font-bold text-foreground">Litres growth</h2>
+              <h2 className="font-display text-lg font-bold text-foreground">Litres delivered by truck</h2>
               <p className="text-xs font-medium text-muted-foreground/80 mt-0.5">
-                Performance tracked over the current period
+                Stacked daily volume per bowser · {periodLabel?.toLowerCase()}
               </p>
             </div>
-            <div className="flex gap-4 shrink-0">
+            <div className="flex gap-3 shrink-0 flex-wrap justify-end max-w-[55%]">
+              {truckKeys.map((k, i) => (
+                <span
+                  key={k}
+                  className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+                  title={`${k}: ${Math.round(truckSeries.totals[k] || 0).toLocaleString()} L`}
+                >
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: TRUCK_COLORS[i % TRUCK_COLORS.length] }} />
+                  {k}
+                </span>
+              ))}
               <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#0E1F10" }} />
-                Litres
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#2563EB" }} />
-                Deliveries
+                <span className="w-2.5 h-1 rounded" style={{ background: "#0E1F10" }} />
+                Drops
               </span>
             </div>
           </div>
@@ -1708,10 +1714,12 @@ function OverviewTab({
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={dailyTrend} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="portal-litres-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0E1F10" stopOpacity={0.14} />
-                      <stop offset="100%" stopColor="#0E1F10" stopOpacity={0} />
-                    </linearGradient>
+                    {truckKeys.map((k, i) => (
+                      <linearGradient key={k} id={`truck-fill-${i}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={TRUCK_COLORS[i % TRUCK_COLORS.length]} stopOpacity={0.85} />
+                        <stop offset="100%" stopColor={TRUCK_COLORS[i % TRUCK_COLORS.length]} stopOpacity={0.35} />
+                      </linearGradient>
+                    ))}
                   </defs>
                   <CartesianGrid stroke="#0E1F10" strokeDasharray="3 3" strokeOpacity={0.06} vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={{ stroke: "var(--border)" }} tickLine={false} minTickGap={32} />
@@ -1721,10 +1729,35 @@ function OverviewTab({
                     contentStyle={{ background: "#0E1F10", border: "none", borderRadius: 8, fontSize: 12, padding: "8px 12px", color: "#C8F26A" }}
                     labelStyle={{ color: "#C8F26A", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em" }}
                     itemStyle={{ color: "#C8F26A" }}
-                    formatter={(v: number, name: string) => name === "litres" ? [`${v.toLocaleString()} L`, "Litres"] : [v.toLocaleString(), "Deliveries"]}
+                    formatter={(v: number, name: string) =>
+                      name === "deliveries"
+                        ? [v.toLocaleString(), "Drops"]
+                        : [`${Number(v).toLocaleString()} L`, name]
+                    }
                   />
-                  <Area yAxisId="left" type="monotone" dataKey="litres" stroke="#0E1F10" strokeWidth={2.5} fill="url(#portal-litres-fill)" isAnimationActive={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="deliveries" stroke="#2563EB" strokeWidth={1.75} strokeDasharray="6 4" dot={false} isAnimationActive={false} />
+                  {truckKeys.map((k, i) => (
+                    <Area
+                      key={k}
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey={k}
+                      stackId="trucks"
+                      stroke={TRUCK_COLORS[i % TRUCK_COLORS.length]}
+                      strokeWidth={1.5}
+                      fill={`url(#truck-fill-${i})`}
+                      isAnimationActive={false}
+                    />
+                  ))}
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="deliveries"
+                    stroke="#0E1F10"
+                    strokeWidth={1.75}
+                    strokeDasharray="4 4"
+                    dot={false}
+                    isAnimationActive={false}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
