@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Menu, ArrowUpRight, ArrowRight, Truck } from "lucide-react";
+import { Menu, ArrowUpRight, ArrowRight, Truck, RefreshCcw } from "lucide-react";
 import { format, subDays, parseISO } from "date-fns";
 import { BarChart, Bar, XAxis, ResponsiveContainer, LabelList, Cell } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { UserMenu } from "@/components/UserMenu";
 import { PACCLogo } from "@/components/PACCLogo";
 import { formatTime, formatDate } from "@/lib/format";
+import { useSyncTransactions } from "@/hooks/useSyncTransactions";
 
 /* ---------- helpers ---------- */
 
@@ -348,6 +349,7 @@ export function MobileOverview() {
   const { filtered, totalRevenue } = useRevenueCalc(range);
   const { data: monthTxns = [] } = useTransactions("month");
   const { data: buyPrices = [] } = useBuyPrices(30);
+  const { syncing, handleSync, lastSyncTime } = useSyncTransactions();
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const numDeliveries = filtered.length;
@@ -409,6 +411,23 @@ export function MobileOverview() {
               >
                 L
               </span>
+            </div>
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-border bg-card px-3 py-3">
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Daily sales data</div>
+                <div className="mt-0.5 text-[12px] font-semibold text-foreground truncate">
+                  {lastSyncTime ? `Last refreshed ${lastSyncTime}` : "Never refreshed"}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleSync}
+                disabled={syncing}
+                className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-foreground px-3.5 py-2 text-[12px] font-bold text-background disabled:opacity-60"
+              >
+                <RefreshCcw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing" : "Refresh"}
+              </button>
             </div>
           </div>
 
