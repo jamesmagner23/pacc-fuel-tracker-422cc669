@@ -11,6 +11,7 @@ import { useDispatchStops, type DispatchStop } from "@/hooks/useDispatch";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { UserMenu } from "@/components/UserMenu";
+import { PACCLogo } from "@/components/PACCLogo";
 import { formatTime, formatDate } from "@/lib/format";
 
 /* ---------- helpers ---------- */
@@ -79,7 +80,7 @@ function MobileHeader() {
       >
         <Menu className="w-[18px] h-[18px]" />
       </button>
-      <h1 className="text-[17px] font-semibold text-foreground">Overview</h1>
+      <PACCLogo size="sm" tone="light" />
       <UserMenu />
     </div>
   );
@@ -375,20 +376,25 @@ export function MobileOverview() {
 
   return (
     <div
-      className="min-h-full bg-gradient-to-b from-[#F4F5F1] via-[#F4F5F1] to-white"
+      className="min-h-full bg-background"
       style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="px-4 pt-3">
+      <div className="px-4">
         <div
-          className="rounded-t-[28px] bg-background px-5 pb-3"
-          style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}
+          className="bg-background px-1 pb-3"
         >
           <MobileHeader />
 
           {/* hero */}
-          <div className="mt-6">
-            <div className="text-[12px] font-semibold uppercase text-muted-foreground" style={{ letterSpacing: "0.04em" }}>
+          <div className="mt-5">
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full"
+                style={{ background: "#C8F26A", boxShadow: "0 0 0 3px rgba(200,242,106,0.25)" }}
+              />
+              <div className="text-[11px] font-bold uppercase text-muted-foreground" style={{ letterSpacing: "0.08em" }}>
               {eyebrow}
+              </div>
             </div>
             <div className="mt-2 flex items-baseline">
               <span
