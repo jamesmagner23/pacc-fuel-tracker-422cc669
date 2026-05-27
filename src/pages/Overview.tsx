@@ -28,6 +28,7 @@ const TILE_THEMES = {
 } as const;
 
 const DONUT_COLORS = ["#2A6A2E", "#7A5300", "#2B3D8E", "#5F6B61", "#B43A2E", "#C7CCC1"];
+const TRUCK_TINTS = ["var(--positive)", "var(--link)", "var(--warning)", "var(--destructive)", "var(--muted-foreground)"];
 
 export default function Overview() {
   const isMobile = useIsMobile();
@@ -61,21 +62,45 @@ export default function Overview() {
   const delPct = pct(numDeliveries, prevDeliveries);
   const avgPct = pct(avgSize, prevAvgSize);
 
-  // Per-truck breakdown for the current window — drives the hero strip and
-  // the KPI tile sublines so a user can see "3.8k from which bowser".
+  const truckNameLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    trucks.forEach((truck) => {
+      [truck.name, truck.speedsol_estacion].forEach((value) => {
+        const key = value?.toString().trim().toLowerCase();
+        if (key) map.set(key, truck.name);
+      });
+    });
+    return map;
+  }, [trucks]);
+
+  // Per-truck breakdown for the current window — SpeedSol's `nombre_flota`
+  // currently carries the client/fleet, so prefer estación to avoid hiding
+  // Truck 1 / Truck 2 behind a single "PACC Civil" total.
   const truckBreakdown = useMemo(() => {
-    const totals: Record<string, { litres: number; deliveries: number }> = {};
+    const totals: Record<string, { litres: number; deliveries: number; revenue: number }> = {};
+    trucks
+      .filter((truck) => truck.is_active)
+      .forEach((truck) => { totals[truck.name] = { litres: 0, deliveries: 0, revenue: 0 }; });
+
     filtered.forEach((t) => {
-      const k = (t.nombre_flota || t.nombre_vendedor || "Fleet").toString().trim() || "Fleet";
-      if (!totals[k]) totals[k] = { litres: 0, deliveries: 0 };
+      const candidates = [t.estacion, t.nombre_flota, t.nombre_vendedor]
+        .map((value) => value?.toString().trim())
+        .filter(Boolean) as string[];
+      const matched = candidates
+        .map((value) => truckNameLookup.get(value.toLowerCase()))
+        .find(Boolean);
+      const k = matched || candidates[0] || "Unassigned truck";
+      if (!totals[k]) totals[k] = { litres: 0, deliveries: 0, revenue: 0 };
       totals[k].litres += t.cantidad || 0;
       totals[k].deliveries += 1;
+      totals[k].revenue += t.dinero_total || 0;
     });
     return Object.entries(totals)
       .map(([name, v]) => ({ name, ...v }))
       .sort((a, b) => b.litres - a.litres);
-  }, [filtered]);
-  const TRUCK_TINTS = ["#2A6A2E", "#2563EB", "#E85D1E", "#7A5300", "#5F6B61"];
+  }, [filtered, truckNameLookup, trucks]);
+
+  const activeTruckCount = trucks.filter((truck) => truck.is_active).length || truckBreakdown.filter((truck) => truck.litres > 0).length;
   const formatLitresShort = (v: number) =>
     v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`;
   const truckSubline = (key: "litres" | "deliveries") => {
