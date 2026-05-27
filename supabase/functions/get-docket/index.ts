@@ -13,15 +13,24 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
+    let id: number | string | null = url.searchParams.get("id");
+    let ids: number[] | null = null;
     const idsParam = url.searchParams.get("ids");
+    if (idsParam) ids = idsParam.split(",").map(Number).filter(Boolean);
+
+    if (req.method !== "GET") {
+      try {
+        const body = await req.json();
+        if (body?.id != null) id = body.id;
+        if (Array.isArray(body?.ids)) ids = body.ids.map(Number).filter(Boolean);
+      } catch (_) { /* no body */ }
+    }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
     let items: any[] = [];
 
-    if (idsParam) {
-      const ids = idsParam.split(",").map(Number).filter(Boolean);
+    if (ids && ids.length > 0) {
       if (ids.length === 0) {
         return new Response(JSON.stringify({ items: [] }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
