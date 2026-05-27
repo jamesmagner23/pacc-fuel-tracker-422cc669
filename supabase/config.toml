@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.scrape-supplier-prices]
 verify_jwt = false
+
+[functions.get-docket]
+verify_jwt = false
