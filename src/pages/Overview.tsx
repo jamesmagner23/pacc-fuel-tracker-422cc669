@@ -1,7 +1,4 @@
 import { useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { TruckMap } from "@/components/TruckMap";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Area, Line,
@@ -13,13 +10,14 @@ import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO, subDays } from "date-fns";
 import { Droplet, DollarSign, Truck, Gauge, Droplets, Fuel, RefreshCcw } from "lucide-react";
-import { formatTime } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { KPISparklineCard } from "@/components/KPISparklineCard";
 import { TodaysDeliveriesPanel } from "@/components/TodaysDeliveriesPanel";
-import { useSyncLog } from "@/hooks/useTransactions";
 import { MobileOverview } from "@/components/mobile/MobileOverview";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSyncTransactions } from "@/hooks/useSyncTransactions";
+import { useTrucks } from "@/hooks/useTrucks";
+import { PACCLogo } from "@/components/PACCLogo";
 
 const TILE_THEMES = {
   litres:    { icon: Droplet,     bg: "#E8EDE5", fg: "#2A6A2E" },
@@ -30,6 +28,7 @@ const TILE_THEMES = {
 } as const;
 
 const DONUT_COLORS = ["#2A6A2E", "#7A5300", "#2B3D8E", "#5F6B61", "#B43A2E", "#C7CCC1"];
+const TRUCK_TINTS = ["var(--positive)", "var(--link)", "var(--warning)", "var(--destructive)", "var(--muted-foreground)"];
 
 export default function Overview() {
   const isMobile = useIsMobile();
@@ -41,30 +40,10 @@ export default function Overview() {
     totalRevenue,
     prevRevenue,
   } = useRevenueCalc(range);
-  const { data: lastSync } = useSyncLog();
+  const { syncing, handleSync, lastSyncTime } = useSyncTransactions();
   const { data: allTxns = [] } = useAllTransactions();
   const { data: buyPrices = [] } = useBuyPrices(60);
-  const queryClient = useQueryClient();
-  const [syncing, setSyncing] = useState(false);
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-transactions");
-      if (error) throw error;
-      if (data?.success) {
-        toast.success(`Synced ${data.records_upserted ?? 0} transactions`);
-        ["transactions", "transactions-prev", "transactions-all", "sync-log", "buy-prices"].forEach(
-          (k) => queryClient.invalidateQueries({ queryKey: [k] }),
-        );
-      } else {
-        toast.error(data?.error || "Sync failed");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Sync failed");
-    } finally {
-      setSyncing(false);
-    }
-  };
+  const { data: trucks = [] } = useTrucks();
   const [growthRange, setGrowthRange] = useState<"7d" | "30d" | "90d">("30d");
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
@@ -83,21 +62,49 @@ export default function Overview() {
   const delPct = pct(numDeliveries, prevDeliveries);
   const avgPct = pct(avgSize, prevAvgSize);
 
-  // Per-truck breakdown for the current window — drives the hero strip and
-  // the KPI tile sublines so a user can see "3.8k from which bowser".
+  const truckNameLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    trucks.forEach((truck) => {
+      [truck.name, truck.speedsol_estacion].forEach((value) => {
+        const key = value?.toString().trim().toLowerCase();
+        if (key) map.set(key, truck.name);
+      });
+    });
+    return map;
+  }, [trucks]);
+
+  // Per-truck breakdown for the current window — SpeedSol's `nombre_flota`
+  // currently carries the client/fleet, so prefer estación to avoid hiding
+  // Truck 1 / Truck 2 behind a single "PACC Civil" total.
   const truckBreakdown = useMemo(() => {
-    const totals: Record<string, { litres: number; deliveries: number }> = {};
+    const totals: Record<string, { litres: number; deliveries: number; revenue: number }> = {};
+    trucks
+      .filter((truck) => truck.is_active)
+      .forEach((truck) => { totals[truck.name] = { litres: 0, deliveries: 0, revenue: 0 }; });
+
     filtered.forEach((t) => {
-      const k = (t.nombre_flota || t.nombre_vendedor || "Fleet").toString().trim() || "Fleet";
-      if (!totals[k]) totals[k] = { litres: 0, deliveries: 0 };
+      const candidates = [t.estacion, t.nombre_flota, t.nombre_vendedor]
+        .map((value) => value?.toString().trim())
+        .filter(Boolean) as string[];
+      const matched = candidates
+        .map((value) => truckNameLookup.get(value.toLowerCase()))
+        .find(Boolean);
+      const k = matched || candidates[0] || "Unassigned truck";
+      if (!totals[k]) totals[k] = { litres: 0, deliveries: 0, revenue: 0 };
       totals[k].litres += t.cantidad || 0;
       totals[k].deliveries += 1;
+      totals[k].revenue += t.dinero_total || 0;
     });
     return Object.entries(totals)
-      .map(([name, v]) => ({ name, ...v }))
+      .map(([name, v]) => ({
+        name,
+        ...v,
+        revenue: v.revenue > 0 ? v.revenue : totalLitres > 0 ? (v.litres / totalLitres) * totalRevenue : 0,
+      }))
       .sort((a, b) => b.litres - a.litres);
-  }, [filtered]);
-  const TRUCK_TINTS = ["#2A6A2E", "#2563EB", "#E85D1E", "#7A5300", "#5F6B61"];
+  }, [filtered, totalLitres, totalRevenue, truckNameLookup, trucks]);
+
+  const activeTruckCount = trucks.filter((truck) => truck.is_active).length || truckBreakdown.filter((truck) => truck.litres > 0).length;
   const formatLitresShort = (v: number) =>
     v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`;
   const truckSubline = (key: "litres" | "deliveries") => {
@@ -198,8 +205,6 @@ export default function Overview() {
     return { rows, total };
   }, [filtered]);
 
-  const lastSyncTime = lastSync?.synced_at ? formatTime(lastSync.synced_at) : null;
-
   const litresFallback = (() => {
     if (range === "today" && totalLitres === 0) return "No deliveries yet today";
     if (lastSyncTime && filtered.length > 0) return `Live · most recent at ${lastSyncTime}`;
@@ -236,7 +241,7 @@ export default function Overview() {
   if (isLoading) {
     return (
       <div className={`-mx-3 sm:-mx-6 md:-mx-8 -my-4 sm:-my-6 md:-my-8 px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 ${pageBg} min-h-full`}>
-        <PageHeader title="Overview" breadcrumb={breadcrumb} />
+        <PageHeader title="PACC Energy" breadcrumb={breadcrumb} />
         <div className="text-sm text-muted-foreground">Loading…</div>
       </div>
     );
@@ -245,7 +250,7 @@ export default function Overview() {
   if (filtered.length === 0) {
     return (
       <div className={`-mx-3 sm:-mx-6 md:-mx-8 -my-4 sm:-my-6 md:-my-8 px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 ${pageBg} min-h-full`}>
-        <PageHeader title="Overview" breadcrumb={breadcrumb} />
+        <PageHeader title="PACC Energy" breadcrumb={breadcrumb} />
         <div className="flex flex-col items-center justify-center text-muted-foreground gap-3 py-12">
           <Droplets className="w-6 h-6" />
           <p className="text-sm">No transactions. Use <strong className="text-foreground">Sync now</strong> in the sidebar to pull data.</p>
@@ -256,102 +261,72 @@ export default function Overview() {
 
   return (
     <div className={`-mx-3 sm:-mx-6 md:-mx-8 -my-4 sm:-my-6 md:-my-8 px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 ${pageBg} min-h-full`}>
-      <PageHeader title="Overview" breadcrumb={breadcrumb} />
+      <PageHeader title="PACC Energy" breadcrumb={breadcrumb} />
 
-      {/* Hero band — branded, with inline sync + per-truck activity strip */}
-      <div
-        className="relative overflow-hidden rounded-2xl p-5 sm:p-6 mb-4 shadow-sm"
-        style={{
-          background:
-            "linear-gradient(120deg, #0E1F10 0%, #1c3a1f 50%, #2A6A2E 100%)",
-          color: "#F4F5F1",
-        }}
-      >
-        <div
-          className="absolute -right-20 -top-20 w-72 h-72 rounded-full pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle, #C8F26A 0%, transparent 60%)",
-            opacity: 0.5,
-          }}
-        />
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div
-              className="text-[10px] font-bold uppercase tracking-[0.18em]"
-              style={{ color: "#C8F26A" }}
-            >
-              PACC Energy · Operations
+      <div className="relative overflow-hidden rounded-[18px] border border-border bg-foreground text-background mb-4 shadow-sm">
+        <div className="relative grid lg:grid-cols-[0.95fr_1.35fr] min-h-[220px]">
+          <div className="px-5 sm:px-6 py-5 sm:py-6 border-b lg:border-b-0 lg:border-r border-background/10">
+            <PACCLogo tone="dark" />
+            <div className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-accent">
+              Live daily fuel sales
             </div>
-            <h1
-              className="font-display text-2xl sm:text-3xl font-bold mt-1 leading-tight tabular-nums"
-              style={{ color: "#F4F5F1" }}
-            >
-              {formatLitresShort(totalLitres)}L{" "}
-              <span className="text-base sm:text-lg font-medium" style={{ color: "#C8F26A" }}>
-                {periodLabel.toLowerCase()}
-              </span>
-            </h1>
-            <p className="text-xs sm:text-sm mt-1.5" style={{ color: "rgba(244,245,241,0.78)" }}>
-              {numDeliveries.toLocaleString()} {numDeliveries === 1 ? "drop" : "drops"}
-              {truckBreakdown.length > 0 && (
-                <> · {truckBreakdown.length} active {truckBreakdown.length === 1 ? "truck" : "trucks"}</>
-              )}
-              {lastSyncTime && <> · Synced {lastSyncTime}</>}
+            <div className="mt-2 flex items-end gap-2">
+              <div className="font-display text-[38px] leading-none font-bold tabular-nums text-background">
+                {formatLitresShort(totalLitres)}L
+              </div>
+              <div className="pb-1.5 text-sm font-bold text-accent">{periodLabel}</div>
+            </div>
+            <p className="mt-3 max-w-[360px] text-sm leading-5 text-background/75">
+              {numDeliveries.toLocaleString()} {numDeliveries === 1 ? "drop" : "drops"} across {activeTruckCount || truckBreakdown.length || 0} active {activeTruckCount === 1 ? "truck" : "trucks"}{lastSyncTime ? ` · last refreshed ${lastSyncTime}` : ""}.
             </p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
             <button
               type="button"
               onClick={handleSync}
               disabled={syncing}
-              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-wider transition-opacity disabled:opacity-60"
-              style={{ background: "#C8F26A", color: "#0E1F10" }}
+              className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 py-2 text-[12px] font-bold uppercase tracking-wider text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               <RefreshCcw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Syncing…" : "Sync now"}
+              {syncing ? "Refreshing sales…" : "Refresh daily data"}
             </button>
           </div>
-        </div>
-        {truckBreakdown.length > 0 && (
-          <div className="relative mt-4 flex flex-wrap gap-2">
-            {truckBreakdown.slice(0, 4).map((t, i) => (
-              <div
-                key={t.name}
-                className="rounded-xl px-3 py-2 min-w-[120px]"
-                style={{
-                  background: "rgba(244,245,241,0.08)",
-                  border: "1px solid rgba(200,242,106,0.18)",
-                }}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: TRUCK_TINTS[i % TRUCK_TINTS.length] }}
-                  />
-                  <span
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: "#F4F5F1" }}
-                  >
-                    {t.name}
-                  </span>
-                </div>
-                <div
-                  className="font-display text-base font-bold tabular-nums mt-0.5"
-                  style={{ color: "#F4F5F1" }}
-                >
-                  {formatLitresShort(t.litres)}L
-                  <span
-                    className="text-[11px] font-medium ml-1.5"
-                    style={{ color: "rgba(244,245,241,0.7)" }}
-                  >
-                    · {t.deliveries} drop{t.deliveries === 1 ? "" : "s"}
-                  </span>
-                </div>
+
+          <div className="relative px-5 sm:px-6 py-5 sm:py-6 bg-background/5">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Truck split</div>
+                <div className="mt-1 text-sm font-semibold text-background/85">Truck 1 and Truck 2 sales attribution</div>
               </div>
-            ))}
+              <span className="rounded-full border border-background/15 px-3 py-1 text-[11px] font-semibold text-background/80">
+                {lastSyncTime ? `Synced ${lastSyncTime}` : "Awaiting sync"}
+              </span>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {truckBreakdown.slice(0, Math.max(2, Math.min(4, truckBreakdown.length))).map((t, i) => {
+                const share = totalLitres > 0 ? Math.round((t.litres / totalLitres) * 100) : 0;
+                return (
+                  <div key={t.name} className="rounded-[14px] border border-background/10 bg-background/10 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: TRUCK_TINTS[i % TRUCK_TINTS.length] }} />
+                        <span className="truncate text-[12px] font-bold uppercase tracking-wider text-background">{t.name}</span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-background/70">{share}%</span>
+                    </div>
+                    <div className="mt-3 font-display text-2xl font-bold tabular-nums text-background">
+                      {formatLitresShort(t.litres)}L
+                    </div>
+                    <div className="mt-1 text-[12px] font-medium text-background/70">
+                      {t.deliveries} drop{t.deliveries === 1 ? "" : "s"} · ${Math.round(t.revenue).toLocaleString()} revenue
+                    </div>
+                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background/15">
+                      <div className="h-full rounded-full bg-accent" style={{ width: `${share}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* KPI grid — 5 tiles incl. buy price; wraps to 2/3 cols at smaller widths */}

@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, A
 import { toast } from "sonner";
 import {
   Truck as TruckIcon, FileText, Wrench, ShieldAlert, BarChart3,
-  Plus, Trash2, Download, Loader2, Pencil, Upload,
+  Plus, Trash2, Download, Loader2, Pencil, Upload, RefreshCcw,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions, useAllTransactions } from "@/hooks/useTransactions";
 import { useChartPalette } from "@/lib/chartPalette";
 import { DateRangeToggle } from "@/components/DateRangeToggle";
+import { useSyncTransactions } from "@/hooks/useSyncTransactions";
 
 const DOC_TYPES = [
   "Tank Certification",
@@ -553,6 +554,7 @@ function SalesPanel({ truck }: { truck: Truck }) {
   const palette = useChartPalette();
   const { data: filtered = [], isLoading } = useTransactions(range);
   const { data: allTxns = [] } = useAllTransactions();
+  const { syncing, handleSync, lastSyncTime } = useSyncTransactions();
 
   const matcher = (t: { estacion: string | null }) =>
     t.estacion === (truck.speedsol_estacion || truck.name);
@@ -577,8 +579,17 @@ function SalesPanel({ truck }: { truck: Truck }) {
 
   return (
     <div className="grid gap-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <h3 className="text-sm font-semibold mr-auto">Sales Performance</h3>
+      <div className="flex items-center gap-3 flex-wrap rounded-[14px] border border-border bg-card p-4">
+        <div className="mr-auto min-w-[220px]">
+          <h3 className="text-sm font-semibold">Daily Fuel Sales</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {truck.name} · {lastSyncTime ? `last refreshed ${lastSyncTime}` : "not refreshed yet"}
+          </p>
+        </div>
+        <Button size="sm" onClick={handleSync} disabled={syncing} className="min-h-10">
+          <RefreshCcw className={`w-3.5 h-3.5 mr-1.5 ${syncing ? "animate-spin" : ""}`} />
+          {syncing ? "Refreshing…" : "Refresh data"}
+        </Button>
         <div className="w-full sm:w-auto sm:min-w-[280px]">
           <DateRangeToggle />
         </div>
