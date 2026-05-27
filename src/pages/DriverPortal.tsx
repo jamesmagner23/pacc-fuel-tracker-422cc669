@@ -678,10 +678,10 @@ function MyDayTab() {
                   )}
                   {!isCompleted && (
                     <button
-                      onClick={() => updateStatus.mutate({ id: stop.id, status: "completed" })}
+                      onClick={() => setSignStop(stop)}
                       className="p-1.5 rounded"
                       style={{ background: "transparent", color: "var(--positive, #C8F26A)", border: "none", cursor: "pointer" }}
-                      title="Mark complete"
+                      title="Complete & sign docket"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                     </button>
