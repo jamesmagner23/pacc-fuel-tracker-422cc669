@@ -262,7 +262,11 @@ export default function LandingPage() {
               <Eye className="w-3.5 h-3.5" /> Demo
             </Button>
 
-            <Button size="sm" className="hidden md:inline-flex" onClick={() => navigate("/login")}>
+            <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => navigate("/login")}>
+              Sign in
+            </Button>
+
+            <Button size="sm" className="hidden md:inline-flex" onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>
               Get a quote
             </Button>
 
