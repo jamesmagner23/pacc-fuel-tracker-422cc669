@@ -23,7 +23,7 @@ export function useSyncTransactions(options: { autoSync?: boolean } = {}) {
   const queryClient = useQueryClient();
   const syncingRef = useRef(false);
 
-  const handleSync = async (opts: { silent?: boolean } = {}) => {
+  const runSync = async (opts: { silent?: boolean } = {}) => {
     if (syncingRef.current) return;
     syncingRef.current = true;
     setSyncing(true);
@@ -50,11 +50,15 @@ export function useSyncTransactions(options: { autoSync?: boolean } = {}) {
     }
   };
 
+  const handleSync = () => {
+    void runSync();
+  };
+
   useEffect(() => {
     if (!autoSync) return;
     const tick = () => {
       if (document.visibilityState === "visible") {
-        handleSync({ silent: true });
+        void runSync({ silent: true });
       }
     };
     const interval = setInterval(tick, AUTO_SYNC_INTERVAL_MS);
