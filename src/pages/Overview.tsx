@@ -499,6 +499,10 @@ export default function Overview() {
               ? `${(totalRevenue / totalLitres).toFixed(2)} $/L avg`
               : undefined
           }
+          periodNote={periodNote}
+          breakdown={revenueBreakdown}
+          breakdownTotal={totalRevenue}
+          breakdownTitle="Revenue by truck"
         />
         <KPISparklineCard
           label={deliveriesLabel}
@@ -511,6 +515,10 @@ export default function Overview() {
           tintBg={TILE_THEMES.delivery.bg}
           tintColor={TILE_THEMES.delivery.fg}
           subLine={truckSubline("deliveries")}
+          periodNote={periodNote}
+          breakdown={deliveriesBreakdown}
+          breakdownTotal={numDeliveries}
+          breakdownTitle="Deliveries by truck"
         />
         <KPISparklineCard
           label={avgLabel}
@@ -527,6 +535,10 @@ export default function Overview() {
               ? `${numDeliveries} drop${numDeliveries === 1 ? "" : "s"}`
               : undefined
           }
+          periodNote={periodNote}
+          breakdown={avgBreakdown}
+          breakdownTotal={avgSize}
+          breakdownTitle="Avg size by truck"
         />
         <KPISparklineCard
           label="Buy Price (Ex-GST)"
