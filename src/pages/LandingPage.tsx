@@ -226,7 +226,10 @@ export default function LandingPage() {
   return (
     <div className="bg-background text-foreground min-h-screen pt-0 mt-0">
       {/* ─────────── NAV ─────────── */}
-      <nav className="sticky top-0 z-50 bg-background border-b border-border pt-0 mt-0">
+      <nav
+        className="sticky top-0 z-50 bg-background border-b border-border"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
           <a href="/landing" className="shrink-0">
             <PACCWordmark />
