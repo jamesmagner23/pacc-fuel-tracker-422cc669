@@ -1577,6 +1577,62 @@ function OverviewTab({
       )}
 
       {/* KPI sparkline tiles — matches admin Overview pattern */}
+      {/* Colourful desktop summary band — gives the top of the Overview a
+          visible identity on large screens. Hidden below lg where the KPI
+          tiles already lead. */}
+      {transactions.length > 0 && (
+        <div
+          className="hidden lg:block rounded-3xl p-6 shadow-sm overflow-hidden relative"
+          style={{
+            background:
+              "linear-gradient(120deg, #0E1F10 0%, #1c3a1f 45%, #2A6A2E 100%)",
+            color: "#F4F5F1",
+          }}
+        >
+          <div
+            className="absolute -right-16 -top-16 w-72 h-72 rounded-full pointer-events-none"
+            style={{ background: "radial-gradient(circle, #C8F26A 0%, transparent 60%)", opacity: 0.55 }}
+          />
+          <div className="relative flex items-end justify-between gap-6 flex-wrap">
+            <div className="min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "#C8F26A" }}>
+                {periodLabel || "This Period"} · {companyName}
+              </div>
+              <h1 className="font-display text-4xl xl:text-5xl font-bold mt-1 leading-tight tabular-nums" style={{ color: "#F4F5F1" }}>
+                {totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(1)}k` : totalLitres.toFixed(0)}{" "}
+                <span className="text-2xl xl:text-3xl font-medium" style={{ color: "#C8F26A" }}>litres delivered</span>
+              </h1>
+              <p className="text-sm mt-2" style={{ color: "rgba(244,245,241,0.78)" }}>
+                Across {numDeliveries.toLocaleString()} {numDeliveries === 1 ? "drop" : "drops"} to {sites.size.toLocaleString()} {sites.size === 1 ? "site" : "sites"}
+                {truckSeries.top.length > 1 && (
+                  <> · {truckSeries.top.length} active trucks</>
+                )}
+              </p>
+            </div>
+            <div className="flex gap-3 flex-wrap">
+              {[
+                { label: "Spend (inc GST)", value: totalSpend > 0 ? `$${totalSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—", accent: "#C8F26A" },
+                { label: "Avg Drop", value: avgDrop > 0 ? `${Math.round(avgDrop).toLocaleString()} L` : "—", accent: "#7DD3FC" },
+                { label: "Est. FTC Savings", value: ftcSavings > 0 ? `$${ftcSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—", accent: "#FCD34D" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-2xl px-4 py-3 min-w-[140px]"
+                  style={{ background: "rgba(244,245,241,0.08)", border: "1px solid rgba(200,242,106,0.18)" }}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: stat.accent }}>
+                    {stat.label}
+                  </div>
+                  <div className="font-display text-xl font-bold tabular-nums mt-1" style={{ color: "#F4F5F1" }}>
+                    {stat.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KPISparklineCard
           label={`${prefix} Litres Delivered`}
