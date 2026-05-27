@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BoldPMark } from "@/components/BoldPMark";
 import truckOnsiteImg from "@/assets/truck-onsite.webp";
 import truckOnsiteImg1200 from "@/assets/truck-onsite-1200.webp";
 import truckOnsiteImg800 from "@/assets/truck-onsite-800.webp";
@@ -92,12 +93,7 @@ const coverage = [
 function PACCWordmark({ dark = false }: { dark?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div
-        className="w-8 h-8 rounded-md flex items-center justify-center font-semibold text-[15px]"
-        style={{ background: dark ? "#C8F26A" : "#0E1F10", color: dark ? "#0E1F10" : "#FFFFFF" }}
-      >
-        P
-      </div>
+      <BoldPMark size={30} bg="#1A472A" fg="#C8F26A" rounded={6} />
       <div className="leading-none">
         <div className={`text-[15px] font-semibold tracking-tight ${dark ? "text-[#ECE4D2]" : "text-foreground"}`}>
           PACC Energy
@@ -230,7 +226,7 @@ export default function LandingPage() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       {/* ─────────── NAV ─────────── */}
-      <nav className="sticky top-0 z-50 bg-background border-b border-border" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+      <nav className="sticky top-0 z-50 bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
           <a href="/landing" className="shrink-0">
             <PACCWordmark />
