@@ -13,6 +13,7 @@ import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_FUEL_INTAKE_LOGS, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { useDispatchStops, useReorderDispatchStops, useUpdateStopStatus, useDeleteStop, useUpsertStop, type DispatchStop } from "@/hooks/useDispatch";
 import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
+import { CompleteStopDialog } from "@/components/dispatch/CompleteStopDialog";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { TagDeliveriesTab } from "@/components/driver/TagDeliveriesTab";
 import { ShareLocationToggle } from "@/components/driver/ShareLocationToggle";
