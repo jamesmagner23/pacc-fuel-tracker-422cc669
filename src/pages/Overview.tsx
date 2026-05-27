@@ -563,6 +563,10 @@ export default function Overview() {
               ? `${latestPrice.supplier} · ${format(parseISO(latestPrice.price_date), "d MMM")}`
               : undefined
           }
+          periodNote="Latest recorded supply price"
+          breakdown={buyPriceBreakdown}
+          breakdownTotal={0}
+          breakdownTitle="Recent prices"
         />
       </div>
 
