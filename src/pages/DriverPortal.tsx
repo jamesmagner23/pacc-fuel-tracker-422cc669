@@ -545,6 +545,7 @@ function MyDayTab() {
   const [addOpen, setAddOpen] = useState(false);
   const [pickClient, setPickClient] = useState<number | null>(null);
   const [editStop, setEditStop] = useState<DispatchStop | null>(null);
+  const [signStop, setSignStop] = useState<DispatchStop | null>(null);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["client-accounts-driver"],
