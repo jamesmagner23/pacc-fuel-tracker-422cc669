@@ -213,28 +213,28 @@ export default function DeliveryDocket() {
         {/* Header */}
         <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-4 print:pb-3 print:mb-3">
            <div>
-            <div style={{ lineHeight: 1 }}>
+            <div style={{ lineHeight: 1, display: "flex", alignItems: "baseline", gap: 6 }}>
               {isDemo ? (
                 <>
                   <div style={{ fontSize: 24, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
                     FUEL<span style={{ color: "#3B82F6" }}>TRACK</span>
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 500, color: "#666", letterSpacing: "0.15em", marginTop: 2 }}>
-                    DIESEL DELIVERY
+                  <div style={{ fontSize: 10, fontWeight: 600, color: "#666", letterSpacing: "0.15em" }}>
+                    DIESEL
                   </div>
                 </>
               ) : (
                 <>
                   <div style={{ fontSize: 24, fontWeight: 800, color: "#111", letterSpacing: "-0.02em" }}>
-                    PACC<span style={{ color: "#C8F26A", fontSize: 15 }}>®</span>
+                    PACC<span style={{ color: "#7BA428", fontSize: 14 }}>®</span>
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 500, color: "#C7BFAC", letterSpacing: "0.15em", marginTop: 2 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#6B6356", letterSpacing: "0.2em" }}>
                     FUEL
                   </div>
                 </>
               )}
             </div>
-            <p className="text-[10px] text-gray-500 mt-2">On-Site Diesel Delivery</p>
+            <p className="text-[10px] text-gray-500 mt-1.5">On-Site Diesel Delivery</p>
           </div>
           <div className="text-right">
             <h1 className="text-base font-bold text-gray-900 print:text-sm">DELIVERY DOCKET</h1>
@@ -306,11 +306,11 @@ export default function DeliveryDocket() {
         </div>
 
         {/* Notes / on-site remarks */}
-        <div className="mb-5 print:mb-3">
-          <h3 className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Notes / On-Site Remarks</h3>
-          <div className="border border-gray-200 rounded-lg min-h-[56px] p-2 text-sm text-gray-500 print:min-h-[48px]">
-            &nbsp;
+        <div className="mb-4 print:mb-3">
+          <div className="flex items-baseline justify-between mb-1.5">
+            <h3 className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">Notes / On-Site Remarks</h3>
           </div>
+          <div className="border border-gray-200 rounded-lg h-16 print:h-14" />
         </div>
 
         {/* Signature lines */}
