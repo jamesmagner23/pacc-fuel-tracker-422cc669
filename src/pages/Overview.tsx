@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { TruckMap } from "@/components/TruckMap";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Area, Line,
@@ -34,17 +34,87 @@ export default function Overview() {
   const isMobile = useIsMobile();
   const { range } = useDateRange();
   const {
-    filtered,
-    previous,
+    filtered: allFiltered,
+    previous: allPrevious,
     isLoading,
-    totalRevenue,
-    prevRevenue,
+    totalRevenue: totalRevenueAll,
+    prevRevenue: prevRevenueAll,
+    getTxPricing,
   } = useRevenueCalc(range);
   const { syncing, handleSync, lastSyncTime } = useSyncTransactions({ autoSync: true });
-  const { data: allTxns = [] } = useAllTransactions();
+  const { data: allTxnsRaw = [] } = useAllTransactions();
   const { data: buyPrices = [] } = useBuyPrices(60);
   const { data: trucks = [] } = useTrucks();
   const [growthRange, setGrowthRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [selectedTruck, setSelectedTruck] = useState<string>("all");
+
+  const truckNameLookup = useMemo(() => {
+    const map = new Map<string, string>();
+    trucks.forEach((truck) => {
+      [truck.name, truck.speedsol_estacion].forEach((value) => {
+        const key = value?.toString().trim().toLowerCase();
+        if (key) map.set(key, truck.name);
+      });
+    });
+    return map;
+  }, [trucks]);
+
+  const matchTxnTruck = useCallback(
+    (t: any) => {
+      const candidates = [t.estacion, t.nombre_flota, t.nombre_vendedor]
+        .map((value) => value?.toString().trim())
+        .filter(Boolean) as string[];
+      return (
+        candidates
+          .map((value) => truckNameLookup.get(value.toLowerCase()))
+          .find(Boolean) || null
+      );
+    },
+    [truckNameLookup],
+  );
+
+  const filtered = useMemo(
+    () =>
+      selectedTruck === "all"
+        ? allFiltered
+        : allFiltered.filter((t) => matchTxnTruck(t) === selectedTruck),
+    [allFiltered, selectedTruck, matchTxnTruck],
+  );
+  const previous = useMemo(
+    () =>
+      selectedTruck === "all"
+        ? allPrevious
+        : allPrevious.filter((t) => matchTxnTruck(t) === selectedTruck),
+    [allPrevious, selectedTruck, matchTxnTruck],
+  );
+  const allTxns = useMemo(
+    () =>
+      selectedTruck === "all"
+        ? allTxnsRaw
+        : allTxnsRaw.filter((t: any) => matchTxnTruck(t) === selectedTruck),
+    [allTxnsRaw, selectedTruck, matchTxnTruck],
+  );
+
+  const sumRevenueLocal = useCallback(
+    (txs: any[]) => {
+      let revenue = 0;
+      txs.forEach((t) => {
+        if (t.dinero_total && t.dinero_total > 0) {
+          revenue += t.dinero_total;
+        } else {
+          const { hasPricing, sellPPL } = getTxPricing(t);
+          if (hasPricing) revenue += (t.cantidad || 0) * sellPPL;
+        }
+      });
+      return revenue;
+    },
+    [getTxPricing],
+  );
+
+  const totalRevenue =
+    selectedTruck === "all" ? totalRevenueAll : sumRevenueLocal(filtered);
+  const prevRevenue =
+    selectedTruck === "all" ? prevRevenueAll : sumRevenueLocal(previous);
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const numDeliveries = filtered.length;
@@ -62,17 +132,6 @@ export default function Overview() {
   const delPct = pct(numDeliveries, prevDeliveries);
   const avgPct = pct(avgSize, prevAvgSize);
 
-  const truckNameLookup = useMemo(() => {
-    const map = new Map<string, string>();
-    trucks.forEach((truck) => {
-      [truck.name, truck.speedsol_estacion].forEach((value) => {
-        const key = value?.toString().trim().toLowerCase();
-        if (key) map.set(key, truck.name);
-      });
-    });
-    return map;
-  }, [trucks]);
-
   // Per-truck breakdown for the current window — SpeedSol's `nombre_flota`
   // currently carries the client/fleet, so prefer estación to avoid hiding
   // Truck 1 / Truck 2 behind a single "PACC Civil" total.
@@ -82,7 +141,7 @@ export default function Overview() {
       .filter((truck) => truck.is_active)
       .forEach((truck) => { totals[truck.name] = { litres: 0, deliveries: 0, revenue: 0 }; });
 
-    filtered.forEach((t) => {
+    allFiltered.forEach((t) => {
       const candidates = [t.estacion, t.nombre_flota, t.nombre_vendedor]
         .map((value) => value?.toString().trim())
         .filter(Boolean) as string[];
@@ -95,14 +154,16 @@ export default function Overview() {
       totals[k].deliveries += 1;
       totals[k].revenue += t.dinero_total || 0;
     });
+    const allFilteredLitres = allFiltered.reduce((s, t) => s + (t.cantidad || 0), 0);
+    const allFilteredRevenue = allFiltered.reduce((s, t) => s + (t.dinero_total || 0), 0);
     return Object.entries(totals)
       .map(([name, v]) => ({
         name,
         ...v,
-        revenue: v.revenue > 0 ? v.revenue : totalLitres > 0 ? (v.litres / totalLitres) * totalRevenue : 0,
+        revenue: v.revenue > 0 ? v.revenue : allFilteredLitres > 0 ? (v.litres / allFilteredLitres) * allFilteredRevenue : 0,
       }))
       .sort((a, b) => b.litres - a.litres);
-  }, [filtered, totalLitres, totalRevenue, truckNameLookup, trucks]);
+  }, [allFiltered, truckNameLookup, trucks]);
 
   const activeTruckCount = trucks.filter((truck) => truck.is_active).length || truckBreakdown.filter((truck) => truck.litres > 0).length;
   const formatLitresShort = (v: number) =>
@@ -291,20 +352,54 @@ export default function Overview() {
           </div>
 
           <div className="relative px-5 sm:px-6 py-5 sm:py-6 bg-background/5">
-            <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Truck split</div>
-                <div className="mt-1 text-sm font-semibold text-background/85">Truck 1 and Truck 2 sales attribution</div>
+                <div className="mt-1 text-sm font-semibold text-background/85">
+                  {selectedTruck === "all"
+                    ? "Tap a truck to focus the KPIs and charts"
+                    : `Showing ${selectedTruck} only — tap All to reset`}
+                </div>
               </div>
-              <span className="rounded-full border border-background/15 px-3 py-1 text-[11px] font-semibold text-background/80">
-                {lastSyncTime ? `Synced ${lastSyncTime}` : "Awaiting sync"}
-              </span>
+              <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-background/15 bg-background/10 p-1">
+                {(["all", ...truckBreakdown.map((t) => t.name)] as string[]).map((opt) => {
+                  const active = selectedTruck === opt;
+                  const label = opt === "all" ? "All trucks" : opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setSelectedTruck(opt)}
+                      className={
+                        "h-7 px-3 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors " +
+                        (active
+                          ? "bg-accent text-accent-foreground"
+                          : "text-background/80 hover:text-background")
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               {truckBreakdown.slice(0, Math.max(2, Math.min(4, truckBreakdown.length))).map((t, i) => {
-                const share = totalLitres > 0 ? Math.round((t.litres / totalLitres) * 100) : 0;
+                const splitTotal = truckBreakdown.reduce((s, x) => s + x.litres, 0);
+                const share = splitTotal > 0 ? Math.round((t.litres / splitTotal) * 100) : 0;
+                const isActive = selectedTruck === t.name;
                 return (
-                  <div key={t.name} className="rounded-[14px] border border-background/10 bg-background/10 p-4">
+                  <button
+                    key={t.name}
+                    type="button"
+                    onClick={() => setSelectedTruck(isActive ? "all" : t.name)}
+                    className={
+                      "text-left rounded-[14px] border p-4 transition-colors " +
+                      (isActive
+                        ? "border-accent bg-accent/15"
+                        : "border-background/10 bg-background/10 hover:bg-background/15")
+                    }
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2">
                         <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: TRUCK_TINTS[i % TRUCK_TINTS.length] }} />
@@ -321,7 +416,7 @@ export default function Overview() {
                     <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background/15">
                       <div className="h-full rounded-full bg-accent" style={{ width: `${share}%` }} />
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
