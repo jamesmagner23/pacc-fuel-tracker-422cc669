@@ -554,7 +554,7 @@ function SalesPanel({ truck }: { truck: Truck }) {
   const palette = useChartPalette();
   const { data: filtered = [], isLoading } = useTransactions(range);
   const { data: allTxns = [] } = useAllTransactions();
-  const { syncing, handleSync, lastSyncTime } = useSyncTransactions();
+  const { syncing, handleSync, lastSyncTime } = useSyncTransactions({ autoSync: true });
 
   const matcher = (t: { estacion: string | null }) =>
     t.estacion === (truck.speedsol_estacion || truck.name);

@@ -40,7 +40,7 @@ export default function Overview() {
     totalRevenue,
     prevRevenue,
   } = useRevenueCalc(range);
-  const { syncing, handleSync, lastSyncTime } = useSyncTransactions();
+  const { syncing, handleSync, lastSyncTime } = useSyncTransactions({ autoSync: true });
   const { data: allTxns = [] } = useAllTransactions();
   const { data: buyPrices = [] } = useBuyPrices(60);
   const { data: trucks = [] } = useTrucks();
