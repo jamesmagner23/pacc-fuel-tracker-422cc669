@@ -159,13 +159,12 @@ function DeltaPill({ pct }: { pct: number }) {
   const formatted = `${up ? "+" : "\u2212"}${Math.abs(pct).toFixed(1)}%`;
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums"
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums"
       style={{
         background: up ? "#E6F3E1" : "#FBE5E2",
         color: up ? "#2A6A2E" : "#8C2A1F",
       }}
     >
-      {up ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
       {formatted}
     </span>
   );
