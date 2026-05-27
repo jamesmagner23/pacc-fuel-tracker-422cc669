@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/hooks/useActivityLog";
-import { Droplets, Truck, Shield } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
-function PACCLogoLarge() {
+function PACCHeaderLogo() {
   return (
-    <div style={{ lineHeight: 1, display: "flex", alignItems: "center", gap: 16 }}>
-      <svg width={56} height={68} viewBox="0 0 100 120" aria-hidden="true">
+    <div className="flex items-center gap-2.5" style={{ lineHeight: 1 }}>
+      <svg width={26} height={32} viewBox="0 0 100 120" aria-hidden="true" className="shrink-0">
         {[
           [1,1,1,1,0],
           [1,0,0,0,1],
@@ -16,37 +16,43 @@ function PACCLogoLarge() {
           [1,0,0,0,0],
           [1,0,0,0,0],
         ].flatMap((row, y) => row.map((on, x) => on ? (
-          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7} fill="var(--accent)" />
+          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7.5} fill="var(--accent)" />
         ) : null))}
       </svg>
-      <div>
-        <div
-          style={{
-            fontFamily: "'Archivo Narrow', 'Archivo', 'Inter', sans-serif",
-            fontSize: 44,
-            fontWeight: 800,
-            color: "var(--text-primary)",
-            letterSpacing: "0.01em",
-            textTransform: "uppercase",
-            lineHeight: 0.95,
-          }}
-        >
-          PACC<br/>ENERGY
-        </div>
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            color: "var(--text-muted)",
-            letterSpacing: "0.28em",
-            marginTop: 8,
-            textTransform: "uppercase",
-          }}
-        >
-          Fuel logistics, simplified
-        </div>
+      <div
+        style={{
+          fontFamily: "'Archivo Narrow', 'Archivo', 'Inter', sans-serif",
+          fontSize: 18,
+          fontWeight: 800,
+          color: "var(--foreground)",
+          letterSpacing: "0.01em",
+          textTransform: "uppercase",
+          lineHeight: 1,
+        }}
+      >
+        PACC ENERGY
       </div>
     </div>
+  );
+}
+
+function AppHeader({ onBack }: { onBack?: () => void }) {
+  return (
+    <header className="sticky top-0 z-20 h-16 shrink-0 border-b border-border bg-background px-4">
+      <div className="mx-auto flex h-full max-w-[430px] items-center justify-between">
+        <PACCHeaderLogo />
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back to sign in"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground active:scale-[0.96]"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        ) : null}
+      </div>
+    </header>
   );
 }
 
