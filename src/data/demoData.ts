@@ -216,6 +216,7 @@ function generateTransactions(buyPrices: BuyPrice[]): Transaction[] {
         producto: "Diesel",
         nombre_vendedor: driver,
         placa,
+        vehiculo: truck,
         totalizador_bruto: 50000 + txId * 100,
         factura: 10000 + txId,
         forma_de_pago: "Account",
