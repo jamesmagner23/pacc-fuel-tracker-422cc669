@@ -1595,41 +1595,47 @@ function OverviewTab({
 
       {/* Litres growth + Volume by site row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-card border border-border rounded-[14px] p-6">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-foreground">Litres growth</h2>
-            <span className="text-[11px] font-medium text-muted-foreground">{periodLabel}</span>
+        <div className="lg:col-span-2 bg-card border border-border/60 rounded-3xl p-6 md:p-8 shadow-sm">
+          <div className="flex items-start justify-between gap-3 mb-6">
+            <div>
+              <h2 className="font-display text-lg font-bold text-foreground">Litres growth</h2>
+              <p className="text-xs font-medium text-muted-foreground/80 mt-0.5">
+                Performance tracked over the current period
+              </p>
+            </div>
+            <div className="flex gap-4 shrink-0">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#0E1F10" }} />
+                Litres
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#2563EB" }} />
+                Deliveries
+              </span>
+            </div>
           </div>
-          <div className="mt-3 flex items-center gap-4 text-[11px] font-medium text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#2A6A2E" }} />
-              Litres delivered
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#2B3D8E" }} />
-              Deliveries (count)
-            </span>
-          </div>
-          <div style={{ height: 280 }} className="mt-2">
+          <div style={{ height: 260 }}>
             {dailyTrend.length >= 2 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={dailyTrend} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="portal-litres-fill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#2A6A2E" stopOpacity={0.18} />
-                      <stop offset="100%" stopColor="#2A6A2E" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#0E1F10" stopOpacity={0.14} />
+                      <stop offset="100%" stopColor="#0E1F10" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" strokeOpacity={0.4} vertical={false} />
+                  <CartesianGrid stroke="#0E1F10" strokeDasharray="3 3" strokeOpacity={0.06} vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={{ stroke: "var(--border)" }} tickLine={false} minTickGap={32} />
                   <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`)} />
                   <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
                   <Tooltip
-                    contentStyle={{ background: "#fff", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13, padding: "8px 12px" }}
+                    contentStyle={{ background: "#0E1F10", border: "none", borderRadius: 8, fontSize: 12, padding: "8px 12px", color: "#C8F26A" }}
+                    labelStyle={{ color: "#C8F26A", fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em" }}
+                    itemStyle={{ color: "#C8F26A" }}
                     formatter={(v: number, name: string) => name === "litres" ? [`${v.toLocaleString()} L`, "Litres"] : [v.toLocaleString(), "Deliveries"]}
                   />
-                  <Area yAxisId="left" type="monotone" dataKey="litres" stroke="#2A6A2E" strokeWidth={1.75} fill="url(#portal-litres-fill)" isAnimationActive={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="deliveries" stroke="#2B3D8E" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                  <Area yAxisId="left" type="monotone" dataKey="litres" stroke="#0E1F10" strokeWidth={2.5} fill="url(#portal-litres-fill)" isAnimationActive={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="deliveries" stroke="#2563EB" strokeWidth={1.75} strokeDasharray="6 4" dot={false} isAnimationActive={false} />
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
@@ -1640,12 +1646,12 @@ function OverviewTab({
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-[14px] p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-foreground">Volume by site</h2>
-            <span className="text-[11px] font-medium text-muted-foreground">{periodLabel}</span>
+        <div className="bg-card border border-border/60 rounded-3xl p-6 md:p-8 shadow-sm">
+          <div className="mb-6">
+            <h2 className="font-display text-lg font-bold text-foreground">Volume by site</h2>
+            <p className="text-xs font-medium text-muted-foreground/80 mt-0.5">Top locations · {periodLabel.toLowerCase()}</p>
           </div>
-          <div style={{ height: 240 }} className="flex flex-col">
+          <div style={{ height: 200 }} className="flex flex-col">
             <div className="relative flex-1 min-h-0">
               {donutData.rows.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-sm text-muted-foreground">No data</div>
@@ -1653,7 +1659,7 @@ function OverviewTab({
                 <>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={donutData.rows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="60%" outerRadius="90%" stroke="none" isAnimationActive={false}>
+                      <Pie data={donutData.rows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="68%" outerRadius="92%" stroke="#FFFFFF" strokeWidth={3} isAnimationActive={false}>
                         {donutData.rows.map((_, i) => (
                           <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
                         ))}
@@ -1661,22 +1667,22 @@ function OverviewTab({
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <div className="text-[22px] font-semibold tabular-nums text-foreground leading-tight">
+                    <div className="font-display text-[24px] font-bold tabular-nums text-foreground leading-tight">
                       {donutData.total >= 1000 ? `${(donutData.total / 1000).toFixed(1)}k` : donutData.total.toFixed(0)}
                     </div>
-                    <div className="text-[11px] font-medium text-muted-foreground">Total litres</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">Total L</div>
                   </div>
                 </>
               )}
             </div>
           </div>
           {donutData.rows.length > 0 && (
-            <ul className="mt-4 space-y-1.5">
+            <ul className="mt-6 space-y-2">
               {donutData.rows.map((r, i) => (
-                <li key={r.name} className="flex items-center gap-2 text-[13px] text-foreground">
-                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
-                  <span className="flex-1 font-medium truncate">{r.name}</span>
-                  <span className="font-semibold tabular-nums">
+                <li key={r.name} className="flex items-center gap-2 text-[12px] text-foreground">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
+                  <span className="flex-1 font-semibold truncate">{r.name}</span>
+                  <span className="font-bold tabular-nums text-muted-foreground">
                     {donutData.total ? `${((r.value / donutData.total) * 100).toFixed(0)}%` : "0%"}
                   </span>
                 </li>
