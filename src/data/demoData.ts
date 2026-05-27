@@ -207,7 +207,7 @@ function generateTransactions(buyPrices: BuyPrice[]): Transaction[] {
         fecha: ts(day, hour),
         date: dateStr,
         estacion: location,
-        nombre_flota: null,
+        nombre_flota: truck,
         nombre_cliente1: prof.customer,
         identificador_cliente1: null,
         ciudad: location,
@@ -216,7 +216,7 @@ function generateTransactions(buyPrices: BuyPrice[]): Transaction[] {
         producto: "Diesel",
         nombre_vendedor: driver,
         placa,
-        vehiculo: truck,
+        // vehiculo intentionally omitted — truck rides on nombre_flota
         totalizador_bruto: 50000 + txId * 100,
         factura: 10000 + txId,
         forma_de_pago: "Account",
