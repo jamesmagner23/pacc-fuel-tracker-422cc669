@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BoldPMark } from "@/components/BoldPMark";
+import { CLIENT_LOGOS } from "@/components/ClientLogos";
 import truckOnsiteImg from "@/assets/truck-onsite.webp";
 import truckOnsiteImg1200 from "@/assets/truck-onsite-1200.webp";
 import truckOnsiteImg800 from "@/assets/truck-onsite-800.webp";
@@ -364,26 +365,26 @@ export default function LandingPage() {
       </section>
 
       {/* ─────────── LOGO STRIP (marquee) ─────────── */}
-      <section className="bg-muted border-b border-border">
+      <section className="bg-white border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-          <div className="eyebrow text-center mb-6">Trusted by Melbourne businesses</div>
+          <div className="eyebrow text-center mb-6 text-neutral-500">Trusted by Melbourne businesses</div>
           <div
             className="relative overflow-hidden"
             style={{
               maskImage:
-                "linear-gradient(to right, transparent, #000 10%, #000 90%, transparent)",
+                "linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)",
               WebkitMaskImage:
-                "linear-gradient(to right, transparent, #000 10%, #000 90%, transparent)",
+                "linear-gradient(to right, transparent, #000 8%, #000 92%, transparent)",
             }}
           >
             <div
-              className="flex gap-12 whitespace-nowrap text-[15px] font-medium text-muted-foreground will-change-transform"
+              className="flex items-center gap-14 whitespace-nowrap will-change-transform"
               style={{ animation: "pacc-marquee 28s linear infinite" }}
             >
               {[0, 1].map((dup) => (
-                <div key={dup} className="flex gap-12 shrink-0 pr-12" aria-hidden={dup === 1}>
-                  {["Ironside", "Track Works", "Keller", "Coates", "Fulton Hogan", "Gearon"].map((name) => (
-                    <span key={name + dup} className="tracking-tight">{name}</span>
+                <div key={dup} className="flex items-center gap-14 shrink-0 pr-14" aria-hidden={dup === 1}>
+                  {CLIENT_LOGOS.map(({ name, Mark }) => (
+                    <Mark key={name + dup} />
                   ))}
                 </div>
               ))}
