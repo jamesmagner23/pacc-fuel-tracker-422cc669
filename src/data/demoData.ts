@@ -248,7 +248,7 @@ function generateTransactions(buyPrices: BuyPrice[]): Transaction[] {
         fecha: ts(day, rand(5, 18)),
         date: dateStr,
         estacion: pick(LOCATIONS),
-        nombre_flota: null,
+        nombre_flota: pick(TRUCKS),
         nombre_cliente1: customer,
         identificador_cliente1: null,
         ciudad: pick(LOCATIONS),
