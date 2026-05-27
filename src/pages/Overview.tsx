@@ -176,8 +176,6 @@ export default function Overview() {
     return { rows, total };
   }, [filtered]);
 
-  const lastSyncTime = lastSync?.synced_at ? formatTime(lastSync.synced_at) : null;
-
   const litresFallback = (() => {
     if (range === "today" && totalLitres === 0) return "No deliveries yet today";
     if (lastSyncTime && filtered.length > 0) return `Live · most recent at ${lastSyncTime}`;
