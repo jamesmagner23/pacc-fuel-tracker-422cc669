@@ -479,6 +479,10 @@ export default function Overview() {
           tintBg={TILE_THEMES.litres.bg}
           tintColor={TILE_THEMES.litres.fg}
           subLine={truckSubline("litres")}
+          periodNote={periodNote}
+          breakdown={litresBreakdown}
+          breakdownTotal={totalLitres}
+          breakdownTitle="Litres by truck"
         />
         <KPISparklineCard
           label={revenueLabel}
