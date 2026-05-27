@@ -734,6 +734,10 @@ function MyDayTab() {
         />
       )}
 
+      {signStop && (
+        <CompleteStopDialog stop={signStop} onClose={() => setSignStop(null)} />
+      )}
+
       {addOpen && pickClient === null && (
         <div className="card p-4 space-y-2">
           <div className="text-sm font-semibold">Pick a customer</div>
