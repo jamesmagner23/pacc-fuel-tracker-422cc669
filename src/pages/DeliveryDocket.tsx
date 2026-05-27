@@ -47,11 +47,8 @@ export default function DeliveryDocket() {
 
     async function fetchDocket() {
       try {
-        const qs = isMulti
-          ? `ids=${encodeURIComponent(multiIds.join(","))}`
-          : `id=${encodeURIComponent(String(id))}`;
-        const { data, error } = await supabase.functions.invoke(`get-docket?${qs}`, {
-          method: "GET",
+        const { data, error } = await supabase.functions.invoke("get-docket", {
+          body: isMulti ? { ids: multiIds } : { id: Number(id) },
         });
         if (!error && data?.items) setItems(data.items as Transaction[]);
       } finally {
