@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { TruckMap } from "@/components/TruckMap";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Area, Line,
@@ -7,8 +10,9 @@ import {
 import { useDateRange } from "@/hooks/useDateRange";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 import { useAllTransactions } from "@/hooks/useTransactions";
+import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO, subDays } from "date-fns";
-import { Droplet, DollarSign, Truck, Gauge, Droplets } from "lucide-react";
+import { Droplet, DollarSign, Truck, Gauge, Droplets, Fuel, RefreshCcw } from "lucide-react";
 import { formatTime } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { KPISparklineCard } from "@/components/KPISparklineCard";
@@ -22,6 +26,7 @@ const TILE_THEMES = {
   revenue:   { icon: DollarSign,  bg: "#F4F0E6", fg: "#7A5300" },
   delivery:  { icon: Truck,       bg: "#EAEEFC", fg: "#2B3D8E" },
   avg:       { icon: Gauge,       bg: "#F4F5F1", fg: "#5F6B61" },
+  buy:       { icon: Fuel,        bg: "#FBE7E1", fg: "#B43A2E" },
 } as const;
 
 const DONUT_COLORS = ["#2A6A2E", "#7A5300", "#2B3D8E", "#5F6B61", "#B43A2E", "#C7CCC1"];
@@ -38,6 +43,28 @@ export default function Overview() {
   } = useRevenueCalc(range);
   const { data: lastSync } = useSyncLog();
   const { data: allTxns = [] } = useAllTransactions();
+  const { data: buyPrices = [] } = useBuyPrices(60);
+  const queryClient = useQueryClient();
+  const [syncing, setSyncing] = useState(false);
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-transactions");
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(`Synced ${data.records_upserted ?? 0} transactions`);
+        ["transactions", "transactions-prev", "transactions-all", "sync-log", "buy-prices"].forEach(
+          (k) => queryClient.invalidateQueries({ queryKey: [k] }),
+        );
+      } else {
+        toast.error(data?.error || "Sync failed");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Sync failed");
+    } finally {
+      setSyncing(false);
+    }
+  };
   const [growthRange, setGrowthRange] = useState<"7d" | "30d" | "90d">("30d");
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
@@ -55,6 +82,59 @@ export default function Overview() {
   const revPct = pct(totalRevenue, prevRevenue);
   const delPct = pct(numDeliveries, prevDeliveries);
   const avgPct = pct(avgSize, prevAvgSize);
+
+  // Per-truck breakdown for the current window — drives the hero strip and
+  // the KPI tile sublines so a user can see "3.8k from which bowser".
+  const truckBreakdown = useMemo(() => {
+    const totals: Record<string, { litres: number; deliveries: number }> = {};
+    filtered.forEach((t) => {
+      const k = (t.nombre_flota || t.nombre_vendedor || "Fleet").toString().trim() || "Fleet";
+      if (!totals[k]) totals[k] = { litres: 0, deliveries: 0 };
+      totals[k].litres += t.cantidad || 0;
+      totals[k].deliveries += 1;
+    });
+    return Object.entries(totals)
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.litres - a.litres);
+  }, [filtered]);
+  const TRUCK_TINTS = ["#2A6A2E", "#2563EB", "#E85D1E", "#7A5300", "#5F6B61"];
+  const formatLitresShort = (v: number) =>
+    v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`;
+  const truckSubline = (key: "litres" | "deliveries") => {
+    const top = truckBreakdown.slice(0, 2);
+    if (top.length === 0) return undefined;
+    return top
+      .map((t) =>
+        key === "litres"
+          ? `${t.name} ${formatLitresShort(t.litres)}L`
+          : `${t.name} ${t.deliveries}`,
+      )
+      .join(" · ");
+  };
+
+  // Latest supply price for the Buy Price KPI tile.
+  const sortedPrices = useMemo(
+    () => [...buyPrices].sort((a, b) => b.price_date.localeCompare(a.price_date)),
+    [buyPrices],
+  );
+  const latestPrice = sortedPrices[0];
+  const priorPrice = sortedPrices.find(
+    (p) => p.price_date < (latestPrice?.price_date || ""),
+  );
+  const buyPricePct =
+    latestPrice && priorPrice && priorPrice.price_per_litre > 0
+      ? ((latestPrice.price_per_litre - priorPrice.price_per_litre) /
+          priorPrice.price_per_litre) *
+        100
+      : null;
+  const buyTrend = useMemo(
+    () =>
+      sortedPrices
+        .slice(0, 14)
+        .reverse()
+        .map((p) => ({ v: p.price_per_litre })),
+    [sortedPrices],
+  );
 
   const dailyData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -178,8 +258,104 @@ export default function Overview() {
     <div className={`-mx-3 sm:-mx-6 md:-mx-8 -my-4 sm:-my-6 md:-my-8 px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 ${pageBg} min-h-full`}>
       <PageHeader title="Overview" breadcrumb={breadcrumb} />
 
-      {/* KPI grid — 2 cols on md/lg, 4 cols at xl */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* Hero band — branded, with inline sync + per-truck activity strip */}
+      <div
+        className="relative overflow-hidden rounded-2xl p-5 sm:p-6 mb-4 shadow-sm"
+        style={{
+          background:
+            "linear-gradient(120deg, #0E1F10 0%, #1c3a1f 50%, #2A6A2E 100%)",
+          color: "#F4F5F1",
+        }}
+      >
+        <div
+          className="absolute -right-20 -top-20 w-72 h-72 rounded-full pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle, #C8F26A 0%, transparent 60%)",
+            opacity: 0.5,
+          }}
+        />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div
+              className="text-[10px] font-bold uppercase tracking-[0.18em]"
+              style={{ color: "#C8F26A" }}
+            >
+              PACC Energy · Operations
+            </div>
+            <h1
+              className="font-display text-2xl sm:text-3xl font-bold mt-1 leading-tight tabular-nums"
+              style={{ color: "#F4F5F1" }}
+            >
+              {formatLitresShort(totalLitres)}L{" "}
+              <span className="text-base sm:text-lg font-medium" style={{ color: "#C8F26A" }}>
+                {periodLabel.toLowerCase()}
+              </span>
+            </h1>
+            <p className="text-xs sm:text-sm mt-1.5" style={{ color: "rgba(244,245,241,0.78)" }}>
+              {numDeliveries.toLocaleString()} {numDeliveries === 1 ? "drop" : "drops"}
+              {truckBreakdown.length > 0 && (
+                <> · {truckBreakdown.length} active {truckBreakdown.length === 1 ? "truck" : "trucks"}</>
+              )}
+              {lastSyncTime && <> · Synced {lastSyncTime}</>}
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              type="button"
+              onClick={handleSync}
+              disabled={syncing}
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-wider transition-opacity disabled:opacity-60"
+              style={{ background: "#C8F26A", color: "#0E1F10" }}
+            >
+              <RefreshCcw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Syncing…" : "Sync now"}
+            </button>
+          </div>
+        </div>
+        {truckBreakdown.length > 0 && (
+          <div className="relative mt-4 flex flex-wrap gap-2">
+            {truckBreakdown.slice(0, 4).map((t, i) => (
+              <div
+                key={t.name}
+                className="rounded-xl px-3 py-2 min-w-[120px]"
+                style={{
+                  background: "rgba(244,245,241,0.08)",
+                  border: "1px solid rgba(200,242,106,0.18)",
+                }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ background: TRUCK_TINTS[i % TRUCK_TINTS.length] }}
+                  />
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: "#F4F5F1" }}
+                  >
+                    {t.name}
+                  </span>
+                </div>
+                <div
+                  className="font-display text-base font-bold tabular-nums mt-0.5"
+                  style={{ color: "#F4F5F1" }}
+                >
+                  {formatLitresShort(t.litres)}L
+                  <span
+                    className="text-[11px] font-medium ml-1.5"
+                    style={{ color: "rgba(244,245,241,0.7)" }}
+                  >
+                    · {t.deliveries} drop{t.deliveries === 1 ? "" : "s"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* KPI grid — 5 tiles incl. buy price; wraps to 2/3 cols at smaller widths */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <KPISparklineCard
           label={litresLabel}
           value={totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`}
@@ -190,6 +366,7 @@ export default function Overview() {
           icon={TILE_THEMES.litres.icon}
           tintBg={TILE_THEMES.litres.bg}
           tintColor={TILE_THEMES.litres.fg}
+          subLine={truckSubline("litres")}
         />
         <KPISparklineCard
           label={revenueLabel}
@@ -201,6 +378,11 @@ export default function Overview() {
           icon={TILE_THEMES.revenue.icon}
           tintBg={TILE_THEMES.revenue.bg}
           tintColor={TILE_THEMES.revenue.fg}
+          subLine={
+            totalLitres > 0
+              ? `${(totalRevenue / totalLitres).toFixed(2)} $/L avg`
+              : undefined
+          }
         />
         <KPISparklineCard
           label={deliveriesLabel}
@@ -212,6 +394,7 @@ export default function Overview() {
           icon={TILE_THEMES.delivery.icon}
           tintBg={TILE_THEMES.delivery.bg}
           tintColor={TILE_THEMES.delivery.fg}
+          subLine={truckSubline("deliveries")}
         />
         <KPISparklineCard
           label={avgLabel}
@@ -223,6 +406,35 @@ export default function Overview() {
           icon={TILE_THEMES.avg.icon}
           tintBg={TILE_THEMES.avg.bg}
           tintColor={TILE_THEMES.avg.fg}
+          subLine={
+            numDeliveries > 0
+              ? `${numDeliveries} drop${numDeliveries === 1 ? "" : "s"}`
+              : undefined
+          }
+        />
+        <KPISparklineCard
+          label="Buy Price (Ex-GST)"
+          value={
+            latestPrice
+              ? `$${latestPrice.price_per_litre.toFixed(3)}/L`
+              : "—"
+          }
+          deltaPct={buyPricePct}
+          trend={buyTrend}
+          fallbackContext={
+            latestPrice
+              ? `Latest ${latestPrice.supplier} · ${format(parseISO(latestPrice.price_date), "d MMM")}`
+              : "No supply price recorded yet"
+          }
+          href="/suppliers"
+          icon={TILE_THEMES.buy.icon}
+          tintBg={TILE_THEMES.buy.bg}
+          tintColor={TILE_THEMES.buy.fg}
+          subLine={
+            latestPrice
+              ? `${latestPrice.supplier} · ${format(parseISO(latestPrice.price_date), "d MMM")}`
+              : undefined
+          }
         />
       </div>
 
