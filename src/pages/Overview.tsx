@@ -281,6 +281,48 @@ export default function Overview() {
   })();
   const avgFallback = "Comparison resumes with previous period data";
 
+  // Period note for tooltips
+  const periodNote = range === "today" ? "Today vs Yesterday" : range === "week" ? "This week vs Last week" : "This month vs Last month";
+
+  // Breakdown data for KPI tiles
+  const litresBreakdown = truckBreakdown.map(t => ({ name: t.name, value: t.litres, displayValue: `${formatLitresShort(t.litres)}L` }));
+  const revenueBreakdown = truckBreakdown.map(t => ({ name: t.name, value: t.revenue, displayValue: `$${Math.round(t.revenue).toLocaleString()}` }));
+  const deliveriesBreakdown = truckBreakdown.map(t => ({ name: t.name, value: t.deliveries, displayValue: t.deliveries.toLocaleString() }));
+
+  // Per-truck average drop size breakdown
+  const avgBreakdown = useMemo(() => {
+    const truckLitres: Record<string, number> = {};
+    const truckCounts: Record<string, number> = {};
+    filtered.forEach((t) => {
+      const candidates = [t.estacion, t.nombre_flota, t.nombre_vendedor]
+        .map((value) => value?.toString().trim())
+        .filter(Boolean) as string[];
+      const matched = candidates
+        .map((value) => truckNameLookup.get(value.toLowerCase()))
+        .find(Boolean);
+      const k = matched || candidates[0] || "Unassigned truck";
+      truckLitres[k] = (truckLitres[k] || 0) + (t.cantidad || 0);
+      truckCounts[k] = (truckCounts[k] || 0) + 1;
+    });
+    return Object.entries(truckLitres)
+      .map(([name, litres]) => ({
+        name,
+        value: truckCounts[name] ? litres / truckCounts[name] : 0,
+        displayValue: `${Math.round(truckCounts[name] ? litres / truckCounts[name] : 0)}L`,
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [filtered, truckNameLookup]);
+
+  // Buy price history breakdown (last 7 entries)
+  const buyPriceBreakdown = useMemo(() =>
+    sortedPrices.slice(0, 7).map(p => ({
+      name: `${p.supplier} · ${format(parseISO(p.price_date), "d MMM")}`,
+      value: p.price_per_litre,
+      displayValue: `$${p.price_per_litre.toFixed(3)}/L`,
+    })),
+    [sortedPrices]
+  );
+
   // Eyebrow prefix reflects period scope.
   const prefix = range === "today" ? "Daily" : range === "week" ? "Weekly" : "Monthly";
   const litresLabel    = `${prefix} Litres Delivered`;
