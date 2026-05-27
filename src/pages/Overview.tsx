@@ -96,9 +96,13 @@ export default function Overview() {
       totals[k].revenue += t.dinero_total || 0;
     });
     return Object.entries(totals)
-      .map(([name, v]) => ({ name, ...v }))
+      .map(([name, v]) => ({
+        name,
+        ...v,
+        revenue: v.revenue > 0 ? v.revenue : totalLitres > 0 ? (v.litres / totalLitres) * totalRevenue : 0,
+      }))
       .sort((a, b) => b.litres - a.litres);
-  }, [filtered, truckNameLookup, trucks]);
+  }, [filtered, totalLitres, totalRevenue, truckNameLookup, trucks]);
 
   const activeTruckCount = trucks.filter((truck) => truck.is_active).length || truckBreakdown.filter((truck) => truck.litres > 0).length;
   const formatLitresShort = (v: number) =>
