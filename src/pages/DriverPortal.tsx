@@ -13,6 +13,7 @@ import { useDemo } from "@/hooks/useDemo";
 import { getDemoData, DEMO_FUEL_INTAKE_LOGS, DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import { useDispatchStops, useReorderDispatchStops, useUpdateStopStatus, useDeleteStop, useUpsertStop, type DispatchStop } from "@/hooks/useDispatch";
 import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
+import { CompleteStopDialog } from "@/components/dispatch/CompleteStopDialog";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { TagDeliveriesTab } from "@/components/driver/TagDeliveriesTab";
 import { ShareLocationToggle } from "@/components/driver/ShareLocationToggle";
@@ -544,6 +545,7 @@ function MyDayTab() {
   const [addOpen, setAddOpen] = useState(false);
   const [pickClient, setPickClient] = useState<number | null>(null);
   const [editStop, setEditStop] = useState<DispatchStop | null>(null);
+  const [signStop, setSignStop] = useState<DispatchStop | null>(null);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["client-accounts-driver"],
@@ -676,10 +678,10 @@ function MyDayTab() {
                   )}
                   {!isCompleted && (
                     <button
-                      onClick={() => updateStatus.mutate({ id: stop.id, status: "completed" })}
+                      onClick={() => setSignStop(stop)}
                       className="p-1.5 rounded"
                       style={{ background: "transparent", color: "var(--positive, #C8F26A)", border: "none", cursor: "pointer" }}
-                      title="Mark complete"
+                      title="Complete & sign docket"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                     </button>
@@ -730,6 +732,10 @@ function MyDayTab() {
             );
           }}
         />
+      )}
+
+      {signStop && (
+        <CompleteStopDialog stop={signStop} onClose={() => setSignStop(null)} />
       )}
 
       {addOpen && pickClient === null && (

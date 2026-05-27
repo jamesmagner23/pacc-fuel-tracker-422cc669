@@ -1674,6 +1674,26 @@ function OverviewTab({
           tintBg="#EAEEFC"
           tintColor="#2B3D8E"
         />
+        <KPISparklineCard
+          label={`${prefix} FTC Savings`}
+          value={ftcSavings > 0 ? `$${ftcSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+          deltaPct={pct(totalLitres, prevLitres)}
+          trend={sparkLitres}
+          fallbackContext="Estimate based on off-road FTC rate"
+          icon={Receipt}
+          tintBg="#E8EDE5"
+          tintColor="#2A6A2E"
+        />
+        <KPISparklineCard
+          label={`${prefix} Emissions (CO\u2082e)`}
+          value={totalLitres > 0 ? `${(totalLitres * CO2_FACTOR / 1000).toFixed(2)} t` : "—"}
+          deltaPct={pct(totalLitres, prevLitres)}
+          trend={sparkLitres}
+          fallbackContext={`${CO2_FACTOR} kg CO\u2082e per litre diesel`}
+          icon={Gauge}
+          tintBg="#F4F0E6"
+          tintColor="#7A5300"
+        />
       </div>
 
       {/* Litres growth + Volume by site row */}
@@ -1882,6 +1902,103 @@ function OverviewTab({
 // ═══════════════════════════════════════════════════════════════════════
 // 02 DELIVERIES — site + project + date range filter, CSV export, dockets
 // ═══════════════════════════════════════════════════════════════════════
+function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null }) {
+  const { data: dockets = [] } = useQuery({
+    queryKey: ["signed-dockets", clientAccountId],
+    queryFn: async () => {
+      if (!clientAccountId) return [];
+      const { data, error } = await supabase
+        .from("dispatch_stops" as any)
+        .select("*")
+        .eq("client_account_id", clientAccountId)
+        .eq("status", "completed")
+        .not("customer_signature", "is", null)
+        .order("signed_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!clientAccountId,
+  });
+  const [open, setOpen] = useState<any | null>(null);
+  if (!dockets.length) return null;
+  return (
+    <div style={card}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div style={{ ...labelStyle, marginBottom: 0 }}>Signed Dockets</div>
+        <div style={muted(11)}>{dockets.length} recent</div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {dockets.map((d, i) => (
+          <button
+            key={d.id}
+            onClick={() => setOpen(d)}
+            style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "10px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none",
+              background: "transparent", border: "none", textAlign: "left", cursor: "pointer", color: T.text,
+            }}
+          >
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{d.site_name}</div>
+              <div style={muted(11)}>
+                {d.signed_at ? format(parseISO(d.signed_at), "d MMM yyyy · HH:mm") : ""}
+                {d.customer_name ? ` · Signed by ${d.customer_name}` : ""}
+              </div>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.chart, marginLeft: 12 }}>
+              {Number(d.delivered_litres || 0).toLocaleString()} L
+            </div>
+          </button>
+        ))}
+      </div>
+      {open && (
+        <div
+          onClick={() => setOpen(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(14,31,16,0.55)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#fff", color: "#0E1F10", borderRadius: 12, padding: 20, maxWidth: 480, width: "100%", maxHeight: "90vh", overflow: "auto" }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 16 }}>{open.site_name}</div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>
+              {open.signed_at ? format(parseISO(open.signed_at), "d MMM yyyy · HH:mm") : ""}
+            </div>
+            <div style={{ fontSize: 13, marginBottom: 8 }}>
+              <strong>Delivered:</strong> {Number(open.delivered_litres || 0).toLocaleString()} L
+            </div>
+            {open.signature_notes && (
+              <div style={{ fontSize: 12, marginBottom: 12, color: "#444" }}>
+                <strong>Notes:</strong> {open.signature_notes}
+              </div>
+            )}
+            {open.customer_signature && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", marginBottom: 4 }}>
+                  Customer ({open.customer_name})
+                </div>
+                <img src={open.customer_signature} alt="Customer signature" style={{ maxWidth: "100%", border: "1px solid #eee", borderRadius: 6 }} />
+              </div>
+            )}
+            {open.driver_signature && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", marginBottom: 4 }}>
+                  Driver
+                </div>
+                <img src={open.driver_signature} alt="Driver signature" style={{ maxWidth: "100%", border: "1px solid #eee", borderRadius: 6 }} />
+              </div>
+            )}
+            <button onClick={() => setOpen(null)} style={{ marginTop: 8, padding: "10px 16px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", cursor: "pointer", width: "100%" }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DeliveriesTab({
   transactions,
   allTransactionsCount,
@@ -2013,6 +2130,7 @@ function DeliveriesTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <SignedDocketsCard clientAccountId={clientAccountId} />
       {unmappedCount > 0 && (
         <div
           style={{

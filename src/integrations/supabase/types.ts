@@ -688,17 +688,23 @@ export type Database = {
           completed_at: string | null
           created_at: string
           created_by: string | null
+          customer_name: string | null
+          customer_signature: string | null
           delivered_litres: number | null
+          driver_signature: string | null
           driver_user_id: string | null
           estimated_litres: number | null
           id: string
           latitude: number | null
           longitude: number | null
           notes: string | null
+          products: Json | null
           project_id: string | null
           recurring_id: string | null
           scheduled_date: string
           sequence: number
+          signature_notes: string | null
+          signed_at: string | null
           site_name: string
           status: string
           truck_id: string | null
@@ -710,17 +716,23 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          customer_name?: string | null
+          customer_signature?: string | null
           delivered_litres?: number | null
+          driver_signature?: string | null
           driver_user_id?: string | null
           estimated_litres?: number | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          products?: Json | null
           project_id?: string | null
           recurring_id?: string | null
           scheduled_date: string
           sequence?: number
+          signature_notes?: string | null
+          signed_at?: string | null
           site_name: string
           status?: string
           truck_id?: string | null
@@ -732,17 +744,23 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          customer_name?: string | null
+          customer_signature?: string | null
           delivered_litres?: number | null
+          driver_signature?: string | null
           driver_user_id?: string | null
           estimated_litres?: number | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          products?: Json | null
           project_id?: string | null
           recurring_id?: string | null
           scheduled_date?: string
           sequence?: number
+          signature_notes?: string | null
+          signed_at?: string | null
           site_name?: string
           status?: string
           truck_id?: string | null
