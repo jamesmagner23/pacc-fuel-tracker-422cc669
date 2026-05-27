@@ -349,7 +349,7 @@ export function MobileOverview() {
   const { filtered, totalRevenue } = useRevenueCalc(range);
   const { data: monthTxns = [] } = useTransactions("month");
   const { data: buyPrices = [] } = useBuyPrices(30);
-  const { syncing, handleSync, lastSyncTime } = useSyncTransactions();
+  const { syncing, handleSync, lastSyncTime } = useSyncTransactions({ autoSync: true });
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const numDeliveries = filtered.length;
