@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BoldPMark } from "@/components/BoldPMark";
+import { CLIENT_LOGOS } from "@/components/ClientLogos";
 import truckOnsiteImg from "@/assets/truck-onsite.webp";
 import truckOnsiteImg1200 from "@/assets/truck-onsite-1200.webp";
 import truckOnsiteImg800 from "@/assets/truck-onsite-800.webp";
