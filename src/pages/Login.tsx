@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { logActivity } from "@/hooks/useActivityLog";
-import { Droplets, Truck, Shield } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
-function PACCLogoLarge() {
+function PACCHeaderLogo() {
   return (
-    <div style={{ lineHeight: 1, display: "flex", alignItems: "center", gap: 16 }}>
-      <svg width={56} height={68} viewBox="0 0 100 120" aria-hidden="true">
+    <div className="flex items-center gap-2.5" style={{ lineHeight: 1 }}>
+      <svg width={26} height={32} viewBox="0 0 100 120" aria-hidden="true" className="shrink-0">
         {[
           [1,1,1,1,0],
           [1,0,0,0,1],
@@ -16,37 +16,43 @@ function PACCLogoLarge() {
           [1,0,0,0,0],
           [1,0,0,0,0],
         ].flatMap((row, y) => row.map((on, x) => on ? (
-          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7} fill="var(--accent)" />
+          <circle key={`${x}-${y}`} cx={x*20+10} cy={y*20+10} r={7.5} fill="var(--accent)" />
         ) : null))}
       </svg>
-      <div>
-        <div
-          style={{
-            fontFamily: "'Archivo Narrow', 'Archivo', 'Inter', sans-serif",
-            fontSize: 44,
-            fontWeight: 800,
-            color: "var(--text-primary)",
-            letterSpacing: "0.01em",
-            textTransform: "uppercase",
-            lineHeight: 0.95,
-          }}
-        >
-          PACC<br/>ENERGY
-        </div>
-        <div
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            color: "var(--text-muted)",
-            letterSpacing: "0.28em",
-            marginTop: 8,
-            textTransform: "uppercase",
-          }}
-        >
-          Fuel logistics, simplified
-        </div>
+      <div
+        style={{
+          fontFamily: "'Archivo Narrow', 'Archivo', 'Inter', sans-serif",
+          fontSize: 18,
+          fontWeight: 800,
+          color: "var(--foreground)",
+          letterSpacing: "0.01em",
+          textTransform: "uppercase",
+          lineHeight: 1,
+        }}
+      >
+        PACC ENERGY
       </div>
     </div>
+  );
+}
+
+function AppHeader({ onBack }: { onBack?: () => void }) {
+  return (
+    <header className="sticky top-0 z-20 h-16 shrink-0 border-b border-border bg-background px-4">
+      <div className="mx-auto flex h-full max-w-[430px] items-center justify-between">
+        <PACCHeaderLogo />
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back to sign in"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground active:scale-[0.96]"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        ) : null}
+      </div>
+    </header>
   );
 }
 
@@ -58,7 +64,6 @@ export default function Login() {
   const [error, setError] = useState("");
   const [forgotMode, setForgotMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [showForm, setShowForm] = useState(true);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,130 +121,52 @@ export default function Login() {
     setLoading(false);
   };
 
-  // Welcome / landing screen
-  if (!showForm && !forgotMode) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        {/* Hero section */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          {/* Animated glow behind logo */}
-          <div
-            className="relative mb-8"
-            style={{
-              filter: "drop-shadow(0 0 60px rgba(200,242,106,0.15))",
-            }}
-          >
-            <PACCLogoLarge />
-          </div>
-
-          <h1
-            className="text-foreground font-light tracking-tight m-0 leading-tight"
-            style={{ fontSize: "clamp(22px, 5vw, 32px)" }}
-          >
-            Fuel Delivery<br />
-            <span className="font-semibold">Management Portal</span>
-          </h1>
-
-          <p className="text-muted-foreground text-sm mt-3 max-w-[320px] leading-relaxed m-0">
-            Real-time tracking, delivery insights and account management for PACC Energy customers and team.
-          </p>
-
-          {/* Feature pills */}
-          <div className="flex flex-wrap justify-center gap-2 mt-8">
-            {[
-              { icon: <Droplets className="w-3.5 h-3.5" />, label: "Live Volume Tracking" },
-              { icon: <Truck className="w-3.5 h-3.5" />, label: "Delivery Management" },
-              { icon: <Shield className="w-3.5 h-3.5" />, label: "Secure Portal Access" },
-            ].map((f) => (
-              <div
-                key={f.label}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium"
-                style={{
-                  background: "rgba(200,242,106,0.08)",
-                  border: "1px solid rgba(200,242,106,0.15)",
-                  color: "#C7BFAC",
-                }}
-              >
-                <span style={{ color: "#C8F26A" }}>{f.icon}</span>
-                {f.label}
-              </div>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <button
-            onClick={() => setShowForm(true)}
-            className="mt-10 w-full max-w-[320px] py-3 rounded-xl text-sm font-semibold cursor-pointer transition-all"
-            style={{
-              background: "#C8F26A",
-              color: "#0E1F10",
-              border: "none",
-              boxShadow: "0 8px 32px rgba(200,242,106,0.3)",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(200,242,106,0.4)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(200,242,106,0.3)"; }}
-          >
-            Sign In
-          </button>
-
-          <p className="text-[11px] text-muted-foreground mt-3 m-0">
-            Admin · Driver · Customer portals
-          </p>
-        </div>
-
-        {/* Footer */}
-        <div className="py-5 text-center">
-          <p className="text-[10px] text-muted-foreground m-0 tracking-wider uppercase">
-            PACC Energy Pty Ltd · Melbourne, Victoria
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (forgotMode) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-5">
-        <form onSubmit={handleForgotPassword} className="w-full max-w-[380px] flex flex-col gap-6">
-          <div className="text-center mb-2">
-            <div className="flex justify-center mb-5"><PACCLogoLarge /></div>
-            <h1 className="text-xl font-semibold text-foreground m-0">Reset password</h1>
-            <p className="text-sm text-muted-foreground mt-1.5">
+      <div className="min-h-screen bg-background flex flex-col">
+        <AppHeader onBack={() => { setForgotMode(false); setResetSent(false); setError(""); }} />
+        <main className="flex-1 px-4 pt-8">
+          <form onSubmit={handleForgotPassword} className="mx-auto w-full max-w-[380px] flex flex-col gap-6">
+            <div className="mb-1">
+              <h1 className="text-2xl font-semibold text-foreground m-0">Reset password</h1>
+              <p className="text-sm text-muted-foreground mt-2">
               {resetSent ? "Check your inbox for a reset link" : "Enter your email to receive a reset link"}
-            </p>
-          </div>
+              </p>
+            </div>
 
-          {!resetSent && (
-            <>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-muted-foreground">Email</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors" />
-              </div>
+            {!resetSent && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-muted-foreground">Email</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required className="bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm outline-none focus:border-primary transition-colors" />
+                </div>
 
-              {error && <div className="bg-negative/10 border border-negative/30 rounded-lg px-3.5 py-2.5 text-xs text-negative">{error}</div>}
+                {error && <div className="bg-negative/10 border border-negative/30 rounded-lg px-3.5 py-2.5 text-xs text-negative">{error}</div>}
 
-              <button type="submit" disabled={loading} className="bg-primary text-primary-foreground border-none rounded-lg py-2.5 text-md font-semibold cursor-pointer hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-70 transition-colors">
-                {loading ? "Sending…" : "Send Reset Link"}
-              </button>
-            </>
-          )}
+                <button type="submit" disabled={loading} className="bg-primary text-primary-foreground border-none rounded-lg py-3 text-md font-semibold cursor-pointer hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-70 transition-colors">
+                  {loading ? "Sending…" : "Send Reset Link"}
+                </button>
+              </>
+            )}
 
-          <button type="button" onClick={() => { setForgotMode(false); setResetSent(false); setError(""); }} className="bg-transparent border-none text-primary text-sm cursor-pointer">
-            ← Back to sign in
-          </button>
-        </form>
+            <button type="button" onClick={() => { setForgotMode(false); setResetSent(false); setError(""); }} className="bg-transparent border-none text-primary text-sm cursor-pointer">
+              Back to sign in
+            </button>
+          </form>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-5">
-      <form onSubmit={handleLogin} className="w-full max-w-[380px] flex flex-col gap-6">
-        <div className="text-center mb-2">
-          <div className="flex justify-center mb-5"><PACCLogoLarge /></div>
-          <h1 className="text-xl font-semibold text-foreground m-0">Sign in</h1>
-          <p className="text-sm text-muted-foreground mt-1.5">Enter your email and password to continue</p>
-        </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <AppHeader />
+      <main className="flex-1 px-4 pt-8">
+        <form onSubmit={handleLogin} className="mx-auto w-full max-w-[380px] flex flex-col gap-6">
+          <div className="mb-1">
+            <h1 className="text-2xl font-semibold text-foreground m-0">Sign in</h1>
+            <p className="text-sm text-muted-foreground mt-2">Enter your email and password to continue</p>
+          </div>
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -257,16 +184,13 @@ export default function Login() {
 
         {error && <div className="bg-negative/10 border border-negative/30 rounded-lg px-3.5 py-2.5 text-xs text-negative">{error}</div>}
 
-        <button type="submit" disabled={loading} className="bg-primary text-primary-foreground border-none rounded-lg py-2.5 text-md font-semibold cursor-pointer hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-70 transition-colors">
+        <button type="submit" disabled={loading} className="bg-primary text-primary-foreground border-none rounded-lg py-3 text-md font-semibold cursor-pointer hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-70 transition-colors">
           {loading ? "Signing in…" : "Sign in"}
         </button>
 
-        <button type="button" onClick={() => setShowForm(false)} className="bg-transparent border-none text-muted-foreground text-xs cursor-pointer">
-          ← Back
-        </button>
-
         <p className="text-xs text-muted-foreground text-center m-0">Need access? Contact PACC Energy</p>
-      </form>
+        </form>
+      </main>
     </div>
   );
 }
