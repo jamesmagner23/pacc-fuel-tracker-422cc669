@@ -1611,9 +1611,9 @@ function OverviewTab({
             </div>
             <div className="flex gap-3 flex-wrap">
               {[
-                { label: "Spend (inc GST)", value: totalSpend > 0 ? `$${totalSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—", accent: "#C8F26A" },
+                { label: "Deliveries", value: numDeliveries.toLocaleString(), accent: "#C8F26A" },
                 { label: "Avg Drop", value: avgDrop > 0 ? `${Math.round(avgDrop).toLocaleString()} L` : "—", accent: "#7DD3FC" },
-                { label: "Est. FTC Savings", value: ftcSavings > 0 ? `$${ftcSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—", accent: "#FCD34D" },
+                { label: "Active Sites", value: sites.size.toLocaleString(), accent: "#FCD34D" },
               ].map((stat) => (
                 <div
                   key={stat.label}
@@ -1645,30 +1645,24 @@ function OverviewTab({
           tintColor="#2A6A2E"
         />
         <KPISparklineCard
-          label={`${prefix} Spend (inc GST)`}
-          value={totalSpend > 0 ? `$${totalSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
-          deltaPct={pct(totalSpend, prevSpend)}
-          trend={sparkRevenue}
+          label={`${prefix} Deliveries`}
+          value={numDeliveries.toLocaleString()}
+          deltaPct={pct(numDeliveries, prevDeliveries)}
+          trend={sparkDeliveries}
           fallbackContext="Comparison resumes with previous period data"
-          icon={DollarSign}
-          tintBg="#F4F0E6"
-          tintColor="#7A5300"
+          icon={Truck}
+          tintBg="#EAEEFC"
+          tintColor="#2B3D8E"
         />
         <KPISparklineCard
-          label="Est. FTC Savings"
-          value={ftcSavings > 0 ? `$${ftcSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
-          deltaPct={null}
-          trend={sparkLitres}
-          fallbackContext="ATO off-road rate × volume"
-          icon={Receipt}
-          tintBg="#C8F26A"
-          tintColor="#0E1F10"
-          customPill={
-            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold bg-muted text-muted-foreground">
-              YTD
-            </span>
-          }
-          subLine="ATO off-road rate × volume"
+          label={`${prefix} Avg Drop`}
+          value={avgDrop > 0 ? `${Math.round(avgDrop).toLocaleString()} L` : "—"}
+          deltaPct={pct(avgDrop, prevAvg)}
+          trend={sparkAvg}
+          fallbackContext="Comparison resumes with previous period data"
+          icon={Gauge}
+          tintBg="#F4F0E6"
+          tintColor="#7A5300"
         />
         <KPISparklineCard
           label="Active Sites"
