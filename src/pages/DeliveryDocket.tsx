@@ -45,41 +45,21 @@ export default function DeliveryDocket() {
       return;
     }
 
-    async function fetchSingle() {
-      const { data: anchor, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("id", Number(id))
-        .single();
-
-      if (error || !anchor) { setLoading(false); return; }
-
-      const { data: related } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("date", anchor.date)
-        .eq("nombre_cliente1", anchor.nombre_cliente1)
-        .eq("estacion", anchor.estacion)
-        .order("fecha", { ascending: true });
-
-      setItems((related || [anchor]) as Transaction[]);
-      setLoading(false);
+    async function fetchDocket() {
+      try {
+        const qs = isMulti
+          ? `ids=${encodeURIComponent(multiIds.join(","))}`
+          : `id=${encodeURIComponent(String(id))}`;
+        const { data, error } = await supabase.functions.invoke(`get-docket?${qs}`, {
+          method: "GET",
+        });
+        if (!error && data?.items) setItems(data.items as Transaction[]);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    async function fetchMulti() {
-      if (multiIds.length === 0) { setLoading(false); return; }
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .in("id", multiIds)
-        .order("fecha", { ascending: true });
-
-      if (!error && data) setItems(data as Transaction[]);
-      setLoading(false);
-    }
-
-    if (isMulti) fetchMulti();
-    else if (id) fetchSingle();
+    fetchDocket();
   }, [id, isMulti, multiIds, isDemo]);
 
   const handlePrint = () => window.print();
