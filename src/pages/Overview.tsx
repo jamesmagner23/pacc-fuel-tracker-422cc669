@@ -1,7 +1,4 @@
 import { useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { TruckMap } from "@/components/TruckMap";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ComposedChart, Area, Line,
@@ -13,13 +10,14 @@ import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { format, parseISO, subDays } from "date-fns";
 import { Droplet, DollarSign, Truck, Gauge, Droplets, Fuel, RefreshCcw } from "lucide-react";
-import { formatTime } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { KPISparklineCard } from "@/components/KPISparklineCard";
 import { TodaysDeliveriesPanel } from "@/components/TodaysDeliveriesPanel";
-import { useSyncLog } from "@/hooks/useTransactions";
 import { MobileOverview } from "@/components/mobile/MobileOverview";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSyncTransactions } from "@/hooks/useSyncTransactions";
+import { useTrucks } from "@/hooks/useTrucks";
+import { PACCLogo } from "@/components/PACCLogo";
 
 const TILE_THEMES = {
   litres:    { icon: Droplet,     bg: "#E8EDE5", fg: "#2A6A2E" },
@@ -41,30 +39,10 @@ export default function Overview() {
     totalRevenue,
     prevRevenue,
   } = useRevenueCalc(range);
-  const { data: lastSync } = useSyncLog();
+  const { syncing, handleSync, lastSyncTime } = useSyncTransactions();
   const { data: allTxns = [] } = useAllTransactions();
   const { data: buyPrices = [] } = useBuyPrices(60);
-  const queryClient = useQueryClient();
-  const [syncing, setSyncing] = useState(false);
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-transactions");
-      if (error) throw error;
-      if (data?.success) {
-        toast.success(`Synced ${data.records_upserted ?? 0} transactions`);
-        ["transactions", "transactions-prev", "transactions-all", "sync-log", "buy-prices"].forEach(
-          (k) => queryClient.invalidateQueries({ queryKey: [k] }),
-        );
-      } else {
-        toast.error(data?.error || "Sync failed");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Sync failed");
-    } finally {
-      setSyncing(false);
-    }
-  };
+  const { data: trucks = [] } = useTrucks();
   const [growthRange, setGrowthRange] = useState<"7d" | "30d" | "90d">("30d");
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
