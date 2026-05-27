@@ -2033,6 +2033,7 @@ function DeliveriesTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <SignedDocketsCard clientAccountId={clientAccountId} />
       {unmappedCount > 0 && (
         <div
           style={{
