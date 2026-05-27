@@ -1674,6 +1674,26 @@ function OverviewTab({
           tintBg="#EAEEFC"
           tintColor="#2B3D8E"
         />
+        <KPISparklineCard
+          label={`${prefix} FTC Savings`}
+          value={ftcSavings > 0 ? `$${ftcSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+          deltaPct={pct(totalLitres, prevLitres)}
+          trend={sparkLitres}
+          fallbackContext="Estimate based on off-road FTC rate"
+          icon={Receipt}
+          tintBg="#E8EDE5"
+          tintColor="#2A6A2E"
+        />
+        <KPISparklineCard
+          label={`${prefix} Emissions (CO\u2082e)`}
+          value={totalLitres > 0 ? `${(totalLitres * CO2_FACTOR / 1000).toFixed(2)} t` : "—"}
+          deltaPct={pct(totalLitres, prevLitres)}
+          trend={sparkLitres}
+          fallbackContext={`${CO2_FACTOR} kg CO\u2082e per litre diesel`}
+          icon={Gauge}
+          tintBg="#F4F0E6"
+          tintColor="#7A5300"
+        />
       </div>
 
       {/* Litres growth + Volume by site row */}
