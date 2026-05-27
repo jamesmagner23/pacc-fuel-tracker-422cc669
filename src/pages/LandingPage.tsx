@@ -224,9 +224,9 @@ export default function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="bg-background text-foreground min-h-screen">
+    <div className="bg-background text-foreground min-h-screen pt-0 mt-0">
       {/* ─────────── NAV ─────────── */}
-      <nav className="sticky top-0 z-50 bg-background border-b border-border">
+      <nav className="sticky top-0 z-50 bg-background border-b border-border pt-0 mt-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
           <a href="/landing" className="shrink-0">
             <PACCWordmark />
@@ -262,7 +262,11 @@ export default function LandingPage() {
               <Eye className="w-3.5 h-3.5" /> Demo
             </Button>
 
-            <Button size="sm" className="hidden md:inline-flex" onClick={() => navigate("/login")}>
+            <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => navigate("/login")}>
+              Sign in
+            </Button>
+
+            <Button size="sm" className="hidden md:inline-flex" onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>
               Get a quote
             </Button>
 
@@ -305,10 +309,13 @@ export default function LandingPage() {
               <Button variant="secondary" className="flex-1" onClick={() => { setMobileOpen(false); navigate("/?demo=true"); }}>
                 Demo
               </Button>
-              <Button className="flex-1" onClick={() => { setMobileOpen(false); navigate("/login"); }}>
-                Get a quote
+              <Button variant="outline" className="flex-1" onClick={() => { setMobileOpen(false); navigate("/login"); }}>
+                Sign in
               </Button>
             </div>
+            <Button className="w-full mt-2" onClick={() => { setMobileOpen(false); document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" }); }}>
+              Get a quote
+            </Button>
           </div>
         )}
       </nav>
