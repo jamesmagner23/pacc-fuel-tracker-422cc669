@@ -309,10 +309,13 @@ export default function LandingPage() {
               <Button variant="secondary" className="flex-1" onClick={() => { setMobileOpen(false); navigate("/?demo=true"); }}>
                 Demo
               </Button>
-              <Button className="flex-1" onClick={() => { setMobileOpen(false); navigate("/login"); }}>
-                Get a quote
+              <Button variant="outline" className="flex-1" onClick={() => { setMobileOpen(false); navigate("/login"); }}>
+                Sign in
               </Button>
             </div>
+            <Button className="w-full mt-2" onClick={() => { setMobileOpen(false); document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" }); }}>
+              Get a quote
+            </Button>
           </div>
         )}
       </nav>
