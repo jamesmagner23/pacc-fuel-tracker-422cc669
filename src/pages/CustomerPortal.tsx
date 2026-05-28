@@ -158,14 +158,11 @@ const tabs = [
   "Overview",
   "Deliveries",
   "Fleet",
+  "Projects",
   "Reports",
   "Profile",
 ] as const;
 type Tab = (typeof tabs)[number];
-
-// Fleet group: Plant + Projects
-const fleetSubtabs = ["Plant", "Projects"] as const;
-type FleetSubtab = (typeof fleetSubtabs)[number];
 
 // Reports group: Analytics + Emissions + Fuel Tax Credit
 const reportSubtabs = ["Analytics", "Emissions", "Fuel Tax Credit"] as const;
@@ -734,8 +731,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                   setActiveTab("Reports");
                 }}
                 onOpenSites={() => {
-                  setFleetSubtab("Projects");
-                  setActiveTab("Fleet");
+                  setActiveTab("Projects");
                 }}
                 periodLabel={PERIOD_LABELS[period]}
                 companyName={companyName}
@@ -757,23 +753,14 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
               />
             )}
             {activeTab === "Fleet" && (
-              <>
-                <SubtabBar
-                  options={fleetSubtabs as unknown as string[]}
-                  active={fleetSubtab}
-                  onChange={(s) => setFleetSubtab(s as FleetSubtab)}
-                />
-                {fleetSubtab === "Plant" && (
-                  <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />
-                )}
-                {fleetSubtab === "Projects" && (
-                  <ProjectsTab
-                    transactions={periodTransactions}
-                    allTransactions={transactions}
-                    clientAccountId={clientAccountId}
-                  />
-                )}
-              </>
+              <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />
+            )}
+            {activeTab === "Projects" && (
+              <ProjectsTab
+                transactions={periodTransactions}
+                allTransactions={transactions}
+                clientAccountId={clientAccountId}
+              />
             )}
             {activeTab === "Reports" && (
               <>
