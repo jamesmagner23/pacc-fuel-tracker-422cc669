@@ -2346,6 +2346,24 @@ function DeliveriesTab({
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  // Bulk docket selection
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const toggleSelected = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const clearSelection = () => { setSelected(new Set()); setSelectMode(false); };
+  const openCombinedDockets = () => {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected).join(",");
+    const extra = demoSuffix ? `&${demoSuffix.slice(1)}` : "";
+    window.open(`/docket/multi?ids=${ids}${extra}`, "_blank");
+  };
+
   const sites = useMemo(
     () => Array.from(new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean))) as string[],
     [transactions]
@@ -2467,7 +2485,31 @@ function DeliveriesTab({
         <div style={muted(12)}>
           {filtered.length.toLocaleString()} deliveries · {fmtL(totalLitres)}
         </div>
-        <GhostButton onClick={exportDeliveries} disabled={filtered.length === 0}>Export CSV</GhostButton>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {selectMode ? (
+            <>
+              <GhostButton
+                onClick={() => {
+                  const allIds = filtered.map((t) => Number(t.id)).filter((n) => Number.isFinite(n));
+                  const allSelected = allIds.every((id) => selected.has(id));
+                  setSelected(allSelected ? new Set() : new Set(allIds));
+                }}
+                disabled={filtered.length === 0}
+              >
+                {filtered.length > 0 && filtered.every((t) => selected.has(Number(t.id))) ? "Deselect all" : "Select all"}
+              </GhostButton>
+              <GhostButton onClick={clearSelection}>Cancel</GhostButton>
+              <GhostButton onClick={openCombinedDockets} disabled={selected.size === 0}>
+                Download {selected.size > 0 ? `${selected.size} ` : ""}docket{selected.size === 1 ? "" : "s"}
+              </GhostButton>
+            </>
+          ) : (
+            <GhostButton onClick={() => setSelectMode(true)} disabled={filtered.length === 0}>
+              Select dockets
+            </GhostButton>
+          )}
+          <GhostButton onClick={exportDeliveries} disabled={filtered.length === 0}>Export CSV</GhostButton>
+        </div>
       </div>
 
       <div style={card}>
@@ -2497,6 +2539,15 @@ function DeliveriesTab({
                 }}
               >
                 <div style={{ display: "flex", alignItems: "stretch", gap: 10, minWidth: 0, flex: 1 }}>
+                  {selectMode && (
+                    <input
+                      type="checkbox"
+                      checked={selected.has(Number(t.id))}
+                      onChange={() => toggleSelected(Number(t.id))}
+                      aria-label="Select delivery"
+                      style={{ width: 18, height: 18, accentColor: T.accent, alignSelf: "center", cursor: "pointer" }}
+                    />
+                  )}
                   <div
                     aria-hidden
                     title={plant?.colour ? `Plant colour: ${plant.colour}` : undefined}
