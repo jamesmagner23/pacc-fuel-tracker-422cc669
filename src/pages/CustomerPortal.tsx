@@ -1653,7 +1653,22 @@ function OverviewTactical({
     return Math.max(4, Math.min(100, Math.round((curr / total) * 100)));
   };
 
-  const topSites = donutRows.slice(0, 5);
+  // Top projects — pad to at least 2 rows using availableProjects so the
+  // section always shows a meaningful preview, even on quiet periods.
+  const topProjectsRaw = donutRows.slice(0, 5);
+  const topSites = (() => {
+    if (topProjectsRaw.length >= 2) return topProjectsRaw;
+    const taken = new Set(topProjectsRaw.map((r) => r.name));
+    const padded = [...topProjectsRaw];
+    for (const p of availableProjects || []) {
+      if (padded.length >= 2) break;
+      if (!taken.has(p.name)) {
+        padded.push({ name: p.name, value: 0 });
+        taken.add(p.name);
+      }
+    }
+    return padded;
+  })();
   const topSiteMax = topSites.reduce((m, r) => Math.max(m, r.value), 0);
 
   const Delta = ({ value }: { value: number | null }) => {
@@ -1913,14 +1928,14 @@ function OverviewTactical({
         <TruckMap height={220} showStops={true} />
       </div>
 
-      {/* Top Volume Sites */}
+      {/* Top Projects */}
       <div className="rounded-2xl p-5 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Top Volume Sites</h3>
-          {onOpenDeliveries && (
+          <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Top Projects</h3>
+          {onOpenSites && (
             <button
               type="button"
-              onClick={onOpenDeliveries}
+              onClick={onOpenSites}
               className="text-[10px] font-bold tracking-wider"
               style={{ color: "var(--accent)" }}
             >
@@ -1929,7 +1944,7 @@ function OverviewTactical({
           )}
         </div>
         {topSites.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No site activity for this period.</p>
+          <p className="text-sm text-muted-foreground">No project activity for this period.</p>
         ) : (
           <div className="space-y-4">
             {topSites.map((r) => {
