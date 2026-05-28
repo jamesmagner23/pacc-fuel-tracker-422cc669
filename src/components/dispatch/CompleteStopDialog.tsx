@@ -17,6 +17,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
     stop.delivered_litres ? String(stop.delivered_litres) : "",
   );
   const [customerName, setCustomerName] = useState("");
+  const [customerRole, setCustomerRole] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingActuals, setLoadingActuals] = useState(true);
@@ -117,6 +118,10 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
       toast.error("Enter the customer / site rep name");
       return;
     }
+    if (!customerRole.trim()) {
+      toast.error("Enter the customer role (e.g. Site Manager)");
+      return;
+    }
     if (custRef.current?.isEmpty()) {
       toast.error("Customer signature is required");
       return;
@@ -134,6 +139,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
           completed_at: new Date().toISOString(),
           delivered_litres: litres,
           customer_name: customerName.trim(),
+          customer_role: customerRole.trim() || null,
           customer_signature: custRef.current?.toDataURL() || null,
           driver_signature: drvRef.current?.toDataURL() || null,
           signed_at: new Date().toISOString(),
