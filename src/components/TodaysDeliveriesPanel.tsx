@@ -112,10 +112,8 @@ export function TodaysDeliveriesPanel({ heightClass = "h-[440px]" }: { heightCla
           <ul>
             {rows.map((s) => {
               const customer = clientMap[s.client_account_id] || s.site_name || "—";
+              // Only show actual delivered litres from SpeedSol — never estimates.
               const delivered = s.delivered_litres;
-              const estimated = s.estimated_litres;
-              const showLitres = delivered ?? (s.status === "scheduled" || s.status === "in_progress" ? estimated : null);
-              const isEstimate = delivered == null && showLitres != null;
               return (
                 <li key={s.id} className="border-b border-border last:border-b-0">
                   <Link
@@ -129,9 +127,7 @@ export function TodaysDeliveriesPanel({ heightClass = "h-[440px]" }: { heightCla
                       </div>
                     </div>
                     <div className="text-sm font-medium tabular-nums text-foreground w-[90px] text-right">
-                      {showLitres != null
-                        ? `${isEstimate ? "~" : ""}${showLitres.toLocaleString()} L`
-                        : "—"}
+                      {delivered != null ? `${delivered.toLocaleString()} L` : "—"}
                     </div>
                     <div className="w-[120px] flex justify-end">
                       <StatusBadge stop={s} />
