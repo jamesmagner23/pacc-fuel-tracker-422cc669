@@ -3295,7 +3295,7 @@ function ProjectsTab({
                     }}
                   >
                     <div>
-                      <div style={labelStyle}>Litres ({PERIOD_LABELS[period as PortalPeriod] ? "" : ""}period)</div>
+                      <div style={labelStyle}>Litres (period)</div>
                       <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{fmtL(litres)}</div>
                     </div>
                     <div>
