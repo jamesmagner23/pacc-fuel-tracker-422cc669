@@ -94,7 +94,7 @@ export function LogStopsDialog({ open, onOpenChange, defaultDate }: Props) {
           client_account_id: r.client_account_id!,
           site_name: r.site_name.trim(),
           address: r.address || null,
-          estimated_litres: r.litres ? Number(r.litres) : null,
+          estimated_litres: null,
           truck_id: r.truck_id !== "none" ? r.truck_id : null,
           driver_user_id: r.driver_user_id !== "none" ? r.driver_user_id : null,
           status: "scheduled",
