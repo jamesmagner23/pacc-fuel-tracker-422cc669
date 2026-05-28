@@ -3974,7 +3974,6 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
   );
 
   const [siteName, setSiteName] = useState("");
-  const [litres, setLitres] = useState("");
   const [date, setDate] = useState(format(addDays(new Date(), 3), "yyyy-MM-dd"));
   const [notes, setNotes] = useState("");
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -3992,7 +3991,7 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
       const { error } = await supabase.from("delivery_requests").insert({
         client_account_id: clientAccountId,
         site_name: siteName,
-        estimated_litres: litres ? parseFloat(litres) : null,
+        estimated_litres: null,
         preferred_date: date,
         notes: notes || null,
         status: "pending",
@@ -4002,7 +4001,6 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
     },
     onSuccess: () => {
       setMsg({ type: "ok", text: "Request submitted. We'll confirm shortly." });
-      setLitres("");
       setNotes("");
       setDate(format(addDays(new Date(), 3), "yyyy-MM-dd"));
       qc.invalidateQueries({ queryKey: ["delivery-requests", clientAccountId] });
@@ -4029,18 +4027,6 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
             ) : (
               <input value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="Site name" style={inputStyle} />
             )}
-          </div>
-          <div>
-            <label style={labelStyle}>Estimated Litres</label>
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              value={litres}
-              onChange={(e) => setLitres(e.target.value)}
-              placeholder="e.g. 5000"
-              style={inputStyle}
-            />
           </div>
           <div>
             <label style={labelStyle}>Preferred Date</label>
@@ -4091,7 +4077,6 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
                     <div style={{ fontSize: 14, fontFamily: T.sansHead, fontWeight: 600, color: T.text }}>{r.site_name}</div>
                     <div style={{ ...muted(11), marginTop: 2 }}>
                       Preferred: {format(parseISO(r.preferred_date), "EEE dd MMM yyyy")}
-                      {r.estimated_litres ? ` · ~${fmtL(Number(r.estimated_litres))}` : ""}
                     </div>
                     {r.notes && <div style={{ ...muted(11), marginTop: 6 }}>{r.notes}</div>}
                   </div>

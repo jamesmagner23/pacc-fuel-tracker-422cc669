@@ -92,8 +92,7 @@ function StopRow({ stop, idx, dragProps, itemStyle, clientNameById, truckNameByI
         </div>
         <div className="text-[11px] text-muted-foreground truncate">{stop.address || "—"}</div>
         <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-2">
-          {stop.estimated_litres ? <span>{Number(stop.estimated_litres).toLocaleString()}L</span> : null}
-          {stop.truck_id && truckNameById[stop.truck_id] && <span>· {truckNameById[stop.truck_id]}</span>}
+          {stop.truck_id && truckNameById[stop.truck_id] && <span>{truckNameById[stop.truck_id]}</span>}
         </div>
       </div>
       <StatusBadge s={stop.status} />
@@ -350,7 +349,6 @@ export default function Dispatch() {
                     {r.frequency === "daily" && "Every day"}
                     {r.frequency === "weekdays" && "Weekdays (Mon–Fri)"}
                     {r.frequency === "weekly" && `Weekly · ${(r.weekdays || []).map((d) => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}`}
-                    {r.estimated_litres ? ` · ${Number(r.estimated_litres).toLocaleString()}L` : ""}
                   </div>
                 </div>
                 <Button

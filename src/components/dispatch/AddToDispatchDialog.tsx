@@ -71,7 +71,7 @@ export function AddToDispatchDialog({
           truck_id: truckId === "none" ? null : truckId,
           site_name: siteName,
           address: address || null,
-          estimated_litres: litres ? Number(litres) : null,
+          estimated_litres: null,
           notes: notes || null,
           frequency,
           weekdays: frequency === "weekly" ? weekdays : [],
@@ -88,7 +88,7 @@ export function AddToDispatchDialog({
         truck_id: truckId === "none" ? null : truckId,
         site_name: siteName,
         address: address || null,
-        estimated_litres: litres ? Number(litres) : null,
+        estimated_litres: null,
         notes: notes || null,
         sequence: 9999,
         status: "scheduled",
@@ -120,8 +120,7 @@ export function AddToDispatchDialog({
             <Label className="text-xs">Address</Label>
             <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Smith St, Melbourne" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div>
               <Label className="text-xs">Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -134,11 +133,6 @@ export function AddToDispatchDialog({
                   <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus />
                 </PopoverContent>
               </Popover>
-            </div>
-            <div>
-              <Label className="text-xs">Estimated litres</Label>
-              <Input type="number" value={litres} onChange={(e) => setLitres(e.target.value)} placeholder="3000" />
-            </div>
           </div>
           <div>
             <Label className="text-xs">Assign truck</Label>

@@ -94,7 +94,7 @@ export function LogStopsDialog({ open, onOpenChange, defaultDate }: Props) {
           client_account_id: r.client_account_id!,
           site_name: r.site_name.trim(),
           address: r.address || null,
-          estimated_litres: r.litres ? Number(r.litres) : null,
+          estimated_litres: null,
           truck_id: r.truck_id !== "none" ? r.truck_id : null,
           driver_user_id: r.driver_user_id !== "none" ? r.driver_user_id : null,
           status: "scheduled",
@@ -214,16 +214,7 @@ export function LogStopsDialog({ open, onOpenChange, defaultDate }: Props) {
                       onChange={(e) => update(r.key, { site_name: e.target.value })}
                     />
                   </div>
-                  <div className="col-span-1">
-                    <Input
-                      className="h-9 text-xs"
-                      type="number"
-                      placeholder="L"
-                      value={r.litres}
-                      onChange={(e) => update(r.key, { litres: e.target.value })}
-                    />
-                  </div>
-                  <div className="col-span-2">
+                  <div className="col-span-3">
                     <Select value={r.truck_id} onValueChange={(v) => update(r.key, { truck_id: v })}>
                       <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Truck" /></SelectTrigger>
                       <SelectContent>

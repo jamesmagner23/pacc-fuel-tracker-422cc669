@@ -222,17 +222,6 @@ export default function ScheduledTab() {
               </Popover>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground">Estimated Litres</label>
-              <Input
-                type="number"
-                value={form.estimated_litres}
-                onChange={(e) => setForm((f) => ({ ...f, estimated_litres: e.target.value }))}
-                placeholder="e.g. 5000"
-                className="text-sm"
-              />
-            </div>
-
             <div className="flex flex-col gap-1.5 sm:col-span-2">
               <label className="text-xs text-muted-foreground">Notes (optional)</label>
               <Textarea
@@ -285,7 +274,6 @@ export default function ScheduledTab() {
                     </div>
                     <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
                       <span>{format(parseISO(d.scheduled_date), "EEE dd MMM yyyy")}</span>
-                      {d.estimated_litres && <span>{Number(d.estimated_litres).toLocaleString()}L</span>}
                       {d.notes && <span className="truncate max-w-[200px]">{d.notes}</span>}
                     </div>
                   </div>
