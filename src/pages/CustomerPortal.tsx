@@ -158,14 +158,11 @@ const tabs = [
   "Overview",
   "Deliveries",
   "Fleet",
+  "Projects",
   "Reports",
   "Profile",
 ] as const;
 type Tab = (typeof tabs)[number];
-
-// Fleet group: Plant + Projects
-const fleetSubtabs = ["Plant", "Projects"] as const;
-type FleetSubtab = (typeof fleetSubtabs)[number];
 
 // Reports group: Analytics + Emissions + Fuel Tax Credit
 const reportSubtabs = ["Analytics", "Emissions", "Fuel Tax Credit"] as const;
@@ -429,7 +426,6 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam]);
   const setActiveTab = setActiveTabState as (t: Tab) => void;
-  const [fleetSubtab, setFleetSubtab] = useState<FleetSubtab>("Plant");
   const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
@@ -581,7 +577,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
       {/* Day / Week / Month period toggle — applies to time-series tabs.
           Overview embeds its own period selector inside the dashboard. */}
       {(activeTab === "Deliveries" ||
-          (activeTab === "Fleet" && fleetSubtab === "Plant") ||
+          activeTab === "Fleet" ||
           (activeTab === "Reports" && reportsSubtab === "Analytics") ||
           (activeTab === "Reports" && reportsSubtab === "Fuel Tax Credit")) && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
@@ -708,7 +704,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
         )}
 
 
-        {isLoading && !(activeTab === "Fleet" && fleetSubtab === "Plant") ? (
+        {isLoading && activeTab !== "Fleet" ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
@@ -734,8 +730,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                   setActiveTab("Reports");
                 }}
                 onOpenSites={() => {
-                  setFleetSubtab("Projects");
-                  setActiveTab("Fleet");
+                  setActiveTab("Projects");
                 }}
                 periodLabel={PERIOD_LABELS[period]}
                 companyName={companyName}
@@ -757,23 +752,14 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
               />
             )}
             {activeTab === "Fleet" && (
-              <>
-                <SubtabBar
-                  options={fleetSubtabs as unknown as string[]}
-                  active={fleetSubtab}
-                  onChange={(s) => setFleetSubtab(s as FleetSubtab)}
-                />
-                {fleetSubtab === "Plant" && (
-                  <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />
-                )}
-                {fleetSubtab === "Projects" && (
-                  <ProjectsTab
-                    transactions={periodTransactions}
-                    allTransactions={transactions}
-                    clientAccountId={clientAccountId}
-                  />
-                )}
-              </>
+              <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />
+            )}
+            {activeTab === "Projects" && (
+              <ProjectsTab
+                transactions={periodTransactions}
+                allTransactions={transactions}
+                clientAccountId={clientAccountId}
+              />
             )}
             {activeTab === "Reports" && (
               <>
