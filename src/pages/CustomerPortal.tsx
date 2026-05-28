@@ -1561,6 +1561,10 @@ function OverviewTab({
       onOpenDeliveries={onOpenDeliveries}
       onOpenFuelVolume={onOpenFuelVolume}
       onOpenSites={onOpenSites}
+      portalFilters={portalFilters}
+      availableTypes={availableTypes}
+      availableProjects={availableProjects}
+      availableTags={availableTags}
     />
   );
 }
