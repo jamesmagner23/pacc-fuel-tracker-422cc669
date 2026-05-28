@@ -1355,6 +1355,7 @@ function OverviewTab({
   availableTypes,
   availableProjects,
   availableTags,
+  placaToProjectName,
 }: {
   transactions: any[];
   allTransactions: any[];
@@ -1376,6 +1377,7 @@ function OverviewTab({
   availableTypes?: string[];
   availableProjects?: { id: string; name: string }[];
   availableTags?: { id: string; name: string }[];
+  placaToProjectName?: Record<string, string>;
 }) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
