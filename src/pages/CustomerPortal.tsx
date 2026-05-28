@@ -576,8 +576,8 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     });
   }, [isDemo, activeTab]);
 
-
-
+  const body = (
+    <>
       {/* Day / Week / Month period toggle — applies to time-series tabs.
           Overview embeds its own period selector inside the dashboard. */}
       {(activeTab === "Deliveries" ||
