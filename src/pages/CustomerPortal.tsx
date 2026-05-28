@@ -1892,66 +1892,6 @@ function OverviewTactical({
         </div>
       </div>
 
-      {/* Period selector — tucked under the KPIs */}
-      <div className="flex items-center justify-between flex-wrap gap-3 -mt-1">
-        <div
-          className="inline-flex items-center gap-1 p-1 rounded-full border"
-          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
-        >
-          {(["day", "week", "month", "all"] as PortalPeriod[]).map((p) => {
-            const active = period === p;
-            return (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPeriod(p)}
-                className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-full transition-all"
-                style={{
-                  color: active ? "var(--background)" : "var(--text-secondary, var(--muted-foreground))",
-                  background: active ? "var(--accent)" : "transparent",
-                }}
-              >
-                {PERIOD_LABELS[p]}
-              </button>
-            );
-          })}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                onClick={() => setPeriod("custom")}
-                className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-full transition-all inline-flex items-center gap-1.5"
-                style={{
-                  color: period === "custom" ? "var(--background)" : "var(--text-secondary, var(--muted-foreground))",
-                  background: period === "custom" ? "var(--accent)" : "transparent",
-                }}
-              >
-                <CalendarIcon className="w-3 h-3" />
-                {period === "custom" && customRange.from
-                  ? `${format(customRange.from, "d MMM")}${customRange.to ? ` – ${format(customRange.to, "d MMM")}` : ""}`
-                  : "Custom"}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="range"
-                selected={{ from: customRange.from, to: customRange.to } as any}
-                onSelect={(r: any) => {
-                  setCustomRange({ from: r?.from, to: r?.to });
-                  if (r?.from) setPeriod("custom");
-                }}
-                numberOfMonths={2}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <span className="text-[11px] text-muted-foreground tabular-nums">
-          {numDeliveries.toLocaleString()} deliveries shown
-        </span>
-      </div>
-
       {/* Live truck map block */}
       <div className="relative rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <div className="absolute top-3 left-3 z-10 backdrop-blur-md px-2 py-1 rounded border flex items-center gap-2" style={{ background: "rgba(0,0,0,0.55)", borderColor: "rgba(255,255,255,0.10)" }}>
