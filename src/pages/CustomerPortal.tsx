@@ -428,6 +428,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   const [fleetSubtab, setFleetSubtab] = useState<FleetSubtab>("Plant");
   const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
   const [period, setPeriod] = useState<PortalPeriod>("month");
+  const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
   const isDemo = useDemo();
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
@@ -509,13 +510,23 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   // chip-style filter bar, so KPIs, charts and the analytics tab all
   // respect the same time window.
   const periodTransactions = useMemo(() => {
+    if (period === "custom") {
+      const { from, to } = customRange;
+      if (!from && !to) return transactions;
+      const fromStr = from ? format(from, "yyyy-MM-dd") : "0000-01-01";
+      const toStr = to ? format(to, "yyyy-MM-dd") : "9999-12-31";
+      return transactions.filter((t: any) => {
+        const d = t.date || "";
+        return d >= fromStr && d <= toStr;
+      });
+    }
     const days = PERIOD_DAYS[period];
     if (days == null) return transactions;
     const cutoff = subDays(new Date(), days);
     cutoff.setHours(0, 0, 0, 0);
     const cutoffStr = format(cutoff, "yyyy-MM-dd");
     return transactions.filter((t: any) => (t.date || "") >= cutoffStr);
-  }, [transactions, period]);
+  }, [transactions, period, customRange]);
 
   // First-paint guard: if the default "This Month" window is empty but the
   // customer DOES have deliveries on file, auto-fall back to "All Time" so
