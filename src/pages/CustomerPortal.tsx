@@ -584,9 +584,9 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     <>
       <PageHeader title={activeTab} breadcrumb={breadcrumbFor(activeTab)} showPeriod={false} />
 
-      {/* Day / Week / Month period toggle — applies to time-series tabs. */}
-      {(activeTab === "Overview" ||
-          activeTab === "Deliveries" ||
+      {/* Day / Week / Month period toggle — applies to time-series tabs.
+          Overview embeds its own period selector inside the dashboard. */}
+      {(activeTab === "Deliveries" ||
           (activeTab === "Fleet" && fleetSubtab === "Plant") ||
           (activeTab === "Reports" && reportsSubtab === "Analytics") ||
           (activeTab === "Reports" && reportsSubtab === "Fuel Tax Credit")) && (
