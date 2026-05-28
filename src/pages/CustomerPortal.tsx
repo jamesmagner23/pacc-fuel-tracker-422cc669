@@ -1380,6 +1380,7 @@ function OverviewTab({
   portalFilters?: ReturnType<typeof usePortalFilters>;
   availableTypes?: string[];
   availableProjects?: { id: string; name: string }[];
+  activeSitesCount?: number;
   availableTags?: { id: string; name: string }[];
   placaToProjectName?: Record<string, string>;
 }) {
