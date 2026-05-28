@@ -2284,9 +2284,8 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
         .select("*, projects(name), trucks(name, rego)")
         .eq("client_account_id", clientAccountId)
         .eq("status", "completed")
-        .not("customer_signature", "is", null)
-        .order("signed_at", { ascending: false })
-        .limit(10);
+        .order("completed_at", { ascending: false, nullsFirst: false })
+        .limit(20);
       if (error) throw error;
       return (data || []) as any[];
     },
