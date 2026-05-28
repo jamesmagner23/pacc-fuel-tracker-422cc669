@@ -1352,6 +1352,10 @@ function OverviewTab({
   onOpenSites,
   periodLabel,
   companyName,
+  portalFilters,
+  availableTypes,
+  availableProjects,
+  availableTags,
 }: {
   transactions: any[];
   allTransactions: any[];
@@ -1369,6 +1373,10 @@ function OverviewTab({
   onOpenSites?: () => void;
   periodLabel?: string;
   companyName?: string;
+  portalFilters?: ReturnType<typeof usePortalFilters>;
+  availableTypes?: string[];
+  availableProjects?: { id: string; name: string }[];
+  availableTags?: { id: string; name: string }[];
 }) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
