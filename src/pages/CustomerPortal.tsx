@@ -736,6 +736,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 portalFilters={portalFilters}
                 availableTypes={availableTypes}
                 availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
+                activeSitesCount={projectsAll.filter((p: any) => (p.status || "active") === "active").length}
                 availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
                 placaToProjectName={(() => {
                   const projectName: Record<string, string> = {};
@@ -1357,6 +1358,7 @@ function OverviewTab({
   portalFilters,
   availableTypes,
   availableProjects,
+  activeSitesCount,
   availableTags,
   placaToProjectName,
 }: {
@@ -1379,6 +1381,7 @@ function OverviewTab({
   portalFilters?: ReturnType<typeof usePortalFilters>;
   availableTypes?: string[];
   availableProjects?: { id: string; name: string }[];
+  activeSitesCount?: number;
   availableTags?: { id: string; name: string }[];
   placaToProjectName?: Record<string, string>;
 }) {
@@ -1492,13 +1495,13 @@ function OverviewTab({
   const DONUT_COLORS = ["#2A6A2E", "#7A5300", "#2B3D8E", "#5F6B61", "#B43A2E", "#C7CCC1"];
   const prefix = period === "day" ? "Daily" : period === "week" ? "Weekly" : period === "month" ? "Monthly" : "All-time";
 
-  // "Sites" = unique delivery locations (estacion / ciudad), not the
-  // single customer name. Falls back to customer if nothing better.
-  const sites = new Set(
-    transactions
-      .map((t) => t.ciudad || t.nombre_cliente1 || t.estacion)
-      .filter(Boolean),
-  );
+  // "Active Sites" reflects the customer's active Projects (sites the
+  // client has set up), not raw SpeedSol delivery locations. SCA fields
+  // (ciudad / nombre_cliente1 / estacion) must not be surfaced as site
+  // labels in the portal.
+  const sitesSize = typeof activeSitesCount === "number"
+    ? activeSitesCount
+    : (availableProjects?.length ?? 0);
 
   // FTC savings — apply off-road / plant rate to total litres as a conservative estimate
   const ftcRate = useMemo(() => {
@@ -1554,7 +1557,7 @@ function OverviewTab({
       prevLitres={prevLitres}
       prevDeliveries={prevDeliveries}
       prevAvg={prevAvg}
-      sitesCount={sites.size}
+      sitesCount={sitesSize}
       donutRows={donutData.rows}
       donutTotal={donutData.total}
       recent={recent}
@@ -1638,6 +1641,7 @@ function OverviewTactical({
   portalFilters?: ReturnType<typeof usePortalFilters>;
   availableTypes?: string[];
   availableProjects?: { id: string; name: string }[];
+  activeSitesCount?: number;
   availableTags?: { id: string; name: string }[];
 }) {
   const fmtBig = (n: number) =>
