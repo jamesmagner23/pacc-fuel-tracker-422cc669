@@ -1583,6 +1583,10 @@ function OverviewTactical({
   onOpenDeliveries,
   onOpenFuelVolume,
   onOpenSites,
+  portalFilters,
+  availableTypes,
+  availableProjects,
+  availableTags,
 }: {
   transactions: any[];
   companyName?: string;
@@ -1605,6 +1609,10 @@ function OverviewTactical({
   onOpenDeliveries?: () => void;
   onOpenFuelVolume?: () => void;
   onOpenSites?: () => void;
+  portalFilters?: ReturnType<typeof usePortalFilters>;
+  availableTypes?: string[];
+  availableProjects?: { id: string; name: string }[];
+  availableTags?: { id: string; name: string }[];
 }) {
   const fmtBig = (n: number) =>
     n >= 1_000_000
