@@ -164,8 +164,8 @@ const tabs = [
 ] as const;
 type Tab = (typeof tabs)[number];
 
-// Reports group: Analytics + Emissions + Fuel Tax Credit
-const reportSubtabs = ["Analytics", "Emissions", "Fuel Tax Credit"] as const;
+// Reports group: Emissions + Fuel Tax Credit
+const reportSubtabs = ["Emissions", "Fuel Tax Credit"] as const;
 type ReportSubtab = (typeof reportSubtabs)[number];
 
 // Day / Week / Month / Custom period toggle for the customer portal.
