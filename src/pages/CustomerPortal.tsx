@@ -3974,7 +3974,6 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
   );
 
   const [siteName, setSiteName] = useState("");
-  const [litres, setLitres] = useState("");
   const [date, setDate] = useState(format(addDays(new Date(), 3), "yyyy-MM-dd"));
   const [notes, setNotes] = useState("");
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
