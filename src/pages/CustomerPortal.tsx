@@ -738,6 +738,15 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 availableTypes={availableTypes}
                 availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
                 availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
+                placaToProjectName={(() => {
+                  const projectName: Record<string, string> = {};
+                  projectsAll.forEach((p: any) => { projectName[p.id] = p.name; });
+                  const out: Record<string, string> = {};
+                  Object.entries(lookups.placaToProject).forEach(([placa, pid]) => {
+                    if (projectName[pid as string]) out[placa] = projectName[pid as string];
+                  });
+                  return out;
+                })()}
               />
             )}
             {activeTab === "Deliveries" && (
@@ -1346,6 +1355,7 @@ function OverviewTab({
   availableTypes,
   availableProjects,
   availableTags,
+  placaToProjectName,
 }: {
   transactions: any[];
   allTransactions: any[];
@@ -1367,6 +1377,7 @@ function OverviewTab({
   availableTypes?: string[];
   availableProjects?: { id: string; name: string }[];
   availableTags?: { id: string; name: string }[];
+  placaToProjectName?: Record<string, string>;
 }) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
@@ -1453,9 +1464,13 @@ function OverviewTab({
   const donutData = useMemo(() => {
     const m: Record<string, number> = {};
     transactions.forEach((t: any) => {
-      // Prefer real destination (city / customer site) over the
-      // dispensing pump/truck name stored in `estacion`.
-      const k = t.ciudad || t.nombre_cliente1 || t.estacion || "Unknown";
+      // Resolve the actual delivery site. Best signal is the project
+      // the placa is assigned to (e.g. "Ironside Maidstone"). Fall back
+      // to delivery city or customer name. Never use `estacion` —
+      // that's the dispensing pump/truck, not a destination.
+      const placa = (t.placa || "").toString().trim();
+      const project = placa && placaToProjectName ? placaToProjectName[placa] : undefined;
+      const k = project || t.ciudad || t.nombre_cliente1 || "Unassigned";
       m[k] = (m[k] || 0) + (t.cantidad || 0);
     });
     const sorted = Object.entries(m).sort(([, a], [, b]) => b - a);
@@ -1465,7 +1480,7 @@ function OverviewTab({
     if (other > 0) rows.push({ name: "Other", value: other });
     const total = rows.reduce((s, r) => s + r.value, 0);
     return { rows, total };
-  }, [transactions]);
+  }, [transactions, placaToProjectName]);
 
   const DONUT_COLORS = ["#2A6A2E", "#7A5300", "#2B3D8E", "#5F6B61", "#B43A2E", "#C7CCC1"];
   const prefix = period === "day" ? "Daily" : period === "week" ? "Weekly" : period === "month" ? "Monthly" : "All-time";

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   Menu, X,
   LayoutDashboard, Truck, Wrench, FileBarChart, User as UserIcon,
-  Phone, HelpCircle,
+  Phone, HelpCircle, FolderKanban,
 } from "lucide-react";
 import { PACCLogo } from "../PACCLogo";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +30,7 @@ const navGroups: NavGroup[] = [
       { tab: "Overview", label: "Overview", icon: LayoutDashboard },
       { tab: "Deliveries", label: "Deliveries", icon: Truck },
       { tab: "Fleet", label: "Equipment", icon: Wrench },
+      { tab: "Projects", label: "Projects", icon: FolderKanban },
       { tab: "Reports", label: "Reports", icon: FileBarChart },
       { tab: "Profile", label: "Profile", icon: UserIcon },
     ],
