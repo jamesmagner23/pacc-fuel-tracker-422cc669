@@ -1474,7 +1474,7 @@ function OverviewTab({
   // single customer name. Falls back to customer if nothing better.
   const sites = new Set(
     transactions
-      .map((t) => t.estacion || t.ciudad || t.nombre_cliente1)
+      .map((t) => t.ciudad || t.nombre_cliente1 || t.estacion)
       .filter(Boolean),
   );
 
