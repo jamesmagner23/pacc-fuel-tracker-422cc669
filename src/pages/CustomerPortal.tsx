@@ -1453,7 +1453,9 @@ function OverviewTab({
   const donutData = useMemo(() => {
     const m: Record<string, number> = {};
     transactions.forEach((t: any) => {
-      const k = t.estacion || t.ciudad || t.nombre_cliente1 || "Unknown";
+      // Prefer real destination (city / customer site) over the
+      // dispensing pump/truck name stored in `estacion`.
+      const k = t.ciudad || t.nombre_cliente1 || t.estacion || "Unknown";
       m[k] = (m[k] || 0) + (t.cantidad || 0);
     });
     const sorted = Object.entries(m).sort(([, a], [, b]) => b - a);
