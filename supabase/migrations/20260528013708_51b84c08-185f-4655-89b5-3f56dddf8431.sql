@@ -1,0 +1,1 @@
+UPDATE public.client_accounts SET speedsol_name = 'TRACK WORKS', speedsol_names = ARRAY['TRACK WORKS'] WHERE id = 32;
