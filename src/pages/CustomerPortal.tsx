@@ -2485,7 +2485,31 @@ function DeliveriesTab({
         <div style={muted(12)}>
           {filtered.length.toLocaleString()} deliveries · {fmtL(totalLitres)}
         </div>
-        <GhostButton onClick={exportDeliveries} disabled={filtered.length === 0}>Export CSV</GhostButton>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {selectMode ? (
+            <>
+              <GhostButton
+                onClick={() => {
+                  const allIds = filtered.map((t) => Number(t.id)).filter((n) => Number.isFinite(n));
+                  const allSelected = allIds.every((id) => selected.has(id));
+                  setSelected(allSelected ? new Set() : new Set(allIds));
+                }}
+                disabled={filtered.length === 0}
+              >
+                {filtered.length > 0 && filtered.every((t) => selected.has(Number(t.id))) ? "Deselect all" : "Select all"}
+              </GhostButton>
+              <GhostButton onClick={clearSelection}>Cancel</GhostButton>
+              <GhostButton onClick={openCombinedDockets} disabled={selected.size === 0}>
+                Download {selected.size > 0 ? `${selected.size} ` : ""}docket{selected.size === 1 ? "" : "s"}
+              </GhostButton>
+            </>
+          ) : (
+            <GhostButton onClick={() => setSelectMode(true)} disabled={filtered.length === 0}>
+              Select dockets
+            </GhostButton>
+          )}
+          <GhostButton onClick={exportDeliveries} disabled={filtered.length === 0}>Export CSV</GhostButton>
+        </div>
       </div>
 
       <div style={card}>
