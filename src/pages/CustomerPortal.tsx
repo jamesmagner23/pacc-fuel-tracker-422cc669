@@ -578,7 +578,6 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
           Overview embeds its own period selector inside the dashboard. */}
       {(activeTab === "Deliveries" ||
           activeTab === "Fleet" ||
-          (activeTab === "Reports" && reportsSubtab === "Analytics") ||
           (activeTab === "Reports" && reportsSubtab === "Fuel Tax Credit")) && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
             <div className="flex items-center gap-3 flex-wrap">
