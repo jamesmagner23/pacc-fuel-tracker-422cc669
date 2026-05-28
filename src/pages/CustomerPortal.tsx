@@ -164,8 +164,8 @@ const tabs = [
 ] as const;
 type Tab = (typeof tabs)[number];
 
-// Reports group: Analytics + Emissions + Fuel Tax Credit
-const reportSubtabs = ["Analytics", "Emissions", "Fuel Tax Credit"] as const;
+// Reports group: Emissions + Fuel Tax Credit
+const reportSubtabs = ["Emissions", "Fuel Tax Credit"] as const;
 type ReportSubtab = (typeof reportSubtabs)[number];
 
 // Day / Week / Month / Custom period toggle for the customer portal.
@@ -426,7 +426,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam]);
   const setActiveTab = setActiveTabState as (t: Tab) => void;
-  const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
+  const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Emissions");
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
   const isDemo = useDemo();
@@ -578,7 +578,6 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
           Overview embeds its own period selector inside the dashboard. */}
       {(activeTab === "Deliveries" ||
           activeTab === "Fleet" ||
-          (activeTab === "Reports" && reportsSubtab === "Analytics") ||
           (activeTab === "Reports" && reportsSubtab === "Fuel Tax Credit")) && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
             <div className="flex items-center gap-3 flex-wrap">
@@ -726,7 +725,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 }}
                 onOpenDeliveries={() => setActiveTab("Deliveries")}
                 onOpenFuelVolume={() => {
-                  setReportsSubtab("Analytics");
+                  setReportsSubtab("Emissions");
                   setActiveTab("Reports");
                 }}
                 onOpenSites={() => {
@@ -777,14 +776,6 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                   active={reportsSubtab}
                   onChange={(s) => setReportsSubtab(s as ReportSubtab)}
                 />
-                {reportsSubtab === "Analytics" && (
-                  <AnalyticsTab
-                    transactions={filteredTransactions}
-                    clientAccountId={clientAccountId}
-                    periodLabel={PERIOD_LABELS[period]}
-                    companyName={companyName}
-                  />
-                )}
                 {reportsSubtab === "Emissions" && (
                   <EmissionsTab transactions={transactions} companyName={companyName} />
                 )}
