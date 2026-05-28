@@ -72,8 +72,9 @@ function DemoAwareRoutes() {
                 <Route path="/market" element={<MarketIntelligence />} />
                 <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                 <Route path="/trucks" element={<TruckPortal />} />
-                <Route path="/portal" element={<CustomerPortal />} />
+                <Route path="/portal" element={<CustomerPortal forcedTab="Deliveries" />} />
                 <Route path="/portal/deliveries" element={<CustomerPortal forcedTab="Deliveries" />} />
+                <Route path="/portal/overview" element={<CustomerPortal forcedTab="Overview" />} />
                 <Route path="/portal/fleet" element={<CustomerPortal forcedTab="Fleet" />} />
                 <Route path="/portal/projects" element={<CustomerPortal forcedTab="Projects" />} />
                 <Route path="/portal/reports" element={<CustomerPortal forcedTab="Reports" />} />
@@ -90,8 +91,9 @@ function DemoAwareRoutes() {
         </>
       ) : (
         <>
-          <Route path="/portal" element={<CustomerPortal />} />
+          <Route path="/portal" element={<CustomerPortal forcedTab="Deliveries" />} />
           <Route path="/portal/deliveries" element={<CustomerPortal forcedTab="Deliveries" />} />
+          <Route path="/portal/overview" element={<CustomerPortal forcedTab="Overview" />} />
           <Route path="/portal/fleet" element={<CustomerPortal forcedTab="Fleet" />} />
           <Route path="/portal/projects" element={<CustomerPortal forcedTab="Projects" />} />
           <Route path="/portal/reports" element={<CustomerPortal forcedTab="Reports" />} />
