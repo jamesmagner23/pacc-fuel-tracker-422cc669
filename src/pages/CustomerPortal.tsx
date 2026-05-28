@@ -2298,13 +2298,13 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
     queryKey: ["signed-dockets-completed-count", clientAccountId],
     queryFn: async () => {
       if (!clientAccountId) return 0;
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from("dispatch_stops" as any)
-        .select("id", { count: "exact", head: true })
+        .select("id")
         .eq("client_account_id", clientAccountId)
         .eq("status", "completed");
       if (error) throw error;
-      return count || 0;
+      return (data || []).length;
     },
     enabled: !!clientAccountId,
   });
