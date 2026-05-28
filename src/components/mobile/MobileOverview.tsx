@@ -285,7 +285,7 @@ function TodaysDeliveriesMobile() {
         <ul>
           {rows.map((s, i) => {
             const customer = clientMap[s.client_account_id] || s.site_name || "—";
-            const litres = s.delivered_litres ?? s.estimated_litres ?? 0;
+            const litres = s.delivered_litres ?? 0;
             const addr = s.address || s.site_name || "—";
             const when = s.completed_at
               ? sameDay(s.completed_at, today) ? formatTime(s.completed_at) : formatDate(s.completed_at)
