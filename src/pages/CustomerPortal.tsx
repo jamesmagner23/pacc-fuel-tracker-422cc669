@@ -37,7 +37,7 @@ import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
 import { PortalLayout } from "@/components/portal/PortalLayout";
-import { PageHeader } from "@/components/PageHeader";
+
 import { KPISparklineCard } from "@/components/KPISparklineCard";
 import {
   DropdownMenu,
@@ -576,18 +576,8 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     });
   }, [isDemo, activeTab]);
 
-  const breadcrumbFor = (tab: Tab | "Help") => [
-    { label: "PACC Energy", href: "/portal" },
-    { label: "Portal", href: "/portal" },
-    { label: tab },
-  ];
-
-  // The body of the portal — same in standalone and in demo mode (where the
-  // admin Layout already provides the sidebar/topbar chrome).
   const body = (
     <>
-      <PageHeader title={activeTab} breadcrumb={breadcrumbFor(activeTab)} showPeriod={false} />
-
       {/* Day / Week / Month period toggle — applies to time-series tabs.
           Overview embeds its own period selector inside the dashboard. */}
       {(activeTab === "Deliveries" ||
@@ -717,66 +707,6 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
           </div>
         )}
 
-        {/* Shared filter bar — collapsed by default to save space.
-            Active filter count surfaces as a pill on the summary row. */}
-        {(activeTab === "Overview" ||
-          activeTab === "Deliveries" ||
-          (activeTab === "Fleet" && fleetSubtab === "Plant")) && (
-          <details style={{ marginBottom: 16 }}>
-            <summary
-              style={{
-                listStyle: "none",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "6px 10px",
-                border: `1px solid ${T.border}`,
-                borderRadius: 999,
-                background: T.surface,
-                fontSize: 11,
-                fontFamily: T.sansHead,
-                fontWeight: 600,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: T.textSecondary,
-              }}
-            >
-              <Filter size={12} />
-              Filters
-              {(portalFilters.filters.types.length +
-                portalFilters.filters.projects.length +
-                portalFilters.filters.tags.length) > 0 && (
-                <span
-                  style={{
-                    background: T.accent,
-                    color: "#0E1F10",
-                    borderRadius: 999,
-                    padding: "1px 7px",
-                    fontSize: 10,
-                    fontWeight: 700,
-                  }}
-                >
-                  {portalFilters.filters.types.length +
-                    portalFilters.filters.projects.length +
-                    portalFilters.filters.tags.length}
-                </span>
-              )}
-            </summary>
-            <div style={{ marginTop: 8 }}>
-              <PortalFilterBar
-                filters={portalFilters.filters}
-                onTypes={portalFilters.setTypes}
-                onProjects={portalFilters.setProjects}
-                onTags={portalFilters.setTags}
-                onReset={portalFilters.reset}
-                availableTypes={availableTypes}
-                availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
-                availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
-              />
-            </div>
-          </details>
-        )}
 
         {isLoading && !(activeTab === "Fleet" && fleetSubtab === "Plant") ? (
           <p style={muted(13)}>Loading...</p>
@@ -809,6 +739,10 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 }}
                 periodLabel={PERIOD_LABELS[period]}
                 companyName={companyName}
+                portalFilters={portalFilters}
+                availableTypes={availableTypes}
+                availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
+                availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
               />
             )}
             {activeTab === "Deliveries" && (
@@ -1422,6 +1356,10 @@ function OverviewTab({
   onOpenSites,
   periodLabel,
   companyName,
+  portalFilters,
+  availableTypes,
+  availableProjects,
+  availableTags,
 }: {
   transactions: any[];
   allTransactions: any[];
@@ -1439,6 +1377,10 @@ function OverviewTab({
   onOpenSites?: () => void;
   periodLabel?: string;
   companyName?: string;
+  portalFilters?: ReturnType<typeof usePortalFilters>;
+  availableTypes?: string[];
+  availableProjects?: { id: string; name: string }[];
+  availableTags?: { id: string; name: string }[];
 }) {
   const { data: rates = [] } = useFtcRates();
   const recent = transactions.slice(0, 6);
@@ -1623,6 +1565,10 @@ function OverviewTab({
       onOpenDeliveries={onOpenDeliveries}
       onOpenFuelVolume={onOpenFuelVolume}
       onOpenSites={onOpenSites}
+      portalFilters={portalFilters}
+      availableTypes={availableTypes}
+      availableProjects={availableProjects}
+      availableTags={availableTags}
     />
   );
 }
@@ -1653,6 +1599,10 @@ function OverviewTactical({
   onOpenDeliveries,
   onOpenFuelVolume,
   onOpenSites,
+  portalFilters,
+  availableTypes,
+  availableProjects,
+  availableTags,
 }: {
   transactions: any[];
   companyName?: string;
@@ -1675,6 +1625,10 @@ function OverviewTactical({
   onOpenDeliveries?: () => void;
   onOpenFuelVolume?: () => void;
   onOpenSites?: () => void;
+  portalFilters?: ReturnType<typeof usePortalFilters>;
+  availableTypes?: string[];
+  availableProjects?: { id: string; name: string }[];
+  availableTags?: { id: string; name: string }[];
 }) {
   const fmtBig = (n: number) =>
     n >= 1_000_000
@@ -1879,9 +1833,62 @@ function OverviewTactical({
 
       {/* Filters summary + Export — sits between KPIs and the map */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <span className="text-[11px] text-muted-foreground tabular-nums">
-          {numDeliveries.toLocaleString()} deliveries shown
-        </span>
+        {portalFilters && (
+          <details>
+            <summary
+              style={{
+                listStyle: "none",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 10px",
+                border: `1px solid ${T.border}`,
+                borderRadius: 999,
+                background: T.surface,
+                fontSize: 11,
+                fontFamily: T.sansHead,
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: T.textSecondary,
+              }}
+            >
+              <Filter size={12} />
+              Filters
+              {(portalFilters.filters.types.length +
+                portalFilters.filters.projects.length +
+                portalFilters.filters.tags.length) > 0 && (
+                <span
+                  style={{
+                    background: T.accent,
+                    color: "#0E1F10",
+                    borderRadius: 999,
+                    padding: "1px 7px",
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {portalFilters.filters.types.length +
+                    portalFilters.filters.projects.length +
+                    portalFilters.filters.tags.length}
+                </span>
+              )}
+            </summary>
+            <div style={{ marginTop: 8 }}>
+              <PortalFilterBar
+                filters={portalFilters.filters}
+                onTypes={portalFilters.setTypes}
+                onProjects={portalFilters.setProjects}
+                onTags={portalFilters.setTags}
+                onReset={portalFilters.reset}
+                availableTypes={availableTypes || []}
+                availableProjects={availableProjects || []}
+                availableTags={availableTags || []}
+              />
+            </div>
+          </details>
+        )}
         <button
           type="button"
           onClick={onExportCsv}
