@@ -1,0 +1,1 @@
+ALTER TABLE public.dispatch_stops ADD COLUMN IF NOT EXISTS customer_role text;
