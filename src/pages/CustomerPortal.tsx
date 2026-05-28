@@ -2281,7 +2281,7 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
       if (!clientAccountId) return [];
       const { data, error } = await supabase
         .from("dispatch_stops" as any)
-        .select("*")
+        .select("*, projects(name), trucks(name, rego)")
         .eq("client_account_id", clientAccountId)
         .eq("status", "completed")
         .not("customer_signature", "is", null)
@@ -2293,6 +2293,18 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
     enabled: !!clientAccountId,
   });
   const [open, setOpen] = useState<any | null>(null);
+  const { data: driverNameById = {} } = useQuery({
+    queryKey: ["signed-dockets-drivers", dockets.map((d: any) => d.driver_user_id).filter(Boolean).sort().join(",")],
+    queryFn: async () => {
+      const ids = Array.from(new Set(dockets.map((d: any) => d.driver_user_id).filter(Boolean)));
+      if (!ids.length) return {} as Record<string, string>;
+      const { data } = await supabase.from("user_roles").select("user_id, full_name, email").in("user_id", ids);
+      const map: Record<string, string> = {};
+      (data || []).forEach((u: any) => { map[u.user_id] = u.full_name || u.email || ""; });
+      return map;
+    },
+    enabled: dockets.length > 0,
+  });
   if (!dockets.length) return null;
   return (
     <div style={card}>
@@ -2337,9 +2349,61 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
             <div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>
               {open.signed_at ? format(parseISO(open.signed_at), "d MMM yyyy · HH:mm") : ""}
             </div>
-            <div style={{ fontSize: 13, marginBottom: 8 }}>
-              <strong>Delivered:</strong> {Number(open.delivered_litres || 0).toLocaleString()} L
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12, fontSize: 12 }}>
+              {open.projects?.name && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Project</div>
+                  <div style={{ fontWeight: 600, color: "#0E1F10" }}>{open.projects.name}</div>
+                </div>
+              )}
+              {open.address && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Address</div>
+                  <div style={{ color: "#0E1F10" }}>{open.address}</div>
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Delivered</div>
+                <div style={{ fontWeight: 700, color: "#0E1F10" }}>{Number(open.delivered_litres || 0).toLocaleString()} L</div>
+              </div>
+              {(open.trucks?.name || open.trucks?.rego) && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Truck</div>
+                  <div style={{ color: "#0E1F10" }}>
+                    {open.trucks?.name}{open.trucks?.rego ? ` · ${open.trucks.rego}` : ""}
+                  </div>
+                </div>
+              )}
+              {open.driver_user_id && driverNameById[open.driver_user_id] && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Driver</div>
+                  <div style={{ color: "#0E1F10" }}>{driverNameById[open.driver_user_id]}</div>
+                </div>
+              )}
             </div>
+
+            {Array.isArray(open.products?.lines) && open.products.lines.length > 0 && (
+              <div style={{ marginBottom: 12, border: "1px solid #eee", borderRadius: 8, overflow: "hidden" }}>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", padding: "8px 10px", background: "#f7f7f5" }}>
+                  Equipment fuelled ({open.products.lines.length})
+                </div>
+                <div>
+                  {open.products.lines.map((ln: any, idx: number) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderTop: idx === 0 ? "none" : "1px solid #f0f0f0", fontSize: 12 }}>
+                      <span style={{ color: "#0E1F10", minWidth: 0, marginRight: 8 }}>
+                        <strong>{ln.placa || "—"}</strong>
+                        {ln.product ? ` · ${ln.product}` : ""}
+                        {ln.fleet ? ` · ${ln.fleet}` : ""}
+                      </span>
+                      <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#0E1F10" }}>
+                        {Number(ln.litres || 0).toFixed(2)} L
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {open.signature_notes && (
               <div style={{ fontSize: 12, marginBottom: 12, color: "#444" }}>
                 <strong>Notes:</strong> {open.signature_notes}
@@ -2348,7 +2412,7 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
             {open.customer_signature && (
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", marginBottom: 4 }}>
-                  Customer ({open.customer_name})
+                  Customer — {open.customer_name}{open.customer_role ? ` · ${open.customer_role}` : ""}
                 </div>
                 <img src={open.customer_signature} alt="Customer signature" style={{ maxWidth: "100%", border: "1px solid #eee", borderRadius: 6 }} />
               </div>
@@ -2356,7 +2420,7 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
             {open.driver_signature && (
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", marginBottom: 4 }}>
-                  Driver
+                  Driver{open.driver_user_id && driverNameById[open.driver_user_id] ? ` — ${driverNameById[open.driver_user_id]}` : ""}
                 </div>
                 <img src={open.driver_signature} alt="Driver signature" style={{ maxWidth: "100%", border: "1px solid #eee", borderRadius: 6 }} />
               </div>

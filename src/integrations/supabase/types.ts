@@ -689,6 +689,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           customer_name: string | null
+          customer_role: string | null
           customer_signature: string | null
           delivered_litres: number | null
           driver_signature: string | null
@@ -717,6 +718,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_name?: string | null
+          customer_role?: string | null
           customer_signature?: string | null
           delivered_litres?: number | null
           driver_signature?: string | null
@@ -745,6 +747,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_name?: string | null
+          customer_role?: string | null
           customer_signature?: string | null
           delivered_litres?: number | null
           driver_signature?: string | null

@@ -17,6 +17,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
     stop.delivered_litres ? String(stop.delivered_litres) : "",
   );
   const [customerName, setCustomerName] = useState("");
+  const [customerRole, setCustomerRole] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingActuals, setLoadingActuals] = useState(true);
@@ -117,6 +118,10 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
       toast.error("Enter the customer / site rep name");
       return;
     }
+    if (!customerRole.trim()) {
+      toast.error("Enter the customer role (e.g. Site Manager)");
+      return;
+    }
     if (custRef.current?.isEmpty()) {
       toast.error("Customer signature is required");
       return;
@@ -134,6 +139,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
           completed_at: new Date().toISOString(),
           delivered_litres: litres,
           customer_name: customerName.trim(),
+          customer_role: customerRole.trim() || null,
           customer_signature: custRef.current?.toDataURL() || null,
           driver_signature: drvRef.current?.toDataURL() || null,
           signed_at: new Date().toISOString(),
@@ -247,6 +253,17 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
               onChange={(e) => setCustomerName(e.target.value)}
               className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-3 text-base outline-none focus:border-gray-900"
               placeholder="Full name"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer role / title</label>
+            <input
+              type="text"
+              value={customerRole}
+              onChange={(e) => setCustomerRole(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-3 text-base outline-none focus:border-gray-900"
+              placeholder="e.g. Site Manager, Foreman, Plant Operator"
             />
           </div>
 
