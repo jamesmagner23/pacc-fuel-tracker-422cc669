@@ -29,7 +29,7 @@ const navGroups: NavGroup[] = [
     items: [
       { tab: "Overview", label: "Overview", icon: LayoutDashboard },
       { tab: "Deliveries", label: "Deliveries", icon: Truck },
-      { tab: "Fleet", label: "Fleet", icon: Wrench },
+      { tab: "Fleet", label: "Equipment", icon: Wrench },
       { tab: "Reports", label: "Reports", icon: FileBarChart },
       { tab: "Profile", label: "Profile", icon: UserIcon },
     ],

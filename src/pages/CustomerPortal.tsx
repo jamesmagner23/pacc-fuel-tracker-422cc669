@@ -3993,9 +3993,9 @@ function PlantTab({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <h2 style={sectionTitle}>Plant &amp; Projects</h2>
+        <h2 style={sectionTitle}>Equipment</h2>
         <p style={{ ...muted(12), margin: "4px 0 0" }}>
-          Drag a plant card into a project column to reassign. Each plant belongs to one project at a time.
+          All plant, machinery and tanks. Drag a card into a project column to reassign — each item belongs to one project at a time.
         </p>
       </div>
 
