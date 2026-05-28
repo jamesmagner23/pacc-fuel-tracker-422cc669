@@ -22,6 +22,10 @@ import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { useClientProfile } from "@/hooks/useClientProfile";
 import { Filter, Droplet, DollarSign, Truck, Gauge, Receipt, MapPin, Download, HelpCircle, Mail } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   usePortalFilters,
