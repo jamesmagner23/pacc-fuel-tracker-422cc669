@@ -426,7 +426,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam]);
   const setActiveTab = setActiveTabState as (t: Tab) => void;
-  const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
+  const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Emissions");
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
   const isDemo = useDemo();
