@@ -577,11 +577,6 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   }, [isDemo, activeTab]);
 
 
-  // The body of the portal — same in standalone and in demo mode (where the
-  // admin Layout already provides the sidebar/topbar chrome).
-  const body = (
-    <>
-      <PageHeader title={activeTab} breadcrumb={breadcrumbFor(activeTab)} showPeriod={false} />
 
       {/* Day / Week / Month period toggle — applies to time-series tabs.
           Overview embeds its own period selector inside the dashboard. */}
