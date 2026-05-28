@@ -1635,6 +1635,10 @@ function OverviewTactical({
   transactions,
   companyName,
   periodLabel,
+  period,
+  setPeriod,
+  customRange,
+  setCustomRange,
   totalLitres,
   numDeliveries,
   avgDrop,
@@ -1647,10 +1651,16 @@ function OverviewTactical({
   recent,
   onExportCsv,
   onOpenDeliveries,
+  onOpenFuelVolume,
+  onOpenSites,
 }: {
   transactions: any[];
   companyName?: string;
   periodLabel?: string;
+  period: PortalPeriod;
+  setPeriod: (p: PortalPeriod) => void;
+  customRange: { from?: Date; to?: Date };
+  setCustomRange: (r: { from?: Date; to?: Date }) => void;
   totalLitres: number;
   numDeliveries: number;
   avgDrop: number;
@@ -1663,6 +1673,8 @@ function OverviewTactical({
   recent: any[];
   onExportCsv: () => void;
   onOpenDeliveries?: () => void;
+  onOpenFuelVolume?: () => void;
+  onOpenSites?: () => void;
 }) {
   const fmtBig = (n: number) =>
     n >= 1_000_000
