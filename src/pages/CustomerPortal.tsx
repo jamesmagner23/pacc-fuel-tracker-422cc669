@@ -1640,6 +1640,7 @@ function OverviewTactical({
   portalFilters?: ReturnType<typeof usePortalFilters>;
   availableTypes?: string[];
   availableProjects?: { id: string; name: string }[];
+  activeSitesCount?: number;
   availableTags?: { id: string; name: string }[];
 }) {
   const fmtBig = (n: number) =>
