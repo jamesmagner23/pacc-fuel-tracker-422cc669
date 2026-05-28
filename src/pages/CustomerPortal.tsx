@@ -2336,7 +2336,7 @@ function DeliveriesTab({
     return m;
   }, [plantItems]);
 
-  const [siteFilter, setSiteFilter] = useState("all");
+  const [plantFilter, setPlantFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -2359,10 +2359,22 @@ function DeliveriesTab({
     window.open(`/docket/multi?ids=${ids}${extra}`, "_blank");
   };
 
-  const sites = useMemo(
-    () => Array.from(new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean))) as string[],
-    [transactions]
-  );
+  // Plant items that actually appear in this client's transactions
+  const plantOptions = useMemo(() => {
+    const seen = new Set<string>();
+    transactions.forEach((t) => {
+      const p = (t.placa || "").toString().trim();
+      if (p) seen.add(p);
+    });
+    return Array.from(seen)
+      .map((placa) => {
+        const pi = plantItems.find(
+          (x) => (x.placa || "").toString().trim().toLowerCase() === placa.toLowerCase()
+        );
+        return { placa, label: pi?.name || placa };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [transactions, plantItems]);
 
   // Build placa → projectId map from assignments + plant items
   const placaToProject = useMemo(() => {
@@ -2396,7 +2408,10 @@ function DeliveriesTab({
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
-      if (siteFilter !== "all" && t.nombre_cliente1 !== siteFilter) return false;
+      if (plantFilter !== "all") {
+        const placa = (t.placa || "").toString().trim();
+        if (placa.toLowerCase() !== plantFilter.toLowerCase()) return false;
+      }
       if (projectFilter !== "all") {
         const placa = (t.placa || "").toString().trim();
         if (placaToProject[placa] !== projectFilter) return false;
@@ -2406,7 +2421,7 @@ function DeliveriesTab({
       if (toDate && d > toDate) return false;
       return true;
     });
-  }, [transactions, siteFilter, projectFilter, placaToProject, fromDate, toDate]);
+  }, [transactions, plantFilter, projectFilter, placaToProject, fromDate, toDate]);
 
   const exportDeliveries = () => {
     const rows: (string | number)[][] = [
@@ -2465,13 +2480,13 @@ function DeliveriesTab({
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8 }}>
-        <select value={siteFilter} onChange={(e) => setSiteFilter(e.target.value)} style={inputStyle}>
-          <option value="all">All Sites</option>
-          {sites.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
         <select value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} style={inputStyle}>
           <option value="all">All Projects</option>
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+        <select value={plantFilter} onChange={(e) => setPlantFilter(e.target.value)} style={inputStyle}>
+          <option value="all">All Plant</option>
+          {plantOptions.map((p) => <option key={p.placa} value={p.placa}>{p.label}</option>)}
         </select>
         <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={inputStyle} placeholder="From" />
         <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={inputStyle} placeholder="To" />
