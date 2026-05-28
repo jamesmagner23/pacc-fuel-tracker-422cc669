@@ -783,6 +783,9 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 transactions={filteredTransactions}
                 allTransactions={transactions}
                 period={period}
+                setPeriod={setPeriod}
+                customRange={customRange}
+                setCustomRange={setCustomRange}
                 demoSuffix={demoSuffix}
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
@@ -792,6 +795,14 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                   setActiveTab("Reports");
                 }}
                 onOpenDeliveries={() => setActiveTab("Deliveries")}
+                onOpenFuelVolume={() => {
+                  setReportsSubtab("Analytics");
+                  setActiveTab("Reports");
+                }}
+                onOpenSites={() => {
+                  setFleetSubtab("Projects");
+                  setActiveTab("Fleet");
+                }}
                 periodLabel={PERIOD_LABELS[period]}
                 companyName={companyName}
               />
