@@ -1517,185 +1517,319 @@ function OverviewTab({
   const topPlant = plantBreakdown[0];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Quick actions — surfaced from Overview so the customer can grab a
-          CSV or jump into Deliveries without hunting through Reports. */}
-      {transactions.length > 0 && (
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
-          <button
-            type="button"
-            onClick={() => {
-              const header = ["Date", "Site", "Plant", "Rego", "Litres", "Docket"];
-              const rows = transactions.map((t: any) => [
-                t.date || "",
-                t.estacion || t.ciudad || t.nombre_cliente1 || "",
-                t.identificador_cliente1 || "",
-                t.placa || "",
-                (t.cantidad || 0).toFixed(2),
-                t.id ?? "",
-              ]);
-              const safeName = (companyName || "deliveries").replace(/[^A-Za-z0-9]+/g, "-");
-              const safePeriod = (periodLabel || "current").replace(/\s+/g, "-");
-              downloadCSV([header, ...rows], `${safeName}-deliveries-${safePeriod}.csv`);
-            }}
-            style={{
-              background: "transparent",
-              color: T.text,
-              border: `1px solid ${T.border}`,
-              borderRadius: 999,
-              padding: "6px 12px",
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-            }}
-          >
-            ↓ Export Deliveries CSV
-          </button>
+    <OverviewTactical
+      transactions={transactions}
+      companyName={companyName}
+      periodLabel={periodLabel}
+      totalLitres={totalLitres}
+      numDeliveries={numDeliveries}
+      avgDrop={avgDrop}
+      prevLitres={prevLitres}
+      prevDeliveries={prevDeliveries}
+      prevAvg={prevAvg}
+      sitesCount={sites.size}
+      donutRows={donutData.rows}
+      donutTotal={donutData.total}
+      recent={recent}
+      onExportCsv={() => {
+        const header = ["Date", "Site", "Plant", "Rego", "Litres", "Docket"];
+        const rows = transactions.map((t: any) => [
+          t.date || "",
+          t.estacion || t.ciudad || t.nombre_cliente1 || "",
+          t.identificador_cliente1 || "",
+          t.placa || "",
+          (t.cantidad || 0).toFixed(2),
+          t.id ?? "",
+        ]);
+        const safeName = (companyName || "deliveries").replace(/[^A-Za-z0-9]+/g, "-");
+        const safePeriod = (periodLabel || "current").replace(/\s+/g, "-");
+        downloadCSV([header, ...rows], `${safeName}-deliveries-${safePeriod}.csv`);
+      }}
+      onOpenDeliveries={onOpenDeliveries}
+    />
+  );
+}
+
+// ─── Tactical Overview presentation ───────────────────────────────────
+// Dense "command hub" layout: header + KPI bento + live map + top sites
+// + truck trend + recent deliveries. Uses semantic tokens so it tracks
+// both the light and dark portal palettes.
+function OverviewTactical({
+  transactions,
+  companyName,
+  periodLabel,
+  totalLitres,
+  numDeliveries,
+  avgDrop,
+  prevLitres,
+  prevDeliveries,
+  prevAvg,
+  sitesCount,
+  donutRows,
+  donutTotal,
+  recent,
+  onExportCsv,
+  onOpenDeliveries,
+}: {
+  transactions: any[];
+  companyName?: string;
+  periodLabel?: string;
+  totalLitres: number;
+  numDeliveries: number;
+  avgDrop: number;
+  prevLitres: number;
+  prevDeliveries: number;
+  prevAvg: number;
+  sitesCount: number;
+  donutRows: { name: string; value: number }[];
+  donutTotal: number;
+  recent: any[];
+  onExportCsv: () => void;
+  onOpenDeliveries?: () => void;
+}) {
+  const fmtBig = (n: number) =>
+    n >= 1_000_000
+      ? `${(n / 1_000_000).toFixed(2)}M`
+      : n >= 1_000
+        ? `${(n / 1_000).toFixed(1)}k`
+        : `${Math.round(n)}`;
+  const pctChange = (curr: number, prev: number): number | null =>
+    prev === 0 ? null : ((curr - prev) / prev) * 100;
+  const litresPct = pctChange(totalLitres, prevLitres);
+  const dropsPct = pctChange(numDeliveries, prevDeliveries);
+  const avgPct = pctChange(avgDrop, prevAvg);
+
+  // KPI progress visualisations: width tracks current vs (current + prev)
+  // so a healthy growth fills the bar past the midline.
+  const ratio = (curr: number, prev: number): number => {
+    const total = curr + prev;
+    if (total <= 0) return 0;
+    return Math.max(4, Math.min(100, Math.round((curr / total) * 100)));
+  };
+
+  const topSites = donutRows.slice(0, 5);
+  const topSiteMax = topSites.reduce((m, r) => Math.max(m, r.value), 0);
+
+  const Delta = ({ value }: { value: number | null }) => {
+    if (value == null) return <span className="text-[10px] font-semibold tracking-wider text-muted-foreground/70">NEW</span>;
+    const up = value >= 0;
+    return (
+      <span
+        className="text-[10px] font-bold tracking-wider tabular-nums"
+        style={{ color: up ? "var(--positive)" : "var(--negative)" }}
+      >
+        {up ? "▲" : "▼"} {Math.abs(value).toFixed(0)}%
+      </span>
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Header row */}
+      <div className="flex justify-between items-end gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] uppercase tracking-[0.18em] font-semibold mb-1" style={{ color: "var(--accent)" }}>
+            Portal / {companyName || "Account"}
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">Overview</h1>
+        </div>
+        <button
+          type="button"
+          onClick={onExportCsv}
+          disabled={transactions.length === 0}
+          className="h-11 px-4 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          style={{ background: "var(--accent)", color: "var(--background)", boxShadow: "0 4px 16px -6px var(--accent)" }}
+        >
+          <Download className="w-4 h-4" strokeWidth={2.5} />
+          <span className="text-xs font-bold tracking-wider">EXPORT</span>
+        </button>
+      </div>
+
+      {/* KPI bento — 2x2 on mobile, 4-up on lg */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Fuel volume — hero KPI with progress */}
+        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Fuel Volume</span>
+            <Delta value={litresPct} />
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-xl font-bold text-foreground tabular-nums">{fmtBig(totalLitres)}</span>
+            <span className="text-[10px] font-medium" style={{ color: "var(--accent)" }}>LITRES</span>
+          </div>
+          <div className="mt-3 h-1 w-full rounded-full overflow-hidden" style={{ background: "var(--border-subtle)" }}>
+            <div className="h-full rounded-full transition-all" style={{ background: "var(--accent)", width: `${ratio(totalLitres, prevLitres)}%` }} />
+          </div>
+        </div>
+
+        {/* Deliveries — segmented bar */}
+        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Deliveries</span>
+            <Delta value={dropsPct} />
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-xl font-bold text-foreground tabular-nums">{numDeliveries.toLocaleString()}</span>
+            <span className="text-[10px] font-medium text-muted-foreground">DROPS</span>
+          </div>
+          <div className="mt-3 flex gap-1">
+            {Array.from({ length: 5 }).map((_, i) => {
+              const fillUpTo = Math.round((Math.min(numDeliveries, prevDeliveries + numDeliveries) / Math.max(1, prevDeliveries + numDeliveries)) * 5);
+              const active = i < fillUpTo;
+              return (
+                <div
+                  key={i}
+                  className="h-1 flex-1 rounded-full"
+                  style={{ background: active ? "var(--accent)" : "var(--border-subtle)" }}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Active sites */}
+        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Active Sites</span>
+            <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider" style={{ color: "var(--positive)" }}>
+              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--positive)" }} />
+              LIVE
+            </span>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-xl font-bold text-foreground tabular-nums">{sitesCount.toLocaleString()}</span>
+            <span className="text-[10px] font-medium text-muted-foreground">{sitesCount === 1 ? "SITE" : "SITES"}</span>
+          </div>
+          <div className="mt-3 text-[10px] text-muted-foreground/80 truncate">
+            {topSites[0]?.name || "Awaiting first delivery"}
+          </div>
+        </div>
+
+        {/* Avg per load */}
+        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Avg / Load</span>
+            <Delta value={avgPct} />
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-xl font-bold text-foreground tabular-nums">{avgDrop > 0 ? fmtBig(avgDrop) : "—"}</span>
+            <span className="text-[10px] font-medium text-muted-foreground">LITRES</span>
+          </div>
+          <div className="mt-3 h-1 w-full rounded-full overflow-hidden" style={{ background: "var(--border-subtle)" }}>
+            <div className="h-full rounded-full transition-all" style={{ background: "var(--accent)", width: `${ratio(avgDrop, prevAvg)}%` }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Live truck map block */}
+      <div className="relative rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
+        <div className="absolute top-3 left-3 z-10 backdrop-blur-md px-2 py-1 rounded border flex items-center gap-2" style={{ background: "rgba(0,0,0,0.55)", borderColor: "rgba(255,255,255,0.10)" }}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "var(--accent)" }} />
+          <span className="text-[9px] font-bold uppercase tracking-tight text-white">Live · Truck Telemetry</span>
+        </div>
+        <TruckMap height={220} showStops={true} />
+      </div>
+
+      {/* Top Volume Sites */}
+      <div className="rounded-2xl p-5 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">Top Volume Sites</h3>
           {onOpenDeliveries && (
             <button
               type="button"
               onClick={onOpenDeliveries}
-              style={{
-                background: "transparent",
-                color: T.text,
-                border: `1px solid ${T.accent}88`,
-                borderRadius: 999,
-                padding: "6px 12px",
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                cursor: "pointer",
-              }}
+              className="text-[10px] font-bold tracking-wider"
+              style={{ color: "var(--accent)" }}
             >
-              View &amp; download dockets →
+              VIEW ALL →
             </button>
           )}
         </div>
-      )}
-
-      {/* KPI sparkline tiles — matches admin Overview pattern */}
-      {/* Colourful desktop summary band — gives the top of the Overview a
-          visible identity on large screens. Hidden below lg where the KPI
-          tiles already lead. */}
-      {transactions.length > 0 && (
-        <div
-          className="hidden lg:block rounded-3xl p-6 shadow-sm overflow-hidden relative"
-          style={{
-            background:
-              "linear-gradient(120deg, #0E1F10 0%, #1c3a1f 45%, #2A6A2E 100%)",
-            color: "#F4F5F1",
-          }}
-        >
-          <div
-            className="absolute -right-16 -top-16 w-72 h-72 rounded-full pointer-events-none"
-            style={{ background: "radial-gradient(circle, #C8F26A 0%, transparent 60%)", opacity: 0.55 }}
-          />
-          <div className="relative flex items-end justify-between gap-6 flex-wrap">
-            <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: "#C8F26A" }}>
-                {periodLabel || "This Period"} · {companyName}
-              </div>
-              <h1 className="font-display text-4xl xl:text-5xl font-bold mt-1 leading-tight tabular-nums" style={{ color: "#F4F5F1" }}>
-                {totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(1)}k` : totalLitres.toFixed(0)}{" "}
-                <span className="text-2xl xl:text-3xl font-medium" style={{ color: "#C8F26A" }}>litres delivered</span>
-              </h1>
-              <p className="text-sm mt-2" style={{ color: "rgba(244,245,241,0.78)" }}>
-                Across {numDeliveries.toLocaleString()} {numDeliveries === 1 ? "drop" : "drops"} to {sites.size.toLocaleString()} {sites.size === 1 ? "site" : "sites"}
-                {truckSeries.top.length > 1 && (
-                  <> · {truckSeries.top.length} active trucks</>
-                )}
-              </p>
-            </div>
-            <div className="flex gap-3 flex-wrap">
-              {[
-                { label: "Deliveries", value: numDeliveries.toLocaleString(), accent: "#C8F26A" },
-                { label: "Avg Drop", value: avgDrop > 0 ? `${Math.round(avgDrop).toLocaleString()} L` : "—", accent: "#7DD3FC" },
-                { label: "Active Sites", value: sites.size.toLocaleString(), accent: "#FCD34D" },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl px-4 py-3 min-w-[140px]"
-                  style={{ background: "rgba(244,245,241,0.08)", border: "1px solid rgba(200,242,106,0.18)" }}
-                >
-                  <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: stat.accent }}>
-                    {stat.label}
+        {topSites.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No site activity for this period.</p>
+        ) : (
+          <div className="space-y-4">
+            {topSites.map((r) => {
+              const pctOfTop = topSiteMax > 0 ? (r.value / topSiteMax) * 100 : 0;
+              const pctOfTotal = donutTotal > 0 ? (r.value / donutTotal) * 100 : 0;
+              return (
+                <div key={r.name} className="space-y-1.5">
+                  <div className="flex justify-between text-[11px] font-medium gap-2">
+                    <span className="text-foreground truncate">{r.name}</span>
+                    <span className="text-foreground tabular-nums shrink-0">
+                      {fmtBig(r.value)} L <span className="text-muted-foreground font-normal">· {pctOfTotal.toFixed(0)}%</span>
+                    </span>
                   </div>
-                  <div className="font-display text-xl font-bold tabular-nums mt-1" style={{ color: "#F4F5F1" }}>
-                    {stat.value}
+                  <div className="h-1.5 w-full rounded-full" style={{ background: "var(--border-subtle)" }}>
+                    <div className="h-full rounded-full transition-all" style={{ background: "var(--accent)", width: `${pctOfTop}%` }} />
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KPISparklineCard
-          label={`${prefix} Litres Delivered`}
-          value={totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`}
-          deltaPct={pct(totalLitres, prevLitres)}
-          trend={sparkLitres}
-          fallbackContext="Comparison resumes with previous period data"
-          icon={Droplet}
-          tintBg="#E8EDE5"
-          tintColor="#2A6A2E"
-        />
-        <KPISparklineCard
-          label={`${prefix} Deliveries`}
-          value={numDeliveries.toLocaleString()}
-          deltaPct={pct(numDeliveries, prevDeliveries)}
-          trend={sparkDeliveries}
-          fallbackContext="Comparison resumes with previous period data"
-          icon={Truck}
-          tintBg="#EAEEFC"
-          tintColor="#2B3D8E"
-        />
-        <KPISparklineCard
-          label={`${prefix} Avg Drop`}
-          value={avgDrop > 0 ? `${Math.round(avgDrop).toLocaleString()} L` : "—"}
-          deltaPct={pct(avgDrop, prevAvg)}
-          trend={sparkAvg}
-          fallbackContext="Comparison resumes with previous period data"
-          icon={Gauge}
-          tintBg="#F4F0E6"
-          tintColor="#7A5300"
-        />
-        <KPISparklineCard
-          label="Active Sites"
-          value={sites.size.toLocaleString()}
-          deltaPct={null}
-          trend={sparkDeliveries}
-          fallbackContext="— no change"
-          icon={MapPin}
-          tintBg="#EAEEFC"
-          tintColor="#2B3D8E"
-        />
-        <KPISparklineCard
-          label={`${prefix} FTC Savings`}
-          value={ftcSavings > 0 ? `$${ftcSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
-          deltaPct={pct(totalLitres, prevLitres)}
-          trend={sparkLitres}
-          fallbackContext="Estimate based on off-road FTC rate"
-          icon={Receipt}
-          tintBg="#E8EDE5"
-          tintColor="#2A6A2E"
-        />
-        <KPISparklineCard
-          label={`${prefix} Emissions (CO\u2082e)`}
-          value={totalLitres > 0 ? `${(totalLitres * CO2_FACTOR / 1000).toFixed(2)} t` : "—"}
-          deltaPct={pct(totalLitres, prevLitres)}
-          trend={sparkLitres}
-          fallbackContext={`${CO2_FACTOR} kg CO\u2082e per litre diesel`}
-          icon={Gauge}
-          tintBg="#F4F0E6"
-          tintColor="#7A5300"
-        />
+        )}
       </div>
 
+      {/* Recent deliveries */}
+      <div className="flex flex-col gap-3">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Recent Deliveries</h3>
+        {recent.length === 0 ? (
+          <div className="rounded-2xl p-6 text-center border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+            <p className="text-xs text-muted-foreground">No deliveries recorded for this period.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recent.map((t: any, i: number) => {
+              const isFirst = i === 0;
+              return (
+                <div
+                  key={t.id || i}
+                  className="p-3 rounded-xl flex items-center gap-4 border transition-colors"
+                  style={{
+                    background: "var(--surface)",
+                    borderColor: "var(--border)",
+                  }}
+                >
+                  <div
+                    className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border"
+                    style={{
+                      background: isFirst ? "var(--accent-light)" : "var(--border-subtle)",
+                      borderColor: isFirst ? "var(--accent)" : "var(--border)",
+                    }}
+                  >
+                    <Droplet className="w-5 h-5" style={{ color: isFirst ? "var(--accent)" : "var(--text-muted)" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">
+                      {(t.placa || t.nombre_cliente1 || "—") + " • " + fmtBig(t.cantidad || 0) + " L"}
+                      {t.producto ? ` ${t.producto}` : ""}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {t.estacion || t.ciudad || "Unknown site"} · {t.date ? formatDate(parseISO(t.date)) : "—"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Legacy chart/site/recent block (no longer rendered) ──────────────
+function _LegacyOverviewExtras_unused() {
+  return null;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _LegacyOverviewBlocks_unused(opts: any) {
+  // The previous Overview layout used the JSX below. Kept inert (never
+  // called) to make the diff smaller and preserve historical intent.
+  const { truckKeys, dailyTrend, TRUCK_COLORS, truckSeries, periodLabel, donutData, DONUT_COLORS, topPlants, recent, T } = opts;
+  return (
+    <div className="hidden">
       {/* Litres growth + Volume by site row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-card border border-border/60 rounded-3xl p-6 md:p-8 shadow-sm">
