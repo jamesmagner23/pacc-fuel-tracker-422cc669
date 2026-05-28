@@ -37,7 +37,7 @@ import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
 import { PortalLayout } from "@/components/portal/PortalLayout";
-import { PageHeader } from "@/components/PageHeader";
+
 import { KPISparklineCard } from "@/components/KPISparklineCard";
 import {
   DropdownMenu,
