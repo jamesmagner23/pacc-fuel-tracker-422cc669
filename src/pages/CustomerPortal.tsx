@@ -576,11 +576,6 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     });
   }, [isDemo, activeTab]);
 
-  const breadcrumbFor = (tab: Tab | "Help") => [
-    { label: "PACC Energy", href: "/portal" },
-    { label: "Portal", href: "/portal" },
-    { label: tab },
-  ];
 
   // The body of the portal — same in standalone and in demo mode (where the
   // admin Layout already provides the sidebar/topbar chrome).
