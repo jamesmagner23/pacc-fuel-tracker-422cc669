@@ -1718,7 +1718,7 @@ function OverviewTactical({
       <div className="flex justify-between items-end gap-3">
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-[0.18em] font-semibold mb-1" style={{ color: "var(--accent)" }}>
-            Portal / {companyName || "Account"}
+            Portal / {companyName || "Account"} · {PERIOD_LABELS[period]}
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">Overview</h1>
         </div>
@@ -1737,7 +1737,13 @@ function OverviewTactical({
       {/* KPI bento — 2x2 on mobile, 4-up on lg */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Fuel volume — hero KPI with progress */}
-        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <button
+          type="button"
+          onClick={onOpenFuelVolume}
+          disabled={!onOpenFuelVolume}
+          className="text-left rounded-2xl p-4 border transition-all hover:border-[var(--accent)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:border-[var(--border)]"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Fuel Volume</span>
             <Delta value={litresPct} />
@@ -1749,10 +1755,16 @@ function OverviewTactical({
           <div className="mt-3 h-1 w-full rounded-full overflow-hidden" style={{ background: "var(--border-subtle)" }}>
             <div className="h-full rounded-full transition-all" style={{ background: "var(--accent)", width: `${ratio(totalLitres, prevLitres)}%` }} />
           </div>
-        </div>
+        </button>
 
         {/* Deliveries — segmented bar */}
-        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <button
+          type="button"
+          onClick={onOpenDeliveries}
+          disabled={!onOpenDeliveries}
+          className="text-left rounded-2xl p-4 border transition-all hover:border-[var(--accent)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:border-[var(--border)]"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Deliveries</span>
             <Delta value={dropsPct} />
@@ -1774,10 +1786,16 @@ function OverviewTactical({
               );
             })}
           </div>
-        </div>
+        </button>
 
         {/* Active sites */}
-        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <button
+          type="button"
+          onClick={onOpenSites}
+          disabled={!onOpenSites}
+          className="text-left rounded-2xl p-4 border transition-all hover:border-[var(--accent)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:border-[var(--border)]"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Active Sites</span>
             <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider" style={{ color: "var(--positive)" }}>
@@ -1792,7 +1810,7 @@ function OverviewTactical({
           <div className="mt-3 text-[10px] text-muted-foreground/80 truncate">
             {topSites[0]?.name || "Awaiting first delivery"}
           </div>
-        </div>
+        </button>
 
         {/* Avg per load */}
         <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -1808,6 +1826,66 @@ function OverviewTactical({
             <div className="h-full rounded-full transition-all" style={{ background: "var(--accent)", width: `${ratio(avgDrop, prevAvg)}%` }} />
           </div>
         </div>
+      </div>
+
+      {/* Period selector — tucked under the KPIs */}
+      <div className="flex items-center justify-between flex-wrap gap-3 -mt-1">
+        <div
+          className="inline-flex items-center gap-1 p-1 rounded-full border"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          {(["day", "week", "month", "all"] as PortalPeriod[]).map((p) => {
+            const active = period === p;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-full transition-all"
+                style={{
+                  color: active ? "var(--background)" : "var(--text-secondary, var(--muted-foreground))",
+                  background: active ? "var(--accent)" : "transparent",
+                }}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            );
+          })}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setPeriod("custom")}
+                className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-full transition-all inline-flex items-center gap-1.5"
+                style={{
+                  color: period === "custom" ? "var(--background)" : "var(--text-secondary, var(--muted-foreground))",
+                  background: period === "custom" ? "var(--accent)" : "transparent",
+                }}
+              >
+                <CalendarIcon className="w-3 h-3" />
+                {period === "custom" && customRange.from
+                  ? `${format(customRange.from, "d MMM")}${customRange.to ? ` – ${format(customRange.to, "d MMM")}` : ""}`
+                  : "Custom"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                selected={{ from: customRange.from, to: customRange.to } as any}
+                onSelect={(r: any) => {
+                  setCustomRange({ from: r?.from, to: r?.to });
+                  if (r?.from) setPeriod("custom");
+                }}
+                numberOfMonths={2}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {numDeliveries.toLocaleString()} deliveries shown
+        </span>
       </div>
 
       {/* Live truck map block */}
