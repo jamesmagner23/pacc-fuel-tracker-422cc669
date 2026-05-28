@@ -2308,24 +2308,36 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
   return (
     <div id="signed-dockets" style={{ ...card, scrollMarginTop: 80 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{ ...labelStyle, marginBottom: 0 }}>Signed Dockets</div>
-        <div style={muted(11)}>{dockets.length} recent</div>
+        <div style={{ ...labelStyle, marginBottom: 0 }}>Delivery Dockets</div>
+        <div style={muted(11)}>
+          {dockets.filter((d: any) => d.customer_signature).length} signed · {dockets.length} total
+        </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column" }}>
         {dockets.map((d, i) => (
           <button
             key={d.id}
-            onClick={() => setOpen(d)}
+            onClick={() => d.customer_signature && setOpen(d)}
+            disabled={!d.customer_signature}
             style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
               padding: "10px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none",
-              background: "transparent", border: "none", textAlign: "left", cursor: "pointer", color: T.text,
+              background: "transparent", border: "none", textAlign: "left",
+              cursor: d.customer_signature ? "pointer" : "default", color: T.text,
             }}
           >
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{d.site_name}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                {d.site_name}
+                {d.customer_signature ? (
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(122,168,77,0.18)", color: "#7AA84D", letterSpacing: "0.05em" }}>SIGNED</span>
+                ) : (
+                  <span style={{ fontSize: 9, fontWeight: 600, padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.06)", color: T.muted, letterSpacing: "0.05em" }}>UNSIGNED</span>
+                )}
+              </div>
               <div style={muted(11)}>
-                {d.signed_at ? format(parseISO(d.signed_at), "d MMM yyyy · HH:mm") : ""}
+                {d.signed_at ? format(parseISO(d.signed_at), "d MMM yyyy · HH:mm")
+                  : d.completed_at ? format(parseISO(d.completed_at), "d MMM yyyy · HH:mm") : ""}
                 {d.customer_name ? ` · Signed by ${d.customer_name}` : ""}
               </div>
             </div>
