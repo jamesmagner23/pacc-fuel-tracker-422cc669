@@ -1864,6 +1864,20 @@ function OverviewTactical({
         </div>
       </div>
 
+      {/* Active sites quick action */}
+      {onOpenSites && (
+        <div className="flex justify-end -mt-2 mb-2">
+          <button
+            type="button"
+            onClick={onOpenSites}
+            className="text-[10px] font-bold tracking-wider transition-colors hover:opacity-80"
+            style={{ color: "var(--accent)" }}
+          >
+            VIEW ALL PROJECTS →
+          </button>
+        </div>
+      )}
+
       {/* Filters summary + Export — sits between KPIs and the map */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         {portalFilters && (
