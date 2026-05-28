@@ -87,6 +87,7 @@ export function PortalLayout({
       Overview: "",
       Deliveries: "deliveries",
       Fleet: "fleet",
+      Projects: "projects",
       Reports: "reports",
       Profile: "profile",
     };
