@@ -1358,6 +1358,7 @@ function OverviewTab({
   portalFilters,
   availableTypes,
   availableProjects,
+  activeSitesCount,
   availableTags,
   placaToProjectName,
 }: {
