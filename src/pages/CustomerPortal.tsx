@@ -707,66 +707,6 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
           </div>
         )}
 
-        {/* Shared filter bar — collapsed by default to save space.
-            Active filter count surfaces as a pill on the summary row. */}
-        {(activeTab === "Overview" ||
-          activeTab === "Deliveries" ||
-          (activeTab === "Fleet" && fleetSubtab === "Plant")) && (
-          <details style={{ marginBottom: 16 }}>
-            <summary
-              style={{
-                listStyle: "none",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "6px 10px",
-                border: `1px solid ${T.border}`,
-                borderRadius: 999,
-                background: T.surface,
-                fontSize: 11,
-                fontFamily: T.sansHead,
-                fontWeight: 600,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: T.textSecondary,
-              }}
-            >
-              <Filter size={12} />
-              Filters
-              {(portalFilters.filters.types.length +
-                portalFilters.filters.projects.length +
-                portalFilters.filters.tags.length) > 0 && (
-                <span
-                  style={{
-                    background: T.accent,
-                    color: "#0E1F10",
-                    borderRadius: 999,
-                    padding: "1px 7px",
-                    fontSize: 10,
-                    fontWeight: 700,
-                  }}
-                >
-                  {portalFilters.filters.types.length +
-                    portalFilters.filters.projects.length +
-                    portalFilters.filters.tags.length}
-                </span>
-              )}
-            </summary>
-            <div style={{ marginTop: 8 }}>
-              <PortalFilterBar
-                filters={portalFilters.filters}
-                onTypes={portalFilters.setTypes}
-                onProjects={portalFilters.setProjects}
-                onTags={portalFilters.setTags}
-                onReset={portalFilters.reset}
-                availableTypes={availableTypes}
-                availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
-                availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
-              />
-            </div>
-          </details>
-        )}
 
         {isLoading && !(activeTab === "Fleet" && fleetSubtab === "Plant") ? (
           <p style={muted(13)}>Loading...</p>
