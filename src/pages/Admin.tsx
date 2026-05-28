@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, Gauge, Users, Shield, TrendingUp, UserMinus, MousePointerClick, Mail, Palette, FileText } from "lucide-react";
+import { LayoutDashboard, Gauge, Users, Shield, TrendingUp, UserMinus, MousePointerClick, Mail, Palette, FileText, FileSignature } from "lucide-react";
 import Reconciliation from "./Reconciliation";
 import SOPManager from "@/components/admin/SOPManager";
 import AdminOverview from "@/components/admin/AdminOverview";
@@ -10,8 +10,9 @@ import EmailClicksTab from "@/components/admin/EmailClicksTab";
 import Outreach from "./Outreach";
 import BrandingTab from "@/components/admin/BrandingTab";
 import EmailTemplatesTab from "@/components/admin/EmailTemplatesTab";
+import SignedDocketsTab from "@/components/admin/SignedDocketsTab";
 
-type TabId = "overview" | "reconciliation" | "users" | "sops" | "ebitda" | "winback" | "email-clicks" | "outreach" | "email-templates" | "branding";
+type TabId = "overview" | "reconciliation" | "dockets" | "users" | "sops" | "ebitda" | "winback" | "email-clicks" | "outreach" | "email-templates" | "branding";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
@@ -19,6 +20,7 @@ export default function Admin() {
   const tabs: { id: TabId; label: string; icon: JSX.Element }[] = [
     { id: "overview", label: "Overview", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
     { id: "reconciliation", label: "Reconciliation", icon: <Gauge className="w-3.5 h-3.5" /> },
+    { id: "dockets", label: "Signed Dockets", icon: <FileSignature className="w-3.5 h-3.5" /> },
     { id: "users", label: "Users & Activity", icon: <Users className="w-3.5 h-3.5" /> },
     { id: "sops", label: "SOPs", icon: <Shield className="w-3.5 h-3.5" /> },
     { id: "ebitda", label: "EBITDA", icon: <TrendingUp className="w-3.5 h-3.5" /> },
@@ -51,6 +53,7 @@ export default function Admin() {
 
       {activeTab === "overview" && <AdminOverview />}
       {activeTab === "reconciliation" && <Reconciliation />}
+      {activeTab === "dockets" && <SignedDocketsTab />}
       {activeTab === "users" && <UsersActivityTab />}
       {activeTab === "sops" && <SOPManager />}
       {activeTab === "ebitda" && <EBITDATab />}
