@@ -167,13 +167,13 @@ type FleetSubtab = (typeof fleetSubtabs)[number];
 const reportSubtabs = ["Analytics", "Emissions", "Fuel Tax Credit"] as const;
 type ReportSubtab = (typeof reportSubtabs)[number];
 
-// Day / Week / Month period toggle for the customer portal.
-type PortalPeriod = "day" | "week" | "month" | "all";
-const PERIOD_DAYS: Record<PortalPeriod, number | null> = {
+// Day / Week / Month / Custom period toggle for the customer portal.
+type PortalPeriod = "day" | "week" | "month" | "all" | "custom";
+const PERIOD_DAYS: Record<Exclude<PortalPeriod, "custom">, number | null> = {
   day: 1, week: 7, month: 30, all: null,
 };
 const PERIOD_LABELS: Record<PortalPeriod, string> = {
-  day: "Today", week: "This Week", month: "This Month", all: "All Time",
+  day: "Daily", week: "Weekly", month: "Monthly", all: "All Time", custom: "Custom",
 };
 
 const CO2_FACTOR = 2.68; // kg CO2e per litre diesel (Australian NGA)
