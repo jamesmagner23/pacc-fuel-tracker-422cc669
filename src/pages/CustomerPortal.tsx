@@ -1714,35 +1714,8 @@ function OverviewTactical({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Header row */}
-      <div className="flex justify-between items-end gap-3">
-        <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.18em] font-semibold mb-1 flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
-            <span>{companyName || "Account"}</span>
-            <span className="opacity-50">·</span>
-            <span className="opacity-80">{PERIOD_LABELS[period]}</span>
-            {period === "custom" && customRange.from && (
-              <span className="opacity-80">
-                ({format(customRange.from, "d MMM")}{customRange.to ? ` – ${format(customRange.to, "d MMM")}` : ""})
-              </span>
-            )}
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">Overview</h1>
-        </div>
-        <button
-          type="button"
-          onClick={onExportCsv}
-          disabled={transactions.length === 0}
-          className="h-11 px-4 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-          style={{ background: "var(--accent)", color: "var(--background)", boxShadow: "0 4px 16px -6px var(--accent)" }}
-        >
-          <Download className="w-4 h-4" strokeWidth={2.5} />
-          <span className="text-xs font-bold tracking-wider">EXPORT</span>
-        </button>
-      </div>
-
-      {/* Period selector — sits above KPIs so it's the first control you see */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      {/* Period selector — first control, sits above the Overview header */}
+      <div className="flex items-center flex-wrap gap-3">
         <div
           className="inline-flex items-center gap-1 p-1 rounded-full border"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}
@@ -1793,9 +1766,21 @@ function OverviewTactical({
             </PopoverContent>
           </Popover>
         </div>
-        <span className="text-[11px] text-muted-foreground tabular-nums">
-          {numDeliveries.toLocaleString()} deliveries shown
-        </span>
+      </div>
+
+      {/* Header row */}
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-[0.18em] font-semibold mb-1 flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
+          <span>{companyName || "Account"}</span>
+          <span className="opacity-50">·</span>
+          <span className="opacity-80">{PERIOD_LABELS[period]}</span>
+          {period === "custom" && customRange.from && (
+            <span className="opacity-80">
+              ({format(customRange.from, "d MMM")}{customRange.to ? ` – ${format(customRange.to, "d MMM")}` : ""})
+            </span>
+          )}
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">Overview</h1>
       </div>
 
       {/* KPI bento — 2x2 on mobile, 4-up on lg */}
@@ -1890,6 +1875,23 @@ function OverviewTactical({
             <div className="h-full rounded-full transition-all" style={{ background: "var(--accent)", width: `${ratio(avgDrop, prevAvg)}%` }} />
           </div>
         </div>
+      </div>
+
+      {/* Filters summary + Export — sits between KPIs and the map */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {numDeliveries.toLocaleString()} deliveries shown
+        </span>
+        <button
+          type="button"
+          onClick={onExportCsv}
+          disabled={transactions.length === 0}
+          className="h-10 px-4 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          style={{ background: "var(--accent)", color: "var(--background)", boxShadow: "0 4px 16px -6px var(--accent)" }}
+        >
+          <Download className="w-4 h-4" strokeWidth={2.5} />
+          <span className="text-xs font-bold tracking-wider">EXPORT</span>
+        </button>
       </div>
 
       {/* Live truck map block */}
