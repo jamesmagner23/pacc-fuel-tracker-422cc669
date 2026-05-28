@@ -5,15 +5,15 @@ import { format, subDays, parseISO } from "date-fns";
 import { BarChart, Bar, XAxis, ResponsiveContainer, LabelList, Cell } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useTransactions, type Transaction } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
-import { useDispatchStops, type DispatchStop } from "@/hooks/useDispatch";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { UserMenu } from "@/components/UserMenu";
 import { PACCLogo } from "@/components/PACCLogo";
 import { formatTime, formatDate } from "@/lib/format";
 import { useSyncTransactions } from "@/hooks/useSyncTransactions";
+import { TruckMap } from "@/components/TruckMap";
 
 /* ---------- helpers ---------- */
 
