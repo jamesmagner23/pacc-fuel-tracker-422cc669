@@ -399,7 +399,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     ? forcedTab
     : (tabs as readonly string[]).includes(tabParam || "")
       ? (tabParam as Tab)
-      : "Overview";
+      : "Deliveries";
   const [activeTab, setActiveTabState] = useState<Tab | "Help">(initialTab);
   // When the URL-driven forcedTab changes (sub-route nav), follow it.
   useEffect(() => {
