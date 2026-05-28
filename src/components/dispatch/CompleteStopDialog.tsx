@@ -2,13 +2,48 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { X, Check, Eraser, Loader2 } from "lucide-react";
+import { X, Check, Eraser, Loader2, RefreshCw } from "lucide-react";
 import { SignaturePad, type SignaturePadHandle } from "./SignaturePad";
 import type { DispatchStop } from "@/hooks/useDispatch";
+import { formatDistanceToNow, parseISO, format } from "date-fns";
 
 interface Props {
   stop: DispatchStop;
   onClose: () => void;
+}
+
+type Txn = {
+  id: number;
+  cantidad: number | null;
+  producto: string | null;
+  nombre_flota: string | null;
+  estacion: string | null;
+  placa: string | null;
+  fecha: string;
+};
+
+// Cluster transactions into "shifts" using time gaps. A gap >= SHIFT_GAP_MIN
+// between consecutive fills (sorted by fecha) starts a new shift bucket.
+const SHIFT_GAP_MIN = 45;
+
+function groupIntoShifts(txns: Txn[]): { start: string; end: string; rows: Txn[] }[] {
+  if (!txns.length) return [];
+  const sorted = [...txns].sort(
+    (a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime(),
+  );
+  const groups: Txn[][] = [[sorted[0]]];
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i - 1].fecha).getTime();
+    const curr = new Date(sorted[i].fecha).getTime();
+    const gapMin = (curr - prev) / 60000;
+    if (gapMin >= SHIFT_GAP_MIN) groups.push([sorted[i]]);
+    else groups[groups.length - 1].push(sorted[i]);
+  }
+  return groups.map((rows) => ({
+    start: rows[0].fecha,
+    end: rows[rows.length - 1].fecha,
+    rows,
+  }));
 }
 
 export function CompleteStopDialog({ stop, onClose }: Props) {
@@ -20,25 +55,24 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingActuals, setLoadingActuals] = useState(true);
-  const [matchedTxns, setMatchedTxns] = useState<Array<{
-    id: number;
-    cantidad: number | null;
-    producto: string | null;
-    nombre_flota: string | null;
-    estacion: string | null;
-    placa: string | null;
-    fecha: string;
-  }>>([]);
+  const [matchedTxns, setMatchedTxns] = useState<Txn[]>([]);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const custRef = useRef<SignaturePadHandle>(null);
   const drvRef = useRef<SignaturePadHandle>(null);
 
+  // Fetch latest sync time from sync_log
+  const refreshLastSync = async () => {
+    const { data } = await supabase.rpc("get_last_sync_status" as any);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (row?.synced_at) setLastSyncAt(row.synced_at as string);
+  };
+
   // Pull actual SpeedSol transactions for this client + date + site
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoadingActuals(true);
-      try {
-        // 1) Resolve speedsol names for this client account
+  const loadActuals = async () => {
+    setLoadingActuals(true);
+    try {
+      // 1) Resolve speedsol names for this client account
         const { data: acct } = await supabase
           .from("client_accounts")
           .select("speedsol_names")
@@ -46,7 +80,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
           .maybeSingle();
         const names: string[] = (acct?.speedsol_names as string[] | null) || [];
         if (!names.length) {
-          if (!cancelled) setMatchedTxns([]);
+          setMatchedTxns([]);
           return;
         }
 
@@ -81,18 +115,39 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
         });
         const useRows = filtered.length ? filtered : (txns || []);
 
-        if (cancelled) return;
-        setMatchedTxns(useRows as any);
-        // Reference-only — no auto-prefill of delivered litres.
-      } catch (e) {
-        console.error("[CompleteStopDialog] actuals lookup failed", e);
-      } finally {
-        if (!cancelled) setLoadingActuals(false);
+      setMatchedTxns(useRows as any);
+      // Reference-only — no auto-prefill of delivered litres.
+    } catch (e) {
+      console.error("[CompleteStopDialog] actuals lookup failed", e);
+    } finally {
+      setLoadingActuals(false);
+    }
+  };
+
+  // Auto-sync SpeedSol the moment the dialog opens, then load actuals.
+  const syncAndReload = async (opts: { manual?: boolean } = {}) => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-transactions");
+      if (error) throw error;
+      if (opts.manual) {
+        const count = Number(data?.records_upserted ?? 0);
+        toast.success(count > 0 ? `Pulled ${count} new transactions` : "Already up to date");
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    } catch (e: any) {
+      if (opts.manual) toast.error(e?.message || "Sync failed");
+      console.warn("[CompleteStopDialog] auto-sync failed", e);
+    } finally {
+      setSyncing(false);
+      await refreshLastSync();
+      await loadActuals();
+    }
+  };
+
+  useEffect(() => {
+    // On open: fire a silent sync, then load
+    void refreshLastSync();
+    void syncAndReload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stop.id]);
 
@@ -100,6 +155,11 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
     () => matchedTxns.reduce((a, t) => a + (Number(t.cantidad) || 0), 0),
     [matchedTxns],
   );
+
+  const shifts = useMemo(() => groupIntoShifts(matchedTxns), [matchedTxns]);
+  const lastSyncLabel = lastSyncAt
+    ? `${formatDistanceToNow(parseISO(lastSyncAt))} ago`
+    : "never";
 
   const submit = async () => {
     const litres = parseFloat(delivered);
@@ -141,6 +201,12 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
             ? {
                 source: "speedsol",
                 matched_transaction_ids: matchedTxns.map((t) => t.id),
+                shifts: shifts.map((s) => ({
+                  start: s.start,
+                  end: s.end,
+                  txn_ids: s.rows.map((r) => r.id),
+                  total_litres: s.rows.reduce((a, r) => a + (Number(r.cantidad) || 0), 0),
+                })),
                 lines: matchedTxns.map((t) => ({
                   txn_id: t.id,
                   product: t.producto,
@@ -148,6 +214,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
                   placa: t.placa,
                   fleet: t.nombre_flota,
                   station: t.estacion,
+                  at: t.fecha,
                 })),
                 total_litres: actualSum,
               }
@@ -193,31 +260,73 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
               <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
                 Actual deliveries (SpeedSol)
               </div>
-              {loadingActuals && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
+              <button
+                type="button"
+                onClick={() => void syncAndReload({ manual: true })}
+                disabled={syncing || loadingActuals}
+                className="flex items-center gap-1 text-[10px] font-semibold text-gray-600 disabled:opacity-50"
+                style={{ background: "none", border: "none" }}
+              >
+                {syncing || loadingActuals ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3 h-3" />
+                )}
+                Refresh
+              </button>
             </div>
-            {!loadingActuals && matchedTxns.length === 0 && (
+            <div className="text-[10px] text-gray-500 mb-2">
+              Last SpeedSol sync: {syncing ? "syncing now…" : lastSyncLabel}
+            </div>
+            {!loadingActuals && !syncing && matchedTxns.length === 0 && (
               <div className="text-xs text-gray-600">
                 No SpeedSol transactions found for this client on {stop.scheduled_date}. Enter litres manually.
               </div>
             )}
-            {matchedTxns.length > 0 && (
+            {shifts.length > 0 && (
               <>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {matchedTxns.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between text-xs">
-                      <span className="truncate mr-2">
-                        {t.producto || "Fuel"}
-                        {t.placa ? ` · ${t.placa}` : ""}
-                        {t.nombre_flota ? ` · ${t.nombre_flota}` : ""}
-                      </span>
-                      <span className="font-mono font-semibold tabular-nums">
-                        {(Number(t.cantidad) || 0).toFixed(2)} L
-                      </span>
-                    </div>
-                  ))}
+                <div className="space-y-3 max-h-56 overflow-y-auto">
+                  {shifts.map((s, idx) => {
+                    const shiftTotal = s.rows.reduce(
+                      (a, r) => a + (Number(r.cantidad) || 0),
+                      0,
+                    );
+                    const sameTime = s.start === s.end;
+                    return (
+                      <div key={`${s.start}-${idx}`}>
+                        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                          <span>
+                            Shift {idx + 1} ·{" "}
+                            {format(parseISO(s.start), "HH:mm")}
+                            {!sameTime && ` – ${format(parseISO(s.end), "HH:mm")}`}
+                          </span>
+                          <span className="font-mono tabular-nums normal-case">
+                            {shiftTotal.toFixed(2)} L
+                          </span>
+                        </div>
+                        <div className="space-y-1 pl-2 border-l-2 border-gray-200">
+                          {s.rows.map((t) => (
+                            <div
+                              key={t.id}
+                              className="flex items-center justify-between text-xs"
+                            >
+                              <span className="truncate mr-2">
+                                {t.producto || "Fuel"}
+                                {t.placa ? ` · ${t.placa}` : ""}
+                                {t.nombre_flota ? ` · ${t.nombre_flota}` : ""}
+                              </span>
+                              <span className="font-mono font-semibold tabular-nums">
+                                {(Number(t.cantidad) || 0).toFixed(2)} L
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 text-xs font-semibold">
-                  <span>Total from dockets</span>
+                  <span>Total — all shifts</span>
                   <span className="font-mono tabular-nums">{actualSum.toFixed(2)} L</span>
                 </div>
               </>
