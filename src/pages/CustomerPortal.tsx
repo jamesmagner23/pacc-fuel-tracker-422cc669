@@ -1462,8 +1462,11 @@ function OverviewTab({
       // mapped project rolls up into a single "Unassigned" bucket.
       const placa = (t.placa || "").toString().trim();
       const project = placa && placaToProjectName ? placaToProjectName[placa] : undefined;
-      const k = project || "Unassigned";
-      m[k] = (m[k] || 0) + (t.cantidad || 0);
+      // Never fall back to SCA WEB fields (ciudad / nombre_cliente1 /
+      // estacion). If the placa isn't mapped to a Project we'd rather
+      // show nothing than leak an upstream city or customer name.
+      if (!project) return;
+      m[project] = (m[project] || 0) + (t.cantidad || 0);
     });
     const sorted = Object.entries(m).sort(([, a], [, b]) => b - a);
     const top5 = sorted.slice(0, 5);
