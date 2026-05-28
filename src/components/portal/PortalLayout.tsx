@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  Menu, X,
+  Menu, X, ChevronDown,
   LayoutDashboard, Truck, Wrench, FileBarChart, User as UserIcon,
   Phone, HelpCircle, FolderKanban,
 } from "lucide-react";
@@ -23,27 +23,24 @@ type NavItem = {
 };
 type NavGroup = { label: string; items: NavItem[] };
 
-const navGroups: NavGroup[] = [
-  {
-    label: "Account",
-    items: [
-      { tab: "Overview", label: "Overview", icon: LayoutDashboard },
-      { tab: "Deliveries", label: "Deliveries", icon: Truck },
-      { tab: "Fleet", label: "Equipment", icon: Wrench },
-      { tab: "Projects", label: "Projects", icon: FolderKanban },
-      { tab: "Reports", label: "Reports", icon: FileBarChart },
-      { tab: "Profile", label: "Profile", icon: UserIcon },
-    ],
-  },
-  {
-    label: "Support",
-    items: [
-      { tab: "ContactDispatch", label: "Contact dispatch", icon: Phone,
-        href: "mailto:fuel@paccvictoria.com", external: true },
-      { tab: "Help", label: "Help", icon: HelpCircle, href: "/portal/help" },
-    ],
-  },
+// Simplified for clients: Deliveries up top, everything else tucked under
+// a collapsible "More" section so the sidebar feels uncluttered.
+const primaryItems: NavItem[] = [
+  { tab: "Deliveries", label: "Deliveries", icon: Truck },
 ];
+const moreItems: NavItem[] = [
+  { tab: "Overview", label: "Overview", icon: LayoutDashboard },
+  { tab: "Fleet", label: "Equipment", icon: Wrench },
+  { tab: "Projects", label: "Projects", icon: FolderKanban },
+  { tab: "Reports", label: "Reports", icon: FileBarChart },
+  { tab: "Profile", label: "Profile", icon: UserIcon },
+];
+const supportItems: NavItem[] = [
+  { tab: "ContactDispatch", label: "Contact dispatch", icon: Phone,
+    href: "mailto:fuel@paccvictoria.com", external: true },
+  { tab: "Help", label: "Help", icon: HelpCircle, href: "/portal/help" },
+];
+const moreTabSet = new Set(moreItems.map((i) => i.tab));
 
 export interface PortalLayoutProps {
   activeTab: string;
@@ -84,7 +81,7 @@ export function PortalLayout({
   // Map a tab name to its real URL under /portal.
   const tabHref = (tab: string) => {
     const slug: Record<string, string> = {
-      Overview: "",
+      Overview: "overview",
       Deliveries: "deliveries",
       Fleet: "fleet",
       Projects: "projects",
@@ -152,18 +149,56 @@ export function PortalLayout({
     </div>
   );
 
+  // Keep More expanded when an item inside it is active, so the user always
+  // sees where they are. Otherwise default to collapsed for a clean look.
+  const moreActive = moreTabSet.has(activeTab);
+  const [moreOpen, setMoreOpen] = useState<boolean>(moreActive);
+  useEffect(() => {
+    if (moreActive) setMoreOpen(true);
+  }, [moreActive]);
+
   const renderGroups = (onNavigate?: () => void) => (
     <>
-      {navGroups.map((g) => (
-        <div key={g.label}>
-          <SectionDivider label={g.label} />
-          <div className="flex flex-col gap-1">
-            {g.items.map((item) => (
-              <NavLinkRow key={item.tab} item={item} onNavigate={onNavigate} />
-            ))}
-          </div>
+      <div className="flex flex-col gap-1 mt-2">
+        {primaryItems.map((item) => (
+          <NavLinkRow key={item.tab} item={item} onNavigate={onNavigate} />
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setMoreOpen((v) => !v)}
+        aria-expanded={moreOpen}
+        className={[
+          "mt-2 w-full flex items-center justify-between rounded-lg text-[14px] transition-colors",
+          "h-9 pr-3 pl-3 border-l-2 border-transparent",
+          moreActive
+            ? "text-foreground font-semibold"
+            : "text-muted-foreground hover:bg-card hover:text-foreground",
+        ].join(" ")}
+      >
+        <span className="inline-flex items-center gap-2.5">
+          <FolderKanban className="w-4 h-4 shrink-0" />
+          <span className="truncate">More</span>
+        </span>
+        <ChevronDown
+          className={"w-4 h-4 transition-transform " + (moreOpen ? "rotate-180" : "")}
+        />
+      </button>
+      {moreOpen && (
+        <div className="flex flex-col gap-1 mt-1 pl-3">
+          {moreItems.map((item) => (
+            <NavLinkRow key={item.tab} item={item} onNavigate={onNavigate} />
+          ))}
         </div>
-      ))}
+      )}
+
+      <SectionDivider label="Support" />
+      <div className="flex flex-col gap-1">
+        {supportItems.map((item) => (
+          <NavLinkRow key={item.tab} item={item} onNavigate={onNavigate} />
+        ))}
+      </div>
     </>
   );
 
