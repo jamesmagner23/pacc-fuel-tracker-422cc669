@@ -1455,13 +1455,14 @@ function OverviewTab({
   const donutData = useMemo(() => {
     const m: Record<string, number> = {};
     transactions.forEach((t: any) => {
-      // Resolve the actual delivery site. Best signal is the project
-      // the placa is assigned to (e.g. "Ironside Maidstone"). Fall back
-      // to delivery city or customer name. Never use `estacion` —
-      // that's the dispensing pump/truck, not a destination.
+      // Only group by an actual mapped Project. Never fall back to
+      // SCA WEB fields like `ciudad` or `nombre_cliente1` — those are
+      // upstream delivery city / customer names (e.g. "Chiconamel")
+      // and don't represent customer Projects. Everything without a
+      // mapped project rolls up into a single "Unassigned" bucket.
       const placa = (t.placa || "").toString().trim();
       const project = placa && placaToProjectName ? placaToProjectName[placa] : undefined;
-      const k = project || t.ciudad || t.nombre_cliente1 || "Unassigned";
+      const k = project || "Unassigned";
       m[k] = (m[k] || 0) + (t.cantidad || 0);
     });
     const sorted = Object.entries(m).sort(([, a], [, b]) => b - a);
