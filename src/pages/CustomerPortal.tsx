@@ -22,6 +22,10 @@ import { useFtcRates, type FtcRate } from "@/hooks/useFtcRates";
 import { AccountModal } from "@/components/customer/AccountModal";
 import { useClientProfile } from "@/hooks/useClientProfile";
 import { Filter, Droplet, DollarSign, Truck, Gauge, Receipt, MapPin, Download, HelpCircle, Mail } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   usePortalFilters,
@@ -167,13 +171,13 @@ type FleetSubtab = (typeof fleetSubtabs)[number];
 const reportSubtabs = ["Analytics", "Emissions", "Fuel Tax Credit"] as const;
 type ReportSubtab = (typeof reportSubtabs)[number];
 
-// Day / Week / Month period toggle for the customer portal.
-type PortalPeriod = "day" | "week" | "month" | "all";
-const PERIOD_DAYS: Record<PortalPeriod, number | null> = {
+// Day / Week / Month / Custom period toggle for the customer portal.
+type PortalPeriod = "day" | "week" | "month" | "all" | "custom";
+const PERIOD_DAYS: Record<Exclude<PortalPeriod, "custom">, number | null> = {
   day: 1, week: 7, month: 30, all: null,
 };
 const PERIOD_LABELS: Record<PortalPeriod, string> = {
-  day: "Today", week: "This Week", month: "This Month", all: "All Time",
+  day: "Daily", week: "Weekly", month: "Monthly", all: "All Time", custom: "Custom",
 };
 
 const CO2_FACTOR = 2.68; // kg CO2e per litre diesel (Australian NGA)
@@ -428,6 +432,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   const [fleetSubtab, setFleetSubtab] = useState<FleetSubtab>("Plant");
   const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Analytics");
   const [period, setPeriod] = useState<PortalPeriod>("month");
+  const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
   const isDemo = useDemo();
   const demoSuffix = isDemo ? `?${params.toString()}` : "";
 
@@ -509,13 +514,23 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   // chip-style filter bar, so KPIs, charts and the analytics tab all
   // respect the same time window.
   const periodTransactions = useMemo(() => {
+    if (period === "custom") {
+      const { from, to } = customRange;
+      if (!from && !to) return transactions;
+      const fromStr = from ? format(from, "yyyy-MM-dd") : "0000-01-01";
+      const toStr = to ? format(to, "yyyy-MM-dd") : "9999-12-31";
+      return transactions.filter((t: any) => {
+        const d = t.date || "";
+        return d >= fromStr && d <= toStr;
+      });
+    }
     const days = PERIOD_DAYS[period];
     if (days == null) return transactions;
     const cutoff = subDays(new Date(), days);
     cutoff.setHours(0, 0, 0, 0);
     const cutoffStr = format(cutoff, "yyyy-MM-dd");
     return transactions.filter((t: any) => (t.date || "") >= cutoffStr);
-  }, [transactions, period]);
+  }, [transactions, period, customRange]);
 
   // First-paint guard: if the default "This Month" window is empty but the
   // customer DOES have deliveries on file, auto-fall back to "All Time" so
@@ -573,9 +588,9 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     <>
       <PageHeader title={activeTab} breadcrumb={breadcrumbFor(activeTab)} showPeriod={false} />
 
-      {/* Day / Week / Month period toggle — applies to time-series tabs. */}
-      {(activeTab === "Overview" ||
-          activeTab === "Deliveries" ||
+      {/* Day / Week / Month period toggle — applies to time-series tabs.
+          Overview embeds its own period selector inside the dashboard. */}
+      {(activeTab === "Deliveries" ||
           (activeTab === "Fleet" && fleetSubtab === "Plant") ||
           (activeTab === "Reports" && reportsSubtab === "Analytics") ||
           (activeTab === "Reports" && reportsSubtab === "Fuel Tax Credit")) && (
@@ -772,6 +787,9 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 transactions={filteredTransactions}
                 allTransactions={transactions}
                 period={period}
+                setPeriod={setPeriod}
+                customRange={customRange}
+                setCustomRange={setCustomRange}
                 demoSuffix={demoSuffix}
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
@@ -781,6 +799,14 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                   setActiveTab("Reports");
                 }}
                 onOpenDeliveries={() => setActiveTab("Deliveries")}
+                onOpenFuelVolume={() => {
+                  setReportsSubtab("Analytics");
+                  setActiveTab("Reports");
+                }}
+                onOpenSites={() => {
+                  setFleetSubtab("Projects");
+                  setActiveTab("Fleet");
+                }}
                 periodLabel={PERIOD_LABELS[period]}
                 companyName={companyName}
               />
@@ -1383,24 +1409,34 @@ function OverviewTab({
   transactions,
   allTransactions,
   period,
+  setPeriod,
+  customRange,
+  setCustomRange,
   demoSuffix,
   speedsolNames,
   isDemo,
   plantItems,
   onOpenFtcReport,
   onOpenDeliveries,
+  onOpenFuelVolume,
+  onOpenSites,
   periodLabel,
   companyName,
 }: {
   transactions: any[];
   allTransactions: any[];
   period: PortalPeriod;
+  setPeriod: (p: PortalPeriod) => void;
+  customRange: { from?: Date; to?: Date };
+  setCustomRange: (r: { from?: Date; to?: Date }) => void;
   demoSuffix: string;
   speedsolNames: string[];
   isDemo: boolean;
   plantItems: any[];
   onOpenFtcReport?: () => void;
   onOpenDeliveries?: () => void;
+  onOpenFuelVolume?: () => void;
+  onOpenSites?: () => void;
   periodLabel?: string;
   companyName?: string;
 }) {
@@ -1413,6 +1449,7 @@ function OverviewTab({
 
   // Previous-period comparison: same window length, immediately preceding.
   const previousTransactions = useMemo(() => {
+    if (period === "custom") return [];
     const days = PERIOD_DAYS[period];
     if (days == null) return [];
     const cutoffEnd = subDays(new Date(), days);
@@ -1555,6 +1592,10 @@ function OverviewTab({
       transactions={transactions}
       companyName={companyName}
       periodLabel={periodLabel}
+      period={period}
+      setPeriod={setPeriod}
+      customRange={customRange}
+      setCustomRange={setCustomRange}
       totalLitres={totalLitres}
       numDeliveries={numDeliveries}
       avgDrop={avgDrop}
@@ -1580,6 +1621,8 @@ function OverviewTab({
         downloadCSV([header, ...rows], `${safeName}-deliveries-${safePeriod}.csv`);
       }}
       onOpenDeliveries={onOpenDeliveries}
+      onOpenFuelVolume={onOpenFuelVolume}
+      onOpenSites={onOpenSites}
     />
   );
 }
@@ -1592,6 +1635,10 @@ function OverviewTactical({
   transactions,
   companyName,
   periodLabel,
+  period,
+  setPeriod,
+  customRange,
+  setCustomRange,
   totalLitres,
   numDeliveries,
   avgDrop,
@@ -1604,10 +1651,16 @@ function OverviewTactical({
   recent,
   onExportCsv,
   onOpenDeliveries,
+  onOpenFuelVolume,
+  onOpenSites,
 }: {
   transactions: any[];
   companyName?: string;
   periodLabel?: string;
+  period: PortalPeriod;
+  setPeriod: (p: PortalPeriod) => void;
+  customRange: { from?: Date; to?: Date };
+  setCustomRange: (r: { from?: Date; to?: Date }) => void;
   totalLitres: number;
   numDeliveries: number;
   avgDrop: number;
@@ -1620,6 +1673,8 @@ function OverviewTactical({
   recent: any[];
   onExportCsv: () => void;
   onOpenDeliveries?: () => void;
+  onOpenFuelVolume?: () => void;
+  onOpenSites?: () => void;
 }) {
   const fmtBig = (n: number) =>
     n >= 1_000_000
@@ -1663,7 +1718,7 @@ function OverviewTactical({
       <div className="flex justify-between items-end gap-3">
         <div className="min-w-0">
           <div className="text-[10px] uppercase tracking-[0.18em] font-semibold mb-1" style={{ color: "var(--accent)" }}>
-            Portal / {companyName || "Account"}
+            Portal / {companyName || "Account"} · {PERIOD_LABELS[period]}
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">Overview</h1>
         </div>
@@ -1682,7 +1737,13 @@ function OverviewTactical({
       {/* KPI bento — 2x2 on mobile, 4-up on lg */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Fuel volume — hero KPI with progress */}
-        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <button
+          type="button"
+          onClick={onOpenFuelVolume}
+          disabled={!onOpenFuelVolume}
+          className="text-left rounded-2xl p-4 border transition-all hover:border-[var(--accent)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:border-[var(--border)]"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Fuel Volume</span>
             <Delta value={litresPct} />
@@ -1694,10 +1755,16 @@ function OverviewTactical({
           <div className="mt-3 h-1 w-full rounded-full overflow-hidden" style={{ background: "var(--border-subtle)" }}>
             <div className="h-full rounded-full transition-all" style={{ background: "var(--accent)", width: `${ratio(totalLitres, prevLitres)}%` }} />
           </div>
-        </div>
+        </button>
 
         {/* Deliveries — segmented bar */}
-        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <button
+          type="button"
+          onClick={onOpenDeliveries}
+          disabled={!onOpenDeliveries}
+          className="text-left rounded-2xl p-4 border transition-all hover:border-[var(--accent)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:border-[var(--border)]"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Deliveries</span>
             <Delta value={dropsPct} />
@@ -1719,10 +1786,16 @@ function OverviewTactical({
               );
             })}
           </div>
-        </div>
+        </button>
 
         {/* Active sites */}
-        <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
+        <button
+          type="button"
+          onClick={onOpenSites}
+          disabled={!onOpenSites}
+          className="text-left rounded-2xl p-4 border transition-all hover:border-[var(--accent)] hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:cursor-default disabled:hover:translate-y-0 disabled:hover:border-[var(--border)]"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Active Sites</span>
             <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider" style={{ color: "var(--positive)" }}>
@@ -1737,7 +1810,7 @@ function OverviewTactical({
           <div className="mt-3 text-[10px] text-muted-foreground/80 truncate">
             {topSites[0]?.name || "Awaiting first delivery"}
           </div>
-        </div>
+        </button>
 
         {/* Avg per load */}
         <div className="rounded-2xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -1753,6 +1826,66 @@ function OverviewTactical({
             <div className="h-full rounded-full transition-all" style={{ background: "var(--accent)", width: `${ratio(avgDrop, prevAvg)}%` }} />
           </div>
         </div>
+      </div>
+
+      {/* Period selector — tucked under the KPIs */}
+      <div className="flex items-center justify-between flex-wrap gap-3 -mt-1">
+        <div
+          className="inline-flex items-center gap-1 p-1 rounded-full border"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          {(["day", "week", "month", "all"] as PortalPeriod[]).map((p) => {
+            const active = period === p;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-full transition-all"
+                style={{
+                  color: active ? "var(--background)" : "var(--text-secondary, var(--muted-foreground))",
+                  background: active ? "var(--accent)" : "transparent",
+                }}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            );
+          })}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setPeriod("custom")}
+                className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-full transition-all inline-flex items-center gap-1.5"
+                style={{
+                  color: period === "custom" ? "var(--background)" : "var(--text-secondary, var(--muted-foreground))",
+                  background: period === "custom" ? "var(--accent)" : "transparent",
+                }}
+              >
+                <CalendarIcon className="w-3 h-3" />
+                {period === "custom" && customRange.from
+                  ? `${format(customRange.from, "d MMM")}${customRange.to ? ` – ${format(customRange.to, "d MMM")}` : ""}`
+                  : "Custom"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                selected={{ from: customRange.from, to: customRange.to } as any}
+                onSelect={(r: any) => {
+                  setCustomRange({ from: r?.from, to: r?.to });
+                  if (r?.from) setPeriod("custom");
+                }}
+                numberOfMonths={2}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {numDeliveries.toLocaleString()} deliveries shown
+        </span>
       </div>
 
       {/* Live truck map block */}
