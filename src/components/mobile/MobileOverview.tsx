@@ -5,15 +5,15 @@ import { format, subDays, parseISO } from "date-fns";
 import { BarChart, Bar, XAxis, ResponsiveContainer, LabelList, Cell } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
-import { useTransactions } from "@/hooks/useTransactions";
+import { useTransactions, type Transaction } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
-import { useDispatchStops, type DispatchStop } from "@/hooks/useDispatch";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { UserMenu } from "@/components/UserMenu";
 import { PACCLogo } from "@/components/PACCLogo";
 import { formatTime, formatDate } from "@/lib/format";
 import { useSyncTransactions } from "@/hooks/useSyncTransactions";
+import { TruckMap } from "@/components/TruckMap";
 
 /* ---------- helpers ---------- */
 
@@ -233,33 +233,34 @@ function KPITile({
 
 /* ---------- deliveries list ---------- */
 
-function sortStops(stops: DispatchStop[]): DispatchStop[] {
-  const upcoming = stops.filter((s) => s.status === "scheduled" || s.status === "in_progress");
-  const done = stops.filter((s) => s.status === "completed");
-  const cancelled = stops.filter((s) => s.status === "cancelled");
-  upcoming.sort((a, b) => a.sequence - b.sequence);
-  done.sort((a, b) => {
-    const ta = a.completed_at ? new Date(a.completed_at).getTime() : 0;
-    const tb = b.completed_at ? new Date(b.completed_at).getTime() : 0;
-    return tb - ta;
-  });
-  return [...upcoming, ...done, ...cancelled];
+function txTime(t: Transaction): number {
+  return t.fecha ? new Date(t.fecha).getTime() : 0;
 }
 
 function TodaysDeliveriesMobile() {
   const today = todayISO();
-  const { data: stops = [], isLoading } = useDispatchStops(today);
+  const { data: todayTx = [], isLoading: loadingToday } = useTransactions("today");
+  const { data: weekTx = [], isLoading: loadingWeek } = useTransactions("week");
+  const isLoading = loadingToday || loadingWeek;
   const { data: clientMap = {} } = useClientNameMap();
-  const rows = useMemo(() => sortStops(stops).slice(0, 6), [stops]);
-  const hasMore = stops.length > 6;
+  const source = todayTx.length > 0 ? todayTx : weekTx;
+  const usingFallback = todayTx.length === 0 && weekTx.length > 0;
+  const sorted = useMemo(
+    () => [...source].sort((a, b) => txTime(b) - txTime(a)),
+    [source],
+  );
+  const rows = sorted.slice(0, 6);
+  const hasMore = sorted.length > 6;
 
   return (
     <section className="mt-8">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-[22px] font-bold text-foreground tracking-tight">Today's deliveries</h2>
+        <h2 className="text-[22px] font-bold text-foreground tracking-tight">
+          {usingFallback ? "Recent deliveries" : "Today's deliveries"}
+        </h2>
         <Link
-          to="/dispatch"
-          aria-label="Open dispatch"
+          to="/transactions"
+          aria-label="Open transactions"
           className="w-7 h-7 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
         >
           <ArrowRight className="w-4 h-4" />
@@ -272,32 +273,26 @@ function TodaysDeliveriesMobile() {
       ) : rows.length === 0 ? (
         <div className="py-12 flex flex-col items-center text-center gap-3">
           <Truck className="w-8 h-8 text-muted-foreground" />
-          <div className="text-base font-semibold text-foreground">No deliveries scheduled today</div>
-          <p className="text-sm text-muted-foreground">Open dispatch to plan your day.</p>
-          <Link
-            to="/dispatch"
-            className="inline-flex items-center rounded-full bg-foreground text-background px-4 py-2 text-sm font-semibold active:scale-[0.98] transition-transform"
-          >
-            Open dispatch
-          </Link>
+          <div className="text-base font-semibold text-foreground">No deliveries yet</div>
+          <p className="text-sm text-muted-foreground">Recent SpeedSol fills will appear here as soon as they sync.</p>
         </div>
       ) : (
         <ul>
-          {rows.map((s, i) => {
-            const customer = clientMap[s.client_account_id] || s.site_name || "—";
-            const litres = s.delivered_litres ?? 0;
-            const addr = s.address || s.site_name || "—";
-            const when = s.completed_at
-              ? sameDay(s.completed_at, today) ? formatTime(s.completed_at) : formatDate(s.completed_at)
+          {rows.map((t, i) => {
+            const customer = t.nombre_cliente1 || t.estacion || "—";
+            const litres = t.cantidad ?? 0;
+            const addr = [t.ciudad, t.producto].filter(Boolean).join(" · ") || t.estacion || "—";
+            const when = t.fecha
+              ? sameDay(t.fecha, today) ? formatTime(t.fecha) : formatDate(t.fecha)
               : "";
             const tint = avatarTintFor(customer);
             return (
               <li
-                key={s.id}
+                key={t.id}
                 className={"flex items-center gap-3 py-3.5 " + (i < rows.length - 1 ? "border-b border-border" : "")}
               >
                 <Link
-                  to={`/dispatch?stop=${s.id}`}
+                  to={`/transactions?date=${t.date ?? ""}&q=${encodeURIComponent(customer)}`}
                   className="flex items-center gap-3 w-full active:scale-[0.99] transition-transform"
                 >
                   <span
@@ -326,7 +321,7 @@ function TodaysDeliveriesMobile() {
       {hasMore && (
         <div className="flex justify-center mt-4">
           <Link
-            to="/dispatch"
+            to="/transactions"
             className="inline-flex items-center rounded-full bg-card border border-border px-4 py-2 text-sm font-semibold text-foreground active:scale-[0.98] transition-transform"
           >
             View all
@@ -472,6 +467,20 @@ export function MobileOverview() {
               bg="#E8EDE5"
             />
           </div>
+
+          {/* Live truck map */}
+          <section className="mt-8">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-[22px] font-bold text-foreground tracking-tight">Live truck</h2>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                Live{lastSyncTime ? ` · ${lastSyncTime}` : ""}
+              </span>
+            </div>
+            <div className="rounded-[14px] border border-border overflow-hidden">
+              <TruckMap bare showStops height={260} />
+            </div>
+          </section>
 
           <TodaysDeliveriesMobile />
 
