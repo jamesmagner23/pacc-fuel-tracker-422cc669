@@ -13,9 +13,8 @@ interface Props {
 
 export function CompleteStopDialog({ stop, onClose }: Props) {
   const qc = useQueryClient();
-  const [delivered, setDelivered] = useState<string>(
-    stop.delivered_litres ? String(stop.delivered_litres) : "",
-  );
+  // Never pre-fill litres. Driver must enter actuals manually every time.
+  const [delivered, setDelivered] = useState<string>("");
   const [customerName, setCustomerName] = useState("");
   const [customerRole, setCustomerRole] = useState("");
   const [notes, setNotes] = useState("");
@@ -30,7 +29,6 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
     placa: string | null;
     fecha: string;
   }>>([]);
-  const [touchedDelivered, setTouchedDelivered] = useState(!!stop.delivered_litres);
   const custRef = useRef<SignaturePadHandle>(null);
   const drvRef = useRef<SignaturePadHandle>(null);
 
@@ -85,12 +83,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
 
         if (cancelled) return;
         setMatchedTxns(useRows as any);
-
-        // Prefill delivered with the actual sum unless the user already edited it
-        if (!touchedDelivered && !stop.delivered_litres && useRows.length) {
-          const sum = useRows.reduce((a: number, t: any) => a + (Number(t.cantidad) || 0), 0);
-          if (sum > 0) setDelivered(sum.toFixed(2));
-        }
+        // Reference-only — no auto-prefill of delivered litres.
       } catch (e) {
         console.error("[CompleteStopDialog] actuals lookup failed", e);
       } finally {
@@ -239,7 +232,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
               type="number"
               inputMode="decimal"
               value={delivered}
-              onChange={(e) => { setDelivered(e.target.value); setTouchedDelivered(true); }}
+              onChange={(e) => setDelivered(e.target.value)}
               className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-3 text-base outline-none focus:border-gray-900"
               placeholder="e.g. 4500"
             />
