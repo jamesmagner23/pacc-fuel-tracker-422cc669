@@ -2414,10 +2414,10 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
               {open.signed_at ? format(parseISO(open.signed_at), "d MMM yyyy · HH:mm") : ""}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12, fontSize: 12 }}>
-              {open.projects?.name && (
+              {open.project?.name && (
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Project</div>
-                  <div style={{ fontWeight: 600, color: "#0E1F10" }}>{open.projects.name}</div>
+                  <div style={{ fontWeight: 600, color: "#0E1F10" }}>{open.project.name}</div>
                 </div>
               )}
               {open.address && (
@@ -2430,11 +2430,11 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Delivered</div>
                 <div style={{ fontWeight: 700, color: "#0E1F10" }}>{Number(open.delivered_litres || 0).toLocaleString()} L</div>
               </div>
-              {(open.trucks?.name || open.trucks?.rego) && (
+              {(open.truck?.name || open.truck?.rego) && (
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Truck</div>
                   <div style={{ color: "#0E1F10" }}>
-                    {open.trucks?.name}{open.trucks?.rego ? ` · ${open.trucks.rego}` : ""}
+                    {open.truck?.name}{open.truck?.rego ? ` · ${open.truck.rego}` : ""}
                   </div>
                 </div>
               )}
