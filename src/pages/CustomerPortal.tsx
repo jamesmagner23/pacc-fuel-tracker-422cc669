@@ -3246,8 +3246,15 @@ function ProjectsTab({
               ? Object.entries(s.weekly).sort((a, b) => b[0].localeCompare(a[0]))
               : [];
             const maxWeekLitres = weekly.reduce((m, [, v]) => Math.max(m, v.litres), 0) || 1;
+            const isOpen = expandedProjectId === p.id;
             return (
-              <div key={p.id} style={card}>
+              <div
+                key={p.id}
+                style={{ ...card, cursor: "pointer" }}
+                onClick={() => setExpandedProjectId((cur) => (cur === p.id ? null : p.id))}
+                role="button"
+                aria-expanded={isOpen}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                   <div style={{ flex: 1, minWidth: 180 }}>
                     <div style={{ fontSize: 16, fontWeight: 600, fontFamily: T.sansHead, color: T.text }}>{p.name}</div>
@@ -3274,11 +3281,14 @@ function ProjectsTab({
                       </div>
                     </div>
                     <button
-                      onClick={() => setExpandedProjectId((cur) => (cur === p.id ? null : p.id))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedProjectId((cur) => (cur === p.id ? null : p.id));
+                      }}
                       style={{
                         alignSelf: "center",
-                        background: expandedProjectId === p.id ? T.accent : "transparent",
-                        color: expandedProjectId === p.id ? T.text : T.text,
+                        background: isOpen ? T.accent : "transparent",
+                        color: T.text,
                         border: `1px solid ${T.accent}88`,
                         borderRadius: 999,
                         padding: "8px 14px",
@@ -3290,12 +3300,12 @@ function ProjectsTab({
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {expandedProjectId === p.id ? "Hide drill-down" : "Drill down"}
+                      {isOpen ? "Hide details" : "View details"}
                     </button>
                   </div>
                 </div>
 
-                {topPlant.length > 0 && (
+                {isOpen && topPlant.length > 0 && (
                   <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
                     <div style={{ ...labelStyle, marginBottom: 8 }}>Top Fuel Users</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -3312,7 +3322,7 @@ function ProjectsTab({
                   </div>
                 )}
 
-                {expandedProjectId === p.id ? (
+                {isOpen ? (
                   (() => {
                     const buckets = history[p.id]?.[granularity] || {};
                     const entries = Object.entries(buckets).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 24);
@@ -3327,14 +3337,14 @@ function ProjectsTab({
                       return `${format(parseISO(k), "dd MMM")} – ${wkEnd}`;
                     };
                     return (
-                      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
+                      <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 12, flexWrap: "wrap" }}>
                           <div style={labelStyle}>Drill-down · All history</div>
                           <div style={{ display: "inline-flex", border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
                             {(["day", "week", "month"] as const).map((g) => (
                               <button
                                 key={g}
-                                onClick={() => setGranularity(g)}
+                                onClick={(e) => { e.stopPropagation(); setGranularity(g); }}
                                 style={{
                                   padding: "6px 12px",
                                   fontSize: 10,
@@ -3380,27 +3390,7 @@ function ProjectsTab({
                       </div>
                     );
                   })()
-                ) : weekly.length > 0 && (
-                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
-                    <div style={{ ...labelStyle, marginBottom: 8 }}>Weekly Breakdown</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                      {weekly.map(([wkStart, v]) => {
-                        const wkEnd = format(addDays(parseISO(wkStart), 6), "dd MMM");
-                        const label = `${format(parseISO(wkStart), "dd MMM")} – ${wkEnd}`;
-                        return (
-                          <div key={wkStart} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
-                            <span style={{ color: T.textSecondary, width: 140, whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{label}</span>
-                            <div style={{ flex: 1, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden" }}>
-                              <div style={{ width: `${(v.litres / maxWeekLitres) * 100}%`, height: "100%", background: T.chart }} />
-                            </div>
-                            <span style={{ color: T.muted, fontSize: 11, fontVariantNumeric: "tabular-nums", minWidth: 50, textAlign: "right" }}>{v.deliveries} dlv</span>
-                            <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600, minWidth: 70, textAlign: "right" }}>{fmtL(v.litres)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                ) : null}
               </div>
             );
           })}
