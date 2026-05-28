@@ -120,8 +120,7 @@ export function AddToDispatchDialog({
             <Label className="text-xs">Address</Label>
             <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Smith St, Melbourne" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          <div>
               <Label className="text-xs">Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -134,7 +133,6 @@ export function AddToDispatchDialog({
                   <Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus />
                 </PopoverContent>
               </Popover>
-            </div>
           </div>
           <div>
             <Label className="text-xs">Assign truck</Label>
