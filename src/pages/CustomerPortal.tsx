@@ -3431,7 +3431,15 @@ function ProjectsTab({
 // ═══════════════════════════════════════════════════════════════════════
 type EmissionPeriod = "month" | "quarter" | "fy";
 
-function EmissionsTab({ transactions, companyName }: { transactions: any[]; companyName: string }) {
+function EmissionsTab({
+  transactions,
+  companyName,
+  placaToProjectName,
+}: {
+  transactions: any[];
+  companyName: string;
+  placaToProjectName?: Record<string, string>;
+}) {
   const [period, setPeriod] = useState<EmissionPeriod>("month");
   const [factor, setFactor] = useState<number>(CO2_FACTOR);
   const [energyContent, setEnergyContent] = useState<number>(38.6); // GJ/kL diesel
@@ -3462,13 +3470,18 @@ function EmissionsTab({ transactions, companyName }: { transactions: any[]; comp
   const siteBreakdown = useMemo(() => {
     const map: Record<string, number> = {};
     inPeriod.forEach((t) => {
-      const site = t.nombre_cliente1 || "Unknown";
-      map[site] = (map[site] || 0) + (t.cantidad || 0);
+      // Group by the Project the placa is mapped to. Never fall back
+      // to SCA WEB customer / city / station names — those leak
+      // upstream labels (e.g. "Chiconamel") into the client portal.
+      const placa = (t.placa || "").toString().trim();
+      const project = placa && placaToProjectName ? placaToProjectName[placa] : undefined;
+      if (!project) return;
+      map[project] = (map[project] || 0) + (t.cantidad || 0);
     });
     return Object.entries(map)
       .map(([site, litres]) => ({ site, litres, kg: litres * effectiveFactor, tonnes: (litres * effectiveFactor) / 1000 }))
       .sort((a, b) => b.litres - a.litres);
-  }, [inPeriod, effectiveFactor]);
+  }, [inPeriod, effectiveFactor, placaToProjectName]);
 
   const exportPDF = () => {
     generateEmissionsPDF({
