@@ -3191,7 +3191,7 @@ function ProjectsTab({
       <div>
         <h2 style={sectionTitle}>Projects</h2>
         <p style={{ ...muted(12), margin: "4px 0 0" }}>
-          Fuel usage per project — assign plant items to projects on the Plant tab.
+          Fuel usage per project — create and assign equipment to projects on the Projects tab.
         </p>
       </div>
 
