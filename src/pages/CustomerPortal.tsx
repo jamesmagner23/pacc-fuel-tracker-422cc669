@@ -3230,7 +3230,7 @@ function ProjectsTab({
             const deliveries = s?.deliveries || 0;
             const co2Tonnes = (litres * CO2_FACTOR) / 1000;
             const topPlant = s
-              ? Object.entries(s.topPlant).sort((a, b) => b[1] - a[1]).slice(0, 5)
+              ? Object.entries(s.topPlant).sort((a, b) => b[1] - a[1])
               : [];
             const maxLitres = topPlant[0]?.[1] || 1;
             const weekly = s
@@ -3256,21 +3256,7 @@ function ProjectsTab({
                       {p.end_date ? ` → ${format(parseISO(p.end_date), "dd MMM yyyy")}` : ""}
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-                    <div>
-                      <div style={labelStyle}>Litres</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{fmtL(litres)}</div>
-                    </div>
-                    <div>
-                      <div style={labelStyle}>Deliveries</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{deliveries}</div>
-                    </div>
-                    <div>
-                      <div style={labelStyle}>CO₂e (t)</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
-                        {fmtNum(co2Tonnes, 2)}
-                      </div>
-                    </div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -3296,9 +3282,42 @@ function ProjectsTab({
                   </div>
                 </div>
 
+                {isOpen && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      marginTop: 14,
+                      paddingTop: 12,
+                      borderTop: `1px solid ${T.border}`,
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                      gap: 16,
+                    }}
+                  >
+                    <div>
+                      <div style={labelStyle}>Litres ({PERIOD_LABELS[period as PortalPeriod] ? "" : ""}period)</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{fmtL(litres)}</div>
+                    </div>
+                    <div>
+                      <div style={labelStyle}>Deliveries</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{deliveries}</div>
+                    </div>
+                    <div>
+                      <div style={labelStyle}>CO₂e (t)</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: T.text, fontVariantNumeric: "tabular-nums" }}>
+                        {fmtNum(co2Tonnes, 2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={labelStyle}>Equipment on site</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{topPlant.length}</div>
+                    </div>
+                  </div>
+                )}
+
                 {isOpen && topPlant.length > 0 && (
                   <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
-                    <div style={{ ...labelStyle, marginBottom: 8 }}>Top Fuel Users</div>
+                    <div style={{ ...labelStyle, marginBottom: 8 }}>Equipment on site · Fuel used</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {topPlant.map(([name, l]) => (
                         <div key={name} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}>
