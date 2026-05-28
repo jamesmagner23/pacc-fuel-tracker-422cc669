@@ -1717,8 +1717,15 @@ function OverviewTactical({
       {/* Header row */}
       <div className="flex justify-between items-end gap-3">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.18em] font-semibold mb-1" style={{ color: "var(--accent)" }}>
-            Portal / {companyName || "Account"} · {PERIOD_LABELS[period]}
+          <div className="text-[10px] uppercase tracking-[0.18em] font-semibold mb-1 flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
+            <span>{companyName || "Account"}</span>
+            <span className="opacity-50">·</span>
+            <span className="opacity-80">{PERIOD_LABELS[period]}</span>
+            {period === "custom" && customRange.from && (
+              <span className="opacity-80">
+                ({format(customRange.from, "d MMM")}{customRange.to ? ` – ${format(customRange.to, "d MMM")}` : ""})
+              </span>
+            )}
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">Overview</h1>
         </div>
@@ -1732,6 +1739,63 @@ function OverviewTactical({
           <Download className="w-4 h-4" strokeWidth={2.5} />
           <span className="text-xs font-bold tracking-wider">EXPORT</span>
         </button>
+      </div>
+
+      {/* Period selector — sits above KPIs so it's the first control you see */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div
+          className="inline-flex items-center gap-1 p-1 rounded-full border"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          {(["day", "week", "month", "all"] as PortalPeriod[]).map((p) => {
+            const active = period === p;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-full transition-all"
+                style={{
+                  color: active ? "var(--background)" : "var(--text-secondary, var(--muted-foreground))",
+                  background: active ? "var(--accent)" : "transparent",
+                }}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            );
+          })}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider rounded-full transition-all inline-flex items-center gap-1.5"
+                style={{
+                  color: period === "custom" ? "var(--background)" : "var(--text-secondary, var(--muted-foreground))",
+                  background: period === "custom" ? "var(--accent)" : "transparent",
+                }}
+              >
+                <CalendarIcon className="w-3 h-3" />
+                Custom
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                selected={{ from: customRange.from, to: customRange.to } as any}
+                onSelect={(r: any) => {
+                  setCustomRange({ from: r?.from, to: r?.to });
+                  if (r?.from) setPeriod("custom");
+                }}
+                numberOfMonths={2}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {numDeliveries.toLocaleString()} deliveries shown
+        </span>
       </div>
 
       {/* KPI bento — 2x2 on mobile, 4-up on lg */}
