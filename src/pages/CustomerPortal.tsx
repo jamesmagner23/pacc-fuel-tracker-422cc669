@@ -736,6 +736,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 portalFilters={portalFilters}
                 availableTypes={availableTypes}
                 availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
+                activeSitesCount={projectsAll.filter((p: any) => (p.status || "active") === "active").length}
                 availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
                 placaToProjectName={(() => {
                   const projectName: Record<string, string> = {};
