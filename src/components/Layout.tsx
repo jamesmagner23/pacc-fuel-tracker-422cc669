@@ -3,7 +3,7 @@ import { DateRangeToggle } from "./DateRangeToggle";
 import { useState, useEffect, type ComponentType } from "react";
 import {
   Menu, X, LogOut,
-  LayoutDashboard, Truck, Building2, DollarSign, Package, TrendingUp, Settings, Bus,
+  LayoutDashboard, Truck, Building2, DollarSign, Package, TrendingUp, Settings, Bus, FolderKanban,
 } from "lucide-react";
 import { PACCLogo } from "./PACCLogo";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +50,7 @@ const demoPortalNavItems: Array<NavItem & { tab?: string }> = [
   { to: "/portal", label: "Overview",   tab: "Overview",   icon: LayoutDashboard },
   { to: "/portal", label: "Deliveries", tab: "Deliveries", icon: Truck },
   { to: "/portal", label: "Fleet",      tab: "Fleet",      icon: Bus },
+  { to: "/portal", label: "Projects",   tab: "Projects",   icon: FolderKanban },
   { to: "/portal", label: "Reports",    tab: "Reports",    icon: TrendingUp },
   { to: "/portal", label: "Profile",    tab: "Profile",    icon: Settings },
 ];
