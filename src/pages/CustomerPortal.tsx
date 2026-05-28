@@ -1819,18 +1819,33 @@ function OverviewTactical({
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Active Sites</span>
-            <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider" style={{ color: "var(--positive)" }}>
-              <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--positive)" }} />
-              LIVE
-            </span>
+            {sitesCount > 0 ? (
+              <span className="flex items-center gap-1 text-[10px] font-bold tracking-wider" style={{ color: "var(--positive)" }}>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--positive)" }} />
+                LIVE
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground">—</span>
+            )}
           </div>
           <div className="flex items-baseline gap-1">
             <span className="text-xl font-bold text-foreground tabular-nums">{sitesCount.toLocaleString()}</span>
             <span className="text-[10px] font-medium text-muted-foreground">{sitesCount === 1 ? "SITE" : "SITES"}</span>
           </div>
-          <div className="mt-3 text-[10px] text-muted-foreground/80 truncate">
-            {topSites[0]?.name || "Awaiting first delivery"}
-          </div>
+          {sitesCount === 0 ? (
+            <div className="mt-3 space-y-1">
+              <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                No deliveries yet. Sites appear here once fuel is delivered to a project.
+              </p>
+              <span className="text-[10px] font-bold tracking-wider" style={{ color: "var(--accent)" }}>
+                View Projects →
+              </span>
+            </div>
+          ) : (
+            <div className="mt-3 text-[10px] text-muted-foreground/80 truncate">
+              {topSites[0]?.name}
+            </div>
+          )}
         </button>
 
         {/* Avg per load */}
@@ -1848,6 +1863,20 @@ function OverviewTactical({
           </div>
         </div>
       </div>
+
+      {/* Active sites quick action */}
+      {onOpenSites && (
+        <div className="flex justify-end -mt-2 mb-2">
+          <button
+            type="button"
+            onClick={onOpenSites}
+            className="text-[10px] font-bold tracking-wider transition-colors hover:opacity-80"
+            style={{ color: "var(--accent)" }}
+          >
+            VIEW ALL PROJECTS →
+          </button>
+        </div>
+      )}
 
       {/* Filters summary + Export — sits between KPIs and the map */}
       <div className="flex items-center justify-between flex-wrap gap-3">
