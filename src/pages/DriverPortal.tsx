@@ -459,7 +459,6 @@ function EditStopDialog({
 }) {
   const [siteName, setSiteName] = useState(stop.site_name);
   const [address, setAddress] = useState(stop.address ?? "");
-  const [litres, setLitres] = useState(stop.estimated_litres?.toString() ?? "");
   const [notes, setNotes] = useState(stop.notes ?? "");
 
   return (
@@ -491,14 +490,6 @@ function EditStopDialog({
             onChange={(e) => setAddress(e.target.value)}
             className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm"
           />
-          <label className="text-xs text-muted-foreground">Estimated litres</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            value={litres}
-            onChange={(e) => setLitres(e.target.value)}
-            className="w-full bg-surface border border-surface-border rounded-lg text-foreground px-3 py-2.5 text-sm"
-          />
           <label className="text-xs text-muted-foreground">Notes</label>
           <textarea
             value={notes}
@@ -520,7 +511,7 @@ function EditStopDialog({
               onSave({
                 site_name: siteName.trim() || stop.site_name,
                 address: address.trim() || null,
-                estimated_litres: litres ? Number(litres) : null,
+                estimated_litres: null,
                 notes: notes.trim() || null,
               })
             }
