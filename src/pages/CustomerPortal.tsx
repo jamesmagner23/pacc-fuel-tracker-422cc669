@@ -1588,6 +1588,10 @@ function OverviewTab({
       transactions={transactions}
       companyName={companyName}
       periodLabel={periodLabel}
+      period={period}
+      setPeriod={setPeriod}
+      customRange={customRange}
+      setCustomRange={setCustomRange}
       totalLitres={totalLitres}
       numDeliveries={numDeliveries}
       avgDrop={avgDrop}
@@ -1613,6 +1617,8 @@ function OverviewTab({
         downloadCSV([header, ...rows], `${safeName}-deliveries-${safePeriod}.csv`);
       }}
       onOpenDeliveries={onOpenDeliveries}
+      onOpenFuelVolume={onOpenFuelVolume}
+      onOpenSites={onOpenSites}
     />
   );
 }
