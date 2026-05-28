@@ -577,7 +577,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
       {/* Day / Week / Month period toggle — applies to time-series tabs.
           Overview embeds its own period selector inside the dashboard. */}
       {(activeTab === "Deliveries" ||
-          (activeTab === "Fleet" && fleetSubtab === "Plant") ||
+          activeTab === "Fleet" ||
           (activeTab === "Reports" && reportsSubtab === "Analytics") ||
           (activeTab === "Reports" && reportsSubtab === "Fuel Tax Credit")) && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
@@ -704,7 +704,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
         )}
 
 
-        {isLoading && !(activeTab === "Fleet" && fleetSubtab === "Plant") ? (
+        {isLoading && activeTab !== "Fleet" ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
