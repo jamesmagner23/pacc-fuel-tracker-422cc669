@@ -2594,7 +2594,60 @@ function DeliveriesTab({
 
       <div style={card}>
         {filtered.length === 0 ? (
-          <p style={muted(13)}>No deliveries recorded for this period.</p>
+          allTransactionsCount === 0 ? (
+            <div style={{ padding: "24px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>⛽</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: T.text, marginBottom: 4 }}>
+                No deliveries yet
+              </div>
+              <div style={{ ...muted(12), maxWidth: 320, margin: "0 auto", lineHeight: 1.5 }}>
+                Your first fuel drop will appear here within an hour of delivery.
+                Each delivery includes a signed docket you can download.
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <a
+                  href="mailto:fuel@paccvictoria.com"
+                  style={{
+                    display: "inline-block",
+                    fontSize: 11,
+                    fontFamily: T.sansHead,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: T.text,
+                    border: `1px solid ${T.accent}`,
+                    padding: "8px 14px",
+                    borderRadius: 4,
+                    textDecoration: "none",
+                  }}
+                >
+                  Contact dispatch
+                </a>
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: "20px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: T.text, marginBottom: 6 }}>
+                No deliveries match these filters
+              </div>
+              <div style={muted(12)}>
+                Try widening the date range or clearing the project / plant filter.
+              </div>
+              {(plantFilter !== "all" || projectFilter !== "all" || fromDate || toDate) && (
+                <div style={{ marginTop: 12 }}>
+                  <GhostButton
+                    onClick={() => {
+                      setPlantFilter("all");
+                      setProjectFilter("all");
+                      setFromDate("");
+                      setToDate("");
+                    }}
+                  >
+                    Clear filters
+                  </GhostButton>
+                </div>
+              )}
+            </div>
+          )
         ) : (
           filtered.map((t, i) => {
             const placa = (t.placa || "").toString().trim();
