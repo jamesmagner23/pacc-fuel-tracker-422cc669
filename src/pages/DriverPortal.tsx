@@ -663,7 +663,6 @@ function MyDayTab() {
                   <div className="flex-1 min-w-0 py-2">
                     <div className="text-sm font-medium text-foreground truncate">{stop.site_name}</div>
                     {stop.address && <div className="text-xs text-muted-foreground truncate">{stop.address}</div>}
-                    {stop.estimated_litres && <div className="text-[11px] text-muted-foreground mt-0.5">{Number(stop.estimated_litres).toLocaleString()}L est.</div>}
                   </div>
                   {!isCompleted && stop.address && (
                     <a
