@@ -260,31 +260,73 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
               <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
                 Actual deliveries (SpeedSol)
               </div>
-              {loadingActuals && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
+              <button
+                type="button"
+                onClick={() => void syncAndReload({ manual: true })}
+                disabled={syncing || loadingActuals}
+                className="flex items-center gap-1 text-[10px] font-semibold text-gray-600 disabled:opacity-50"
+                style={{ background: "none", border: "none" }}
+              >
+                {syncing || loadingActuals ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3 h-3" />
+                )}
+                Refresh
+              </button>
             </div>
-            {!loadingActuals && matchedTxns.length === 0 && (
+            <div className="text-[10px] text-gray-500 mb-2">
+              Last SpeedSol sync: {syncing ? "syncing now…" : lastSyncLabel}
+            </div>
+            {!loadingActuals && !syncing && matchedTxns.length === 0 && (
               <div className="text-xs text-gray-600">
                 No SpeedSol transactions found for this client on {stop.scheduled_date}. Enter litres manually.
               </div>
             )}
-            {matchedTxns.length > 0 && (
+            {shifts.length > 0 && (
               <>
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {matchedTxns.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between text-xs">
-                      <span className="truncate mr-2">
-                        {t.producto || "Fuel"}
-                        {t.placa ? ` · ${t.placa}` : ""}
-                        {t.nombre_flota ? ` · ${t.nombre_flota}` : ""}
-                      </span>
-                      <span className="font-mono font-semibold tabular-nums">
-                        {(Number(t.cantidad) || 0).toFixed(2)} L
-                      </span>
-                    </div>
-                  ))}
+                <div className="space-y-3 max-h-56 overflow-y-auto">
+                  {shifts.map((s, idx) => {
+                    const shiftTotal = s.rows.reduce(
+                      (a, r) => a + (Number(r.cantidad) || 0),
+                      0,
+                    );
+                    const sameTime = s.start === s.end;
+                    return (
+                      <div key={`${s.start}-${idx}`}>
+                        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                          <span>
+                            Shift {idx + 1} ·{" "}
+                            {format(parseISO(s.start), "HH:mm")}
+                            {!sameTime && ` – ${format(parseISO(s.end), "HH:mm")}`}
+                          </span>
+                          <span className="font-mono tabular-nums normal-case">
+                            {shiftTotal.toFixed(2)} L
+                          </span>
+                        </div>
+                        <div className="space-y-1 pl-2 border-l-2 border-gray-200">
+                          {s.rows.map((t) => (
+                            <div
+                              key={t.id}
+                              className="flex items-center justify-between text-xs"
+                            >
+                              <span className="truncate mr-2">
+                                {t.producto || "Fuel"}
+                                {t.placa ? ` · ${t.placa}` : ""}
+                                {t.nombre_flota ? ` · ${t.nombre_flota}` : ""}
+                              </span>
+                              <span className="font-mono font-semibold tabular-nums">
+                                {(Number(t.cantidad) || 0).toFixed(2)} L
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 text-xs font-semibold">
-                  <span>Total from dockets</span>
+                  <span>Total — all shifts</span>
                   <span className="font-mono tabular-nums">{actualSum.toFixed(2)} L</span>
                 </div>
               </>
