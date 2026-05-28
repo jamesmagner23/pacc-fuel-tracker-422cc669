@@ -777,7 +777,19 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                   onChange={(s) => setReportsSubtab(s as ReportSubtab)}
                 />
                 {reportsSubtab === "Emissions" && (
-                  <EmissionsTab transactions={transactions} companyName={companyName} />
+                  <EmissionsTab
+                    transactions={transactions}
+                    companyName={companyName}
+                    placaToProjectName={(() => {
+                      const projectName: Record<string, string> = {};
+                      projectsAll.forEach((p: any) => { projectName[p.id] = p.name; });
+                      const out: Record<string, string> = {};
+                      Object.entries(lookups.placaToProject).forEach(([placa, pid]) => {
+                        if (projectName[pid as string]) out[placa] = projectName[pid as string];
+                      });
+                      return out;
+                    })()}
+                  />
                 )}
                 {reportsSubtab === "Fuel Tax Credit" && (
                   <FtcReportTab
