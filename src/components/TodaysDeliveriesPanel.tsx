@@ -112,11 +112,14 @@ export function TodaysDeliveriesPanel({ heightClass = "h-[440px]" }: { heightCla
           <ul>
             {rows.map((s) => {
               const customer = clientMap[s.client_account_id] || s.site_name || "—";
-              const litres = s.delivered_litres ?? s.estimated_litres ?? 0;
+              const delivered = s.delivered_litres;
+              const estimated = s.estimated_litres;
+              const showLitres = delivered ?? (s.status === "scheduled" || s.status === "in_progress" ? estimated : null);
+              const isEstimate = delivered == null && showLitres != null;
               return (
                 <li key={s.id} className="border-b border-border last:border-b-0">
                   <Link
-                    to={`/dispatch?stop=${s.id}`}
+                    to={`/transactions?date=${s.scheduled_date}&q=${encodeURIComponent(customer)}`}
                     className="grid grid-cols-[1fr_auto_auto] items-center gap-3 px-5 py-3 hover:bg-muted/60 transition-colors"
                   >
                     <div className="min-w-0">
@@ -125,8 +128,10 @@ export function TodaysDeliveriesPanel({ heightClass = "h-[440px]" }: { heightCla
                         {s.address || s.site_name || "—"}
                       </div>
                     </div>
-                    <div className="text-sm font-medium tabular-nums text-foreground w-[80px] text-right">
-                      {litres ? `${litres.toLocaleString()} L` : "—"}
+                    <div className="text-sm font-medium tabular-nums text-foreground w-[90px] text-right">
+                      {showLitres != null
+                        ? `${isEstimate ? "~" : ""}${showLitres.toLocaleString()} L`
+                        : "—"}
                     </div>
                     <div className="w-[120px] flex justify-end">
                       <StatusBadge stop={s} />
