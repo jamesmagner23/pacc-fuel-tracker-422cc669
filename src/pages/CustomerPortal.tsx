@@ -2275,77 +2275,130 @@ function _LegacyOverviewBlocks_unused(opts: any) {
 // 02 DELIVERIES — site + project + date range filter, CSV export, dockets
 // ═══════════════════════════════════════════════════════════════════════
 function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null }) {
-  const { data: dockets = [] } = useQuery({
+  const [open, setOpen] = useState<any | null>(null);
+  const { data: dockets = [], isLoading, error } = useQuery({
     queryKey: ["signed-dockets", clientAccountId],
     queryFn: async () => {
       if (!clientAccountId) return [];
       const { data, error } = await supabase
         .from("dispatch_stops" as any)
-        .select("*, projects(name), trucks(name, rego)")
+        .select("*")
         .eq("client_account_id", clientAccountId)
         .eq("status", "completed")
+        .not("customer_signature", "is", null)
+        .order("signed_at", { ascending: false, nullsFirst: false })
         .order("completed_at", { ascending: false, nullsFirst: false })
-        .limit(20);
+        .limit(50);
       if (error) throw error;
       return (data || []) as any[];
     },
     enabled: !!clientAccountId,
   });
-  const [open, setOpen] = useState<any | null>(null);
+  const { data: completedCount = 0 } = useQuery({
+    queryKey: ["signed-dockets-completed-count", clientAccountId],
+    queryFn: async () => {
+      if (!clientAccountId) return 0;
+      const { data, error } = await supabase
+        .from("dispatch_stops" as any)
+        .select("id")
+        .eq("client_account_id", clientAccountId)
+        .eq("status", "completed");
+      if (error) throw error;
+      return (data || []).length;
+    },
+    enabled: !!clientAccountId,
+  });
+  const { data: projectById = {} } = useQuery({
+    queryKey: ["signed-dockets-projects", dockets.map((d: any) => d.project_id).filter(Boolean).sort().join(",")],
+    queryFn: async () => {
+      const ids = Array.from(new Set(dockets.map((d: any) => d.project_id).filter(Boolean)));
+      if (!ids.length) return {} as Record<string, any>;
+      const { data, error } = await supabase.from("projects").select("id, name, site_address").in("id", ids);
+      if (error) return {} as Record<string, any>;
+      const map: Record<string, any> = {};
+      (data || []).forEach((p: any) => { map[p.id] = p; });
+      return map;
+    },
+    enabled: dockets.length > 0,
+  });
+  const { data: truckById = {} } = useQuery({
+    queryKey: ["signed-dockets-trucks", dockets.map((d: any) => d.truck_id).filter(Boolean).sort().join(",")],
+    queryFn: async () => {
+      const ids = Array.from(new Set(dockets.map((d: any) => d.truck_id).filter(Boolean)));
+      if (!ids.length) return {} as Record<string, any>;
+      const { data, error } = await supabase.from("trucks" as any).select("id, name, rego").in("id", ids);
+      if (error) return {} as Record<string, any>;
+      const map: Record<string, any> = {};
+      (data || []).forEach((t: any) => { map[t.id] = t; });
+      return map;
+    },
+    enabled: dockets.length > 0,
+  });
   const { data: driverNameById = {} } = useQuery({
     queryKey: ["signed-dockets-drivers", dockets.map((d: any) => d.driver_user_id).filter(Boolean).sort().join(",")],
     queryFn: async () => {
       const ids = Array.from(new Set(dockets.map((d: any) => d.driver_user_id).filter(Boolean)));
       if (!ids.length) return {} as Record<string, string>;
-      const { data } = await supabase.from("user_roles").select("user_id, full_name, email").in("user_id", ids);
+      const { data, error } = await supabase.from("user_roles").select("user_id, full_name, email").in("user_id", ids);
+      if (error) return {} as Record<string, string>;
       const map: Record<string, string> = {};
       (data || []).forEach((u: any) => { map[u.user_id] = u.full_name || u.email || ""; });
       return map;
     },
     enabled: dockets.length > 0,
   });
-  if (!dockets.length) return null;
   return (
     <div id="signed-dockets" style={{ ...card, scrollMarginTop: 80 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{ ...labelStyle, marginBottom: 0 }}>Delivery Dockets</div>
+        <div style={{ ...labelStyle, marginBottom: 0 }}>Signed Dockets</div>
         <div style={muted(11)}>
-          {dockets.filter((d: any) => d.customer_signature).length} signed · {dockets.length} total
+          {dockets.length} signed
         </div>
       </div>
+      {isLoading && <p style={muted(13)}>Loading signed dockets…</p>}
+      {error && <p style={{ ...muted(13), color: "#9F2A1D" }}>Signed dockets could not be loaded. Please refresh and try again.</p>}
+      {!isLoading && !error && dockets.length === 0 && (
+        <div style={{ border: `1px dashed ${T.border}`, borderRadius: 8, padding: 14, background: T.surfaceRaised }}>
+          <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>No signed dockets yet</div>
+          <div style={muted(12)}>
+            {completedCount > 0
+              ? `${completedCount} completed delivery ${completedCount === 1 ? "record is" : "records are"} below, but none have a captured customer signature yet.`
+              : "Signed dockets will appear here as soon as a driver captures the customer and driver signatures."}
+          </div>
+        </div>
+      )}
       <div style={{ display: "flex", flexDirection: "column" }}>
-        {dockets.map((d, i) => (
-          <button
-            key={d.id}
-            onClick={() => d.customer_signature && setOpen(d)}
-            disabled={!d.customer_signature}
-            style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "10px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none",
-              background: "transparent", border: "none", textAlign: "left",
-              cursor: d.customer_signature ? "pointer" : "default", color: T.text,
-            }}
-          >
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                {d.site_name}
-                {d.customer_signature ? (
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(122,168,77,0.18)", color: "#7AA84D", letterSpacing: "0.05em" }}>SIGNED</span>
-                ) : (
-                  <span style={{ fontSize: 9, fontWeight: 600, padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.06)", color: T.muted, letterSpacing: "0.05em" }}>UNSIGNED</span>
-                )}
+        {dockets.map((d, i) => {
+          const project = d.project_id ? projectById[d.project_id] : null;
+          const truck = d.truck_id ? truckById[d.truck_id] : null;
+          return (
+            <button
+              key={d.id}
+              onClick={() => setOpen({ ...d, project, truck })}
+              style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "10px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none",
+                background: "transparent", border: "none", textAlign: "left",
+                cursor: "pointer", color: T.text,
+              }}
+            >
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  {project?.name || d.site_name}
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(122,168,77,0.18)", color: "#2A6A2E", letterSpacing: "0.05em" }}>SIGNED</span>
+                </div>
+                <div style={muted(11)}>
+                  {d.signed_at ? format(parseISO(d.signed_at), "d MMM yyyy · HH:mm")
+                    : d.completed_at ? format(parseISO(d.completed_at), "d MMM yyyy · HH:mm") : ""}
+                  {d.customer_name ? ` · ${d.customer_name}${d.customer_role ? `, ${d.customer_role}` : ""}` : ""}
+                </div>
               </div>
-              <div style={muted(11)}>
-                {d.signed_at ? format(parseISO(d.signed_at), "d MMM yyyy · HH:mm")
-                  : d.completed_at ? format(parseISO(d.completed_at), "d MMM yyyy · HH:mm") : ""}
-                {d.customer_name ? ` · Signed by ${d.customer_name}` : ""}
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.chart, marginLeft: 12 }}>
+                {Number(d.delivered_litres || 0).toLocaleString()} L
               </div>
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.chart, marginLeft: 12 }}>
-              {Number(d.delivered_litres || 0).toLocaleString()} L
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
       {open && (
         <div
@@ -2361,10 +2414,10 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
               {open.signed_at ? format(parseISO(open.signed_at), "d MMM yyyy · HH:mm") : ""}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12, fontSize: 12 }}>
-              {open.projects?.name && (
+              {open.project?.name && (
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Project</div>
-                  <div style={{ fontWeight: 600, color: "#0E1F10" }}>{open.projects.name}</div>
+                  <div style={{ fontWeight: 600, color: "#0E1F10" }}>{open.project.name}</div>
                 </div>
               )}
               {open.address && (
@@ -2377,11 +2430,11 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Delivered</div>
                 <div style={{ fontWeight: 700, color: "#0E1F10" }}>{Number(open.delivered_litres || 0).toLocaleString()} L</div>
               </div>
-              {(open.trucks?.name || open.trucks?.rego) && (
+              {(open.truck?.name || open.truck?.rego) && (
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Truck</div>
                   <div style={{ color: "#0E1F10" }}>
-                    {open.trucks?.name}{open.trucks?.rego ? ` · ${open.trucks.rego}` : ""}
+                    {open.truck?.name}{open.truck?.rego ? ` · ${open.truck.rego}` : ""}
                   </div>
                 </div>
               )}
