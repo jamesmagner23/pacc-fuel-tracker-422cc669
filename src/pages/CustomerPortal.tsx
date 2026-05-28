@@ -2281,7 +2281,7 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
       if (!clientAccountId) return [];
       const { data, error } = await supabase
         .from("dispatch_stops" as any)
-        .select("*")
+        .select("*, projects(name), trucks(name, rego)")
         .eq("client_account_id", clientAccountId)
         .eq("status", "completed")
         .not("customer_signature", "is", null)
@@ -2293,6 +2293,18 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
     enabled: !!clientAccountId,
   });
   const [open, setOpen] = useState<any | null>(null);
+  const { data: driverNameById = {} } = useQuery({
+    queryKey: ["signed-dockets-drivers", dockets.map((d: any) => d.driver_user_id).filter(Boolean).sort().join(",")],
+    queryFn: async () => {
+      const ids = Array.from(new Set(dockets.map((d: any) => d.driver_user_id).filter(Boolean)));
+      if (!ids.length) return {} as Record<string, string>;
+      const { data } = await supabase.from("user_roles").select("user_id, full_name, email").in("user_id", ids);
+      const map: Record<string, string> = {};
+      (data || []).forEach((u: any) => { map[u.user_id] = u.full_name || u.email || ""; });
+      return map;
+    },
+    enabled: dockets.length > 0,
+  });
   if (!dockets.length) return null;
   return (
     <div style={card}>
