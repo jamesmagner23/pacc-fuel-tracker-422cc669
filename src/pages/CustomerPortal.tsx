@@ -1877,6 +1877,23 @@ function OverviewTactical({
         </div>
       </div>
 
+      {/* Filters summary + Export — sits between KPIs and the map */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {numDeliveries.toLocaleString()} deliveries shown
+        </span>
+        <button
+          type="button"
+          onClick={onExportCsv}
+          disabled={transactions.length === 0}
+          className="h-10 px-4 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          style={{ background: "var(--accent)", color: "var(--background)", boxShadow: "0 4px 16px -6px var(--accent)" }}
+        >
+          <Download className="w-4 h-4" strokeWidth={2.5} />
+          <span className="text-xs font-bold tracking-wider">EXPORT</span>
+        </button>
+      </div>
+
       {/* Live truck map block */}
       <div className="relative rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
         <div className="absolute top-3 left-3 z-10 backdrop-blur-md px-2 py-1 rounded border flex items-center gap-2" style={{ background: "rgba(0,0,0,0.55)", borderColor: "rgba(255,255,255,0.10)" }}>
