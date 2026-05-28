@@ -1557,7 +1557,7 @@ function OverviewTab({
       prevLitres={prevLitres}
       prevDeliveries={prevDeliveries}
       prevAvg={prevAvg}
-      sitesCount={sites.size}
+      sitesCount={sitesSize}
       donutRows={donutData.rows}
       donutTotal={donutData.total}
       recent={recent}
