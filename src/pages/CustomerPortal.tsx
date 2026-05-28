@@ -704,7 +704,20 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
 
 
         {isLoading && activeTab !== "Fleet" ? (
-          <p style={muted(13)}>Loading...</p>
+          <div style={{ padding: "32px 8px", textAlign: "center" }}>
+            <div
+              aria-hidden
+              style={{
+                width: 24, height: 24, margin: "0 auto 12px",
+                border: `2px solid ${T.border}`,
+                borderTopColor: T.accent,
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite",
+              }}
+            />
+            <div style={muted(12)}>Loading your deliveries…</div>
+            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+          </div>
         ) : (
           <>
             {activeTab === "Overview" && (
