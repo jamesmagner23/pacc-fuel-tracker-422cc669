@@ -214,16 +214,7 @@ export function LogStopsDialog({ open, onOpenChange, defaultDate }: Props) {
                       onChange={(e) => update(r.key, { site_name: e.target.value })}
                     />
                   </div>
-                  <div className="col-span-1">
-                    <Input
-                      className="h-9 text-xs"
-                      type="number"
-                      placeholder="L"
-                      value={r.litres}
-                      onChange={(e) => update(r.key, { litres: e.target.value })}
-                    />
-                  </div>
-                  <div className="col-span-2">
+                  <div className="col-span-3">
                     <Select value={r.truck_id} onValueChange={(v) => update(r.key, { truck_id: v })}>
                       <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Truck" /></SelectTrigger>
                       <SelectContent>
