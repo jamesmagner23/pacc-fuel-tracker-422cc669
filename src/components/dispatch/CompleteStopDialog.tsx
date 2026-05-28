@@ -226,7 +226,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
 
           <div>
             <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
-              Delivered litres {matchedTxns.length > 0 && <span className="text-gray-400 font-normal normal-case">(prefilled from SpeedSol)</span>}
+              Delivered litres <span className="text-gray-400 font-normal normal-case">(enter manually)</span>
             </label>
             <input
               type="number"
