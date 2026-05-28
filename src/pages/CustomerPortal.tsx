@@ -725,7 +725,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 }}
                 onOpenDeliveries={() => setActiveTab("Deliveries")}
                 onOpenFuelVolume={() => {
-                  setReportsSubtab("Analytics");
+                  setReportsSubtab("Emissions");
                   setActiveTab("Reports");
                 }}
                 onOpenSites={() => {
@@ -776,14 +776,6 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                   active={reportsSubtab}
                   onChange={(s) => setReportsSubtab(s as ReportSubtab)}
                 />
-                {reportsSubtab === "Analytics" && (
-                  <AnalyticsTab
-                    transactions={filteredTransactions}
-                    clientAccountId={clientAccountId}
-                    periodLabel={PERIOD_LABELS[period]}
-                    companyName={companyName}
-                  />
-                )}
                 {reportsSubtab === "Emissions" && (
                   <EmissionsTab transactions={transactions} companyName={companyName} />
                 )}
