@@ -1424,6 +1424,7 @@ function OverviewTab({
 
   // Previous-period comparison: same window length, immediately preceding.
   const previousTransactions = useMemo(() => {
+    if (period === "custom") return [];
     const days = PERIOD_DAYS[period];
     if (days == null) return [];
     const cutoffEnd = subDays(new Date(), days);
