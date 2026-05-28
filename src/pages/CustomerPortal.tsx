@@ -2680,6 +2680,7 @@ function DeliveriesTab({
                   justifyContent: "space-between",
                   alignItems: "center",
                   gap: 12,
+                  flexWrap: "wrap",
                   padding: "12px 0",
                   borderTop: i > 0 ? `1px solid ${T.border}` : "none",
                 }}
