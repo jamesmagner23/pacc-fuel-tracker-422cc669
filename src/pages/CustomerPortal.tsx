@@ -739,6 +739,10 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 }}
                 periodLabel={PERIOD_LABELS[period]}
                 companyName={companyName}
+                portalFilters={portalFilters}
+                availableTypes={availableTypes}
+                availableProjects={projectsAll.map((p) => ({ id: p.id, name: p.name }))}
+                availableTags={plantTagsAll.map((t) => ({ id: t.id, name: t.name }))}
               />
             )}
             {activeTab === "Deliveries" && (
