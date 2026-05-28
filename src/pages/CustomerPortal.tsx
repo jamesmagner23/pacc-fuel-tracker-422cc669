@@ -579,43 +579,77 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
           (activeTab === "Fleet" && fleetSubtab === "Plant") ||
           (activeTab === "Reports" && reportsSubtab === "Analytics") ||
           (activeTab === "Reports" && reportsSubtab === "Fuel Tax Credit")) && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
-            <div style={{ display: "inline-flex", border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
-              {(["day", "week", "month", "all"] as PortalPeriod[]).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  style={{
-                    padding: "8px 14px",
-                    fontSize: 11,
-                    fontFamily: T.sansHead,
-                    fontWeight: period === p ? 600 : 500,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    color: period === p ? T.text : T.textSecondary,
-                    background: period === p ? T.accent : "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {PERIOD_LABELS[p]}
-                </button>
-              ))}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 2,
+                  padding: 3,
+                  borderRadius: 999,
+                  background: T.surface,
+                  border: `1px solid ${T.border}`,
+                }}
+              >
+                {(["day", "week", "month", "all"] as PortalPeriod[]).map((p) => {
+                  const active = period === p;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setPeriod(p)}
+                      style={{
+                        padding: "6px 14px",
+                        fontSize: 11,
+                        fontFamily: T.sansHead,
+                        fontWeight: active ? 600 : 500,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        color: active ? T.text : T.textSecondary,
+                        background: active ? T.accent : "transparent",
+                        border: "none",
+                        borderRadius: 999,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "all 160ms ease",
+                      }}
+                    >
+                      {PERIOD_LABELS[p]}
+                    </button>
+                  );
+                })}
+              </div>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: T.textSecondary,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                <strong style={{ color: T.text, fontWeight: 600 }}>
+                  {periodTransactions.length.toLocaleString()}
+                </strong>{" "}
+                deliveries
+              </span>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              <span style={{ ...muted(11), letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Showing {periodTransactions.length.toLocaleString()} deliveries · {PERIOD_LABELS[period]}
-              </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-2 rounded-full bg-foreground text-background hover:opacity-90"
-                    style={{ height: 36, padding: "0 16px", fontSize: 13, fontWeight: 600 }}
+                    className="inline-flex items-center gap-2 rounded-full hover:opacity-90 transition-opacity"
+                    style={{
+                      height: 36,
+                      padding: "0 16px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      background: "transparent",
+                      color: T.text,
+                      border: `1px solid ${T.border}`,
+                    }}
                   >
                     <Download className="w-3.5 h-3.5" />
-                    Download statement
+                    Statement
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
