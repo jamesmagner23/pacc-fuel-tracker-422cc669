@@ -2346,6 +2346,24 @@ function DeliveriesTab({
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  // Bulk docket selection
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const toggleSelected = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const clearSelection = () => { setSelected(new Set()); setSelectMode(false); };
+  const openCombinedDockets = () => {
+    if (selected.size === 0) return;
+    const ids = Array.from(selected).join(",");
+    const extra = demoSuffix ? `&${demoSuffix.slice(1)}` : "";
+    window.open(`/docket/multi?ids=${ids}${extra}`, "_blank");
+  };
+
   const sites = useMemo(
     () => Array.from(new Set(transactions.map((t) => t.nombre_cliente1).filter(Boolean))) as string[],
     [transactions]
