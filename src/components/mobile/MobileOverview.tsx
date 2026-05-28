@@ -468,6 +468,20 @@ export function MobileOverview() {
             />
           </div>
 
+          {/* Live truck map */}
+          <section className="mt-8">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-[22px] font-bold text-foreground tracking-tight">Live truck</h2>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                Live{lastSyncTime ? ` · ${lastSyncTime}` : ""}
+              </span>
+            </div>
+            <div className="rounded-[14px] border border-border overflow-hidden">
+              <TruckMap bare showStops height={260} />
+            </div>
+          </section>
+
           <TodaysDeliveriesMobile />
 
           <div className="h-3" />
