@@ -2539,6 +2539,15 @@ function DeliveriesTab({
                 }}
               >
                 <div style={{ display: "flex", alignItems: "stretch", gap: 10, minWidth: 0, flex: 1 }}>
+                  {selectMode && (
+                    <input
+                      type="checkbox"
+                      checked={selected.has(Number(t.id))}
+                      onChange={() => toggleSelected(Number(t.id))}
+                      aria-label="Select delivery"
+                      style={{ width: 18, height: 18, accentColor: T.accent, alignSelf: "center", cursor: "pointer" }}
+                    />
+                  )}
                   <div
                     aria-hidden
                     title={plant?.colour ? `Plant colour: ${plant.colour}` : undefined}
