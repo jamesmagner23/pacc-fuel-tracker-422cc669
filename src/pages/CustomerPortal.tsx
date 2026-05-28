@@ -1405,24 +1405,34 @@ function OverviewTab({
   transactions,
   allTransactions,
   period,
+  setPeriod,
+  customRange,
+  setCustomRange,
   demoSuffix,
   speedsolNames,
   isDemo,
   plantItems,
   onOpenFtcReport,
   onOpenDeliveries,
+  onOpenFuelVolume,
+  onOpenSites,
   periodLabel,
   companyName,
 }: {
   transactions: any[];
   allTransactions: any[];
   period: PortalPeriod;
+  setPeriod: (p: PortalPeriod) => void;
+  customRange: { from?: Date; to?: Date };
+  setCustomRange: (r: { from?: Date; to?: Date }) => void;
   demoSuffix: string;
   speedsolNames: string[];
   isDemo: boolean;
   plantItems: any[];
   onOpenFtcReport?: () => void;
   onOpenDeliveries?: () => void;
+  onOpenFuelVolume?: () => void;
+  onOpenSites?: () => void;
   periodLabel?: string;
   companyName?: string;
 }) {
