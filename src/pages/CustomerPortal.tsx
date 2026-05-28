@@ -4740,9 +4740,6 @@ function AnalyticsTab({
                 <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   {fmtL(m.litres)}
                 </span>
-                <span style={{ minWidth: 80, textAlign: "right", color: T.text, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                  {fmt$(m.ftcClaim)}
-                </span>
               </div>
             ))}
           </div>
