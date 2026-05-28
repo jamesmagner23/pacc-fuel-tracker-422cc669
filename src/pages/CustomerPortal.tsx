@@ -2307,7 +2307,7 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
   });
   if (!dockets.length) return null;
   return (
-    <div style={card}>
+    <div id="signed-dockets" style={{ ...card, scrollMarginTop: 80 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <div style={{ ...labelStyle, marginBottom: 0 }}>Signed Dockets</div>
         <div style={muted(11)}>{dockets.length} recent</div>
