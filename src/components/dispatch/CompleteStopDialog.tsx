@@ -257,6 +257,17 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
           </div>
 
           <div>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer role / title</label>
+            <input
+              type="text"
+              value={customerRole}
+              onChange={(e) => setCustomerRole(e.target.value)}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-3 text-base outline-none focus:border-gray-900"
+              placeholder="e.g. Site Manager, Foreman, Plant Operator"
+            />
+          </div>
+
+          <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer signature</label>
               <button
