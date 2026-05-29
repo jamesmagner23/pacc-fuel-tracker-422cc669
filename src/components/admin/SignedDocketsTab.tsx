@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
-import { FileSignature, X, Search, Download } from "lucide-react";
+import { FileSignature, X, Search, Download, Trash2 } from "lucide-react";
 
 interface SignedStop {
   id: string;
@@ -25,6 +25,8 @@ interface SignedStop {
 export default function SignedDocketsTab() {
   const [search, setSearch] = useState("");
   const [viewing, setViewing] = useState<SignedStop | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const qc = useQueryClient();
 
   const { data: stops = [], isLoading } = useQuery({
     queryKey: ["admin-signed-dockets"],
@@ -39,6 +41,24 @@ export default function SignedDocketsTab() {
       return (data || []) as unknown as SignedStop[];
     },
   });
+
+  const handleDelete = async (s: SignedStop) => {
+    const ok = window.confirm(
+      `Delete signed docket for "${s.site_name}" (${format(parseISO(s.signed_at), "dd MMM yy HH:mm")})?\n\nThis permanently removes the dispatch stop and its signatures.`
+    );
+    if (!ok) return;
+    setDeletingId(s.id);
+    try {
+      const { error } = await supabase.from("dispatch_stops" as any).delete().eq("id", s.id);
+      if (error) throw error;
+      if (viewing?.id === s.id) setViewing(null);
+      await qc.invalidateQueries({ queryKey: ["admin-signed-dockets"] });
+    } catch (e: any) {
+      window.alert(`Failed to delete: ${e?.message || e}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const { data: clients = [] } = useQuery({
     queryKey: ["signed-dockets-clients"],
@@ -128,12 +148,22 @@ export default function SignedDocketsTab() {
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <button
-                      onClick={() => setViewing(s)}
-                      className="text-xs px-2.5 py-1 rounded-md bg-surface-raised hover:bg-surface-raised/80 text-foreground border border-surface-border"
-                    >
-                      View
-                    </button>
+                    <div className="inline-flex items-center gap-1.5">
+                      <button
+                        onClick={() => setViewing(s)}
+                        className="text-xs px-2.5 py-1 rounded-md bg-surface-raised hover:bg-surface-raised/80 text-foreground border border-surface-border"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleDelete(s)}
+                        disabled={deletingId === s.id}
+                        title="Delete docket"
+                        className="text-xs p-1.5 rounded-md bg-surface-raised hover:bg-destructive/20 text-destructive border border-surface-border disabled:opacity-50"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
