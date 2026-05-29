@@ -45,7 +45,7 @@ export function TodaysDeliveriesPanel({ heightClass = "h-[440px]" }: { heightCla
               const customer = t.nombre_cliente1 || t.estacion || "—";
               const litres = t.cantidad ?? null;
               const when = t.fecha ? formatTime(t.fecha) : "";
-              const site = [t.ciudad, t.producto].filter(Boolean).join(" · ") || t.estacion || "—";
+              const site = t.producto || "—";
               return (
                 <li key={t.id} className="border-b border-border last:border-b-0">
                   <Link
