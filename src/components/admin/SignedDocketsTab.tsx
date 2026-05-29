@@ -212,6 +212,10 @@ export default function SignedDocketsTab() {
 function DocketViewer({ stop, clientName, onClose }: { stop: SignedStop; clientName?: string; onClose: () => void }) {
   const products = stop.products as any;
   const lines = Array.isArray(products?.lines) ? products.lines : [];
+  const verified = products?.source === "speedsol" && Array.isArray(products?.matched_transaction_ids) && products.matched_transaction_ids.length > 0;
+  const ssTotal = verified ? Number(products?.total_litres || 0) : null;
+  const entered = stop.delivered_litres != null ? Number(stop.delivered_litres) : null;
+  const variance = verified && entered != null ? entered - (ssTotal || 0) : null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
       <div className="bg-surface border border-surface-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -233,6 +237,32 @@ function DocketViewer({ stop, clientName, onClose }: { stop: SignedStop; clientN
           </div>
         </div>
         <div className="p-5 space-y-4 text-sm">
+          <div className={`rounded-lg border p-3 ${verified ? "border-primary/40 bg-primary/5" : "border-surface-border bg-surface-raised/30"}`}>
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold flex items-center gap-1.5">
+                {verified ? (
+                  <><ShieldCheck className="w-3.5 h-3.5 text-primary" /> SpeedSol verified</>
+                ) : (
+                  <><ShieldAlert className="w-3.5 h-3.5 text-muted-foreground" /> Manually entered (no SpeedSol match)</>
+                )}
+              </div>
+              {verified && (
+                <div className="text-[10px] text-muted-foreground tabular-nums">
+                  {products.matched_transaction_ids.length} matched txn · {ssTotal!.toLocaleString()}L
+                </div>
+              )}
+            </div>
+            {verified && entered != null && (
+              <div className="text-[11px] text-muted-foreground mt-1">
+                Driver entered <span className="font-semibold text-foreground">{entered.toLocaleString()}L</span>{" "}
+                vs SpeedSol total <span className="font-semibold text-foreground">{ssTotal!.toLocaleString()}L</span>{" "}
+                · Δ <span className={Math.abs(variance!) / Math.max(ssTotal!, 1) > 0.02 ? "text-destructive font-semibold" : "text-foreground"}>
+                  {variance! > 0 ? "+" : ""}{Math.round(variance!).toLocaleString()}L
+                </span>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <Info label="Client" value={clientName || "—"} />
             <Info label="Date" value={format(parseISO(stop.scheduled_date), "dd MMM yyyy")} />
