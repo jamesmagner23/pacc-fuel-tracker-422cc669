@@ -281,7 +281,7 @@ function TodaysDeliveriesMobile() {
           {rows.map((t, i) => {
             const customer = t.nombre_cliente1 || t.estacion || "—";
             const litres = t.cantidad ?? 0;
-            const addr = [t.ciudad, t.producto].filter(Boolean).join(" · ") || t.estacion || "—";
+            const addr = t.producto || "—";
             const when = t.fecha
               ? sameDay(t.fecha, today) ? formatTime(t.fecha) : formatDate(t.fecha)
               : "";
