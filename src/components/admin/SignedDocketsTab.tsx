@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { FileSignature, X, Search, Download, Trash2 } from "lucide-react";
+import { ShieldCheck, ShieldAlert } from "lucide-react";
 
 interface SignedStop {
   id: string;
@@ -116,18 +117,26 @@ export default function SignedDocketsTab() {
                 <th className="text-left px-3 py-2.5">Client</th>
                 <th className="text-left px-3 py-2.5">Customer</th>
                 <th className="text-right px-3 py-2.5">Litres</th>
+                <th className="text-center px-3 py-2.5">SpeedSol</th>
                 <th className="text-center px-3 py-2.5">Signatures</th>
                 <th className="text-right px-3 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Loading…</td></tr>
+                <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Loading…</td></tr>
               )}
               {!isLoading && filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">No signed dockets yet</td></tr>
+                <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">No signed dockets yet</td></tr>
               )}
-              {filtered.map((s) => (
+              {filtered.map((s) => {
+                const p: any = s.products || null;
+                const verified = p?.source === "speedsol" && Array.isArray(p?.matched_transaction_ids) && p.matched_transaction_ids.length > 0;
+                const ssTotal = verified ? Number(p?.total_litres || 0) : null;
+                const entered = s.delivered_litres != null ? Number(s.delivered_litres) : null;
+                const variance = verified && entered != null ? entered - (ssTotal || 0) : null;
+                const variancePct = verified && ssTotal && entered != null ? Math.abs(variance! / ssTotal) * 100 : null;
+                return (
                 <tr key={s.id} className="border-t border-surface-border hover:bg-surface-raised/40">
                   <td className="px-3 py-2.5 tabular-nums whitespace-nowrap">
                     {format(parseISO(s.signed_at), "dd MMM yy HH:mm")}
@@ -140,6 +149,27 @@ export default function SignedDocketsTab() {
                   </td>
                   <td className="px-3 py-2.5 text-right tabular-nums">
                     {s.delivered_litres != null ? `${Number(s.delivered_litres).toLocaleString()}L` : "—"}
+                  </td>
+                  <td className="px-3 py-2.5 text-center">
+                    {verified ? (
+                      <div className="inline-flex flex-col items-center leading-tight">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-primary font-semibold">
+                          <ShieldCheck className="w-3 h-3" /> Verified
+                        </span>
+                        <span className="text-[10px] text-muted-foreground tabular-nums">
+                          {ssTotal!.toLocaleString()}L · {p.matched_transaction_ids.length} txn
+                        </span>
+                        {variancePct != null && (
+                          <span className={`text-[10px] tabular-nums ${variancePct > 2 ? "text-destructive" : "text-muted-foreground"}`}>
+                            Δ {variance! > 0 ? "+" : ""}{Math.round(variance!).toLocaleString()}L
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <ShieldAlert className="w-3 h-3" /> Manual
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2.5 text-center">
                     <span className="inline-flex items-center gap-1 text-[10px]">
@@ -166,7 +196,7 @@ export default function SignedDocketsTab() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
         </div>
@@ -182,6 +212,10 @@ export default function SignedDocketsTab() {
 function DocketViewer({ stop, clientName, onClose }: { stop: SignedStop; clientName?: string; onClose: () => void }) {
   const products = stop.products as any;
   const lines = Array.isArray(products?.lines) ? products.lines : [];
+  const verified = products?.source === "speedsol" && Array.isArray(products?.matched_transaction_ids) && products.matched_transaction_ids.length > 0;
+  const ssTotal = verified ? Number(products?.total_litres || 0) : null;
+  const entered = stop.delivered_litres != null ? Number(stop.delivered_litres) : null;
+  const variance = verified && entered != null ? entered - (ssTotal || 0) : null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
       <div className="bg-surface border border-surface-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -203,6 +237,32 @@ function DocketViewer({ stop, clientName, onClose }: { stop: SignedStop; clientN
           </div>
         </div>
         <div className="p-5 space-y-4 text-sm">
+          <div className={`rounded-lg border p-3 ${verified ? "border-primary/40 bg-primary/5" : "border-surface-border bg-surface-raised/30"}`}>
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-semibold flex items-center gap-1.5">
+                {verified ? (
+                  <><ShieldCheck className="w-3.5 h-3.5 text-primary" /> SpeedSol verified</>
+                ) : (
+                  <><ShieldAlert className="w-3.5 h-3.5 text-muted-foreground" /> Manually entered (no SpeedSol match)</>
+                )}
+              </div>
+              {verified && (
+                <div className="text-[10px] text-muted-foreground tabular-nums">
+                  {products.matched_transaction_ids.length} matched txn · {ssTotal!.toLocaleString()}L
+                </div>
+              )}
+            </div>
+            {verified && entered != null && (
+              <div className="text-[11px] text-muted-foreground mt-1">
+                Driver entered <span className="font-semibold text-foreground">{entered.toLocaleString()}L</span>{" "}
+                vs SpeedSol total <span className="font-semibold text-foreground">{ssTotal!.toLocaleString()}L</span>{" "}
+                · Δ <span className={Math.abs(variance!) / Math.max(ssTotal!, 1) > 0.02 ? "text-destructive font-semibold" : "text-foreground"}>
+                  {variance! > 0 ? "+" : ""}{Math.round(variance!).toLocaleString()}L
+                </span>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <Info label="Client" value={clientName || "—"} />
             <Info label="Date" value={format(parseISO(stop.scheduled_date), "dd MMM yyyy")} />
