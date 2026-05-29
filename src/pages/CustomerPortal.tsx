@@ -2043,7 +2043,7 @@ function OverviewTactical({
                       {t.producto ? ` ${t.producto}` : ""}
                     </p>
                     <p className="text-[10px] text-muted-foreground truncate">
-                      {t.estacion || t.ciudad || "Unknown site"} · {t.date ? formatDate(parseISO(t.date)) : "—"}
+                      {t.date ? formatDate(parseISO(t.date)) : "—"}
                     </p>
                   </div>
                 </div>
