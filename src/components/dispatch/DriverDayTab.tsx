@@ -122,6 +122,8 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
 
 const STOP_RADIUS_KM = 0.1; // 100 m cluster radius
 const MIN_STOP_MINUTES = 3; // anything ≥ 3 min counted as a stop
+const SITE_VISIT_RADIUS_KM = 0.5; // pings within 500 m of a scheduled site count as "at the site"
+const SITE_VISIT_GAP_MIN = 10; // pings separated by >10 min away from site break the visit
 
 interface Ping {
   lat: number;
@@ -172,6 +174,49 @@ function detectStops(pings: Ping[]): StopEvent[] {
   }
   flush();
   return stops;
+}
+
+// Infer when the driver was physically at a scheduled site, using GPS pings.
+// Returns the longest contiguous run of pings within SITE_VISIT_RADIUS_KM,
+// independent of any "complete" button press by the driver.
+function inferSiteVisit(
+  site: { lat: number; lng: number },
+  pings: Ping[],
+): { arrivedMs: number; leftMs: number; dwellMs: number; pingCount: number } | null {
+  if (pings.length === 0) return null;
+  const near = pings
+    .map((p) => ({ p, d: haversineKm(p, site) }))
+    .filter((x) => x.d <= SITE_VISIT_RADIUS_KM);
+  if (near.length === 0) return null;
+
+  // Split into contiguous runs (max 10 min gap between consecutive near-pings)
+  const runs: Ping[][] = [];
+  let cur: Ping[] = [near[0].p];
+  for (let i = 1; i < near.length; i++) {
+    const prev = cur[cur.length - 1];
+    if ((near[i].p.t - prev.t) / 60000 <= SITE_VISIT_GAP_MIN) {
+      cur.push(near[i].p);
+    } else {
+      runs.push(cur);
+      cur = [near[i].p];
+    }
+  }
+  runs.push(cur);
+
+  // Pick the longest run by duration
+  let best = runs[0];
+  let bestDur = best[best.length - 1].t - best[0].t;
+  for (const r of runs) {
+    const d = r[r.length - 1].t - r[0].t;
+    if (d > bestDur) { best = r; bestDur = d; }
+  }
+
+  return {
+    arrivedMs: best[0].t,
+    leftMs: best[best.length - 1].t,
+    dwellMs: best[best.length - 1].t - best[0].t,
+    pingCount: best.length,
+  };
 }
 
 function fmtHM(ms: number) {
@@ -454,23 +499,21 @@ export function DriverDayTab() {
   // surface accurate arrival / departure / dwell in the popup.
   const scheduledMarkers = useMemo(() => {
     return scheduledMarkersBase.map((m) => {
-      let best: StopEvent | null = null;
-      let bestDist = Infinity;
-      stopEvents.forEach((ev) => {
-        const d = haversineKm(ev.centroid, { lat: m.lat, lng: m.lng });
-        if (d < 0.3 && d < bestDist) { bestDist = d; best = ev; }
-      });
-      if (best) {
-        return { ...m, arrivedMs: best.startMs, leftMs: best.endMs, dwellMs: best.endMs - best.startMs };
+      // Source of truth = GPS pings physically near this site, NOT
+      // the driver pressing "complete" (which can happen anywhere/anytime).
+      const visit = inferSiteVisit({ lat: m.lat, lng: m.lng }, pings);
+      if (visit) {
+        return {
+          ...m,
+          arrivedMs: visit.arrivedMs,
+          leftMs: visit.leftMs,
+          dwellMs: visit.dwellMs,
+          visitSource: "gps" as const,
+        };
       }
-      // Fall back to completed_at if we have it (no GPS but stop was logged)
-      if (m.completed_at) {
-        const t = new Date(m.completed_at).getTime();
-        return { ...m, arrivedMs: t, leftMs: t, dwellMs: 0 };
-      }
-      return { ...m, arrivedMs: null, leftMs: null, dwellMs: null };
+      return { ...m, arrivedMs: null, leftMs: null, dwellMs: null, visitSource: "none" as const };
     });
-  }, [scheduledMarkersBase, stopEvents]);
+  }, [scheduledMarkersBase, pings]);
 
   const { data: routeData } = useRouteBetweenStops(scheduledMarkers);
 
@@ -502,31 +545,28 @@ export function DriverDayTab() {
     [stops]
   );
 
-  // Match each stop event to nearest scheduled stop (by coords if available, else by completed_at)
-  const matched = useMemo(() => {
-    return stopEvents.map((ev) => {
-      let best: any = null;
-      let bestDist = Infinity;
-      stops.forEach((s: any) => {
-        if (s.latitude != null && s.longitude != null) {
-          const d = haversineKm({ lat: Number(s.latitude), lng: Number(s.longitude) }, ev.centroid);
-          if (d < 0.3 && d < bestDist) { bestDist = d; best = s; }
-        } else if (s.completed_at) {
-          const ct = new Date(s.completed_at).getTime();
-          if (ct >= ev.startMs - 15 * 60000 && ct <= ev.endMs + 15 * 60000) {
-            if (!best) best = s;
-          }
-        }
-      });
-      return { ev, stop: best };
+  // Timeline = every scheduled stop, sorted by actual arrival time (GPS-inferred).
+  // Unvisited stops fall to the bottom of the list.
+  const timeline = useMemo(() => {
+    const rows = scheduledMarkers.map((m) => {
+      const stop = (stops as any[]).find((s) => String(s.id) === m.id);
+      return { marker: m, stop };
     });
-  }, [stopEvents, stops]);
+    rows.sort((a, b) => {
+      const ta = a.marker.arrivedMs ?? Number.POSITIVE_INFINITY;
+      const tb = b.marker.arrivedMs ?? Number.POSITIVE_INFINITY;
+      return ta - tb;
+    });
+    return rows;
+  }, [scheduledMarkers, stops]);
+
+  const visitedRows = useMemo(() => timeline.filter((r) => r.marker.arrivedMs != null), [timeline]);
 
   const medianDwell = useMemo(() => {
-    if (stopEvents.length === 0) return 0;
-    const sorted = [...stopEvents].map((s) => s.endMs - s.startMs).sort((a, b) => a - b);
-    return sorted[Math.floor(sorted.length / 2)];
-  }, [stopEvents]);
+    const dwells = visitedRows.map((r) => r.marker.dwellMs || 0).filter((d) => d > 0).sort((a, b) => a - b);
+    if (dwells.length === 0) return 0;
+    return dwells[Math.floor(dwells.length / 2)];
+  }, [visitedRows]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -611,13 +651,13 @@ export function DriverDayTab() {
       </div>
 
       {/* Stop timeline */}
-      {stopEvents.length > 0 && (
+      {timeline.length > 0 && (
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <div className="text-sm font-semibold">Stop timeline</div>
               <div className="text-[11px] text-muted-foreground">
-                {stopEvents.length} stops · {totalLitres.toLocaleString()} L delivered · median dwell {fmtHM(medianDwell)}
+                {visitedRows.length}/{timeline.length} stops visited (by GPS) · {totalLitres.toLocaleString()} L delivered{medianDwell > 0 ? ` · median dwell ${fmtHM(medianDwell)}` : ""}
               </div>
             </div>
           </div>
@@ -625,7 +665,7 @@ export function DriverDayTab() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-left text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border">
-                  <th className="py-2 pr-2">#</th>
+                  <th className="py-2 pr-2">Planned #</th>
                   <th className="py-2 pr-2">Location</th>
                   <th className="py-2 pr-2">Arrived</th>
                   <th className="py-2 pr-2">Left</th>
@@ -636,30 +676,31 @@ export function DriverDayTab() {
                 </tr>
               </thead>
               <tbody>
-                {matched.map(({ ev, stop }, i) => {
-                  const next = matched[i + 1];
-                  const driveToNextMs = next ? next.ev.startMs - ev.endMs : 0;
-                  const dwellMs = ev.endMs - ev.startMs;
+                {timeline.map(({ marker, stop }, i) => {
+                  const next = timeline[i + 1];
+                  const visited = marker.arrivedMs != null && marker.leftMs != null;
+                  const dwellMs = marker.dwellMs || 0;
+                  const driveToNextMs = visited && next?.marker.arrivedMs != null
+                    ? Math.max(0, next.marker.arrivedMs - (marker.leftMs as number))
+                    : 0;
                   const litres = Number(stop?.delivered_litres) || 0;
                   const totalMin = (dwellMs + driveToNextMs) / 60000;
                   const lpm = totalMin > 0 ? litres / totalMin : 0;
-                  const slow = dwellMs > medianDwell * 1.5;
-                  const label = stop
-                    ? `${stop.site_name}${clientNames[stop.client_account_id] ? ` · ${clientNames[stop.client_account_id]}` : ""}`
-                    : "Unknown stop";
+                  const slow = dwellMs > 0 && medianDwell > 0 && dwellMs > medianDwell * 1.5;
+                  const label = `${marker.site_name}${marker.client ? ` · ${marker.client}` : ""}`;
                   return (
-                    <tr key={i} className="border-b border-border last:border-0">
-                      <td className="py-2 pr-2 font-semibold">{i + 1}</td>
+                    <tr key={marker.id} className={`border-b border-border last:border-0 ${!visited ? "opacity-60" : ""}`}>
+                      <td className="py-2 pr-2 font-semibold">{marker.sequence}</td>
                       <td className="py-2 pr-2 max-w-[220px] truncate">{label}</td>
-                      <td className="py-2 pr-2 text-muted-foreground">{fmtTime(ev.startMs)}</td>
-                      <td className="py-2 pr-2 text-muted-foreground">{fmtTime(ev.endMs)}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">{visited ? fmtTime(marker.arrivedMs as number) : <span className="italic">no GPS visit</span>}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">{visited ? fmtTime(marker.leftMs as number) : "—"}</td>
                       <td className={`py-2 pr-2 font-medium ${slow ? "text-destructive" : ""}`}>
-                        {fmtHM(dwellMs)}{slow && " ⚠"}
+                        {visited ? `${fmtHM(dwellMs)}${slow ? " ⚠" : ""}` : "—"}
                       </td>
-                      <td className="py-2 pr-2 text-muted-foreground">{next ? fmtHM(driveToNextMs) : "—"}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">{driveToNextMs > 0 ? fmtHM(driveToNextMs) : "—"}</td>
                       <td className="py-2 pr-2">{litres > 0 ? `${litres.toLocaleString()} L` : "—"}</td>
                       <td className="py-2 pr-2">
-                        {litres > 0 ? (
+                        {litres > 0 && totalMin > 0 ? (
                           <span className={`text-[10px] px-2 py-0.5 rounded-full ${lpm > 30 ? "bg-emerald-500/15 text-emerald-500" : lpm > 10 ? "bg-muted text-muted-foreground" : "bg-destructive/15 text-destructive"}`}>
                             {lpm.toFixed(0)} L/min
                           </span>
@@ -674,7 +715,8 @@ export function DriverDayTab() {
             </table>
           </div>
           <div className="mt-3 text-[10px] text-muted-foreground">
-            Stops auto-detected when the driver stayed within 100 m for ≥ 3 minutes. ⚠ flags dwell &gt; 1.5× the day's median.
+            Arrival/Left times are derived from GPS pings within 500 m of each scheduled site — not from the driver's "complete" tap.
+            Rows ordered by actual arrival time. Faded rows = no GPS evidence the driver visited that site today. ⚠ flags dwell &gt; 1.5× the day's median.
           </div>
         </div>
       )}
