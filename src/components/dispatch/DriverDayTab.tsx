@@ -250,11 +250,13 @@ function DriverDayMap({
   pings,
   stopEvents,
   scheduledStops,
+  routeGeometry,
   height = 460,
 }: {
   pings: Ping[];
   stopEvents: StopEvent[];
-  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string }>;
+  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; arrivedMs?: number | null; leftMs?: number | null; dwellMs?: number | null }>;
+  routeGeometry?: GeoJSON.LineString | null;
   height?: number;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -282,8 +284,25 @@ function DriverDayMap({
     if (!map || !ready) return;
 
     // Clear previous layers
+    if (map.getLayer("route-line")) map.removeLayer("route-line");
+    if (map.getSource("route")) map.removeSource("route");
     if (map.getLayer("trail-line")) map.removeLayer("trail-line");
     if (map.getSource("trail")) map.removeSource("trail");
+
+    // Driving route between scheduled stops (solid orange)
+    if (routeGeometry && routeGeometry.coordinates?.length >= 2) {
+      map.addSource("route", {
+        type: "geojson",
+        data: { type: "Feature", properties: {}, geometry: routeGeometry },
+      });
+      map.addLayer({
+        id: "route-line",
+        type: "line",
+        source: "route",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#f04a1a", "line-width": 4, "line-opacity": 0.9 },
+      });
+    }
 
     // Add polyline
     if (pings.length >= 2) {
@@ -300,7 +319,7 @@ function DriverDayMap({
         type: "line",
         source: "trail",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#f04a1a", "line-width": 3, "line-opacity": 0.55, "line-dasharray": [2, 2] },
+        paint: { "line-color": "#120a04", "line-width": 2, "line-opacity": 0.55, "line-dasharray": [2, 2] },
       });
     }
 
@@ -323,13 +342,18 @@ function DriverDayMap({
         cursor:pointer;
       `;
       el.textContent = String(s.sequence ?? "");
+      const timingHtml = s.arrivedMs && s.leftMs
+        ? `<div style="font-size:11px;color:#444;margin-top:4px">Arrived ${fmtTime(s.arrivedMs)} · Left ${fmtTime(s.leftMs)}</div>
+           <div style="font-size:11px;color:#444">On site approx ${fmtHM(s.dwellMs || 0)}</div>`
+        : `<div style="font-size:11px;color:#999;margin-top:4px;font-style:italic">No GPS dwell match</div>`;
       new mapboxgl.Marker({ element: el, anchor: "center" })
         .setLngLat([s.lng, s.lat])
         .setPopup(
           new mapboxgl.Popup({ offset: 20, closeButton: false }).setHTML(
             `<div style="font-size:12px;font-weight:600;color:#120a04">#${s.sequence} ${s.site_name}</div>
              ${s.client ? `<div style="font-size:11px;color:#555">${s.client}</div>` : ""}
-             <div style="font-size:11px;color:${completed ? "#16a34a" : "#f04a1a"};font-weight:600;margin-top:2px">${s.status.toUpperCase()}</div>`
+             <div style="font-size:11px;color:${completed ? "#16a34a" : "#f04a1a"};font-weight:600;margin-top:2px">${s.status.toUpperCase()}</div>
+             ${timingHtml}`
           )
         )
         .addTo(map);
@@ -367,7 +391,7 @@ function DriverDayMap({
       scheduledStops.forEach((s) => b.extend([s.lng, s.lat]));
       try { map.fitBounds(b, { padding: 50, duration: 600, maxZoom: 14 }); } catch { /* noop */ }
     }
-  }, [ready, pings, stopEvents, scheduledStops]);
+  }, [ready, pings, stopEvents, scheduledStops, routeGeometry]);
 
   return (
     <div
