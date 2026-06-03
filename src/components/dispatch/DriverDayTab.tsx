@@ -148,8 +148,14 @@ function useClientNameMap(ids: number[]) {
 function DriverDayMap({
   pings,
   stopEvents,
+  scheduledStops,
   height = 460,
-}: { pings: Ping[]; stopEvents: StopEvent[]; height?: number }) {
+}: {
+  pings: Ping[];
+  stopEvents: StopEvent[];
+  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string }>;
+  height?: number;
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const { data: token } = useMapboxToken();
@@ -193,28 +199,58 @@ function DriverDayMap({
         type: "line",
         source: "trail",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#f04a1a", "line-width": 3, "line-opacity": 0.85 },
+        paint: { "line-color": "#f04a1a", "line-width": 3, "line-opacity": 0.55, "line-dasharray": [2, 2] },
       });
     }
 
     // Markers (remove old DOM markers we added previously)
     document.querySelectorAll(".dd-stop-marker").forEach((el) => el.remove());
+    document.querySelectorAll(".dd-sched-marker").forEach((el) => el.remove());
+
+    // Scheduled stops — solid pins with sequence number, status-coloured
+    scheduledStops.forEach((s) => {
+      const completed = s.status === "completed";
+      const bg = completed ? "#16a34a" : "#f04a1a";
+      const el = document.createElement("div");
+      el.className = "dd-sched-marker";
+      el.style.cssText = `
+        width:30px;height:30px;border-radius:50%;
+        background:${bg};color:#fff;
+        display:flex;align-items:center;justify-content:center;
+        font-size:12px;font-weight:700;
+        border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);
+        cursor:pointer;
+      `;
+      el.textContent = String(s.sequence ?? "");
+      new mapboxgl.Marker({ element: el, anchor: "center" })
+        .setLngLat([s.lng, s.lat])
+        .setPopup(
+          new mapboxgl.Popup({ offset: 20, closeButton: false }).setHTML(
+            `<div style="font-size:12px;font-weight:600;color:#120a04">#${s.sequence} ${s.site_name}</div>
+             ${s.client ? `<div style="font-size:11px;color:#555">${s.client}</div>` : ""}
+             <div style="font-size:11px;color:${completed ? "#16a34a" : "#f04a1a"};font-weight:600;margin-top:2px">${s.status.toUpperCase()}</div>`
+          )
+        )
+        .addTo(map);
+    });
+
+    // GPS-detected stop clusters (smaller, secondary)
     stopEvents.forEach((s, i) => {
       const el = document.createElement("div");
       el.className = "dd-stop-marker";
       el.style.cssText = `
-        width:26px;height:26px;border-radius:50%;
+        width:18px;height:18px;border-radius:50%;
         background:#120a04;color:#fff;
         display:flex;align-items:center;justify-content:center;
-        font-size:11px;font-weight:700;
-        border:2px solid #f04a1a;box-shadow:0 2px 6px rgba(0,0,0,0.35);
+        font-size:9px;font-weight:700;
+        border:1.5px solid #fbbf24;box-shadow:0 2px 4px rgba(0,0,0,0.3);
       `;
-      el.textContent = String(i + 1);
+      el.textContent = "G";
       new mapboxgl.Marker({ element: el, anchor: "center" })
         .setLngLat([s.centroid.lng, s.centroid.lat])
         .setPopup(
           new mapboxgl.Popup({ offset: 18, closeButton: false }).setHTML(
-            `<div style="font-size:12px;font-weight:600;color:#120a04">Stop ${i + 1}</div>
+            `<div style="font-size:12px;font-weight:600;color:#120a04">GPS cluster ${i + 1}</div>
              <div style="font-size:11px;color:#444">${fmtTime(s.startMs)} – ${fmtTime(s.endMs)}</div>
              <div style="font-size:11px;color:#444">Dwell ${fmtHM(s.endMs - s.startMs)}</div>`
           )
@@ -222,13 +258,15 @@ function DriverDayMap({
         .addTo(map);
     });
 
-    // Fit bounds
-    if (pings.length > 0) {
+    // Fit bounds — include both pings and scheduled stops so the view
+    // reflects the work, not just the (often sparse) GPS trail.
+    if (pings.length > 0 || scheduledStops.length > 0) {
       const b = new mapboxgl.LngLatBounds();
       pings.forEach((p) => b.extend([p.lng, p.lat]));
+      scheduledStops.forEach((s) => b.extend([s.lng, s.lat]));
       try { map.fitBounds(b, { padding: 50, duration: 600, maxZoom: 14 }); } catch { /* noop */ }
     }
-  }, [ready, pings, stopEvents]);
+  }, [ready, pings, stopEvents, scheduledStops]);
 
   return (
     <div
