@@ -335,6 +335,7 @@ function inferTransactionVisit(
   const matches = transactions
     .filter((t) => {
       const hay = normName(t.nombre_cliente1);
+      if (hay.length < 3) return false;
       return needles.some((n) => hay.includes(n) || n.includes(hay));
     })
     .map((t) => ({ t: new Date(t.fecha).getTime(), litres: Number(t.cantidad) || 0 }))
@@ -750,7 +751,7 @@ export function DriverDayTab() {
           <div className="text-[11px] leading-relaxed">
             {showingDateFallback && <div><strong>Dispatch stops are not assigned to this driver.</strong> Showing all scheduled stops for this date so the map still reflects the run.</div>}
             {noGps && <div><strong>No GPS pings.</strong> Driver had location-share off all day — map shows scheduled stops only.</div>}
-            {sparseGps && <div><strong>Sparse GPS ({pings.length} pings).</strong> The dashed trail is a straight-line guess between pings, not the real route. Stops shown are from the dispatch schedule, not GPS clusters.</div>}
+            {sparseGps && <div><strong>Sparse GPS ({pings.length} pings).</strong> Timings fall back to fuel logs where available; the GPS trail alone is not reliable for every stop.</div>}
             {ungeocodedCount > 0 && <div className="mt-1 text-muted-foreground">{ungeocodedCount} stop{ungeocodedCount === 1 ? "" : "s"} couldn't be placed on the map (missing address).</div>}
           </div>
         </div>
@@ -822,7 +823,7 @@ export function DriverDayTab() {
                       <td className="py-2 pr-2">{litres > 0 ? `${litres.toLocaleString()} L` : "—"}</td>
                       <td className="py-2 pr-2">
                         {litres > 0 && totalMin > 0 ? (
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${lpm > 30 ? "bg-emerald-500/15 text-emerald-500" : lpm > 10 ? "bg-muted text-muted-foreground" : "bg-destructive/15 text-destructive"}`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${lpm > 30 ? "bg-positive/15 text-positive" : lpm > 10 ? "bg-muted text-muted-foreground" : "bg-destructive/15 text-destructive"}`}>
                             {lpm.toFixed(0)} L/min
                           </span>
                         ) : (
