@@ -12,6 +12,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDrivers } from "@/hooks/useDrivers";
 import { useMapboxToken } from "@/hooks/useMapboxToken";
 
+// ---------- geocoding (client-side, cached in localStorage + DB writeback) ----------
+const GEO_CACHE_KEY = "pacc.geocode.cache.v1";
+function loadGeoCache(): Record<string, { lat: number; lng: number }> {
+  try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || "{}"); } catch { return {}; }
+}
+function saveGeoCache(c: Record<string, { lat: number; lng: number }>) {
+  try { localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(c)); } catch { /* noop */ }
+}
+async function geocodeAddress(address: string, token: string): Promise<{ lat: number; lng: number } | null> {
+  const q = encodeURIComponent(address + ", Victoria, Australia");
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?access_token=${token}&country=AU&limit=1`;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const c = j?.features?.[0]?.center;
+    if (Array.isArray(c) && c.length === 2) return { lng: c[0], lat: c[1] };
+  } catch { /* noop */ }
+  return null;
+}
+
+function useGeocodedStops(stops: any[]) {
+  const { data: token } = useMapboxToken();
+  const [coords, setCoords] = useState<Record<string, { lat: number; lng: number }>>(() => loadGeoCache());
+
+  useEffect(() => {
+    if (!token || stops.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const cache = { ...loadGeoCache() };
+      let mutated = false;
+      for (const s of stops) {
+        const key = String(s.id);
+        if (s.latitude != null && s.longitude != null) {
+          if (!cache[key]) {
+            cache[key] = { lat: Number(s.latitude), lng: Number(s.longitude) };
+            mutated = true;
+          }
+          continue;
+        }
+        if (cache[key]) continue;
+        const addr = (s.address || s.site_name || "").trim();
+        if (!addr) continue;
+        const c = await geocodeAddress(addr, token);
+        if (cancelled) return;
+        if (c) {
+          cache[key] = c;
+          mutated = true;
+          // Best-effort writeback so it survives across users/devices
+          supabase
+            .from("dispatch_stops")
+            .update({ latitude: c.lat, longitude: c.lng })
+            .eq("id", s.id)
+            .then(() => { /* noop */ }, () => { /* noop */ });
+        }
+      }
+      if (mutated && !cancelled) {
+        saveGeoCache(cache);
+        setCoords(cache);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, stops]);
+
+  return coords;
+}
+
 // ---------- helpers ----------
 function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371;
@@ -148,8 +215,14 @@ function useClientNameMap(ids: number[]) {
 function DriverDayMap({
   pings,
   stopEvents,
+  scheduledStops,
   height = 460,
-}: { pings: Ping[]; stopEvents: StopEvent[]; height?: number }) {
+}: {
+  pings: Ping[];
+  stopEvents: StopEvent[];
+  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string }>;
+  height?: number;
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const { data: token } = useMapboxToken();
@@ -193,28 +266,58 @@ function DriverDayMap({
         type: "line",
         source: "trail",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#f04a1a", "line-width": 3, "line-opacity": 0.85 },
+        paint: { "line-color": "#f04a1a", "line-width": 3, "line-opacity": 0.55, "line-dasharray": [2, 2] },
       });
     }
 
     // Markers (remove old DOM markers we added previously)
     document.querySelectorAll(".dd-stop-marker").forEach((el) => el.remove());
+    document.querySelectorAll(".dd-sched-marker").forEach((el) => el.remove());
+
+    // Scheduled stops — solid pins with sequence number, status-coloured
+    scheduledStops.forEach((s) => {
+      const completed = s.status === "completed";
+      const bg = completed ? "#16a34a" : "#f04a1a";
+      const el = document.createElement("div");
+      el.className = "dd-sched-marker";
+      el.style.cssText = `
+        width:30px;height:30px;border-radius:50%;
+        background:${bg};color:#fff;
+        display:flex;align-items:center;justify-content:center;
+        font-size:12px;font-weight:700;
+        border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);
+        cursor:pointer;
+      `;
+      el.textContent = String(s.sequence ?? "");
+      new mapboxgl.Marker({ element: el, anchor: "center" })
+        .setLngLat([s.lng, s.lat])
+        .setPopup(
+          new mapboxgl.Popup({ offset: 20, closeButton: false }).setHTML(
+            `<div style="font-size:12px;font-weight:600;color:#120a04">#${s.sequence} ${s.site_name}</div>
+             ${s.client ? `<div style="font-size:11px;color:#555">${s.client}</div>` : ""}
+             <div style="font-size:11px;color:${completed ? "#16a34a" : "#f04a1a"};font-weight:600;margin-top:2px">${s.status.toUpperCase()}</div>`
+          )
+        )
+        .addTo(map);
+    });
+
+    // GPS-detected stop clusters (smaller, secondary)
     stopEvents.forEach((s, i) => {
       const el = document.createElement("div");
       el.className = "dd-stop-marker";
       el.style.cssText = `
-        width:26px;height:26px;border-radius:50%;
+        width:18px;height:18px;border-radius:50%;
         background:#120a04;color:#fff;
         display:flex;align-items:center;justify-content:center;
-        font-size:11px;font-weight:700;
-        border:2px solid #f04a1a;box-shadow:0 2px 6px rgba(0,0,0,0.35);
+        font-size:9px;font-weight:700;
+        border:1.5px solid #fbbf24;box-shadow:0 2px 4px rgba(0,0,0,0.3);
       `;
-      el.textContent = String(i + 1);
+      el.textContent = "G";
       new mapboxgl.Marker({ element: el, anchor: "center" })
         .setLngLat([s.centroid.lng, s.centroid.lat])
         .setPopup(
           new mapboxgl.Popup({ offset: 18, closeButton: false }).setHTML(
-            `<div style="font-size:12px;font-weight:600;color:#120a04">Stop ${i + 1}</div>
+            `<div style="font-size:12px;font-weight:600;color:#120a04">GPS cluster ${i + 1}</div>
              <div style="font-size:11px;color:#444">${fmtTime(s.startMs)} – ${fmtTime(s.endMs)}</div>
              <div style="font-size:11px;color:#444">Dwell ${fmtHM(s.endMs - s.startMs)}</div>`
           )
@@ -222,13 +325,15 @@ function DriverDayMap({
         .addTo(map);
     });
 
-    // Fit bounds
-    if (pings.length > 0) {
+    // Fit bounds — include both pings and scheduled stops so the view
+    // reflects the work, not just the (often sparse) GPS trail.
+    if (pings.length > 0 || scheduledStops.length > 0) {
       const b = new mapboxgl.LngLatBounds();
       pings.forEach((p) => b.extend([p.lng, p.lat]));
+      scheduledStops.forEach((s) => b.extend([s.lng, s.lat]));
       try { map.fitBounds(b, { padding: 50, duration: 600, maxZoom: 14 }); } catch { /* noop */ }
     }
-  }, [ready, pings, stopEvents]);
+  }, [ready, pings, stopEvents, scheduledStops]);
 
   return (
     <div
@@ -264,6 +369,30 @@ export function DriverDayTab() {
   const { data: clientNames = {} } = useClientNameMap(clientIds as number[]);
 
   const stopEvents = useMemo(() => detectStops(pings), [pings]);
+  const geo = useGeocodedStops(stops as any[]);
+
+  const scheduledMarkers = useMemo(() => {
+    return (stops as any[])
+      .map((s) => {
+        const c = geo[String(s.id)] || (s.latitude != null && s.longitude != null ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null);
+        if (!c) return null;
+        return {
+          id: String(s.id),
+          lat: c.lat,
+          lng: c.lng,
+          sequence: s.sequence ?? 0,
+          site_name: s.site_name,
+          status: s.status,
+          client: clientNames[s.client_account_id],
+        };
+      })
+      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string }>;
+  }, [stops, geo, clientNames]);
+
+  const completedCount = useMemo(() => (stops as any[]).filter((s) => s.status === "completed").length, [stops]);
+  const ungeocodedCount = (stops as any[]).length - scheduledMarkers.length;
+  const sparseGps = pings.length > 0 && pings.length < 10;
+  const noGps = pings.length === 0;
 
   // ----- metrics -----
   const metrics = useMemo(() => {
@@ -347,7 +476,7 @@ export function DriverDayTab() {
           { label: "KM driven", value: metrics.km ? metrics.km.toFixed(1) : "—", icon: RouteIcon },
           { label: "Drive time", value: metrics.driveMs ? fmtHM(metrics.driveMs) : "—", icon: Gauge },
           { label: "Stopped", value: metrics.stoppedMs ? fmtHM(metrics.stoppedMs) : "—", icon: Timer },
-          { label: "Stops", value: stopEvents.length, icon: MapPin },
+          { label: "Stops", value: `${completedCount}/${(stops as any[]).length}`, icon: MapPin, sub: "completed / scheduled" },
           {
             label: "OT (>8h)",
             value: metrics.otMs ? fmtHM(metrics.otMs) : "0m",
@@ -361,21 +490,33 @@ export function DriverDayTab() {
               <k.icon className={`w-3.5 h-3.5 ${k.warn ? "text-destructive" : "text-muted-foreground"}`} />
             </div>
             <div className={`text-lg font-bold ${k.warn ? "text-destructive" : ""}`}>{k.value}</div>
+            {k.sub && <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">{k.sub}</div>}
           </div>
         ))}
       </div>
+
+      {(noGps || sparseGps || ungeocodedCount > 0) && (
+        <div className="card p-3 border-l-4 border-l-amber-500 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div className="text-[11px] leading-relaxed">
+            {noGps && <div><strong>No GPS pings.</strong> Driver had location-share off all day — map shows scheduled stops only.</div>}
+            {sparseGps && <div><strong>Sparse GPS ({pings.length} pings).</strong> The dashed trail is a straight-line guess between pings, not the real route. Stops shown are from the dispatch schedule, not GPS clusters.</div>}
+            {ungeocodedCount > 0 && <div className="mt-1 text-muted-foreground">{ungeocodedCount} stop{ungeocodedCount === 1 ? "" : "s"} couldn't be placed on the map (missing address).</div>}
+          </div>
+        </div>
+      )}
 
       {/* Map */}
       <div className="card p-3">
         {pingsLoading ? (
           <div className="text-xs text-muted-foreground py-12 text-center">Loading trail…</div>
-        ) : pings.length === 0 ? (
+        ) : pings.length === 0 && scheduledMarkers.length === 0 ? (
           <div className="text-xs text-muted-foreground py-12 text-center">
-            No GPS data for this driver on {format(date, "dd MMM yyyy")}.<br />
+            No GPS data or scheduled stops for this driver on {format(date, "dd MMM yyyy")}.<br />
             Driver needs to turn on <strong>Share my location</strong> in the driver portal.
           </div>
         ) : (
-          <DriverDayMap pings={pings} stopEvents={stopEvents} height={460} />
+          <DriverDayMap pings={pings} stopEvents={stopEvents} scheduledStops={scheduledMarkers} height={460} />
         )}
       </div>
 
