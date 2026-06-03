@@ -79,6 +79,35 @@ function useGeocodedStops(stops: any[]) {
   return coords;
 }
 
+// ---------- Mapbox driving directions between scheduled stops ----------
+function useRouteBetweenStops(
+  markers: Array<{ id: string; lat: number; lng: number; sequence: number }>,
+) {
+  const { data: token } = useMapboxToken();
+  const key = markers.map((m) => `${m.lng.toFixed(5)},${m.lat.toFixed(5)}`).join(";");
+  return useQuery({
+    queryKey: ["driver-day-route", key],
+    enabled: !!token && markers.length >= 2,
+    staleTime: 60 * 60 * 1000,
+    queryFn: async () => {
+      // Mapbox Directions caps at 25 coordinates per request.
+      const pts = markers.slice(0, 25);
+      const coords = pts.map((m) => `${m.lng},${m.lat}`).join(";");
+      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?geometries=geojson&overview=full&access_token=${token}`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("directions failed");
+      const j = await r.json();
+      const route = j?.routes?.[0];
+      if (!route) return null;
+      return {
+        geometry: route.geometry as GeoJSON.LineString,
+        distanceKm: (route.distance || 0) / 1000,
+        durationMin: (route.duration || 0) / 60,
+      };
+    },
+  });
+}
+
 // ---------- helpers ----------
 function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371;
