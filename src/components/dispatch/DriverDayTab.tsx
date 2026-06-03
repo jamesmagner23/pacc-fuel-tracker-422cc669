@@ -188,12 +188,17 @@ function useDriverStopsForDay(driverId: string | null, dateStr: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("dispatch_stops")
-        .select("id, site_name, address, latitude, longitude, status, completed_at, delivered_litres, client_account_id, sequence")
-        .eq("driver_user_id", driverId!)
+        .select("id, site_name, address, latitude, longitude, status, completed_at, delivered_litres, client_account_id, sequence, driver_user_id, truck_id")
         .eq("scheduled_date", dateStr)
         .order("sequence", { ascending: true });
       if (error) throw error;
-      return data || [];
+      const rows = data || [];
+      const assignedToDriver = rows.filter((s: any) => s.driver_user_id === driverId);
+
+      return {
+        stops: assignedToDriver.length > 0 ? assignedToDriver : rows,
+        showingDateFallback: assignedToDriver.length === 0 && rows.length > 0,
+      };
     },
   });
 }
@@ -364,7 +369,9 @@ export function DriverDayTab() {
   }, [drivers, driverId]);
 
   const { data: pings = [], isLoading: pingsLoading } = useDriverPings(driverId, dateStr);
-  const { data: stops = [] } = useDriverStopsForDay(driverId, dateStr);
+  const { data: stopResult, isLoading: stopsLoading } = useDriverStopsForDay(driverId, dateStr);
+  const stops = stopResult?.stops ?? [];
+  const showingDateFallback = !!stopResult?.showingDateFallback;
   const clientIds = useMemo(() => Array.from(new Set(stops.map((s: any) => s.client_account_id).filter(Boolean))), [stops]);
   const { data: clientNames = {} } = useClientNameMap(clientIds as number[]);
 
@@ -373,14 +380,14 @@ export function DriverDayTab() {
 
   const scheduledMarkers = useMemo(() => {
     return (stops as any[])
-      .map((s) => {
+      .map((s, index) => {
         const c = geo[String(s.id)] || (s.latitude != null && s.longitude != null ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null);
         if (!c) return null;
         return {
           id: String(s.id),
           lat: c.lat,
           lng: c.lng,
-          sequence: s.sequence ?? 0,
+          sequence: index + 1,
           site_name: s.site_name,
           status: s.status,
           client: clientNames[s.client_account_id],
@@ -495,10 +502,11 @@ export function DriverDayTab() {
         ))}
       </div>
 
-      {(noGps || sparseGps || ungeocodedCount > 0) && (
+      {(noGps || sparseGps || ungeocodedCount > 0 || showingDateFallback) && (
         <div className="card p-3 border-l-4 border-l-amber-500 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
           <div className="text-[11px] leading-relaxed">
+            {showingDateFallback && <div><strong>Dispatch stops are not assigned to this driver.</strong> Showing all scheduled stops for this date so the map still reflects the run.</div>}
             {noGps && <div><strong>No GPS pings.</strong> Driver had location-share off all day — map shows scheduled stops only.</div>}
             {sparseGps && <div><strong>Sparse GPS ({pings.length} pings).</strong> The dashed trail is a straight-line guess between pings, not the real route. Stops shown are from the dispatch schedule, not GPS clusters.</div>}
             {ungeocodedCount > 0 && <div className="mt-1 text-muted-foreground">{ungeocodedCount} stop{ungeocodedCount === 1 ? "" : "s"} couldn't be placed on the map (missing address).</div>}
@@ -508,7 +516,7 @@ export function DriverDayTab() {
 
       {/* Map */}
       <div className="card p-3">
-        {pingsLoading ? (
+        {pingsLoading || stopsLoading ? (
           <div className="text-xs text-muted-foreground py-12 text-center">Loading trail…</div>
         ) : pings.length === 0 && scheduledMarkers.length === 0 ? (
           <div className="text-xs text-muted-foreground py-12 text-center">
