@@ -122,6 +122,8 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
 
 const STOP_RADIUS_KM = 0.1; // 100 m cluster radius
 const MIN_STOP_MINUTES = 3; // anything ≥ 3 min counted as a stop
+const SITE_VISIT_RADIUS_KM = 0.5; // pings within 500 m of a scheduled site count as "at the site"
+const SITE_VISIT_GAP_MIN = 10; // pings separated by >10 min away from site break the visit
 
 interface Ping {
   lat: number;
@@ -172,6 +174,49 @@ function detectStops(pings: Ping[]): StopEvent[] {
   }
   flush();
   return stops;
+}
+
+// Infer when the driver was physically at a scheduled site, using GPS pings.
+// Returns the longest contiguous run of pings within SITE_VISIT_RADIUS_KM,
+// independent of any "complete" button press by the driver.
+function inferSiteVisit(
+  site: { lat: number; lng: number },
+  pings: Ping[],
+): { arrivedMs: number; leftMs: number; dwellMs: number; pingCount: number } | null {
+  if (pings.length === 0) return null;
+  const near = pings
+    .map((p) => ({ p, d: haversineKm(p, site) }))
+    .filter((x) => x.d <= SITE_VISIT_RADIUS_KM);
+  if (near.length === 0) return null;
+
+  // Split into contiguous runs (max 10 min gap between consecutive near-pings)
+  const runs: Ping[][] = [];
+  let cur: Ping[] = [near[0].p];
+  for (let i = 1; i < near.length; i++) {
+    const prev = cur[cur.length - 1];
+    if ((near[i].p.t - prev.t) / 60000 <= SITE_VISIT_GAP_MIN) {
+      cur.push(near[i].p);
+    } else {
+      runs.push(cur);
+      cur = [near[i].p];
+    }
+  }
+  runs.push(cur);
+
+  // Pick the longest run by duration
+  let best = runs[0];
+  let bestDur = best[best.length - 1].t - best[0].t;
+  for (const r of runs) {
+    const d = r[r.length - 1].t - r[0].t;
+    if (d > bestDur) { best = r; bestDur = d; }
+  }
+
+  return {
+    arrivedMs: best[0].t,
+    leftMs: best[best.length - 1].t,
+    dwellMs: best[best.length - 1].t - best[0].t,
+    pingCount: best.length,
+  };
 }
 
 function fmtHM(ms: number) {
