@@ -598,7 +598,8 @@ export function DriverDayTab() {
           visitSource: "gps-near" as const,
         };
       }
-      const txVisit = inferTransactionVisit(m.matchNames, deliveryTransactions);
+      const scheduledStop = (stops as any[]).find((s) => String(s.id) === m.id);
+      const txVisit = inferTransactionVisit(m.matchNames, deliveryTransactions, Number(scheduledStop?.delivered_litres) || undefined);
       if (txVisit) {
         return {
           ...m,
@@ -660,6 +661,13 @@ export function DriverDayTab() {
   }, [scheduledMarkers, stops]);
 
   const visitedRows = useMemo(() => timeline.filter((r) => r.marker.arrivedMs != null), [timeline]);
+  const visitSourceCounts = useMemo(() => {
+    return visitedRows.reduce((acc, r) => {
+      const key = r.marker.visitSource || "none";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [visitedRows]);
 
   const medianDwell = useMemo(() => {
     const dwells = visitedRows.map((r) => r.marker.dwellMs || 0).filter((d) => d > 0).sort((a, b) => a - b);
@@ -756,7 +764,7 @@ export function DriverDayTab() {
             <div>
               <div className="text-sm font-semibold">Stop timeline</div>
               <div className="text-[11px] text-muted-foreground">
-                {visitedRows.length}/{timeline.length} stops visited (by GPS) · {totalLitres.toLocaleString()} L delivered{medianDwell > 0 ? ` · median dwell ${fmtHM(medianDwell)}` : ""}
+                {visitedRows.length}/{timeline.length} stops timed · {totalLitres.toLocaleString()} L delivered{medianDwell > 0 ? ` · median dwell ${fmtHM(medianDwell)}` : ""}
               </div>
             </div>
           </div>
@@ -782,16 +790,17 @@ export function DriverDayTab() {
                   const driveToNextMs = visited && next?.marker.arrivedMs != null
                     ? Math.max(0, next.marker.arrivedMs - (marker.leftMs as number))
                     : 0;
-                  const litres = Number(stop?.delivered_litres) || 0;
+                  const litres = Number(stop?.delivered_litres) || Number((marker as any).loggedLitres) || 0;
                   const totalMin = (dwellMs + driveToNextMs) / 60000;
                   const lpm = totalMin > 0 ? litres / totalMin : 0;
                   const slow = dwellMs > 0 && medianDwell > 0 && dwellMs > medianDwell * 1.5;
                   const label = `${marker.site_name}${marker.client ? ` · ${marker.client}` : ""}`;
+                  const sourceLabel = marker.visitSource === "fuel-log" ? "fuel log" : marker.visitSource === "gps-near" ? "near GPS" : marker.visitSource === "gps" ? "GPS" : "";
                   return (
                     <tr key={marker.id} className={`border-b border-border last:border-0 ${!visited ? "opacity-60" : ""}`}>
                       <td className="py-2 pr-2 font-semibold">{marker.sequence}</td>
                       <td className="py-2 pr-2 max-w-[220px] truncate">{label}</td>
-                      <td className="py-2 pr-2 text-muted-foreground">{visited ? fmtTime(marker.arrivedMs as number) : <span className="italic">no GPS visit</span>}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">{visited ? <span>{fmtTime(marker.arrivedMs as number)}{sourceLabel && <span className="block text-[9px] uppercase tracking-wider">{sourceLabel}</span>}</span> : <span className="italic">no timing evidence</span>}</td>
                       <td className="py-2 pr-2 text-muted-foreground">{visited ? fmtTime(marker.leftMs as number) : "—"}</td>
                       <td className={`py-2 pr-2 font-medium ${slow ? "text-destructive" : ""}`}>
                         {visited ? `${fmtHM(dwellMs)}${slow ? " ⚠" : ""}` : "—"}
@@ -814,8 +823,8 @@ export function DriverDayTab() {
             </table>
           </div>
           <div className="mt-3 text-[10px] text-muted-foreground">
-            Arrival/Left times are derived from GPS pings within 500 m of each scheduled site — not from the driver's "complete" tap.
-            Rows ordered by actual arrival time. Faded rows = no GPS evidence the driver visited that site today. ⚠ flags dwell &gt; 1.5× the day's median.
+            Times use confirmed GPS first, then near-GPS for imperfect geocodes, then fuel transaction timestamps where GPS is missing — never the driver's "complete" tap.
+            Rows ordered by inferred arrival time. Faded rows = no timing evidence for that site today. ⚠ flags dwell &gt; 1.5× the day's median.
           </div>
         </div>
       )}
