@@ -188,12 +188,17 @@ function useDriverStopsForDay(driverId: string | null, dateStr: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("dispatch_stops")
-        .select("id, site_name, address, latitude, longitude, status, completed_at, delivered_litres, client_account_id, sequence")
-        .eq("driver_user_id", driverId!)
+        .select("id, site_name, address, latitude, longitude, status, completed_at, delivered_litres, client_account_id, sequence, driver_user_id, truck_id")
         .eq("scheduled_date", dateStr)
         .order("sequence", { ascending: true });
       if (error) throw error;
-      return data || [];
+      const rows = data || [];
+      const assignedToDriver = rows.filter((s: any) => s.driver_user_id === driverId);
+
+      return {
+        stops: assignedToDriver.length > 0 ? assignedToDriver : rows,
+        showingDateFallback: assignedToDriver.length === 0 && rows.length > 0,
+      };
     },
   });
 }
@@ -364,7 +369,9 @@ export function DriverDayTab() {
   }, [drivers, driverId]);
 
   const { data: pings = [], isLoading: pingsLoading } = useDriverPings(driverId, dateStr);
-  const { data: stops = [] } = useDriverStopsForDay(driverId, dateStr);
+  const { data: stopResult, isLoading: stopsLoading } = useDriverStopsForDay(driverId, dateStr);
+  const stops = stopResult?.stops ?? [];
+  const showingDateFallback = !!stopResult?.showingDateFallback;
   const clientIds = useMemo(() => Array.from(new Set(stops.map((s: any) => s.client_account_id).filter(Boolean))), [stops]);
   const { data: clientNames = {} } = useClientNameMap(clientIds as number[]);
 
@@ -373,14 +380,14 @@ export function DriverDayTab() {
 
   const scheduledMarkers = useMemo(() => {
     return (stops as any[])
-      .map((s) => {
+      .map((s, index) => {
         const c = geo[String(s.id)] || (s.latitude != null && s.longitude != null ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null);
         if (!c) return null;
         return {
           id: String(s.id),
           lat: c.lat,
           lng: c.lng,
-          sequence: s.sequence ?? 0,
+          sequence: index + 1,
           site_name: s.site_name,
           status: s.status,
           client: clientNames[s.client_account_id],
