@@ -676,7 +676,7 @@ export function DriverDayTab() {
   }, [visitedRows]);
   const sourceSummary = useMemo(() => {
     const parts = [
-      visitSourceCounts.gps ? `${visitSourceCounts.gps} GPS` : "",
+      visitSourceCounts["gps"] ? `${visitSourceCounts["gps"]} GPS` : "",
       visitSourceCounts["gps-near"] ? `${visitSourceCounts["gps-near"]} near GPS` : "",
       visitSourceCounts["fuel-log"] ? `${visitSourceCounts["fuel-log"]} fuel log` : "",
     ].filter(Boolean);
