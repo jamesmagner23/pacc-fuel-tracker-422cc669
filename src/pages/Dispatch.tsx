@@ -16,6 +16,8 @@ import { useTrucks } from "@/hooks/useTrucks";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
 import { LogStopsDialog } from "@/components/dispatch/LogStopsDialog";
+import { DriverDayTab } from "@/components/dispatch/DriverDayTab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 function googleMapsUrl(stops: DispatchStop[]) {
@@ -197,6 +199,12 @@ export default function Dispatch() {
 
   return (
     <div className="flex flex-col gap-3 max-w-[1200px] w-full">
+      <Tabs defaultValue="route" className="w-full">
+        <TabsList>
+          <TabsTrigger value="route">Route plan</TabsTrigger>
+          <TabsTrigger value="driver-day">Driver Day</TabsTrigger>
+        </TabsList>
+        <TabsContent value="route" className="flex flex-col gap-3 mt-3">
       {/* Header */}
       <div className="card p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -382,6 +390,11 @@ export default function Dispatch() {
           </div>
         )}
       </div>
+        </TabsContent>
+        <TabsContent value="driver-day" className="mt-3">
+          <DriverDayTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
