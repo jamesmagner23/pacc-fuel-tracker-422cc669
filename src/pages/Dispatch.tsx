@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plus, GripVertical, Trash2, Package, CheckCircle2, Clock, MapPin, Navigation, ListPlus, Repeat } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, GripVertical, Trash2, Package, CheckCircle2, Clock, MapPin, Navigation, ListPlus, Repeat, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,10 +11,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { TruckMap } from "@/components/TruckMap";
-import { useDispatchStops, useDeleteStop, useReorderDispatchStops, useUpdateStopStatus, useRecurring, useDeleteRecurring, type DispatchStop } from "@/hooks/useDispatch";
+import { useDispatchStops, useDeleteStop, useReorderDispatchStops, useUpdateStopStatus, useRecurring, useDeleteRecurring, type DispatchStop, type DispatchRecurring } from "@/hooks/useDispatch";
 import { useTrucks } from "@/hooks/useTrucks";
 import { useDragReorder } from "@/hooks/useDragReorder";
 import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
+import { EditRecurringDialog } from "@/components/dispatch/EditRecurringDialog";
 import { LogStopsDialog } from "@/components/dispatch/LogStopsDialog";
 import { DriverDayTab } from "@/components/dispatch/DriverDayTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -167,6 +168,7 @@ export default function Dispatch() {
   const updateStatus = useUpdateStopStatus();
   const { data: recurring = [] } = useRecurring();
   const delRecurring = useDeleteRecurring();
+  const [editRecurring, setEditRecurring] = useState<DispatchRecurring | null>(null);
 
   const truckNameById = useMemo(() => Object.fromEntries(trucks.map((t) => [t.id, t.name])), [trucks]);
   const clientNameById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c.company_name])), [clients]);
@@ -333,6 +335,12 @@ export default function Dispatch() {
 
       <LogStopsDialog open={logStopsOpen} onOpenChange={setLogStopsOpen} defaultDate={date} />
 
+      <EditRecurringDialog
+        open={!!editRecurring}
+        onOpenChange={(v) => { if (!v) setEditRecurring(null); }}
+        recurring={editRecurring}
+      />
+
       {/* Recurring orders */}
       <div className="card p-4">
         <div className="flex items-center gap-2 mb-3">
@@ -359,6 +367,15 @@ export default function Dispatch() {
                     {r.frequency === "weekly" && `Weekly · ${(r.weekdays || []).map((d) => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}`}
                   </div>
                 </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2"
+                  title="Edit recurring order"
+                  onClick={() => setEditRecurring(r)}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"
