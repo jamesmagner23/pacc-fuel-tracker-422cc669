@@ -79,6 +79,35 @@ function useGeocodedStops(stops: any[]) {
   return coords;
 }
 
+// ---------- Mapbox driving directions between scheduled stops ----------
+function useRouteBetweenStops(
+  markers: Array<{ id: string; lat: number; lng: number; sequence: number }>,
+) {
+  const { data: token } = useMapboxToken();
+  const key = markers.map((m) => `${m.lng.toFixed(5)},${m.lat.toFixed(5)}`).join(";");
+  return useQuery({
+    queryKey: ["driver-day-route", key],
+    enabled: !!token && markers.length >= 2,
+    staleTime: 60 * 60 * 1000,
+    queryFn: async () => {
+      // Mapbox Directions caps at 25 coordinates per request.
+      const pts = markers.slice(0, 25);
+      const coords = pts.map((m) => `${m.lng},${m.lat}`).join(";");
+      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?geometries=geojson&overview=full&access_token=${token}`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("directions failed");
+      const j = await r.json();
+      const route = j?.routes?.[0];
+      if (!route) return null;
+      return {
+        geometry: route.geometry as GeoJSON.LineString,
+        distanceKm: (route.distance || 0) / 1000,
+        durationMin: (route.duration || 0) / 60,
+      };
+    },
+  });
+}
+
 // ---------- helpers ----------
 function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371;
@@ -221,11 +250,13 @@ function DriverDayMap({
   pings,
   stopEvents,
   scheduledStops,
+  routeGeometry,
   height = 460,
 }: {
   pings: Ping[];
   stopEvents: StopEvent[];
-  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string }>;
+  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; arrivedMs?: number | null; leftMs?: number | null; dwellMs?: number | null }>;
+  routeGeometry?: GeoJSON.LineString | null;
   height?: number;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -253,8 +284,25 @@ function DriverDayMap({
     if (!map || !ready) return;
 
     // Clear previous layers
+    if (map.getLayer("route-line")) map.removeLayer("route-line");
+    if (map.getSource("route")) map.removeSource("route");
     if (map.getLayer("trail-line")) map.removeLayer("trail-line");
     if (map.getSource("trail")) map.removeSource("trail");
+
+    // Driving route between scheduled stops (solid orange)
+    if (routeGeometry && routeGeometry.coordinates?.length >= 2) {
+      map.addSource("route", {
+        type: "geojson",
+        data: { type: "Feature", properties: {}, geometry: routeGeometry },
+      });
+      map.addLayer({
+        id: "route-line",
+        type: "line",
+        source: "route",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#f04a1a", "line-width": 4, "line-opacity": 0.9 },
+      });
+    }
 
     // Add polyline
     if (pings.length >= 2) {
@@ -271,7 +319,7 @@ function DriverDayMap({
         type: "line",
         source: "trail",
         layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": "#f04a1a", "line-width": 3, "line-opacity": 0.55, "line-dasharray": [2, 2] },
+        paint: { "line-color": "#120a04", "line-width": 2, "line-opacity": 0.55, "line-dasharray": [2, 2] },
       });
     }
 
@@ -294,13 +342,18 @@ function DriverDayMap({
         cursor:pointer;
       `;
       el.textContent = String(s.sequence ?? "");
+      const timingHtml = s.arrivedMs && s.leftMs
+        ? `<div style="font-size:11px;color:#444;margin-top:4px">Arrived ${fmtTime(s.arrivedMs)} · Left ${fmtTime(s.leftMs)}</div>
+           <div style="font-size:11px;color:#444">On site approx ${fmtHM(s.dwellMs || 0)}</div>`
+        : `<div style="font-size:11px;color:#999;margin-top:4px;font-style:italic">No GPS dwell match</div>`;
       new mapboxgl.Marker({ element: el, anchor: "center" })
         .setLngLat([s.lng, s.lat])
         .setPopup(
           new mapboxgl.Popup({ offset: 20, closeButton: false }).setHTML(
             `<div style="font-size:12px;font-weight:600;color:#120a04">#${s.sequence} ${s.site_name}</div>
              ${s.client ? `<div style="font-size:11px;color:#555">${s.client}</div>` : ""}
-             <div style="font-size:11px;color:${completed ? "#16a34a" : "#f04a1a"};font-weight:600;margin-top:2px">${s.status.toUpperCase()}</div>`
+             <div style="font-size:11px;color:${completed ? "#16a34a" : "#f04a1a"};font-weight:600;margin-top:2px">${s.status.toUpperCase()}</div>
+             ${timingHtml}`
           )
         )
         .addTo(map);
@@ -338,7 +391,7 @@ function DriverDayMap({
       scheduledStops.forEach((s) => b.extend([s.lng, s.lat]));
       try { map.fitBounds(b, { padding: 50, duration: 600, maxZoom: 14 }); } catch { /* noop */ }
     }
-  }, [ready, pings, stopEvents, scheduledStops]);
+  }, [ready, pings, stopEvents, scheduledStops, routeGeometry]);
 
   return (
     <div
@@ -378,7 +431,7 @@ export function DriverDayTab() {
   const stopEvents = useMemo(() => detectStops(pings), [pings]);
   const geo = useGeocodedStops(stops as any[]);
 
-  const scheduledMarkers = useMemo(() => {
+  const scheduledMarkersBase = useMemo(() => {
     return (stops as any[])
       .map((s, index) => {
         const c = geo[String(s.id)] || (s.latitude != null && s.longitude != null ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null);
@@ -391,29 +444,58 @@ export function DriverDayTab() {
           site_name: s.site_name,
           status: s.status,
           client: clientNames[s.client_account_id],
+          completed_at: s.completed_at ?? null,
         };
       })
-      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string }>;
+      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; completed_at: string | null }>;
   }, [stops, geo, clientNames]);
 
+  // Match each scheduled marker to a detected GPS stop cluster so we can
+  // surface accurate arrival / departure / dwell in the popup.
+  const scheduledMarkers = useMemo(() => {
+    return scheduledMarkersBase.map((m) => {
+      let best: StopEvent | null = null;
+      let bestDist = Infinity;
+      stopEvents.forEach((ev) => {
+        const d = haversineKm(ev.centroid, { lat: m.lat, lng: m.lng });
+        if (d < 0.3 && d < bestDist) { bestDist = d; best = ev; }
+      });
+      if (best) {
+        return { ...m, arrivedMs: best.startMs, leftMs: best.endMs, dwellMs: best.endMs - best.startMs };
+      }
+      // Fall back to completed_at if we have it (no GPS but stop was logged)
+      if (m.completed_at) {
+        const t = new Date(m.completed_at).getTime();
+        return { ...m, arrivedMs: t, leftMs: t, dwellMs: 0 };
+      }
+      return { ...m, arrivedMs: null, leftMs: null, dwellMs: null };
+    });
+  }, [scheduledMarkersBase, stopEvents]);
+
+  const { data: routeData } = useRouteBetweenStops(scheduledMarkers);
+
   const completedCount = useMemo(() => (stops as any[]).filter((s) => s.status === "completed").length, [stops]);
-  const ungeocodedCount = (stops as any[]).length - scheduledMarkers.length;
+  const ungeocodedCount = (stops as any[]).length - scheduledMarkersBase.length;
   const sparseGps = pings.length > 0 && pings.length < 10;
   const noGps = pings.length === 0;
 
   // ----- metrics -----
   const metrics = useMemo(() => {
     if (pings.length < 2) {
-      return { km: 0, shiftMs: 0, stoppedMs: 0, driveMs: 0, otMs: 0 };
+      return { km: routeData?.distanceKm ?? 0, kmSource: routeData ? "route" : "none", shiftMs: 0, stoppedMs: 0, driveMs: 0, otMs: 0 };
     }
-    let km = 0;
-    for (let i = 1; i < pings.length; i++) km += haversineKm(pings[i - 1], pings[i]);
+    let gpsKm = 0;
+    for (let i = 1; i < pings.length; i++) gpsKm += haversineKm(pings[i - 1], pings[i]);
+    // Prefer Mapbox driving distance when available — straight-line GPS
+    // underestimates for sparse pings and overestimates for jittery ones.
+    const km = routeData?.distanceKm ?? gpsKm;
+    const kmSource = routeData ? "route" : "gps";
     const shiftMs = pings[pings.length - 1].t - pings[0].t;
     const stoppedMs = stopEvents.reduce((a, s) => a + (s.endMs - s.startMs), 0);
     const driveMs = Math.max(0, shiftMs - stoppedMs);
     const otMs = Math.max(0, shiftMs - 8 * 60 * 60 * 1000);
-    return { km, shiftMs, stoppedMs, driveMs, otMs };
-  }, [pings, stopEvents]);
+    return { km, kmSource, shiftMs, stoppedMs, driveMs, otMs };
+  }, [pings, stopEvents, routeData]);
 
   const totalLitres = useMemo(
     () => stops.reduce((a: number, s: any) => a + (Number(s.delivered_litres) || 0), 0),
@@ -480,7 +562,7 @@ export function DriverDayTab() {
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
         {[
           { label: "Shift", value: metrics.shiftMs ? fmtHM(metrics.shiftMs) : "—", icon: Clock },
-          { label: "KM driven", value: metrics.km ? metrics.km.toFixed(1) : "—", icon: RouteIcon },
+          { label: "KM driven", value: metrics.km ? metrics.km.toFixed(1) : "—", icon: RouteIcon, sub: metrics.kmSource === "route" ? "best route" : metrics.kmSource === "gps" ? "from GPS" : undefined },
           { label: "Drive time", value: metrics.driveMs ? fmtHM(metrics.driveMs) : "—", icon: Gauge },
           { label: "Stopped", value: metrics.stoppedMs ? fmtHM(metrics.stoppedMs) : "—", icon: Timer },
           { label: "Stops", value: `${completedCount}/${(stops as any[]).length}`, icon: MapPin, sub: "completed / scheduled" },
@@ -524,7 +606,7 @@ export function DriverDayTab() {
             Driver needs to turn on <strong>Share my location</strong> in the driver portal.
           </div>
         ) : (
-          <DriverDayMap pings={pings} stopEvents={stopEvents} scheduledStops={scheduledMarkers} height={460} />
+          <DriverDayMap pings={pings} stopEvents={stopEvents} scheduledStops={scheduledMarkers} routeGeometry={routeData?.geometry ?? null} height={460} />
         )}
       </div>
 
