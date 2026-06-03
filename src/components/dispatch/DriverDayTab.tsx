@@ -615,7 +615,12 @@ export function DriverDayTab() {
     });
   }, [scheduledMarkersBase, pings, stops, deliveryTransactions]);
 
-  const { data: routeData } = useRouteBetweenStops(scheduledMarkers);
+  const routeMarkers = useMemo(() => {
+    const visited = scheduledMarkers.filter((m) => m.arrivedMs != null).sort((a, b) => (a.arrivedMs as number) - (b.arrivedMs as number));
+    return visited.length >= 2 ? visited : scheduledMarkers;
+  }, [scheduledMarkers]);
+
+  const { data: routeData } = useRouteBetweenStops(routeMarkers);
 
   const completedCount = useMemo(() => (stops as any[]).filter((s) => s.status === "completed").length, [stops]);
   const ungeocodedCount = (stops as any[]).length - scheduledMarkersBase.length;
@@ -668,6 +673,14 @@ export function DriverDayTab() {
       return acc;
     }, {} as Record<string, number>);
   }, [visitedRows]);
+  const sourceSummary = useMemo(() => {
+    const parts = [
+      visitSourceCounts.gps ? `${visitSourceCounts.gps} GPS` : "",
+      visitSourceCounts["gps-near"] ? `${visitSourceCounts["gps-near"]} near GPS` : "",
+      visitSourceCounts["fuel-log"] ? `${visitSourceCounts["fuel-log"]} fuel log` : "",
+    ].filter(Boolean);
+    return parts.length ? ` · ${parts.join(" / ")}` : "";
+  }, [visitSourceCounts]);
 
   const medianDwell = useMemo(() => {
     const dwells = visitedRows.map((r) => r.marker.dwellMs || 0).filter((d) => d > 0).sort((a, b) => a - b);
@@ -764,7 +777,7 @@ export function DriverDayTab() {
             <div>
               <div className="text-sm font-semibold">Stop timeline</div>
               <div className="text-[11px] text-muted-foreground">
-                {visitedRows.length}/{timeline.length} stops timed · {totalLitres.toLocaleString()} L delivered{medianDwell > 0 ? ` · median dwell ${fmtHM(medianDwell)}` : ""}
+                {visitedRows.length}/{timeline.length} stops timed{sourceSummary} · {totalLitres.toLocaleString()} L delivered{medianDwell > 0 ? ` · median dwell ${fmtHM(medianDwell)}` : ""}
               </div>
             </div>
           </div>
