@@ -122,8 +122,10 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
 
 const STOP_RADIUS_KM = 0.1; // 100 m cluster radius
 const MIN_STOP_MINUTES = 3; // anything ≥ 3 min counted as a stop
-const SITE_VISIT_RADIUS_KM = 0.5; // pings within 500 m of a scheduled site count as "at the site"
+const SITE_VISIT_RADIUS_KM = 0.5; // pings within 500 m of a scheduled site count as a confirmed GPS visit
+const SITE_VISIT_NEAR_RADIUS_KM = 1.25; // allow for imperfect geocodes on completed/delivered stops
 const SITE_VISIT_GAP_MIN = 10; // pings separated by >10 min away from site break the visit
+const TX_GROUP_GAP_MIN = 35; // split fuel log groups when transactions are far apart
 
 interface Ping {
   lat: number;
@@ -182,11 +184,12 @@ function detectStops(pings: Ping[]): StopEvent[] {
 function inferSiteVisit(
   site: { lat: number; lng: number },
   pings: Ping[],
+  radiusKm = SITE_VISIT_RADIUS_KM,
 ): { arrivedMs: number; leftMs: number; dwellMs: number; pingCount: number } | null {
   if (pings.length === 0) return null;
   const near = pings
     .map((p) => ({ p, d: haversineKm(p, site) }))
-    .filter((x) => x.d <= SITE_VISIT_RADIUS_KM);
+    .filter((x) => x.d <= radiusKm);
   if (near.length === 0) return null;
 
   // Split into contiguous runs (max 10 min gap between consecutive near-pings)
@@ -229,20 +232,30 @@ function fmtTime(ms: number) {
   return format(new Date(ms), "HH:mm");
 }
 
+function localOperationalRangeIso(dateStr: string, hours = 30) {
+  const start = new Date(`${dateStr}T00:00:00`);
+  const end = new Date(start);
+  end.setHours(end.getHours() + hours);
+  return { startIso: start.toISOString(), endIso: end.toISOString() };
+}
+
+function normName(value: unknown) {
+  return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
 // ---------- data hooks ----------
 function useDriverPings(driverId: string | null, dateStr: string) {
   return useQuery({
     queryKey: ["driver-day-pings", driverId, dateStr],
     enabled: !!driverId,
     queryFn: async () => {
-      const start = `${dateStr}T00:00:00`;
-      const end = `${dateStr}T23:59:59`;
+      const { startIso, endIso } = localOperationalRangeIso(dateStr, 24);
       const { data, error } = await supabase
         .from("driver_locations")
         .select("latitude, longitude, recorded_at, speed")
         .eq("driver_user_id", driverId!)
-        .gte("recorded_at", start)
-        .lte("recorded_at", end)
+        .gte("recorded_at", startIso)
+        .lt("recorded_at", endIso)
         .order("recorded_at", { ascending: true });
       if (error) throw error;
       return (data || []).map((r: any) => ({
