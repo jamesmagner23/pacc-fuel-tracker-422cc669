@@ -12,6 +12,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDrivers } from "@/hooks/useDrivers";
 import { useMapboxToken } from "@/hooks/useMapboxToken";
 
+// ---------- geocoding (client-side, cached in localStorage + DB writeback) ----------
+const GEO_CACHE_KEY = "pacc.geocode.cache.v1";
+function loadGeoCache(): Record<string, { lat: number; lng: number }> {
+  try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY) || "{}"); } catch { return {}; }
+}
+function saveGeoCache(c: Record<string, { lat: number; lng: number }>) {
+  try { localStorage.setItem(GEO_CACHE_KEY, JSON.stringify(c)); } catch { /* noop */ }
+}
+async function geocodeAddress(address: string, token: string): Promise<{ lat: number; lng: number } | null> {
+  const q = encodeURIComponent(address + ", Victoria, Australia");
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?access_token=${token}&country=AU&limit=1`;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const c = j?.features?.[0]?.center;
+    if (Array.isArray(c) && c.length === 2) return { lng: c[0], lat: c[1] };
+  } catch { /* noop */ }
+  return null;
+}
+
+function useGeocodedStops(stops: any[]) {
+  const { data: token } = useMapboxToken();
+  const [coords, setCoords] = useState<Record<string, { lat: number; lng: number }>>(() => loadGeoCache());
+
+  useEffect(() => {
+    if (!token || stops.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const cache = { ...loadGeoCache() };
+      let mutated = false;
+      for (const s of stops) {
+        const key = String(s.id);
+        if (s.latitude != null && s.longitude != null) {
+          if (!cache[key]) {
+            cache[key] = { lat: Number(s.latitude), lng: Number(s.longitude) };
+            mutated = true;
+          }
+          continue;
+        }
+        if (cache[key]) continue;
+        const addr = (s.address || s.site_name || "").trim();
+        if (!addr) continue;
+        const c = await geocodeAddress(addr, token);
+        if (cancelled) return;
+        if (c) {
+          cache[key] = c;
+          mutated = true;
+          // Best-effort writeback so it survives across users/devices
+          supabase
+            .from("dispatch_stops")
+            .update({ latitude: c.lat, longitude: c.lng })
+            .eq("id", s.id)
+            .then(() => { /* noop */ }, () => { /* noop */ });
+        }
+      }
+      if (mutated && !cancelled) {
+        saveGeoCache(cache);
+        setCoords(cache);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, stops]);
+
+  return coords;
+}
+
 // ---------- helpers ----------
 function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const R = 6371;
