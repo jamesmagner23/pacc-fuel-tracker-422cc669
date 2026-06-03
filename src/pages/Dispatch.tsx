@@ -168,6 +168,7 @@ export default function Dispatch() {
   const updateStatus = useUpdateStopStatus();
   const { data: recurring = [] } = useRecurring();
   const delRecurring = useDeleteRecurring();
+  const [editRecurring, setEditRecurring] = useState<DispatchRecurring | null>(null);
 
   const truckNameById = useMemo(() => Object.fromEntries(trucks.map((t) => [t.id, t.name])), [trucks]);
   const clientNameById = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c.company_name])), [clients]);
@@ -360,6 +361,15 @@ export default function Dispatch() {
                     {r.frequency === "weekly" && `Weekly · ${(r.weekdays || []).map((d) => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", ")}`}
                   </div>
                 </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2"
+                  title="Edit recurring order"
+                  onClick={() => setEditRecurring(r)}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"
