@@ -328,6 +328,7 @@ function useDeliveryTransactionsForDay(dateStr: string) {
 function inferTransactionVisit(
   matchNames: string[] | undefined,
   transactions: Array<{ fecha: string; nombre_cliente1: string | null; cantidad: number | null }>,
+  targetLitres?: number,
 ): { arrivedMs: number; leftMs: number; dwellMs: number; litres: number; txCount: number } | null {
   const needles = (matchNames || []).map(normName).filter((n) => n.length >= 3);
   if (needles.length === 0) return null;
@@ -348,14 +349,17 @@ function inferTransactionVisit(
     else { groups.push(cur); cur = [matches[i]]; }
   }
   groups.push(cur);
-  const best = groups.reduce((a, b) => (b.reduce((s, x) => s + x.litres, 0) > a.reduce((s, x) => s + x.litres, 0) ? b : a), groups[0]);
+  const groupLitres = (g: typeof matches) => g.reduce((s, x) => s + x.litres, 0);
+  const best = targetLitres && targetLitres > 0
+    ? groups.reduce((a, b) => Math.abs(groupLitres(b) - targetLitres) < Math.abs(groupLitres(a) - targetLitres) ? b : a, groups[0])
+    : groups.reduce((a, b) => (groupLitres(b) > groupLitres(a) ? b : a), groups[0]);
   const arrivedMs = best[0].t;
   const leftMs = best[best.length - 1].t;
   return {
     arrivedMs,
     leftMs,
     dwellMs: Math.max(leftMs - arrivedMs, 8 * 60 * 1000),
-    litres: best.reduce((s, x) => s + x.litres, 0),
+    litres: groupLitres(best),
     txCount: best.length,
   };
 }
