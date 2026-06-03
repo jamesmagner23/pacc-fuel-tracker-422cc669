@@ -223,7 +223,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ── MAIN COLUMN ── */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-60">
+      {/* Sidebar is 240px; use 256px (pl-64) so headings don't kiss the sidebar edge. */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
         <header
           className={
             "sticky top-0 z-30 border-b border-border bg-background " +
