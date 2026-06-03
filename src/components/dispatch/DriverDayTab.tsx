@@ -431,7 +431,7 @@ export function DriverDayTab() {
   const stopEvents = useMemo(() => detectStops(pings), [pings]);
   const geo = useGeocodedStops(stops as any[]);
 
-  const scheduledMarkers = useMemo(() => {
+  const scheduledMarkersBase = useMemo(() => {
     return (stops as any[])
       .map((s, index) => {
         const c = geo[String(s.id)] || (s.latitude != null && s.longitude != null ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null);
@@ -444,29 +444,58 @@ export function DriverDayTab() {
           site_name: s.site_name,
           status: s.status,
           client: clientNames[s.client_account_id],
+          completed_at: s.completed_at ?? null,
         };
       })
-      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string }>;
+      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; completed_at: string | null }>;
   }, [stops, geo, clientNames]);
 
+  // Match each scheduled marker to a detected GPS stop cluster so we can
+  // surface accurate arrival / departure / dwell in the popup.
+  const scheduledMarkers = useMemo(() => {
+    return scheduledMarkersBase.map((m) => {
+      let best: StopEvent | null = null;
+      let bestDist = Infinity;
+      stopEvents.forEach((ev) => {
+        const d = haversineKm(ev.centroid, { lat: m.lat, lng: m.lng });
+        if (d < 0.3 && d < bestDist) { bestDist = d; best = ev; }
+      });
+      if (best) {
+        return { ...m, arrivedMs: best.startMs, leftMs: best.endMs, dwellMs: best.endMs - best.startMs };
+      }
+      // Fall back to completed_at if we have it (no GPS but stop was logged)
+      if (m.completed_at) {
+        const t = new Date(m.completed_at).getTime();
+        return { ...m, arrivedMs: t, leftMs: t, dwellMs: 0 };
+      }
+      return { ...m, arrivedMs: null, leftMs: null, dwellMs: null };
+    });
+  }, [scheduledMarkersBase, stopEvents]);
+
+  const { data: routeData } = useRouteBetweenStops(scheduledMarkers);
+
   const completedCount = useMemo(() => (stops as any[]).filter((s) => s.status === "completed").length, [stops]);
-  const ungeocodedCount = (stops as any[]).length - scheduledMarkers.length;
+  const ungeocodedCount = (stops as any[]).length - scheduledMarkersBase.length;
   const sparseGps = pings.length > 0 && pings.length < 10;
   const noGps = pings.length === 0;
 
   // ----- metrics -----
   const metrics = useMemo(() => {
     if (pings.length < 2) {
-      return { km: 0, shiftMs: 0, stoppedMs: 0, driveMs: 0, otMs: 0 };
+      return { km: routeData?.distanceKm ?? 0, kmSource: routeData ? "route" : "none", shiftMs: 0, stoppedMs: 0, driveMs: 0, otMs: 0 };
     }
-    let km = 0;
-    for (let i = 1; i < pings.length; i++) km += haversineKm(pings[i - 1], pings[i]);
+    let gpsKm = 0;
+    for (let i = 1; i < pings.length; i++) gpsKm += haversineKm(pings[i - 1], pings[i]);
+    // Prefer Mapbox driving distance when available — straight-line GPS
+    // underestimates for sparse pings and overestimates for jittery ones.
+    const km = routeData?.distanceKm ?? gpsKm;
+    const kmSource = routeData ? "route" : "gps";
     const shiftMs = pings[pings.length - 1].t - pings[0].t;
     const stoppedMs = stopEvents.reduce((a, s) => a + (s.endMs - s.startMs), 0);
     const driveMs = Math.max(0, shiftMs - stoppedMs);
     const otMs = Math.max(0, shiftMs - 8 * 60 * 60 * 1000);
-    return { km, shiftMs, stoppedMs, driveMs, otMs };
-  }, [pings, stopEvents]);
+    return { km, kmSource, shiftMs, stoppedMs, driveMs, otMs };
+  }, [pings, stopEvents, routeData]);
 
   const totalLitres = useMemo(
     () => stops.reduce((a: number, s: any) => a + (Number(s.delivered_litres) || 0), 0),
@@ -533,7 +562,7 @@ export function DriverDayTab() {
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
         {[
           { label: "Shift", value: metrics.shiftMs ? fmtHM(metrics.shiftMs) : "—", icon: Clock },
-          { label: "KM driven", value: metrics.km ? metrics.km.toFixed(1) : "—", icon: RouteIcon },
+          { label: "KM driven", value: metrics.km ? metrics.km.toFixed(1) : "—", icon: RouteIcon, sub: metrics.kmSource === "route" ? "best route" : metrics.kmSource === "gps" ? "from GPS" : undefined },
           { label: "Drive time", value: metrics.driveMs ? fmtHM(metrics.driveMs) : "—", icon: Gauge },
           { label: "Stopped", value: metrics.stoppedMs ? fmtHM(metrics.stoppedMs) : "—", icon: Timer },
           { label: "Stops", value: `${completedCount}/${(stops as any[]).length}`, icon: MapPin, sub: "completed / scheduled" },
@@ -577,7 +606,7 @@ export function DriverDayTab() {
             Driver needs to turn on <strong>Share my location</strong> in the driver portal.
           </div>
         ) : (
-          <DriverDayMap pings={pings} stopEvents={stopEvents} scheduledStops={scheduledMarkers} height={460} />
+          <DriverDayMap pings={pings} stopEvents={stopEvents} scheduledStops={scheduledMarkers} routeGeometry={routeData?.geometry ?? null} height={460} />
         )}
       </div>
 
