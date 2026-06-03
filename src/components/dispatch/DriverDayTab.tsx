@@ -481,7 +481,7 @@ function DriverDayMap({
       const timingHtml = s.arrivedMs && s.leftMs
         ? `<div style="font-size:11px;color:#444;margin-top:4px">Arrived ${fmtTime(s.arrivedMs)} · Left ${fmtTime(s.leftMs)}</div>
            <div style="font-size:11px;color:#444">On site approx ${fmtHM(s.dwellMs || 0)}${sourceLabel ? ` · ${sourceLabel}` : ""}</div>`
-        : `<div style="font-size:11px;color:#999;margin-top:4px;font-style:italic">No GPS dwell match</div>`;
+        : `<div style="font-size:11px;color:#999;margin-top:4px;font-style:italic">No timing evidence</div>`;
       new mapboxgl.Marker({ element: el, anchor: "center" })
         .setLngLat([s.lng, s.lat])
         .setPopup(
