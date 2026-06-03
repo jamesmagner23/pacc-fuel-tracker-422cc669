@@ -232,10 +232,25 @@ function fmtTime(ms: number) {
   return format(new Date(ms), "HH:mm");
 }
 
+function melbourneOffsetMs(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Melbourne",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(date).reduce((acc, p) => ({ ...acc, [p.type]: p.value }), {} as Record<string, string>);
+  const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+  return asUtc - date.getTime();
+}
+
+function melbourneLocalToUtc(dateStr: string, hour: number) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const guess = new Date(Date.UTC(year, month - 1, day, hour, 0, 0));
+  return new Date(guess.getTime() - melbourneOffsetMs(guess));
+}
+
 function localOperationalRangeIso(dateStr: string, hours = 30) {
-  const start = new Date(`${dateStr}T00:00:00`);
-  const end = new Date(start);
-  end.setHours(end.getHours() + hours);
+  const start = melbourneLocalToUtc(dateStr, 0);
+  const end = melbourneLocalToUtc(dateStr, hours);
   return { startIso: start.toISOString(), endIso: end.toISOString() };
 }
 
