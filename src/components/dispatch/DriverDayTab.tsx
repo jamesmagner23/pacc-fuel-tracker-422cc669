@@ -499,23 +499,21 @@ export function DriverDayTab() {
   // surface accurate arrival / departure / dwell in the popup.
   const scheduledMarkers = useMemo(() => {
     return scheduledMarkersBase.map((m) => {
-      let best: StopEvent | null = null;
-      let bestDist = Infinity;
-      stopEvents.forEach((ev) => {
-        const d = haversineKm(ev.centroid, { lat: m.lat, lng: m.lng });
-        if (d < 0.3 && d < bestDist) { bestDist = d; best = ev; }
-      });
-      if (best) {
-        return { ...m, arrivedMs: best.startMs, leftMs: best.endMs, dwellMs: best.endMs - best.startMs };
+      // Source of truth = GPS pings physically near this site, NOT
+      // the driver pressing "complete" (which can happen anywhere/anytime).
+      const visit = inferSiteVisit({ lat: m.lat, lng: m.lng }, pings);
+      if (visit) {
+        return {
+          ...m,
+          arrivedMs: visit.arrivedMs,
+          leftMs: visit.leftMs,
+          dwellMs: visit.dwellMs,
+          visitSource: "gps" as const,
+        };
       }
-      // Fall back to completed_at if we have it (no GPS but stop was logged)
-      if (m.completed_at) {
-        const t = new Date(m.completed_at).getTime();
-        return { ...m, arrivedMs: t, leftMs: t, dwellMs: 0 };
-      }
-      return { ...m, arrivedMs: null, leftMs: null, dwellMs: null };
+      return { ...m, arrivedMs: null, leftMs: null, dwellMs: null, visitSource: "none" as const };
     });
-  }, [scheduledMarkersBase, stopEvents]);
+  }, [scheduledMarkersBase, pings]);
 
   const { data: routeData } = useRouteBetweenStops(scheduledMarkers);
 
@@ -547,31 +545,28 @@ export function DriverDayTab() {
     [stops]
   );
 
-  // Match each stop event to nearest scheduled stop (by coords if available, else by completed_at)
-  const matched = useMemo(() => {
-    return stopEvents.map((ev) => {
-      let best: any = null;
-      let bestDist = Infinity;
-      stops.forEach((s: any) => {
-        if (s.latitude != null && s.longitude != null) {
-          const d = haversineKm({ lat: Number(s.latitude), lng: Number(s.longitude) }, ev.centroid);
-          if (d < 0.3 && d < bestDist) { bestDist = d; best = s; }
-        } else if (s.completed_at) {
-          const ct = new Date(s.completed_at).getTime();
-          if (ct >= ev.startMs - 15 * 60000 && ct <= ev.endMs + 15 * 60000) {
-            if (!best) best = s;
-          }
-        }
-      });
-      return { ev, stop: best };
+  // Timeline = every scheduled stop, sorted by actual arrival time (GPS-inferred).
+  // Unvisited stops fall to the bottom of the list.
+  const timeline = useMemo(() => {
+    const rows = scheduledMarkers.map((m) => {
+      const stop = (stops as any[]).find((s) => String(s.id) === m.id);
+      return { marker: m, stop };
     });
-  }, [stopEvents, stops]);
+    rows.sort((a, b) => {
+      const ta = a.marker.arrivedMs ?? Number.POSITIVE_INFINITY;
+      const tb = b.marker.arrivedMs ?? Number.POSITIVE_INFINITY;
+      return ta - tb;
+    });
+    return rows;
+  }, [scheduledMarkers, stops]);
+
+  const visitedRows = useMemo(() => timeline.filter((r) => r.marker.arrivedMs != null), [timeline]);
 
   const medianDwell = useMemo(() => {
-    if (stopEvents.length === 0) return 0;
-    const sorted = [...stopEvents].map((s) => s.endMs - s.startMs).sort((a, b) => a - b);
-    return sorted[Math.floor(sorted.length / 2)];
-  }, [stopEvents]);
+    const dwells = visitedRows.map((r) => r.marker.dwellMs || 0).filter((d) => d > 0).sort((a, b) => a - b);
+    if (dwells.length === 0) return 0;
+    return dwells[Math.floor(dwells.length / 2)];
+  }, [visitedRows]);
 
   return (
     <div className="flex flex-col gap-3">
