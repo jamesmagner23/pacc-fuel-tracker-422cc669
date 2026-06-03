@@ -366,44 +366,44 @@ export default function Overview() {
     <div className={`-mx-3 sm:-mx-6 md:-mx-8 -my-4 sm:-my-6 md:-my-8 px-3 sm:px-6 md:px-8 py-4 sm:py-6 md:py-8 ${pageBg} min-h-full`}>
       <PageHeader title="PACC Energy" breadcrumb={breadcrumb} />
 
-      <div className="relative overflow-hidden rounded-[18px] border border-border bg-foreground text-background mb-4 shadow-sm">
+      <div className="relative overflow-hidden rounded-[18px] border border-border bg-card text-foreground mb-4 shadow-sm">
         <div className="relative grid lg:grid-cols-[0.95fr_1.35fr] min-h-[220px]">
-          <div className="px-5 sm:px-6 py-5 sm:py-6 border-b lg:border-b-0 lg:border-r border-background/10">
-            <PACCLogo tone="dark" />
-            <div className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-accent">
+          <div className="px-5 sm:px-6 py-5 sm:py-6 border-b lg:border-b-0 lg:border-r border-border">
+            <PACCLogo tone="light" />
+            <div className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
               Live daily fuel sales
             </div>
             <div className="mt-2 flex items-end gap-2">
-              <div className="font-display text-[38px] leading-none font-bold tabular-nums text-background">
+              <div className="font-display text-[38px] leading-none font-bold tabular-nums text-foreground">
                 {formatLitresShort(totalLitres)}L
               </div>
-              <div className="pb-1.5 text-sm font-bold text-accent">{periodLabel}</div>
+              <div className="pb-1.5 text-sm font-bold text-primary">{periodLabel}</div>
             </div>
-            <p className="mt-3 max-w-[360px] text-sm leading-5 text-background/75">
+            <p className="mt-3 max-w-[360px] text-sm leading-5 text-muted-foreground">
               {numDeliveries.toLocaleString()} {numDeliveries === 1 ? "drop" : "drops"} across {activeTruckCount || truckBreakdown.length || 0} active {activeTruckCount === 1 ? "truck" : "trucks"}{lastSyncTime ? ` · last refreshed ${lastSyncTime}` : ""}.
             </p>
             <button
               type="button"
               onClick={handleSync}
               disabled={syncing}
-              className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 py-2 text-[12px] font-bold uppercase tracking-wider text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-4 py-2 text-[12px] font-bold uppercase tracking-wider text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               <RefreshCcw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
               {syncing ? "Refreshing sales…" : "Refresh daily data"}
             </button>
           </div>
 
-          <div className="relative px-5 sm:px-6 py-5 sm:py-6 bg-background/5">
+          <div className="relative px-5 sm:px-6 py-5 sm:py-6 bg-muted/40">
             <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-accent">Truck split</div>
-                <div className="mt-1 text-sm font-semibold text-background/85">
+                <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Truck split</div>
+                <div className="mt-1 text-sm font-semibold text-foreground/85">
                   {selectedTruck === "all"
                     ? "Tap a truck to focus the KPIs and charts"
                     : `Showing ${selectedTruck} only — tap All to reset`}
                 </div>
               </div>
-              <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-background/15 bg-background/10 p-1">
+              <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-border bg-background p-1">
                 {(["all", ...truckBreakdown.map((t) => t.name)] as string[]).map((opt) => {
                   const active = selectedTruck === opt;
                   const label = opt === "all" ? "All trucks" : opt;
@@ -415,8 +415,8 @@ export default function Overview() {
                       className={
                         "h-7 px-3 rounded-full text-[11px] font-bold uppercase tracking-wider transition-colors " +
                         (active
-                          ? "bg-accent text-accent-foreground"
-                          : "text-background/80 hover:text-background")
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground")
                       }
                     >
                       {label}
@@ -438,25 +438,25 @@ export default function Overview() {
                     className={
                       "text-left rounded-[14px] border p-4 transition-colors " +
                       (isActive
-                        ? "border-accent bg-accent/15"
-                        : "border-background/10 bg-background/10 hover:bg-background/15")
+                        ? "border-primary bg-accent/25"
+                        : "border-border bg-background hover:bg-muted")
                     }
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2">
                         <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: TRUCK_TINTS[i % TRUCK_TINTS.length] }} />
-                        <span className="truncate text-[12px] font-bold uppercase tracking-wider text-background">{t.name}</span>
+                        <span className="truncate text-[12px] font-bold uppercase tracking-wider text-foreground">{t.name}</span>
                       </div>
-                      <span className="text-[11px] font-semibold text-background/70">{share}%</span>
+                      <span className="text-[11px] font-semibold text-muted-foreground">{share}%</span>
                     </div>
-                    <div className="mt-3 font-display text-2xl font-bold tabular-nums text-background">
+                    <div className="mt-3 font-display text-2xl font-bold tabular-nums text-foreground">
                       {formatLitresShort(t.litres)}L
                     </div>
-                    <div className="mt-1 text-[12px] font-medium text-background/70">
+                    <div className="mt-1 text-[12px] font-medium text-muted-foreground">
                       {t.deliveries} drop{t.deliveries === 1 ? "" : "s"} · ${Math.round(t.revenue).toLocaleString()} revenue
                     </div>
-                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background/15">
-                      <div className="h-full rounded-full bg-accent" style={{ width: `${share}%` }} />
+                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${share}%` }} />
                     </div>
                   </button>
                 );
