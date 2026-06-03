@@ -335,6 +335,12 @@ export default function Dispatch() {
 
       <LogStopsDialog open={logStopsOpen} onOpenChange={setLogStopsOpen} defaultDate={date} />
 
+      <EditRecurringDialog
+        open={!!editRecurring}
+        onOpenChange={(v) => { if (!v) setEditRecurring(null); }}
+        recurring={editRecurring}
+      />
+
       {/* Recurring orders */}
       <div className="card p-4">
         <div className="flex items-center gap-2 mb-3">
