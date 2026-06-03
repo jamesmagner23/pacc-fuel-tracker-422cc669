@@ -578,6 +578,19 @@ export function DriverDayTab() {
     return scheduledMarkersBase.map((m) => {
       // Source of truth = GPS pings physically near this site, NOT
       // the driver pressing "complete" (which can happen anywhere/anytime).
+      const scheduledStop = (stops as any[]).find((s) => String(s.id) === m.id);
+      const txVisit = inferTransactionVisit(m.matchNames, deliveryTransactions, Number(scheduledStop?.delivered_litres) || undefined);
+      if (txVisit) {
+        return {
+          ...m,
+          arrivedMs: txVisit.arrivedMs,
+          leftMs: txVisit.leftMs,
+          dwellMs: txVisit.dwellMs,
+          visitSource: "fuel-log" as const,
+          loggedLitres: txVisit.litres,
+          txCount: txVisit.txCount,
+        };
+      }
       const visit = inferSiteVisit({ lat: m.lat, lng: m.lng }, pings);
       if (visit) {
         return {
@@ -596,19 +609,6 @@ export function DriverDayTab() {
           leftMs: nearVisit.leftMs,
           dwellMs: nearVisit.dwellMs,
           visitSource: "gps-near" as const,
-        };
-      }
-      const scheduledStop = (stops as any[]).find((s) => String(s.id) === m.id);
-      const txVisit = inferTransactionVisit(m.matchNames, deliveryTransactions, Number(scheduledStop?.delivered_litres) || undefined);
-      if (txVisit) {
-        return {
-          ...m,
-          arrivedMs: txVisit.arrivedMs,
-          leftMs: txVisit.leftMs,
-          dwellMs: txVisit.dwellMs,
-          visitSource: "fuel-log" as const,
-          loggedLitres: txVisit.litres,
-          txCount: txVisit.txCount,
         };
       }
       return { ...m, arrivedMs: null, leftMs: null, dwellMs: null, visitSource: "none" as const };
