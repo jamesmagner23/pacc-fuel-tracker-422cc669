@@ -122,8 +122,10 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
 
 const STOP_RADIUS_KM = 0.1; // 100 m cluster radius
 const MIN_STOP_MINUTES = 3; // anything ≥ 3 min counted as a stop
-const SITE_VISIT_RADIUS_KM = 0.5; // pings within 500 m of a scheduled site count as "at the site"
+const SITE_VISIT_RADIUS_KM = 0.5; // pings within 500 m of a scheduled site count as a confirmed GPS visit
+const SITE_VISIT_NEAR_RADIUS_KM = 1.25; // allow for imperfect geocodes on completed/delivered stops
 const SITE_VISIT_GAP_MIN = 10; // pings separated by >10 min away from site break the visit
+const TX_GROUP_GAP_MIN = 35; // split fuel log groups when transactions are far apart
 
 interface Ping {
   lat: number;
@@ -182,11 +184,12 @@ function detectStops(pings: Ping[]): StopEvent[] {
 function inferSiteVisit(
   site: { lat: number; lng: number },
   pings: Ping[],
+  radiusKm = SITE_VISIT_RADIUS_KM,
 ): { arrivedMs: number; leftMs: number; dwellMs: number; pingCount: number } | null {
   if (pings.length === 0) return null;
   const near = pings
     .map((p) => ({ p, d: haversineKm(p, site) }))
-    .filter((x) => x.d <= SITE_VISIT_RADIUS_KM);
+    .filter((x) => x.d <= radiusKm);
   if (near.length === 0) return null;
 
   // Split into contiguous runs (max 10 min gap between consecutive near-pings)
@@ -229,20 +232,45 @@ function fmtTime(ms: number) {
   return format(new Date(ms), "HH:mm");
 }
 
+function melbourneOffsetMs(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Melbourne",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).formatToParts(date).reduce((acc, p) => ({ ...acc, [p.type]: p.value }), {} as Record<string, string>);
+  const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+  return asUtc - date.getTime();
+}
+
+function melbourneLocalToUtc(dateStr: string, hour: number) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const guess = new Date(Date.UTC(year, month - 1, day, hour, 0, 0));
+  return new Date(guess.getTime() - melbourneOffsetMs(guess));
+}
+
+function localOperationalRangeIso(dateStr: string, hours = 30) {
+  const start = melbourneLocalToUtc(dateStr, 0);
+  const end = melbourneLocalToUtc(dateStr, hours);
+  return { startIso: start.toISOString(), endIso: end.toISOString() };
+}
+
+function normName(value: unknown) {
+  return String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
 // ---------- data hooks ----------
 function useDriverPings(driverId: string | null, dateStr: string) {
   return useQuery({
     queryKey: ["driver-day-pings", driverId, dateStr],
     enabled: !!driverId,
     queryFn: async () => {
-      const start = `${dateStr}T00:00:00`;
-      const end = `${dateStr}T23:59:59`;
+      const { startIso, endIso } = localOperationalRangeIso(dateStr, 24);
       const { data, error } = await supabase
         .from("driver_locations")
         .select("latitude, longitude, recorded_at, speed")
         .eq("driver_user_id", driverId!)
-        .gte("recorded_at", start)
-        .lte("recorded_at", end)
+        .gte("recorded_at", startIso)
+        .lt("recorded_at", endIso)
         .order("recorded_at", { ascending: true });
       if (error) throw error;
       return (data || []).map((r: any) => ({
@@ -282,12 +310,74 @@ function useClientNameMap(ids: number[]) {
     queryKey: ["client-name-map", ids.sort().join(",")],
     enabled: ids.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("client_accounts").select("id, company_name").in("id", ids);
-      const map: Record<number, string> = {};
-      (data || []).forEach((c: any) => { map[c.id] = c.company_name; });
+      const { data } = await supabase.from("client_accounts").select("id, company_name, speedsol_name, speedsol_names").in("id", ids);
+      const map: Record<number, { company_name: string; matchNames: string[] }> = {};
+      (data || []).forEach((c: any) => {
+        map[c.id] = {
+          company_name: c.company_name,
+          matchNames: [c.company_name, c.speedsol_name, ...(Array.isArray(c.speedsol_names) ? c.speedsol_names : [])].filter(Boolean),
+        };
+      });
       return map;
     },
   });
+}
+
+function useDeliveryTransactionsForDay(dateStr: string) {
+  return useQuery({
+    queryKey: ["driver-day-transactions", dateStr],
+    queryFn: async () => {
+      const { startIso, endIso } = localOperationalRangeIso(dateStr, 30);
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("id, fecha, nombre_cliente1, cantidad, placa, estacion, nombre_vendedor")
+        .gte("fecha", startIso)
+        .lt("fecha", endIso)
+        .order("fecha", { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: number; fecha: string; nombre_cliente1: string | null; cantidad: number | null; placa: string | null; estacion: string | null; nombre_vendedor: string | null }>;
+    },
+  });
+}
+
+function inferTransactionVisit(
+  matchNames: string[] | undefined,
+  transactions: Array<{ fecha: string; nombre_cliente1: string | null; cantidad: number | null }>,
+  targetLitres?: number,
+): { arrivedMs: number; leftMs: number; dwellMs: number; litres: number; txCount: number } | null {
+  const needles = (matchNames || []).map(normName).filter((n) => n.length >= 3);
+  if (needles.length === 0) return null;
+  const matches = transactions
+    .filter((t) => {
+      const hay = normName(t.nombre_cliente1);
+      if (hay.length < 3) return false;
+      return needles.some((n) => hay.includes(n) || n.includes(hay));
+    })
+    .map((t) => ({ t: new Date(t.fecha).getTime(), litres: Number(t.cantidad) || 0 }))
+    .filter((t) => Number.isFinite(t.t))
+    .sort((a, b) => a.t - b.t);
+  if (matches.length === 0) return null;
+
+  const groups: Array<typeof matches> = [];
+  let cur = [matches[0]];
+  for (let i = 1; i < matches.length; i++) {
+    if ((matches[i].t - cur[cur.length - 1].t) / 60000 <= TX_GROUP_GAP_MIN) cur.push(matches[i]);
+    else { groups.push(cur); cur = [matches[i]]; }
+  }
+  groups.push(cur);
+  const groupLitres = (g: typeof matches) => g.reduce((s, x) => s + x.litres, 0);
+  const best = targetLitres && targetLitres > 0
+    ? groups.reduce((a, b) => Math.abs(groupLitres(b) - targetLitres) < Math.abs(groupLitres(a) - targetLitres) ? b : a, groups[0])
+    : groups.reduce((a, b) => (groupLitres(b) > groupLitres(a) ? b : a), groups[0]);
+  const arrivedMs = best[0].t;
+  const leftMs = best[best.length - 1].t;
+  return {
+    arrivedMs,
+    leftMs,
+    dwellMs: Math.max(leftMs - arrivedMs, 8 * 60 * 1000),
+    litres: groupLitres(best),
+    txCount: best.length,
+  };
 }
 
 // ---------- map ----------
@@ -300,7 +390,7 @@ function DriverDayMap({
 }: {
   pings: Ping[];
   stopEvents: StopEvent[];
-  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; arrivedMs?: number | null; leftMs?: number | null; dwellMs?: number | null }>;
+  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; arrivedMs?: number | null; leftMs?: number | null; dwellMs?: number | null; visitSource?: "gps" | "gps-near" | "fuel-log" | "none" }>;
   routeGeometry?: GeoJSON.LineString | null;
   height?: number;
 }) {
@@ -387,10 +477,11 @@ function DriverDayMap({
         cursor:pointer;
       `;
       el.textContent = String(s.sequence ?? "");
+      const sourceLabel = s.visitSource === "fuel-log" ? "fuel log" : s.visitSource === "gps-near" ? "near GPS" : s.visitSource === "gps" ? "GPS" : "";
       const timingHtml = s.arrivedMs && s.leftMs
         ? `<div style="font-size:11px;color:#444;margin-top:4px">Arrived ${fmtTime(s.arrivedMs)} · Left ${fmtTime(s.leftMs)}</div>
-           <div style="font-size:11px;color:#444">On site approx ${fmtHM(s.dwellMs || 0)}</div>`
-        : `<div style="font-size:11px;color:#999;margin-top:4px;font-style:italic">No GPS dwell match</div>`;
+           <div style="font-size:11px;color:#444">On site approx ${fmtHM(s.dwellMs || 0)}${sourceLabel ? ` · ${sourceLabel}` : ""}</div>`
+        : `<div style="font-size:11px;color:#999;margin-top:4px;font-style:italic">No timing evidence</div>`;
       new mapboxgl.Marker({ element: el, anchor: "center" })
         .setLngLat([s.lng, s.lat])
         .setPopup(
@@ -472,6 +563,7 @@ export function DriverDayTab() {
   const showingDateFallback = !!stopResult?.showingDateFallback;
   const clientIds = useMemo(() => Array.from(new Set(stops.map((s: any) => s.client_account_id).filter(Boolean))), [stops]);
   const { data: clientNames = {} } = useClientNameMap(clientIds as number[]);
+  const { data: deliveryTransactions = [] } = useDeliveryTransactionsForDay(dateStr);
 
   const stopEvents = useMemo(() => detectStops(pings), [pings]);
   const geo = useGeocodedStops(stops as any[]);
@@ -488,11 +580,12 @@ export function DriverDayTab() {
           sequence: index + 1,
           site_name: s.site_name,
           status: s.status,
-          client: clientNames[s.client_account_id],
+          client: clientNames[s.client_account_id]?.company_name,
+          matchNames: clientNames[s.client_account_id]?.matchNames ?? [s.site_name],
           completed_at: s.completed_at ?? null,
         };
       })
-      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; completed_at: string | null }>;
+      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; matchNames: string[]; completed_at: string | null }>;
   }, [stops, geo, clientNames]);
 
   // Match each scheduled marker to a detected GPS stop cluster so we can
@@ -501,6 +594,19 @@ export function DriverDayTab() {
     return scheduledMarkersBase.map((m) => {
       // Source of truth = GPS pings physically near this site, NOT
       // the driver pressing "complete" (which can happen anywhere/anytime).
+      const scheduledStop = (stops as any[]).find((s) => String(s.id) === m.id);
+      const txVisit = inferTransactionVisit(m.matchNames, deliveryTransactions, Number(scheduledStop?.delivered_litres) || undefined);
+      if (txVisit) {
+        return {
+          ...m,
+          arrivedMs: txVisit.arrivedMs,
+          leftMs: txVisit.leftMs,
+          dwellMs: txVisit.dwellMs,
+          visitSource: "fuel-log" as const,
+          loggedLitres: txVisit.litres,
+          txCount: txVisit.txCount,
+        };
+      }
       const visit = inferSiteVisit({ lat: m.lat, lng: m.lng }, pings);
       if (visit) {
         return {
@@ -511,11 +617,26 @@ export function DriverDayTab() {
           visitSource: "gps" as const,
         };
       }
+      const nearVisit = inferSiteVisit({ lat: m.lat, lng: m.lng }, pings, SITE_VISIT_NEAR_RADIUS_KM);
+      if (nearVisit && (m.status === "completed" || Number((stops as any[]).find((s) => String(s.id) === m.id)?.delivered_litres) > 0)) {
+        return {
+          ...m,
+          arrivedMs: nearVisit.arrivedMs,
+          leftMs: nearVisit.leftMs,
+          dwellMs: nearVisit.dwellMs,
+          visitSource: "gps-near" as const,
+        };
+      }
       return { ...m, arrivedMs: null, leftMs: null, dwellMs: null, visitSource: "none" as const };
     });
-  }, [scheduledMarkersBase, pings]);
+  }, [scheduledMarkersBase, pings, stops, deliveryTransactions]);
 
-  const { data: routeData } = useRouteBetweenStops(scheduledMarkers);
+  const routeMarkers = useMemo(() => {
+    const visited = scheduledMarkers.filter((m) => m.arrivedMs != null).sort((a, b) => (a.arrivedMs as number) - (b.arrivedMs as number));
+    return visited.length >= 2 ? visited : scheduledMarkers;
+  }, [scheduledMarkers]);
+
+  const { data: routeData } = useRouteBetweenStops(routeMarkers);
 
   const completedCount = useMemo(() => (stops as any[]).filter((s) => s.status === "completed").length, [stops]);
   const ungeocodedCount = (stops as any[]).length - scheduledMarkersBase.length;
@@ -561,6 +682,21 @@ export function DriverDayTab() {
   }, [scheduledMarkers, stops]);
 
   const visitedRows = useMemo(() => timeline.filter((r) => r.marker.arrivedMs != null), [timeline]);
+  const visitSourceCounts = useMemo(() => {
+    return visitedRows.reduce((acc, r) => {
+      const key = r.marker.visitSource || "none";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [visitedRows]);
+  const sourceSummary = useMemo(() => {
+    const parts = [
+      visitSourceCounts["gps"] ? `${visitSourceCounts["gps"]} GPS` : "",
+      visitSourceCounts["gps-near"] ? `${visitSourceCounts["gps-near"]} near GPS` : "",
+      visitSourceCounts["fuel-log"] ? `${visitSourceCounts["fuel-log"]} fuel log` : "",
+    ].filter(Boolean);
+    return parts.length ? ` · ${parts.join(" / ")}` : "";
+  }, [visitSourceCounts]);
 
   const medianDwell = useMemo(() => {
     const dwells = visitedRows.map((r) => r.marker.dwellMs || 0).filter((d) => d > 0).sort((a, b) => a - b);
@@ -630,7 +766,7 @@ export function DriverDayTab() {
           <div className="text-[11px] leading-relaxed">
             {showingDateFallback && <div><strong>Dispatch stops are not assigned to this driver.</strong> Showing all scheduled stops for this date so the map still reflects the run.</div>}
             {noGps && <div><strong>No GPS pings.</strong> Driver had location-share off all day — map shows scheduled stops only.</div>}
-            {sparseGps && <div><strong>Sparse GPS ({pings.length} pings).</strong> The dashed trail is a straight-line guess between pings, not the real route. Stops shown are from the dispatch schedule, not GPS clusters.</div>}
+            {sparseGps && <div><strong>Sparse GPS ({pings.length} pings).</strong> Timings fall back to fuel logs where available; the GPS trail alone is not reliable for every stop.</div>}
             {ungeocodedCount > 0 && <div className="mt-1 text-muted-foreground">{ungeocodedCount} stop{ungeocodedCount === 1 ? "" : "s"} couldn't be placed on the map (missing address).</div>}
           </div>
         </div>
@@ -657,7 +793,7 @@ export function DriverDayTab() {
             <div>
               <div className="text-sm font-semibold">Stop timeline</div>
               <div className="text-[11px] text-muted-foreground">
-                {visitedRows.length}/{timeline.length} stops visited (by GPS) · {totalLitres.toLocaleString()} L delivered{medianDwell > 0 ? ` · median dwell ${fmtHM(medianDwell)}` : ""}
+                {visitedRows.length}/{timeline.length} stops timed{sourceSummary} · {totalLitres.toLocaleString()} L delivered{medianDwell > 0 ? ` · median dwell ${fmtHM(medianDwell)}` : ""}
               </div>
             </div>
           </div>
@@ -683,16 +819,17 @@ export function DriverDayTab() {
                   const driveToNextMs = visited && next?.marker.arrivedMs != null
                     ? Math.max(0, next.marker.arrivedMs - (marker.leftMs as number))
                     : 0;
-                  const litres = Number(stop?.delivered_litres) || 0;
+                  const litres = Number(stop?.delivered_litres) || Number((marker as any).loggedLitres) || 0;
                   const totalMin = (dwellMs + driveToNextMs) / 60000;
                   const lpm = totalMin > 0 ? litres / totalMin : 0;
                   const slow = dwellMs > 0 && medianDwell > 0 && dwellMs > medianDwell * 1.5;
                   const label = `${marker.site_name}${marker.client ? ` · ${marker.client}` : ""}`;
+                  const sourceLabel = marker.visitSource === "fuel-log" ? "fuel log" : marker.visitSource === "gps-near" ? "near GPS" : marker.visitSource === "gps" ? "GPS" : "";
                   return (
                     <tr key={marker.id} className={`border-b border-border last:border-0 ${!visited ? "opacity-60" : ""}`}>
                       <td className="py-2 pr-2 font-semibold">{marker.sequence}</td>
                       <td className="py-2 pr-2 max-w-[220px] truncate">{label}</td>
-                      <td className="py-2 pr-2 text-muted-foreground">{visited ? fmtTime(marker.arrivedMs as number) : <span className="italic">no GPS visit</span>}</td>
+                      <td className="py-2 pr-2 text-muted-foreground">{visited ? <span>{fmtTime(marker.arrivedMs as number)}{sourceLabel && <span className="block text-[9px] uppercase tracking-wider">{sourceLabel}</span>}</span> : <span className="italic">no timing evidence</span>}</td>
                       <td className="py-2 pr-2 text-muted-foreground">{visited ? fmtTime(marker.leftMs as number) : "—"}</td>
                       <td className={`py-2 pr-2 font-medium ${slow ? "text-destructive" : ""}`}>
                         {visited ? `${fmtHM(dwellMs)}${slow ? " ⚠" : ""}` : "—"}
@@ -701,7 +838,7 @@ export function DriverDayTab() {
                       <td className="py-2 pr-2">{litres > 0 ? `${litres.toLocaleString()} L` : "—"}</td>
                       <td className="py-2 pr-2">
                         {litres > 0 && totalMin > 0 ? (
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${lpm > 30 ? "bg-emerald-500/15 text-emerald-500" : lpm > 10 ? "bg-muted text-muted-foreground" : "bg-destructive/15 text-destructive"}`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${lpm > 30 ? "bg-positive/15 text-positive" : lpm > 10 ? "bg-muted text-muted-foreground" : "bg-destructive/15 text-destructive"}`}>
                             {lpm.toFixed(0)} L/min
                           </span>
                         ) : (
@@ -715,8 +852,8 @@ export function DriverDayTab() {
             </table>
           </div>
           <div className="mt-3 text-[10px] text-muted-foreground">
-            Arrival/Left times are derived from GPS pings within 500 m of each scheduled site — not from the driver's "complete" tap.
-            Rows ordered by actual arrival time. Faded rows = no GPS evidence the driver visited that site today. ⚠ flags dwell &gt; 1.5× the day's median.
+            Times use confirmed GPS first, then near-GPS for imperfect geocodes, then fuel transaction timestamps where GPS is missing — never the driver's "complete" tap.
+            Rows ordered by inferred arrival time. Faded rows = no timing evidence for that site today. ⚠ flags dwell &gt; 1.5× the day's median.
           </div>
         </div>
       )}
