@@ -295,12 +295,69 @@ function useClientNameMap(ids: number[]) {
     queryKey: ["client-name-map", ids.sort().join(",")],
     enabled: ids.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("client_accounts").select("id, company_name").in("id", ids);
-      const map: Record<number, string> = {};
-      (data || []).forEach((c: any) => { map[c.id] = c.company_name; });
+      const { data } = await supabase.from("client_accounts").select("id, company_name, speedsol_name, speedsol_names").in("id", ids);
+      const map: Record<number, { company_name: string; matchNames: string[] }> = {};
+      (data || []).forEach((c: any) => {
+        map[c.id] = {
+          company_name: c.company_name,
+          matchNames: [c.company_name, c.speedsol_name, ...(Array.isArray(c.speedsol_names) ? c.speedsol_names : [])].filter(Boolean),
+        };
+      });
       return map;
     },
   });
+}
+
+function useDeliveryTransactionsForDay(dateStr: string) {
+  return useQuery({
+    queryKey: ["driver-day-transactions", dateStr],
+    queryFn: async () => {
+      const { startIso, endIso } = localOperationalRangeIso(dateStr, 30);
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("id, fecha, nombre_cliente1, cantidad, placa, estacion, nombre_vendedor")
+        .gte("fecha", startIso)
+        .lt("fecha", endIso)
+        .order("fecha", { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: number; fecha: string; nombre_cliente1: string | null; cantidad: number | null; placa: string | null; estacion: string | null; nombre_vendedor: string | null }>;
+    },
+  });
+}
+
+function inferTransactionVisit(
+  matchNames: string[] | undefined,
+  transactions: Array<{ fecha: string; nombre_cliente1: string | null; cantidad: number | null }>,
+): { arrivedMs: number; leftMs: number; dwellMs: number; litres: number; txCount: number } | null {
+  const needles = (matchNames || []).map(normName).filter((n) => n.length >= 3);
+  if (needles.length === 0) return null;
+  const matches = transactions
+    .filter((t) => {
+      const hay = normName(t.nombre_cliente1);
+      return needles.some((n) => hay.includes(n) || n.includes(hay));
+    })
+    .map((t) => ({ t: new Date(t.fecha).getTime(), litres: Number(t.cantidad) || 0 }))
+    .filter((t) => Number.isFinite(t.t))
+    .sort((a, b) => a.t - b.t);
+  if (matches.length === 0) return null;
+
+  const groups: typeof matches[] = [];
+  let cur = [matches[0]];
+  for (let i = 1; i < matches.length; i++) {
+    if ((matches[i].t - cur[cur.length - 1].t) / 60000 <= TX_GROUP_GAP_MIN) cur.push(matches[i]);
+    else { groups.push(cur); cur = [matches[i]]; }
+  }
+  groups.push(cur);
+  const best = groups.reduce((a, b) => (b.reduce((s, x) => s + x.litres, 0) > a.reduce((s, x) => s + x.litres, 0) ? b : a), groups[0]);
+  const arrivedMs = best[0].t;
+  const leftMs = best[best.length - 1].t;
+  return {
+    arrivedMs,
+    leftMs,
+    dwellMs: Math.max(leftMs - arrivedMs, 8 * 60 * 1000),
+    litres: best.reduce((s, x) => s + x.litres, 0),
+    txCount: best.length,
+  };
 }
 
 // ---------- map ----------
