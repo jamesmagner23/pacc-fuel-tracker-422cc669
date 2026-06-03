@@ -543,6 +543,7 @@ export function DriverDayTab() {
   const showingDateFallback = !!stopResult?.showingDateFallback;
   const clientIds = useMemo(() => Array.from(new Set(stops.map((s: any) => s.client_account_id).filter(Boolean))), [stops]);
   const { data: clientNames = {} } = useClientNameMap(clientIds as number[]);
+  const { data: deliveryTransactions = [] } = useDeliveryTransactionsForDay(dateStr);
 
   const stopEvents = useMemo(() => detectStops(pings), [pings]);
   const geo = useGeocodedStops(stops as any[]);
@@ -559,11 +560,12 @@ export function DriverDayTab() {
           sequence: index + 1,
           site_name: s.site_name,
           status: s.status,
-          client: clientNames[s.client_account_id],
+          client: clientNames[s.client_account_id]?.company_name,
+          matchNames: clientNames[s.client_account_id]?.matchNames ?? [s.site_name],
           completed_at: s.completed_at ?? null,
         };
       })
-      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; completed_at: string | null }>;
+      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; matchNames: string[]; completed_at: string | null }>;
   }, [stops, geo, clientNames]);
 
   // Match each scheduled marker to a detected GPS stop cluster so we can
@@ -582,9 +584,31 @@ export function DriverDayTab() {
           visitSource: "gps" as const,
         };
       }
+      const nearVisit = inferSiteVisit({ lat: m.lat, lng: m.lng }, pings, SITE_VISIT_NEAR_RADIUS_KM);
+      if (nearVisit && (m.status === "completed" || Number((stops as any[]).find((s) => String(s.id) === m.id)?.delivered_litres) > 0)) {
+        return {
+          ...m,
+          arrivedMs: nearVisit.arrivedMs,
+          leftMs: nearVisit.leftMs,
+          dwellMs: nearVisit.dwellMs,
+          visitSource: "gps-near" as const,
+        };
+      }
+      const txVisit = inferTransactionVisit(m.matchNames, deliveryTransactions);
+      if (txVisit) {
+        return {
+          ...m,
+          arrivedMs: txVisit.arrivedMs,
+          leftMs: txVisit.leftMs,
+          dwellMs: txVisit.dwellMs,
+          visitSource: "fuel-log" as const,
+          loggedLitres: txVisit.litres,
+          txCount: txVisit.txCount,
+        };
+      }
       return { ...m, arrivedMs: null, leftMs: null, dwellMs: null, visitSource: "none" as const };
     });
-  }, [scheduledMarkersBase, pings]);
+  }, [scheduledMarkersBase, pings, stops, deliveryTransactions]);
 
   const { data: routeData } = useRouteBetweenStops(scheduledMarkers);
 
