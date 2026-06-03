@@ -502,10 +502,11 @@ export function DriverDayTab() {
         ))}
       </div>
 
-      {(noGps || sparseGps || ungeocodedCount > 0) && (
+      {(noGps || sparseGps || ungeocodedCount > 0 || showingDateFallback) && (
         <div className="card p-3 border-l-4 border-l-amber-500 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
           <div className="text-[11px] leading-relaxed">
+            {showingDateFallback && <div><strong>Dispatch stops are not assigned to this driver.</strong> Showing all scheduled stops for this date so the map still reflects the run.</div>}
             {noGps && <div><strong>No GPS pings.</strong> Driver had location-share off all day — map shows scheduled stops only.</div>}
             {sparseGps && <div><strong>Sparse GPS ({pings.length} pings).</strong> The dashed trail is a straight-line guess between pings, not the real route. Stops shown are from the dispatch schedule, not GPS clusters.</div>}
             {ungeocodedCount > 0 && <div className="mt-1 text-muted-foreground">{ungeocodedCount} stop{ungeocodedCount === 1 ? "" : "s"} couldn't be placed on the map (missing address).</div>}
@@ -515,7 +516,7 @@ export function DriverDayTab() {
 
       {/* Map */}
       <div className="card p-3">
-        {pingsLoading ? (
+        {pingsLoading || stopsLoading ? (
           <div className="text-xs text-muted-foreground py-12 text-center">Loading trail…</div>
         ) : pings.length === 0 && scheduledMarkers.length === 0 ? (
           <div className="text-xs text-muted-foreground py-12 text-center">
