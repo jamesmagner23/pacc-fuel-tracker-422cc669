@@ -369,6 +369,30 @@ export function DriverDayTab() {
   const { data: clientNames = {} } = useClientNameMap(clientIds as number[]);
 
   const stopEvents = useMemo(() => detectStops(pings), [pings]);
+  const geo = useGeocodedStops(stops as any[]);
+
+  const scheduledMarkers = useMemo(() => {
+    return (stops as any[])
+      .map((s) => {
+        const c = geo[String(s.id)] || (s.latitude != null && s.longitude != null ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null);
+        if (!c) return null;
+        return {
+          id: String(s.id),
+          lat: c.lat,
+          lng: c.lng,
+          sequence: s.sequence ?? 0,
+          site_name: s.site_name,
+          status: s.status,
+          client: clientNames[s.client_account_id],
+        };
+      })
+      .filter(Boolean) as Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string }>;
+  }, [stops, geo, clientNames]);
+
+  const completedCount = useMemo(() => (stops as any[]).filter((s) => s.status === "completed").length, [stops]);
+  const ungeocodedCount = (stops as any[]).length - scheduledMarkers.length;
+  const sparseGps = pings.length > 0 && pings.length < 10;
+  const noGps = pings.length === 0;
 
   // ----- metrics -----
   const metrics = useMemo(() => {
@@ -452,7 +476,7 @@ export function DriverDayTab() {
           { label: "KM driven", value: metrics.km ? metrics.km.toFixed(1) : "—", icon: RouteIcon },
           { label: "Drive time", value: metrics.driveMs ? fmtHM(metrics.driveMs) : "—", icon: Gauge },
           { label: "Stopped", value: metrics.stoppedMs ? fmtHM(metrics.stoppedMs) : "—", icon: Timer },
-          { label: "Stops", value: stopEvents.length, icon: MapPin },
+          { label: "Stops", value: `${completedCount}/${(stops as any[]).length}`, icon: MapPin, sub: "completed / scheduled" },
           {
             label: "OT (>8h)",
             value: metrics.otMs ? fmtHM(metrics.otMs) : "0m",
@@ -466,21 +490,33 @@ export function DriverDayTab() {
               <k.icon className={`w-3.5 h-3.5 ${k.warn ? "text-destructive" : "text-muted-foreground"}`} />
             </div>
             <div className={`text-lg font-bold ${k.warn ? "text-destructive" : ""}`}>{k.value}</div>
+            {k.sub && <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">{k.sub}</div>}
           </div>
         ))}
       </div>
+
+      {(noGps || sparseGps || ungeocodedCount > 0) && (
+        <div className="card p-3 border-l-4 border-l-amber-500 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div className="text-[11px] leading-relaxed">
+            {noGps && <div><strong>No GPS pings.</strong> Driver had location-share off all day — map shows scheduled stops only.</div>}
+            {sparseGps && <div><strong>Sparse GPS ({pings.length} pings).</strong> The dashed trail is a straight-line guess between pings, not the real route. Stops shown are from the dispatch schedule, not GPS clusters.</div>}
+            {ungeocodedCount > 0 && <div className="mt-1 text-muted-foreground">{ungeocodedCount} stop{ungeocodedCount === 1 ? "" : "s"} couldn't be placed on the map (missing address).</div>}
+          </div>
+        </div>
+      )}
 
       {/* Map */}
       <div className="card p-3">
         {pingsLoading ? (
           <div className="text-xs text-muted-foreground py-12 text-center">Loading trail…</div>
-        ) : pings.length === 0 ? (
+        ) : pings.length === 0 && scheduledMarkers.length === 0 ? (
           <div className="text-xs text-muted-foreground py-12 text-center">
-            No GPS data for this driver on {format(date, "dd MMM yyyy")}.<br />
+            No GPS data or scheduled stops for this driver on {format(date, "dd MMM yyyy")}.<br />
             Driver needs to turn on <strong>Share my location</strong> in the driver portal.
           </div>
         ) : (
-          <DriverDayMap pings={pings} stopEvents={stopEvents} height={460} />
+          <DriverDayMap pings={pings} stopEvents={stopEvents} scheduledStops={scheduledMarkers} height={460} />
         )}
       </div>
 
