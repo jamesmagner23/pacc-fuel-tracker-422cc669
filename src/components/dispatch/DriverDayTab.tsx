@@ -343,7 +343,7 @@ function inferTransactionVisit(
     .sort((a, b) => a.t - b.t);
   if (matches.length === 0) return null;
 
-  const groups: typeof matches[] = [];
+  const groups: Array<typeof matches> = [];
   let cur = [matches[0]];
   for (let i = 1; i < matches.length; i++) {
     if ((matches[i].t - cur[cur.length - 1].t) / 60000 <= TX_GROUP_GAP_MIN) cur.push(matches[i]);
