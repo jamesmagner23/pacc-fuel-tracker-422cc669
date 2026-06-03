@@ -370,7 +370,7 @@ function DriverDayMap({
 }: {
   pings: Ping[];
   stopEvents: StopEvent[];
-  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; arrivedMs?: number | null; leftMs?: number | null; dwellMs?: number | null }>;
+  scheduledStops: Array<{ id: string; lat: number; lng: number; sequence: number; site_name: string; status: string; client?: string; arrivedMs?: number | null; leftMs?: number | null; dwellMs?: number | null; visitSource?: "gps" | "gps-near" | "fuel-log" | "none" }>;
   routeGeometry?: GeoJSON.LineString | null;
   height?: number;
 }) {
@@ -457,9 +457,10 @@ function DriverDayMap({
         cursor:pointer;
       `;
       el.textContent = String(s.sequence ?? "");
+      const sourceLabel = s.visitSource === "fuel-log" ? "fuel log" : s.visitSource === "gps-near" ? "near GPS" : s.visitSource === "gps" ? "GPS" : "";
       const timingHtml = s.arrivedMs && s.leftMs
         ? `<div style="font-size:11px;color:#444;margin-top:4px">Arrived ${fmtTime(s.arrivedMs)} · Left ${fmtTime(s.leftMs)}</div>
-           <div style="font-size:11px;color:#444">On site approx ${fmtHM(s.dwellMs || 0)}</div>`
+           <div style="font-size:11px;color:#444">On site approx ${fmtHM(s.dwellMs || 0)}${sourceLabel ? ` · ${sourceLabel}` : ""}</div>`
         : `<div style="font-size:11px;color:#999;margin-top:4px;font-style:italic">No GPS dwell match</div>`;
       new mapboxgl.Marker({ element: el, anchor: "center" })
         .setLngLat([s.lng, s.lat])
