@@ -98,8 +98,35 @@ Deno.serve(async (req) => {
       if (insErr) throw insErr;
     }
 
+    // Pro Fusion buy price = Viva Melbourne Diesel TGP - 1 cpl (ex-GST).
+    // Per supplier: they no longer email prices; Viva TGP minus 1c is the rule.
+    const vivaMelbDiesel = records.find(
+      (r) => r.product === "Diesel" && r.location.toLowerCase() === "melbourne",
+    );
+    let proFusionPrice: number | null = null;
+    if (vivaMelbDiesel) {
+      proFusionPrice = +((vivaMelbDiesel.price_cpl - 1) / 100).toFixed(4);
+      const { error: bpErr } = await supabase
+        .from("buy_prices")
+        .upsert(
+          {
+            price_date: priceDate,
+            supplier: "Pro Fusion",
+            price_per_litre: proFusionPrice,
+            notes: `Auto-derived from Viva Melbourne Diesel TGP (${vivaMelbDiesel.price_cpl.toFixed(2)}¢) − 1¢ per supplier agreement`,
+          },
+          { onConflict: "price_date,supplier" },
+        );
+      if (bpErr) throw bpErr;
+    }
+
     return new Response(
-      JSON.stringify({ success: true, price_date: priceDate, records: records.length }),
+      JSON.stringify({
+        success: true,
+        price_date: priceDate,
+        records: records.length,
+        pro_fusion_price: proFusionPrice,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
