@@ -635,6 +635,7 @@ function MyDayTab() {
                     borderTop: itemStyle.borderTop,
                     borderBottom: itemStyle.borderBottom,
                     cursor: isCompleted ? "default" : itemStyle.cursor,
+                    touchAction: itemStyle.touchAction,
                   }}
                 >
                   {!isCompleted && (
