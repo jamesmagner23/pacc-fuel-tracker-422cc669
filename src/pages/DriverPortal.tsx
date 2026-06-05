@@ -617,7 +617,20 @@ function MyDayTab() {
         <div className="card" style={{ padding: 0 }}>
           <div className="px-5 py-3.5 border-b border-surface-border">
             <span className="text-sm font-semibold text-foreground">Delivery Stops</span>
-            <span className="text-xs text-muted-foreground ml-2">Drag to reorder</span>
+            <span className="text-xs text-muted-foreground ml-2">Hold &amp; drag to reorder</span>
+            <button
+              onClick={() => {
+                const incomplete = sorted.filter((s) => s.status !== "completed");
+                const completed = sorted.filter((s) => s.status === "completed");
+                const reversed = [...completed, ...incomplete.reverse()];
+                handleReorder(reversed);
+              }}
+              className="float-right text-xs font-semibold px-2 py-1 rounded"
+              style={{ background: "var(--surface-raised)", color: "var(--accent, #C8F26A)", border: "none", cursor: "pointer" }}
+              title="Reverse the order of remaining stops"
+            >
+              Reverse order
+            </button>
           </div>
           <div className="flex flex-col">
             {sorted.map((stop, idx) => {
@@ -635,6 +648,7 @@ function MyDayTab() {
                     borderTop: itemStyle.borderTop,
                     borderBottom: itemStyle.borderBottom,
                     cursor: isCompleted ? "default" : itemStyle.cursor,
+                    touchAction: itemStyle.touchAction,
                   }}
                 >
                   {!isCompleted && (
