@@ -162,7 +162,6 @@ export function useDragReorder<T>({ items, onReorder, canDrag }: UseDragReorderO
       onTouchMove: handleTouchMove,
       onTouchEnd: handleTouchEnd,
       onTouchCancel: handleTouchEnd,
-      style: { touchAction: dragIndex !== null ? "none" : "manipulation" } as React.CSSProperties,
     };
   }, [items, canDrag, dragIndex, handleDragStart, handleDragOver, handleDragEnter, handleDragLeave, handleDrop, handleDragEnd, handleTouchStart, handleTouchMove, handleTouchEnd]);
 
@@ -175,6 +174,7 @@ export function useDragReorder<T>({ items, onReorder, canDrag }: UseDragReorderO
       borderBottom: isOver && dragIndex !== null && index > dragIndex ? "2px solid var(--accent, #C8F26A)" : undefined,
       cursor: isDragging ? "grabbing" : "grab",
       transition: "border-color 0.15s ease",
+      touchAction: dragIndex !== null ? "none" : "pan-y",
     };
   }, [dragIndex, overIndex]);
 
