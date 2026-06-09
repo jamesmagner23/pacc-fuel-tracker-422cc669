@@ -78,7 +78,13 @@ export default function LiveDropCalculator() {
 
   const [driveMin, setDriveMin] = useState<number | null>(20);
   const speed = 40; // km/h average
-  const truckPerKm = 0.65;
+
+  // Truck cost build-up (editable)
+  const [driverWage, setDriverWage] = useState<number | null>(45);     // $/hr loaded (super, leave, workcover)
+  const [loadMin, setLoadMin] = useState<number | null>(30);            // loading + unloading minutes per drop
+  const [truckLper100, setTruckLper100] = useState<number | null>(38); // truck diesel consumption L/100km
+  const [truckDieselPrice, setTruckDieselPrice] = useState<number | null>(1.85); // $/L inc-GST burnt by the truck
+  const [maintPerKm, setMaintPerKm] = useState<number | null>(0.25);    // tyres + servicing + rego + insurance per km
 
   // Client + payment terms
   const [clients, setClients] = useState<ClientRow[]>([]);
@@ -160,7 +166,12 @@ export default function LiveDropCalculator() {
   const r = useMemo(() => {
     const dm = n(driveMin);
     const truckKm = (dm / 60) * speed * 2; // round trip
-    const truckCost = truckKm * truckPerKm;
+    const driveHours = (dm * 2) / 60;
+    const totalHours = driveHours + n(loadMin) / 60;
+    const wageCost = totalHours * n(driverWage);
+    const truckFuelCost = (truckKm * n(truckLper100) / 100) * n(truckDieselPrice);
+    const maintCost = truckKm * n(maintPerKm);
+    const truckCost = wageCost + truckFuelCost + maintCost;
     let sell = n(sellInput);
     if (mode === "quote") {
       sell =
@@ -175,8 +186,12 @@ export default function LiveDropCalculator() {
     const revenue = n(litres) * sell;
     const gm = n(litres) * cpl;
     const contribution = gm - truckCost;
-    return { sell, cpl, pct, revenue, gm, truckCost, contribution };
-  }, [mode, buy, litres, target, targetCpl, targetPct, sellInput, driveMin]);
+    return {
+      sell, cpl, pct, revenue, gm, truckCost, contribution,
+      truckKm, totalHours, wageCost, truckFuelCost, maintCost,
+    };
+  }, [mode, buy, litres, target, targetCpl, targetPct, sellInput, driveMin,
+      driverWage, loadMin, truckLper100, truckDieselPrice, maintPerKm]);
 
   const money = (n: number) =>
     isFinite(n) ? "$" + Math.round(n).toLocaleString("en-AU") : "$0";
@@ -387,6 +402,38 @@ export default function LiveDropCalculator() {
           </div>
         </div>
 
+        {/* Truck cost build-up */}
+        <div className="pt-2 border-t border-border">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
+            Truck cost build-up
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Driver $/hr</Label>
+              <NumberField value={driverWage} step="0.5" onChange={setDriverWage} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Load/unload min</Label>
+              <NumberField value={loadMin} onChange={setLoadMin} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Truck L/100km</Label>
+              <NumberField value={truckLper100} step="0.5" onChange={setTruckLper100} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Diesel $/L</Label>
+              <NumberField value={truckDieselPrice} step="0.01" onChange={setTruckDieselPrice} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Tyres+maint $/km</Label>
+              <NumberField value={maintPerKm} step="0.01" onChange={setMaintPerKm} className="mt-1" />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Driver = wage + super/leave/workcover loaded. Maint covers tyres, servicing, rego, insurance per km. Yard/admin overhead excluded.
+          </p>
+        </div>
+
         {mode === "quote" ? (
           <div className="space-y-3">
             <div className="flex gap-2">
@@ -474,7 +521,11 @@ export default function LiveDropCalculator() {
         <div className="mt-6 pt-4 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           <Stat label="Total quote" value={money(r.revenue)} />
           <Stat label="Gross margin" value={money(r.gm)} />
-          <Stat label="Truck cost" value={money(r.truckCost)} sub={`${((n(driveMin) / 60) * speed * 2).toFixed(0)} km @ $${truckPerKm}/km`} />
+          <Stat
+            label="Truck cost"
+            value={money(r.truckCost)}
+            sub={`${r.truckKm.toFixed(0)} km · ${r.totalHours.toFixed(1)}h`}
+          />
           <Stat label="Buy used" value={`$${buy.toFixed(4)}`} sub={manualBuy !== null ? "manual" : supplier} />
           {paymentTerms != null && (
             <Stat
@@ -484,10 +535,16 @@ export default function LiveDropCalculator() {
             />
           )}
         </div>
+
+        <div className="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-4 text-sm">
+          <Stat label="· Driver wage" value={money(r.wageCost)} sub={`${r.totalHours.toFixed(1)}h @ $${n(driverWage)}/hr`} />
+          <Stat label="· Truck fuel" value={money(r.truckFuelCost)} sub={`${(r.truckKm * n(truckLper100) / 100).toFixed(1)} L @ $${n(truckDieselPrice).toFixed(2)}`} />
+          <Stat label="· Tyres + maint" value={money(r.maintCost)} sub={`${r.truckKm.toFixed(0)} km @ $${n(maintPerKm).toFixed(2)}/km`} />
+        </div>
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Driver wage excluded (full-time). Contribution is before yard, insurance, rego, software and admin overheads. Admin tool — never client-facing.
+        Contribution is after driver, truck fuel and per-km wear. Yard rent, office, software and admin overheads still excluded. Admin tool — never client-facing.
       </p>
     </div>
   );
