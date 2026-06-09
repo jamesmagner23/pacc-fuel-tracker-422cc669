@@ -23,11 +23,11 @@ type ClientRow = {
 };
 
 const SUPPLIERS = ["Pro Fusion", "Pacific"] as const;
-// Pro Fusion feeds in inc-GST (from Viva TGP). Pacific is supplied ex-GST.
+// Both Pro Fusion (from Viva TGP) and Pacific feed in inc-GST.
 // Normalise everything to ex-GST for margin maths.
 const GST_INCLUSIVE: Record<string, boolean> = {
   "Pro Fusion": true,
-  Pacific: false,
+  Pacific: true,
 };
 const toExGst = (supplierName: string, price: number) =>
   GST_INCLUSIVE[supplierName] ? price / 1.1 : price;
@@ -200,7 +200,7 @@ export default function LiveDropCalculator() {
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
               Live supplier buy price feeds in from Viva TGP (Pro Fusion) and supplier email scraping (Pacific). Admin only.
-              {" "}Pro Fusion is inc-GST and Pacific is ex-GST; both shown ex-GST.
+              {" "}Both suppliers feed in inc-GST; shown ex-GST below for margin maths.
             </p>
           </div>
 
