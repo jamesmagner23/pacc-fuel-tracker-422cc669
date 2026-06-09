@@ -98,9 +98,8 @@ Deno.serve(async (req) => {
       if (insErr) throw insErr;
     }
 
-    // Pro Fusion buy price = Viva Melbourne Diesel TGP - 1.5 cpl (ex-GST),
-    // effective the day AFTER the Viva "as at" date (Viva publishes today's
-    // TGP for tomorrow's pricing, matching Pro Fusion's old email cadence).
+    // Pro Fusion buy price = Viva Melbourne Diesel TGP - 1.5 cpl (inc-GST),
+    // effective on the same date as the Viva "as at" daily TGP.
     // Per supplier: they no longer email prices; Viva TGP minus 1.5c is the rule.
     const vivaMelbDiesel = records.find(
       (r) => r.product === "Diesel" && r.location.toLowerCase() === "melbourne",
@@ -108,18 +107,14 @@ Deno.serve(async (req) => {
     let proFusionPrice: number | null = null;
     if (vivaMelbDiesel) {
       proFusionPrice = +((vivaMelbDiesel.price_cpl - 1.5) / 100).toFixed(4);
-      // Effective date = Viva price_date + 1 day
-      const effectiveDate = new Date(priceDate + "T00:00:00Z");
-      effectiveDate.setUTCDate(effectiveDate.getUTCDate() + 1);
-      const proFusionDate = effectiveDate.toISOString().slice(0, 10);
       const { error: bpErr } = await supabase
         .from("buy_prices")
         .upsert(
           {
-            price_date: proFusionDate,
+            price_date: priceDate,
             supplier: "Pro Fusion",
             price_per_litre: proFusionPrice,
-            notes: `Auto-derived from Viva Melbourne Diesel TGP as at ${priceDate} (${vivaMelbDiesel.price_cpl.toFixed(2)}¢) − 1.5¢ per supplier agreement; effective ${proFusionDate}`,
+            notes: `Auto-derived from Viva Melbourne Diesel TGP as at ${priceDate} (${vivaMelbDiesel.price_cpl.toFixed(2)}¢) − 1.5¢ inc-GST per supplier agreement`,
           },
           { onConflict: "price_date,supplier" },
         );
