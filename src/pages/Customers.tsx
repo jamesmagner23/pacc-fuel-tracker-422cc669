@@ -332,9 +332,6 @@ export default function Customers() {
             <TabsContent value="pricing" className="mt-5">
               <ClientPricingTab />
             </TabsContent>
-            <TabsContent value="quotes" className="mt-5">
-              <PricingTab />
-            </TabsContent>
           </>
         )}
         <TabsContent value="tag" className="mt-5">
