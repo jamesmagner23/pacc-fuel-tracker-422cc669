@@ -93,7 +93,6 @@ export default function LiveDropCalculator() {
         .from("buy_prices")
         .select("supplier, price_per_litre, price_date, notes")
         .in("supplier", SUPPLIERS as unknown as string[])
-        .lte("price_date", todayMelbourne)
         .order("price_date", { ascending: false })
         .limit(50);
       if (error) {
