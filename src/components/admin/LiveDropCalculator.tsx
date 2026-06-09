@@ -88,10 +88,12 @@ export default function LiveDropCalculator() {
 
   useEffect(() => {
     (async () => {
+      const todayMelbourne = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
       const { data, error } = await supabase
         .from("buy_prices")
         .select("supplier, price_per_litre, price_date, notes")
         .in("supplier", SUPPLIERS as unknown as string[])
+        .lte("price_date", todayMelbourne)
         .order("price_date", { ascending: false })
         .limit(50);
       if (error) {
