@@ -267,14 +267,91 @@ export default function LiveDropCalculator() {
             Override buy price manually
           </label>
           {manualBuy !== null && (
-            <Input
-              type="number"
-              step="0.0001"
+            <NumberField
               value={manualBuy}
-              onChange={(e) => setManualBuy(parseFloat(e.target.value) || 0)}
+              step="0.0001"
+              onChange={(v) => setManualBuy(v)}
               className="w-32"
             />
           )}
+        </div>
+      </Card>
+
+      {/* Customer + payment terms */}
+      <Card className="p-6 bg-card border-border space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-widest text-muted-foreground">
+              Customer
+            </div>
+            <div className="text-sm text-muted-foreground mt-0.5">
+              Pick a repeat client to pull their payment terms, or leave blank for a one-off.
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Client
+            </Label>
+            <Select
+              value={clientId === null ? "__none" : String(clientId)}
+              onValueChange={(v) => setClientId(v === "__none" ? null : Number(v))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select client…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">One-off / not listed</SelectItem>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.company_name}
+                    {c.payment_terms_days != null ? ` · ${c.payment_terms_days}d` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Payment terms (days)
+            </Label>
+            <div className="flex gap-2 mt-1 flex-wrap">
+              {PAYMENT_TERM_OPTIONS.map((d) => (
+                <Button
+                  key={d}
+                  type="button"
+                  size="sm"
+                  variant={paymentTerms === d ? "default" : "outline"}
+                  onClick={() => setPaymentTerms(d)}
+                >
+                  {d === 0 ? "COD" : `${d}d`}
+                </Button>
+              ))}
+              <NumberField
+                value={paymentTerms}
+                onChange={(v) => setPaymentTerms(v)}
+                placeholder="Custom"
+                className="w-24"
+              />
+            </div>
+            {selectedClient && termsChanged && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  Saved: {selectedClient.payment_terms_days != null ? `${selectedClient.payment_terms_days}d` : "—"}
+                </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-7 px-2 text-xs"
+                  disabled={savingTerms}
+                  onClick={saveTermsForClient}
+                >
+                  {savingTerms ? "Saving…" : `Save as default for ${selectedClient.company_name}`}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -299,10 +376,9 @@ export default function LiveDropCalculator() {
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
               Litres
             </Label>
-            <Input
-              type="number"
+            <NumberField
               value={litres}
-              onChange={(e) => setLitres(parseFloat(e.target.value) || 0)}
+              onChange={setLitres}
               className="text-xl font-semibold mt-1"
             />
           </div>
@@ -310,10 +386,9 @@ export default function LiveDropCalculator() {
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
               Drive each way (min)
             </Label>
-            <Input
-              type="number"
+            <NumberField
               value={driveMin}
-              onChange={(e) => setDriveMin(parseFloat(e.target.value) || 0)}
+              onChange={setDriveMin}
               className="text-xl font-semibold mt-1"
             />
           </div>
@@ -339,12 +414,9 @@ export default function LiveDropCalculator() {
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                   Margin (cents per litre)
                 </Label>
-                <Input
-                  type="number"
+                <NumberField
                   value={targetCpl}
-                  onChange={(e) =>
-                    setTargetCpl(parseFloat(e.target.value) || 0)
-                  }
+                  onChange={setTargetCpl}
                   className="text-xl font-semibold mt-1"
                 />
               </div>
@@ -353,12 +425,9 @@ export default function LiveDropCalculator() {
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                   Margin (% of sell)
                 </Label>
-                <Input
-                  type="number"
+                <NumberField
                   value={targetPct}
-                  onChange={(e) =>
-                    setTargetPct(parseFloat(e.target.value) || 0)
-                  }
+                  onChange={setTargetPct}
                   className="text-xl font-semibold mt-1"
                 />
               </div>
@@ -369,11 +438,10 @@ export default function LiveDropCalculator() {
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
               Your sell price ($/L)
             </Label>
-            <Input
-              type="number"
-              step="0.001"
+            <NumberField
               value={sellInput}
-              onChange={(e) => setSellInput(parseFloat(e.target.value) || 0)}
+              step="0.001"
+              onChange={setSellInput}
               className="text-xl font-semibold mt-1"
             />
           </div>
@@ -413,8 +481,15 @@ export default function LiveDropCalculator() {
         <div className="mt-6 pt-4 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           <Stat label="Total quote" value={money(r.revenue)} />
           <Stat label="Gross margin" value={money(r.gm)} />
-          <Stat label="Truck cost" value={money(r.truckCost)} sub={`${((driveMin / 60) * speed * 2).toFixed(0)} km @ $${truckPerKm}/km`} />
+          <Stat label="Truck cost" value={money(r.truckCost)} sub={`${((n(driveMin) / 60) * speed * 2).toFixed(0)} km @ $${truckPerKm}/km`} />
           <Stat label="Buy used" value={`$${buy.toFixed(4)}`} sub={manualBuy !== null ? "manual" : supplier} />
+          {paymentTerms != null && (
+            <Stat
+              label="Payment terms"
+              value={paymentTerms === 0 ? "COD" : `${paymentTerms} days`}
+              sub={selectedClient ? selectedClient.company_name : "one-off"}
+            />
+          )}
         </div>
       </Card>
 
