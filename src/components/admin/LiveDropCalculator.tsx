@@ -23,14 +23,7 @@ type ClientRow = {
 };
 
 const SUPPLIERS = ["Pro Fusion", "Pacific"] as const;
-// Both Pro Fusion (from Viva TGP) and Pacific feed in inc-GST.
-// Normalise everything to ex-GST for margin maths.
-const GST_INCLUSIVE: Record<string, boolean> = {
-  "Pro Fusion": true,
-  Pacific: true,
-};
-const toExGst = (supplierName: string, price: number) =>
-  GST_INCLUSIVE[supplierName] ? price / 1.1 : price;
+// Both suppliers feed in inc-GST. We show and calc everything inc-GST.
 
 const PAYMENT_TERM_OPTIONS = [0, 7, 14, 21, 30, 45, 60] as const;
 
