@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Transactions from "./Transactions";
 import ClientPricingTab from "@/components/finance/ClientPricingTab";
-import PricingTab from "@/components/finance/PricingTab";
 import TagDeliveries from "./TagDeliveries";
 import { useUserRole } from "@/hooks/useUserRole";
 
