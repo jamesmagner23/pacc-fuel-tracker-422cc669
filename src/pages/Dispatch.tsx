@@ -410,6 +410,9 @@ export default function Dispatch() {
         )}
       </div>
         </TabsContent>
+        <TabsContent value="week" className="mt-3">
+          <WeekViewTab />
+        </TabsContent>
         <TabsContent value="driver-day" className="mt-3">
           <DriverDayTab />
         </TabsContent>
