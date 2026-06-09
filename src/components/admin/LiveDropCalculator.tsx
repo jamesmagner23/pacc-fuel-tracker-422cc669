@@ -402,6 +402,38 @@ export default function LiveDropCalculator() {
           </div>
         </div>
 
+        {/* Truck cost build-up */}
+        <div className="pt-2 border-t border-border">
+          <div className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
+            Truck cost build-up
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Driver $/hr</Label>
+              <NumberField value={driverWage} step="0.5" onChange={setDriverWage} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Load/unload min</Label>
+              <NumberField value={loadMin} onChange={setLoadMin} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Truck L/100km</Label>
+              <NumberField value={truckLper100} step="0.5" onChange={setTruckLper100} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Diesel $/L</Label>
+              <NumberField value={truckDieselPrice} step="0.01" onChange={setTruckDieselPrice} className="mt-1" />
+            </div>
+            <div>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Tyres+maint $/km</Label>
+              <NumberField value={maintPerKm} step="0.01" onChange={setMaintPerKm} className="mt-1" />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Driver = wage + super/leave/workcover loaded. Maint covers tyres, servicing, rego, insurance per km. Yard/admin overhead excluded.
+          </p>
+        </div>
+
         {mode === "quote" ? (
           <div className="space-y-3">
             <div className="flex gap-2">
@@ -503,10 +535,16 @@ export default function LiveDropCalculator() {
             />
           )}
         </div>
+
+        <div className="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-4 text-sm">
+          <Stat label="· Driver wage" value={money(r.wageCost)} sub={`${r.totalHours.toFixed(1)}h @ $${n(driverWage)}/hr`} />
+          <Stat label="· Truck fuel" value={money(r.truckFuelCost)} sub={`${(r.truckKm * n(truckLper100) / 100).toFixed(1)} L @ $${n(truckDieselPrice).toFixed(2)}`} />
+          <Stat label="· Tyres + maint" value={money(r.maintCost)} sub={`${r.truckKm.toFixed(0)} km @ $${n(maintPerKm).toFixed(2)}/km`} />
+        </div>
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Driver wage excluded (full-time). Contribution is before yard, insurance, rego, software and admin overheads. Admin tool — never client-facing.
+        Contribution is after driver, truck fuel and per-km wear. Yard rent, office, software and admin overheads still excluded. Admin tool — never client-facing.
       </p>
     </div>
   );
