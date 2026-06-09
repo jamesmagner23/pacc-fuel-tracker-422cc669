@@ -109,6 +109,7 @@ export default function LiveDropCalculator() {
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
               Live supplier buy price feeds in from Viva TGP (Pro Fusion) and supplier email scraping (Pacific). Admin only.
+              {" "}Pro Fusion is inc-GST and Pacific is ex-GST; both shown ex-GST.
             </p>
           </div>
 
