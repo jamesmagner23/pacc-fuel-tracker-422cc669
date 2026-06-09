@@ -116,6 +116,7 @@ export default function LiveDropCalculator() {
           <div className="text-right">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
               Today's buy ({supplier})
+              {" "}· ex-GST
             </div>
             {loading ? (
               <div className="text-muted-foreground mt-1">…</div>
