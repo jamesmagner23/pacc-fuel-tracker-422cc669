@@ -23,7 +23,8 @@ type ClientRow = {
 };
 
 const SUPPLIERS = ["Pro Fusion", "Pacific"] as const;
-// Both suppliers feed in inc-GST. We show and calc everything inc-GST.
+// Both suppliers feed in inc-GST already (Pro Fusion = Viva TGP − 1c inc-GST,
+// Pacific = scraped from supplier email inc-GST). Show as-is, no conversion.
 
 const PAYMENT_TERM_OPTIONS = [0, 7, 14, 21, 30, 45, 60] as const;
 
@@ -192,7 +193,7 @@ export default function LiveDropCalculator() {
               Price a Drop
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              Live supplier buy price feeds in from Viva TGP (Pro Fusion) and supplier email scraping (Pacific). Admin only. All prices shown inc-GST.
+              Live buy prices: Pro Fusion = Viva Melbourne TGP − 1c (inc-GST). Pacific = scraped from supplier email (inc-GST). Admin only.
             </p>
           </div>
 
