@@ -3,7 +3,7 @@ import { DateRangeToggle } from "./DateRangeToggle";
 import { useState, useEffect, type ComponentType } from "react";
 import {
   Menu, X, LogOut,
-  LayoutDashboard, Truck, Building2, DollarSign, Package, TrendingUp, Settings, Bus, FolderKanban,
+  LayoutDashboard, Truck, Building2, DollarSign, Package, TrendingUp, Settings, Bus, FolderKanban, Tag,
 } from "lucide-react";
 import { PACCLogo } from "./PACCLogo";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ const navGroups: NavGroup[] = [
       { to: "/", label: "Overview", icon: LayoutDashboard },
       { to: "/dispatch", label: "Dispatch", icon: Truck },
       { to: "/customers", label: "Customers", icon: Building2 },
+      { to: "/sales", label: "Sales", icon: Tag },
     ],
   },
   {
