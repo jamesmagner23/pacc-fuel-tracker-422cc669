@@ -23,14 +23,7 @@ type ClientRow = {
 };
 
 const SUPPLIERS = ["Pro Fusion", "Pacific"] as const;
-// Both Pro Fusion (from Viva TGP) and Pacific feed in inc-GST.
-// Normalise everything to ex-GST for margin maths.
-const GST_INCLUSIVE: Record<string, boolean> = {
-  "Pro Fusion": true,
-  Pacific: true,
-};
-const toExGst = (supplierName: string, price: number) =>
-  GST_INCLUSIVE[supplierName] ? price / 1.1 : price;
+// Both suppliers feed in inc-GST. We show and calc everything inc-GST.
 
 const PAYMENT_TERM_OPTIONS = [0, 7, 14, 21, 30, 45, 60] as const;
 
@@ -158,7 +151,7 @@ export default function LiveDropCalculator() {
 
   const priceRow = rows[supplier] ?? null;
   const rawBuy = priceRow ? Number(priceRow.price_per_litre) : 0;
-  const buy = manualBuy ?? (priceRow ? toExGst(supplier, rawBuy) : 0);
+  const buy = manualBuy ?? rawBuy;
   const todayMel = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
   const stale = !priceRow || priceRow.price_date < todayMel;
 
@@ -199,15 +192,13 @@ export default function LiveDropCalculator() {
               Price a Drop
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              Live supplier buy price feeds in from Viva TGP (Pro Fusion) and supplier email scraping (Pacific). Admin only.
-              {" "}Both suppliers feed in inc-GST; shown ex-GST below for margin maths.
+              Live supplier buy price feeds in from Viva TGP (Pro Fusion) and supplier email scraping (Pacific). Admin only. All prices shown inc-GST.
             </p>
           </div>
 
           <div className="text-right">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Today's buy ({supplier})
-              {" "}· ex-GST
+              Today's buy ({supplier}) · inc-GST
             </div>
             {loading ? (
               <div className="text-muted-foreground mt-1">…</div>
@@ -247,7 +238,7 @@ export default function LiveDropCalculator() {
               {s}
               {rows[s] && (
                 <span className="ml-2 opacity-70 text-xs">
-                  ${toExGst(s, Number(rows[s]!.price_per_litre)).toFixed(3)}
+                  ${Number(rows[s]!.price_per_litre).toFixed(3)}
                 </span>
               )}
             </Button>
@@ -458,7 +449,7 @@ export default function LiveDropCalculator() {
             <div className="text-5xl font-bold text-foreground leading-none mt-2">
               ${r.sell.toFixed(3)}
             </div>
-            <div className="text-sm text-muted-foreground mt-1">per litre (ex-GST)</div>
+            <div className="text-sm text-muted-foreground mt-1">per litre (inc-GST)</div>
           </div>
           <div className="md:text-right">
             <div className="text-xs uppercase tracking-widest text-muted-foreground">
