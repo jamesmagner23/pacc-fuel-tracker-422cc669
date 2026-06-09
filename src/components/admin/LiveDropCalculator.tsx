@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 type Mode = "quote" | "check";
@@ -14,6 +15,11 @@ type BuyRow = {
   price_per_litre: number;
   price_date: string;
   notes: string | null;
+};
+type ClientRow = {
+  id: number;
+  company_name: string;
+  payment_terms_days: number | null;
 };
 
 const SUPPLIERS = ["Pro Fusion", "Pacific"] as const;
@@ -26,6 +32,41 @@ const GST_INCLUSIVE: Record<string, boolean> = {
 const toExGst = (supplierName: string, price: number) =>
   GST_INCLUSIVE[supplierName] ? price / 1.1 : price;
 
+const PAYMENT_TERM_OPTIONS = [0, 7, 14, 21, 30, 45, 60] as const;
+
+/** Allow inputs to be cleared (empty) while still typing a clean number. */
+function NumberField({
+  value,
+  onChange,
+  step,
+  className,
+  placeholder,
+}: {
+  value: number | null;
+  onChange: (v: number | null) => void;
+  step?: string;
+  className?: string;
+  placeholder?: string;
+}) {
+  return (
+    <Input
+      type="number"
+      inputMode="decimal"
+      step={step}
+      placeholder={placeholder}
+      value={value === null || Number.isNaN(value) ? "" : value}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw === "") return onChange(null);
+        const n = parseFloat(raw);
+        onChange(Number.isFinite(n) ? n : null);
+      }}
+      className={className}
+    />
+  );
+}
+const n = (v: number | null) => (v === null || !Number.isFinite(v) ? 0 : v);
+
 export default function LiveDropCalculator() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Record<string, BuyRow | null>>({});
@@ -34,16 +75,22 @@ export default function LiveDropCalculator() {
 
   const [manualBuy, setManualBuy] = useState<number | null>(null);
   const [mode, setMode] = useState<Mode>("quote");
-  const [litres, setLitres] = useState(3000);
+  const [litres, setLitres] = useState<number | null>(3000);
 
   const [target, setTarget] = useState<Target>("cpl");
-  const [targetCpl, setTargetCpl] = useState(27);
-  const [targetPct, setTargetPct] = useState(15);
-  const [sellInput, setSellInput] = useState(1.82);
+  const [targetCpl, setTargetCpl] = useState<number | null>(27);
+  const [targetPct, setTargetPct] = useState<number | null>(15);
+  const [sellInput, setSellInput] = useState<number | null>(1.82);
 
-  const [driveMin, setDriveMin] = useState(20);
+  const [driveMin, setDriveMin] = useState<number | null>(20);
   const speed = 40; // km/h average
   const truckPerKm = 0.65;
+
+  // Client + payment terms
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [clientId, setClientId] = useState<number | null>(null);
+  const [paymentTerms, setPaymentTerms] = useState<number | null>(null);
+  const [savingTerms, setSavingTerms] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -66,6 +113,49 @@ export default function LiveDropCalculator() {
     })();
   }, []);
 
+  // Load clients (for payment terms lookup)
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("client_accounts")
+        .select("id, company_name, payment_terms_days")
+        .eq("is_active", true)
+        .order("company_name");
+      setClients((data || []) as ClientRow[]);
+    })();
+  }, []);
+
+  // When a client is picked, default payment terms from their saved value
+  useEffect(() => {
+    if (clientId === null) {
+      setPaymentTerms(null);
+      return;
+    }
+    const c = clients.find((x) => x.id === clientId);
+    setPaymentTerms(c?.payment_terms_days ?? null);
+  }, [clientId, clients]);
+
+  const selectedClient = clients.find((c) => c.id === clientId) || null;
+  const termsChanged =
+    selectedClient && (selectedClient.payment_terms_days ?? null) !== (paymentTerms ?? null);
+
+  const saveTermsForClient = async () => {
+    if (!selectedClient) return;
+    setSavingTerms(true);
+    const { error } = await supabase
+      .from("client_accounts")
+      .update({ payment_terms_days: paymentTerms })
+      .eq("id", selectedClient.id);
+    setSavingTerms(false);
+    if (!error) {
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === selectedClient.id ? { ...c, payment_terms_days: paymentTerms } : c
+        )
+      );
+    }
+  };
+
   const priceRow = rows[supplier] ?? null;
   const rawBuy = priceRow ? Number(priceRow.price_per_litre) : 0;
   const buy = manualBuy ?? (priceRow ? toExGst(supplier, rawBuy) : 0);
@@ -73,21 +163,22 @@ export default function LiveDropCalculator() {
   const stale = !priceRow || priceRow.price_date < todayMel;
 
   const r = useMemo(() => {
-    const truckKm = (driveMin / 60) * speed * 2; // round trip
+    const dm = n(driveMin);
+    const truckKm = (dm / 60) * speed * 2; // round trip
     const truckCost = truckKm * truckPerKm;
-    let sell = sellInput;
+    let sell = n(sellInput);
     if (mode === "quote") {
       sell =
         target === "cpl"
-          ? buy + targetCpl / 100
-          : targetPct < 100
-          ? buy / (1 - targetPct / 100)
+          ? buy + n(targetCpl) / 100
+          : n(targetPct) < 100
+          ? buy / (1 - n(targetPct) / 100)
           : buy;
     }
     const cpl = sell - buy;
     const pct = sell > 0 ? (cpl / sell) * 100 : 0;
-    const revenue = litres * sell;
-    const gm = litres * cpl;
+    const revenue = n(litres) * sell;
+    const gm = n(litres) * cpl;
     const contribution = gm - truckCost;
     return { sell, cpl, pct, revenue, gm, truckCost, contribution };
   }, [mode, buy, litres, target, targetCpl, targetPct, sellInput, driveMin]);
