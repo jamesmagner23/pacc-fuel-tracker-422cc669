@@ -78,6 +78,7 @@ export type Database = {
           id: number
           is_active: boolean | null
           logo_url: string | null
+          payment_terms_days: number | null
           speedsol_name: string | null
           speedsol_names: string[] | null
           updated_at: string | null
@@ -94,6 +95,7 @@ export type Database = {
           id?: never
           is_active?: boolean | null
           logo_url?: string | null
+          payment_terms_days?: number | null
           speedsol_name?: string | null
           speedsol_names?: string[] | null
           updated_at?: string | null
@@ -110,6 +112,7 @@ export type Database = {
           id?: never
           is_active?: boolean | null
           logo_url?: string | null
+          payment_terms_days?: number | null
           speedsol_name?: string | null
           speedsol_names?: string[] | null
           updated_at?: string | null
