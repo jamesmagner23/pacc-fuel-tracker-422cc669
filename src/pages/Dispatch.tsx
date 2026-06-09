@@ -18,6 +18,7 @@ import { AddToDispatchDialog } from "@/components/dispatch/AddToDispatchDialog";
 import { EditRecurringDialog } from "@/components/dispatch/EditRecurringDialog";
 import { LogStopsDialog } from "@/components/dispatch/LogStopsDialog";
 import { DriverDayTab } from "@/components/dispatch/DriverDayTab";
+import { WeekViewTab } from "@/components/dispatch/WeekViewTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
@@ -204,6 +205,7 @@ export default function Dispatch() {
       <Tabs defaultValue="route" className="w-full">
         <TabsList>
           <TabsTrigger value="route">Route plan</TabsTrigger>
+          <TabsTrigger value="week">Week</TabsTrigger>
           <TabsTrigger value="driver-day">Driver Day</TabsTrigger>
         </TabsList>
         <TabsContent value="route" className="flex flex-col gap-3 mt-3">
