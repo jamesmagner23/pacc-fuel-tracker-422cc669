@@ -524,11 +524,13 @@ export default function PricingTab() {
                 })}
               </div>
             )}
-            <div className="text-2xl sm:text-3xl font-light text-foreground tracking-tighter tabular-nums">
-              ${latestBuyPrice.toFixed(4)}
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-foreground tabular-nums">
+              <span className="text-2xl sm:text-3xl font-light leading-none">
+                ${latestBuyPrice.toFixed(4)}
+              </span>
               <span className="text-sm text-muted-foreground">/L</span>
               {selectedTodayPrice && (
-                <span className="text-xs text-muted-foreground ml-2">· {selectedTodayPrice.supplier}</span>
+                <span className="text-xs text-muted-foreground">· {selectedTodayPrice.supplier}</span>
               )}
             </div>
             {/* TGP delta */}
