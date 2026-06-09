@@ -192,15 +192,13 @@ export default function LiveDropCalculator() {
               Price a Drop
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              Live supplier buy price feeds in from Viva TGP (Pro Fusion) and supplier email scraping (Pacific). Admin only.
-              {" "}Both suppliers feed in inc-GST; shown ex-GST below for margin maths.
+              Live supplier buy price feeds in from Viva TGP (Pro Fusion) and supplier email scraping (Pacific). Admin only. All prices shown inc-GST.
             </p>
           </div>
 
           <div className="text-right">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Today's buy ({supplier})
-              {" "}· ex-GST
+              Today's buy ({supplier}) · inc-GST
             </div>
             {loading ? (
               <div className="text-muted-foreground mt-1">…</div>
@@ -451,7 +449,7 @@ export default function LiveDropCalculator() {
             <div className="text-5xl font-bold text-foreground leading-none mt-2">
               ${r.sell.toFixed(3)}
             </div>
-            <div className="text-sm text-muted-foreground mt-1">per litre (ex-GST)</div>
+            <div className="text-sm text-muted-foreground mt-1">per litre (inc-GST)</div>
           </div>
           <div className="md:text-right">
             <div className="text-xs uppercase tracking-widest text-muted-foreground">
