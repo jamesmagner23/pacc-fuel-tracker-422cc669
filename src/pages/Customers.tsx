@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Transactions from "./Transactions";
 import ClientPricingTab from "@/components/finance/ClientPricingTab";
-import PricingTab from "@/components/finance/PricingTab";
 import TagDeliveries from "./TagDeliveries";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -303,7 +302,6 @@ export default function Customers() {
     { value: "transactions", label: "Transactions" },
     ...(hideMoney ? [] : [
       { value: "pricing", label: "Client Pricing" },
-      { value: "quotes", label: "Quote Builder" },
     ]),
     { value: "tag", label: "Tag Deliveries" },
   ];
@@ -332,9 +330,6 @@ export default function Customers() {
           <>
             <TabsContent value="pricing" className="mt-5">
               <ClientPricingTab />
-            </TabsContent>
-            <TabsContent value="quotes" className="mt-5">
-              <PricingTab />
             </TabsContent>
           </>
         )}

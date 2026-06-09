@@ -29,6 +29,7 @@ import Suppliers from "./pages/Suppliers";
 import MarketIntelligence from "./pages/MarketIntelligence";
 import CRM from "./pages/CRM";
 import Pricing from "./pages/Pricing";
+import Sales from "./pages/Sales";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import LandingPage from "./pages/LandingPage";
@@ -73,6 +74,7 @@ function DemoAwareRoutes() {
                 <Route path="/market" element={<MarketIntelligence />} />
                 <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                 <Route path="/admin/pricing" element={<Pricing />} />
+                <Route path="/sales" element={<Sales />} />
                 <Route path="/trucks" element={<TruckPortal />} />
                 <Route path="/portal" element={<CustomerPortal />} />
                 <Route path="/portal/deliveries" element={<CustomerPortal forcedTab="Deliveries" />} />
@@ -119,6 +121,7 @@ function DemoAwareRoutes() {
                   <Route path="/market" element={<MarketIntelligence />} />
                   <Route path="/admin/tag-deliveries" element={<TagDeliveries />} />
                   <Route path="/admin/pricing" element={<Pricing />} />
+                  <Route path="/sales" element={<Sales />} />
                   <Route path="/trucks" element={<TruckPortal />} />
                   <Route path="/admin/outreach" element={<Outreach />} />
                   <Route path="/crm" element={<CRM />} />
