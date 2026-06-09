@@ -8,9 +8,10 @@ const corsHeaders = {
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1";
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-// Suppliers we look for. Tweak the `query` to match the real sender / subject.
+// Pacific emails contain the daily inc-GST supplier price. Pro Fusion is no
+// longer scraped here: its buy price is derived from Viva Melbourne Diesel TGP
+// minus 1.5c/L by fetch-viva-tgp.
 const ALL_SUPPLIERS: { name: string; from: string }[] = [
-  { name: "Pro Fusion", from: "tony@profusionfuels.com.au" },
   { name: "Pacific", from: "admin@pacificfuelsolutions.com.au" },
 ];
 

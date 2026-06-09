@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       if (insErr) throw insErr;
     }
 
-    // Pro Fusion buy price = Viva Melbourne Diesel TGP - 1.5 cpl (ex-GST),
+    // Pro Fusion buy price = Viva Melbourne Diesel TGP - 1.5 cpl (inc-GST),
     // effective the day AFTER the Viva "as at" date (Viva publishes today's
     // TGP for tomorrow's pricing, matching Pro Fusion's old email cadence).
     // Per supplier: they no longer email prices; Viva TGP minus 1.5c is the rule.
