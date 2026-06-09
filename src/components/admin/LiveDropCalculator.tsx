@@ -152,7 +152,7 @@ export default function LiveDropCalculator() {
 
   const priceRow = rows[supplier] ?? null;
   const rawBuy = priceRow ? Number(priceRow.price_per_litre) : 0;
-  const buy = manualBuy ?? (priceRow ? toExGst(supplier, rawBuy) : 0);
+  const buy = manualBuy ?? rawBuy;
   const todayMel = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
   const stale = !priceRow || priceRow.price_date < todayMel;
 
@@ -193,15 +193,13 @@ export default function LiveDropCalculator() {
               Price a Drop
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              Live supplier buy price feeds in from Viva TGP (Pro Fusion) and supplier email scraping (Pacific). Admin only.
-              {" "}Both suppliers feed in inc-GST; shown ex-GST below for margin maths.
+              Live buy prices: Pro Fusion = Viva Melbourne TGP − 1c (inc-GST). Pacific = scraped from supplier email (inc-GST). Admin only.
             </p>
           </div>
 
           <div className="text-right">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Today's buy ({supplier})
-              {" "}· ex-GST
+              Today's buy ({supplier}) · inc-GST
             </div>
             {loading ? (
               <div className="text-muted-foreground mt-1">…</div>
@@ -241,7 +239,7 @@ export default function LiveDropCalculator() {
               {s}
               {rows[s] && (
                 <span className="ml-2 opacity-70 text-xs">
-                  ${toExGst(s, Number(rows[s]!.price_per_litre)).toFixed(3)}
+                  ${Number(rows[s]!.price_per_litre).toFixed(3)}
                 </span>
               )}
             </Button>
