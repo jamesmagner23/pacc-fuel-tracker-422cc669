@@ -7,6 +7,7 @@ export default function Pricing() {
       <PageHeader
         title="Price a Drop"
         subtitle="Live buy-price-aware quoting calculator (admin only)"
+        showPeriod={false}
       />
       <LiveDropCalculator />
     </div>
