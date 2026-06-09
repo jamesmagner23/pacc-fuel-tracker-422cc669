@@ -450,7 +450,7 @@ export default function LiveDropCalculator() {
             <div className="text-5xl font-bold text-foreground leading-none mt-2">
               ${r.sell.toFixed(3)}
             </div>
-            <div className="text-sm text-muted-foreground mt-1">per litre (ex-GST)</div>
+            <div className="text-sm text-muted-foreground mt-1">per litre (inc-GST)</div>
           </div>
           <div className="md:text-right">
             <div className="text-xs uppercase tracking-widest text-muted-foreground">
