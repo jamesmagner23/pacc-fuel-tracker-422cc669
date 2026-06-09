@@ -489,7 +489,11 @@ export default function LiveDropCalculator() {
         <div className="mt-6 pt-4 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           <Stat label="Total quote" value={money(r.revenue)} />
           <Stat label="Gross margin" value={money(r.gm)} />
-          <Stat label="Truck cost" value={money(r.truckCost)} sub={`${((n(driveMin) / 60) * speed * 2).toFixed(0)} km @ $${truckPerKm}/km`} />
+          <Stat
+            label="Truck cost"
+            value={money(r.truckCost)}
+            sub={`${r.truckKm.toFixed(0)} km · ${r.totalHours.toFixed(1)}h`}
+          />
           <Stat label="Buy used" value={`$${buy.toFixed(4)}`} sub={manualBuy !== null ? "manual" : supplier} />
           {paymentTerms != null && (
             <Stat
