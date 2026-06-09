@@ -29,6 +29,7 @@ import Suppliers from "./pages/Suppliers";
 import MarketIntelligence from "./pages/MarketIntelligence";
 import CRM from "./pages/CRM";
 import Pricing from "./pages/Pricing";
+import Sales from "./pages/Sales";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import LandingPage from "./pages/LandingPage";
