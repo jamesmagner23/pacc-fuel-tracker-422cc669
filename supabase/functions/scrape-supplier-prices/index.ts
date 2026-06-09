@@ -54,7 +54,7 @@ async function aiExtractPrice(supplier: string, body: string, emailDate: string)
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) return { price: null, date: null, reason: "No LOVABLE_API_KEY" };
 
-  const prompt = `Extract the diesel buy price (per litre, EX-GST, in AUD) from this ${supplier} email.
+  const prompt = `Extract the diesel buy price (per litre, INCLUDING GST, in AUD) from this ${supplier} email.
 The email was SENT on ${emailDate}.
 
 IMPORTANT — effective date rules (apply to BOTH Pro Fusion and Pacific):
@@ -65,8 +65,8 @@ IMPORTANT — effective date rules (apply to BOTH Pro Fusion and Pacific):
 - ONLY fall back to the email send date if the body clearly says "today" / "effective today" / "for today's price".
 - Never blindly assume — verify against the body every time.
 
-Return strict JSON: {"price_per_litre_ex_gst": number|null, "price_date": "YYYY-MM-DD"|null, "reason": string}.
-If multiple products, prefer Diesel. If only inc-GST is shown, divide by 1.1 to convert. If unsure about the price, return null.
+Return strict JSON: {"price_per_litre_inc_gst": number|null, "price_date": "YYYY-MM-DD"|null, "reason": string}.
+If multiple products, prefer Diesel / DIESEL ULS. If the email shows both "excluding" and "including" columns, ALWAYS use the "including" price. If only ex-GST is shown, multiply by 1.1. If unsure about the price, return null.
 The "reason" MUST briefly quote the date phrase you used (e.g. 'body says "for tomorrow" → 2025-05-09', or 'explicit: "price for 9th May 2025"', or 'no date in body, defaulting to email-date+1').
 
 EMAIL BODY:
@@ -87,7 +87,7 @@ ${body}`;
   try {
     const parsed = JSON.parse(content);
     return {
-      price: typeof parsed.price_per_litre_ex_gst === "number" ? parsed.price_per_litre_ex_gst : null,
+      price: typeof parsed.price_per_litre_inc_gst === "number" ? parsed.price_per_litre_inc_gst : null,
       date: parsed.price_date || null,
       reason: parsed.reason || "",
     };
