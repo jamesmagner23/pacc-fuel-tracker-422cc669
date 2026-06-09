@@ -78,7 +78,13 @@ export default function LiveDropCalculator() {
 
   const [driveMin, setDriveMin] = useState<number | null>(20);
   const speed = 40; // km/h average
-  const truckPerKm = 0.65;
+
+  // Truck cost build-up (editable)
+  const [driverWage, setDriverWage] = useState<number | null>(45);     // $/hr loaded (super, leave, workcover)
+  const [loadMin, setLoadMin] = useState<number | null>(30);            // loading + unloading minutes per drop
+  const [truckLper100, setTruckLper100] = useState<number | null>(38); // truck diesel consumption L/100km
+  const [truckDieselPrice, setTruckDieselPrice] = useState<number | null>(1.85); // $/L inc-GST burnt by the truck
+  const [maintPerKm, setMaintPerKm] = useState<number | null>(0.25);    // tyres + servicing + rego + insurance per km
 
   // Client + payment terms
   const [clients, setClients] = useState<ClientRow[]>([]);
@@ -160,7 +166,12 @@ export default function LiveDropCalculator() {
   const r = useMemo(() => {
     const dm = n(driveMin);
     const truckKm = (dm / 60) * speed * 2; // round trip
-    const truckCost = truckKm * truckPerKm;
+    const driveHours = (dm * 2) / 60;
+    const totalHours = driveHours + n(loadMin) / 60;
+    const wageCost = totalHours * n(driverWage);
+    const truckFuelCost = (truckKm * n(truckLper100) / 100) * n(truckDieselPrice);
+    const maintCost = truckKm * n(maintPerKm);
+    const truckCost = wageCost + truckFuelCost + maintCost;
     let sell = n(sellInput);
     if (mode === "quote") {
       sell =
@@ -175,8 +186,12 @@ export default function LiveDropCalculator() {
     const revenue = n(litres) * sell;
     const gm = n(litres) * cpl;
     const contribution = gm - truckCost;
-    return { sell, cpl, pct, revenue, gm, truckCost, contribution };
-  }, [mode, buy, litres, target, targetCpl, targetPct, sellInput, driveMin]);
+    return {
+      sell, cpl, pct, revenue, gm, truckCost, contribution,
+      truckKm, totalHours, wageCost, truckFuelCost, maintCost,
+    };
+  }, [mode, buy, litres, target, targetCpl, targetPct, sellInput, driveMin,
+      driverWage, loadMin, truckLper100, truckDieselPrice, maintPerKm]);
 
   const money = (n: number) =>
     isFinite(n) ? "$" + Math.round(n).toLocaleString("en-AU") : "$0";
