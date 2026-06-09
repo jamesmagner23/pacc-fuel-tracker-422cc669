@@ -303,7 +303,6 @@ export default function Customers() {
     { value: "transactions", label: "Transactions" },
     ...(hideMoney ? [] : [
       { value: "pricing", label: "Client Pricing" },
-      { value: "quotes", label: "Quote Builder" },
     ]),
     { value: "tag", label: "Tag Deliveries" },
   ];
