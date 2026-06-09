@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 type Mode = "quote" | "check";
@@ -14,6 +15,11 @@ type BuyRow = {
   price_per_litre: number;
   price_date: string;
   notes: string | null;
+};
+type ClientRow = {
+  id: number;
+  company_name: string;
+  payment_terms_days: number | null;
 };
 
 const SUPPLIERS = ["Pro Fusion", "Pacific"] as const;
@@ -26,6 +32,41 @@ const GST_INCLUSIVE: Record<string, boolean> = {
 const toExGst = (supplierName: string, price: number) =>
   GST_INCLUSIVE[supplierName] ? price / 1.1 : price;
 
+const PAYMENT_TERM_OPTIONS = [0, 7, 14, 21, 30, 45, 60] as const;
+
+/** Allow inputs to be cleared (empty) while still typing a clean number. */
+function NumberField({
+  value,
+  onChange,
+  step,
+  className,
+  placeholder,
+}: {
+  value: number | null;
+  onChange: (v: number | null) => void;
+  step?: string;
+  className?: string;
+  placeholder?: string;
+}) {
+  return (
+    <Input
+      type="number"
+      inputMode="decimal"
+      step={step}
+      placeholder={placeholder}
+      value={value === null || Number.isNaN(value) ? "" : value}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw === "") return onChange(null);
+        const n = parseFloat(raw);
+        onChange(Number.isFinite(n) ? n : null);
+      }}
+      className={className}
+    />
+  );
+}
+const n = (v: number | null) => (v === null || !Number.isFinite(v) ? 0 : v);
+
 export default function LiveDropCalculator() {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Record<string, BuyRow | null>>({});
@@ -34,16 +75,22 @@ export default function LiveDropCalculator() {
 
   const [manualBuy, setManualBuy] = useState<number | null>(null);
   const [mode, setMode] = useState<Mode>("quote");
-  const [litres, setLitres] = useState(3000);
+  const [litres, setLitres] = useState<number | null>(3000);
 
   const [target, setTarget] = useState<Target>("cpl");
-  const [targetCpl, setTargetCpl] = useState(27);
-  const [targetPct, setTargetPct] = useState(15);
-  const [sellInput, setSellInput] = useState(1.82);
+  const [targetCpl, setTargetCpl] = useState<number | null>(27);
+  const [targetPct, setTargetPct] = useState<number | null>(15);
+  const [sellInput, setSellInput] = useState<number | null>(1.82);
 
-  const [driveMin, setDriveMin] = useState(20);
+  const [driveMin, setDriveMin] = useState<number | null>(20);
   const speed = 40; // km/h average
   const truckPerKm = 0.65;
+
+  // Client + payment terms
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [clientId, setClientId] = useState<number | null>(null);
+  const [paymentTerms, setPaymentTerms] = useState<number | null>(null);
+  const [savingTerms, setSavingTerms] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -66,6 +113,49 @@ export default function LiveDropCalculator() {
     })();
   }, []);
 
+  // Load clients (for payment terms lookup)
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("client_accounts")
+        .select("id, company_name, payment_terms_days")
+        .eq("is_active", true)
+        .order("company_name");
+      setClients((data || []) as ClientRow[]);
+    })();
+  }, []);
+
+  // When a client is picked, default payment terms from their saved value
+  useEffect(() => {
+    if (clientId === null) {
+      setPaymentTerms(null);
+      return;
+    }
+    const c = clients.find((x) => x.id === clientId);
+    setPaymentTerms(c?.payment_terms_days ?? null);
+  }, [clientId, clients]);
+
+  const selectedClient = clients.find((c) => c.id === clientId) || null;
+  const termsChanged =
+    selectedClient && (selectedClient.payment_terms_days ?? null) !== (paymentTerms ?? null);
+
+  const saveTermsForClient = async () => {
+    if (!selectedClient) return;
+    setSavingTerms(true);
+    const { error } = await supabase
+      .from("client_accounts")
+      .update({ payment_terms_days: paymentTerms })
+      .eq("id", selectedClient.id);
+    setSavingTerms(false);
+    if (!error) {
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === selectedClient.id ? { ...c, payment_terms_days: paymentTerms } : c
+        )
+      );
+    }
+  };
+
   const priceRow = rows[supplier] ?? null;
   const rawBuy = priceRow ? Number(priceRow.price_per_litre) : 0;
   const buy = manualBuy ?? (priceRow ? toExGst(supplier, rawBuy) : 0);
@@ -73,21 +163,22 @@ export default function LiveDropCalculator() {
   const stale = !priceRow || priceRow.price_date < todayMel;
 
   const r = useMemo(() => {
-    const truckKm = (driveMin / 60) * speed * 2; // round trip
+    const dm = n(driveMin);
+    const truckKm = (dm / 60) * speed * 2; // round trip
     const truckCost = truckKm * truckPerKm;
-    let sell = sellInput;
+    let sell = n(sellInput);
     if (mode === "quote") {
       sell =
         target === "cpl"
-          ? buy + targetCpl / 100
-          : targetPct < 100
-          ? buy / (1 - targetPct / 100)
+          ? buy + n(targetCpl) / 100
+          : n(targetPct) < 100
+          ? buy / (1 - n(targetPct) / 100)
           : buy;
     }
     const cpl = sell - buy;
     const pct = sell > 0 ? (cpl / sell) * 100 : 0;
-    const revenue = litres * sell;
-    const gm = litres * cpl;
+    const revenue = n(litres) * sell;
+    const gm = n(litres) * cpl;
     const contribution = gm - truckCost;
     return { sell, cpl, pct, revenue, gm, truckCost, contribution };
   }, [mode, buy, litres, target, targetCpl, targetPct, sellInput, driveMin]);
@@ -176,14 +267,91 @@ export default function LiveDropCalculator() {
             Override buy price manually
           </label>
           {manualBuy !== null && (
-            <Input
-              type="number"
-              step="0.0001"
+            <NumberField
               value={manualBuy}
-              onChange={(e) => setManualBuy(parseFloat(e.target.value) || 0)}
+              step="0.0001"
+              onChange={(v) => setManualBuy(v)}
               className="w-32"
             />
           )}
+        </div>
+      </Card>
+
+      {/* Customer + payment terms */}
+      <Card className="p-6 bg-card border-border space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-widest text-muted-foreground">
+              Customer
+            </div>
+            <div className="text-sm text-muted-foreground mt-0.5">
+              Pick a repeat client to pull their payment terms, or leave blank for a one-off.
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Client
+            </Label>
+            <Select
+              value={clientId === null ? "__none" : String(clientId)}
+              onValueChange={(v) => setClientId(v === "__none" ? null : Number(v))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select client…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">One-off / not listed</SelectItem>
+                {clients.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>
+                    {c.company_name}
+                    {c.payment_terms_days != null ? ` · ${c.payment_terms_days}d` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Payment terms (days)
+            </Label>
+            <div className="flex gap-2 mt-1 flex-wrap">
+              {PAYMENT_TERM_OPTIONS.map((d) => (
+                <Button
+                  key={d}
+                  type="button"
+                  size="sm"
+                  variant={paymentTerms === d ? "default" : "outline"}
+                  onClick={() => setPaymentTerms(d)}
+                >
+                  {d === 0 ? "COD" : `${d}d`}
+                </Button>
+              ))}
+              <NumberField
+                value={paymentTerms}
+                onChange={(v) => setPaymentTerms(v)}
+                placeholder="Custom"
+                className="w-24"
+              />
+            </div>
+            {selectedClient && termsChanged && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  Saved: {selectedClient.payment_terms_days != null ? `${selectedClient.payment_terms_days}d` : "—"}
+                </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-7 px-2 text-xs"
+                  disabled={savingTerms}
+                  onClick={saveTermsForClient}
+                >
+                  {savingTerms ? "Saving…" : `Save as default for ${selectedClient.company_name}`}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -208,10 +376,9 @@ export default function LiveDropCalculator() {
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
               Litres
             </Label>
-            <Input
-              type="number"
+            <NumberField
               value={litres}
-              onChange={(e) => setLitres(parseFloat(e.target.value) || 0)}
+              onChange={setLitres}
               className="text-xl font-semibold mt-1"
             />
           </div>
@@ -219,10 +386,9 @@ export default function LiveDropCalculator() {
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
               Drive each way (min)
             </Label>
-            <Input
-              type="number"
+            <NumberField
               value={driveMin}
-              onChange={(e) => setDriveMin(parseFloat(e.target.value) || 0)}
+              onChange={setDriveMin}
               className="text-xl font-semibold mt-1"
             />
           </div>
@@ -248,12 +414,9 @@ export default function LiveDropCalculator() {
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                   Margin (cents per litre)
                 </Label>
-                <Input
-                  type="number"
+                <NumberField
                   value={targetCpl}
-                  onChange={(e) =>
-                    setTargetCpl(parseFloat(e.target.value) || 0)
-                  }
+                  onChange={setTargetCpl}
                   className="text-xl font-semibold mt-1"
                 />
               </div>
@@ -262,12 +425,9 @@ export default function LiveDropCalculator() {
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                   Margin (% of sell)
                 </Label>
-                <Input
-                  type="number"
+                <NumberField
                   value={targetPct}
-                  onChange={(e) =>
-                    setTargetPct(parseFloat(e.target.value) || 0)
-                  }
+                  onChange={setTargetPct}
                   className="text-xl font-semibold mt-1"
                 />
               </div>
@@ -278,11 +438,10 @@ export default function LiveDropCalculator() {
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">
               Your sell price ($/L)
             </Label>
-            <Input
-              type="number"
-              step="0.001"
+            <NumberField
               value={sellInput}
-              onChange={(e) => setSellInput(parseFloat(e.target.value) || 0)}
+              step="0.001"
+              onChange={setSellInput}
               className="text-xl font-semibold mt-1"
             />
           </div>
@@ -322,8 +481,15 @@ export default function LiveDropCalculator() {
         <div className="mt-6 pt-4 border-t border-border grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           <Stat label="Total quote" value={money(r.revenue)} />
           <Stat label="Gross margin" value={money(r.gm)} />
-          <Stat label="Truck cost" value={money(r.truckCost)} sub={`${((driveMin / 60) * speed * 2).toFixed(0)} km @ $${truckPerKm}/km`} />
+          <Stat label="Truck cost" value={money(r.truckCost)} sub={`${((n(driveMin) / 60) * speed * 2).toFixed(0)} km @ $${truckPerKm}/km`} />
           <Stat label="Buy used" value={`$${buy.toFixed(4)}`} sub={manualBuy !== null ? "manual" : supplier} />
+          {paymentTerms != null && (
+            <Stat
+              label="Payment terms"
+              value={paymentTerms === 0 ? "COD" : `${paymentTerms} days`}
+              sub={selectedClient ? selectedClient.company_name : "one-off"}
+            />
+          )}
         </div>
       </Card>
 
