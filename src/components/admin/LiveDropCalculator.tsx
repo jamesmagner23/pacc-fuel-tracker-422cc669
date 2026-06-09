@@ -17,6 +17,14 @@ type BuyRow = {
 };
 
 const SUPPLIERS = ["Pro Fusion", "Pacific"] as const;
+// Pro Fusion feeds in inc-GST (from Viva TGP). Pacific is supplied ex-GST.
+// Normalise everything to ex-GST for margin maths.
+const GST_INCLUSIVE: Record<string, boolean> = {
+  "Pro Fusion": true,
+  Pacific: false,
+};
+const toExGst = (supplierName: string, price: number) =>
+  GST_INCLUSIVE[supplierName] ? price / 1.1 : price;
 
 export default function LiveDropCalculator() {
   const [loading, setLoading] = useState(true);
@@ -59,7 +67,8 @@ export default function LiveDropCalculator() {
   }, []);
 
   const priceRow = rows[supplier] ?? null;
-  const buy = manualBuy ?? (priceRow ? Number(priceRow.price_per_litre) : 0);
+  const rawBuy = priceRow ? Number(priceRow.price_per_litre) : 0;
+  const buy = manualBuy ?? (priceRow ? toExGst(supplier, rawBuy) : 0);
   const todayMel = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
   const stale = !priceRow || priceRow.price_date < todayMel;
 
@@ -145,7 +154,7 @@ export default function LiveDropCalculator() {
               {s}
               {rows[s] && (
                 <span className="ml-2 opacity-70 text-xs">
-                  ${Number(rows[s]!.price_per_litre).toFixed(3)}
+                  ${toExGst(s, Number(rows[s]!.price_per_litre)).toFixed(3)}
                 </span>
               )}
             </Button>
