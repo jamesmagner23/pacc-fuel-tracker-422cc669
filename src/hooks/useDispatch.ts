@@ -55,6 +55,40 @@ export function useDispatchStops(date?: string, truckId?: string | null) {
   });
 }
 
+export function useDispatchStopsRange(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: ["dispatch-stops-range", startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dispatch_stops" as any)
+        .select("*")
+        .gte("scheduled_date", startDate)
+        .lte("scheduled_date", endDate)
+        .order("scheduled_date", { ascending: true })
+        .order("sequence", { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as DispatchStop[];
+    },
+    refetchInterval: 30000,
+  });
+}
+
+export function useMoveStop() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, scheduled_date, sequence }: { id: string; scheduled_date: string; sequence?: number }) => {
+      const patch: any = { scheduled_date };
+      if (sequence !== undefined) patch.sequence = sequence;
+      const { error } = await supabase.from("dispatch_stops" as any).update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dispatch-stops"] });
+      qc.invalidateQueries({ queryKey: ["dispatch-stops-range"] });
+    },
+  });
+}
+
 export function useUpsertStop() {
   const qc = useQueryClient();
   return useMutation({
