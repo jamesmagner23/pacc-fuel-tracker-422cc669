@@ -22,6 +22,8 @@ import { supabase } from "@/integrations/supabase/client";
 import QuoteEditModal from "./QuoteEditModal";
 import { useDemo } from "@/hooks/useDemo";
 import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
+import OutreachComposer from "@/components/outreach/OutreachComposer";
+import { Mail } from "lucide-react";
 
 const GST_RATE = 0.1;
 
@@ -122,6 +124,8 @@ export default function PricingTab() {
 
   // Multi-line items
   const [lineItems, setLineItems] = useState<LineItem[]>([newLineItem()]);
+
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const updateLine = (key: string, field: keyof LineItem, value: string) => {
     setLineItems((items) => items.map((li) => li.key === key ? { ...li, [field]: value } : li));
@@ -769,7 +773,26 @@ export default function PricingTab() {
         <button onClick={handleCreateQuote} disabled={createQuote.isPending} className="mt-4 bg-primary text-primary-foreground border-none rounded-full px-6 py-2.5 text-xs font-semibold cursor-pointer disabled:opacity-70">
           {createQuote.isPending ? "Creating…" : `Create Quote (${lineItems.length} item${lineItems.length !== 1 ? "s" : ""})`}
         </button>
+        <button
+          type="button"
+          onClick={() => setComposerOpen(true)}
+          disabled={!hasFuelItems || grandVolume <= 0}
+          className="mt-4 ml-2 bg-transparent text-primary border border-primary/30 rounded-full px-4 py-2.5 text-xs font-semibold cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+          title="Open the outreach composer prefilled with this quote's sell price"
+        >
+          <Mail className="w-3.5 h-3.5" /> Email this quote
+        </button>
       </div>
+
+      <OutreachComposer
+        open={composerOpen}
+        onClose={() => setComposerOpen(false)}
+        defaultCategory="followup"
+        sellPricePerLitre={hasFuelItems && grandVolume > 0 ? grandTotalEx / grandVolume * (1 + GST_RATE) : null}
+        firstName={name?.split(" ")[0]}
+        company={name}
+        toEmail={email}
+      />
 
       {/* Quote history */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">

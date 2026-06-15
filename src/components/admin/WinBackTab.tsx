@@ -4,10 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Phone, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { subDays, format } from "date-fns";
+import OutreachComposer from "@/components/outreach/OutreachComposer";
 
 export default function WinBackTab() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [composerTarget, setComposerTarget] = useState<{
+    firstName: string; company: string; toEmail: string;
+  } | null>(null);
 
   const { data: allTxns = [], isLoading: loadingAll } = useQuery({
     queryKey: ["all-transactions-lapsed"],
@@ -32,6 +36,20 @@ export default function WinBackTab() {
       return data ?? [];
     },
     staleTime: 300000,
+  });
+
+  const { data: recentSends = [], refetch: refetchSends } = useQuery({
+    queryKey: ["outreach-log-recent"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("outreach_log")
+        .select("id, to_name, to_email, company, category, segment, sell_price, sent_via, created_at")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 30000,
   });
 
   const lapsedCustomers = useMemo(() => {
@@ -148,9 +166,17 @@ export default function WinBackTab() {
                     </a>
                   )}
                   {c.account?.contact_email && !c.account.contact_email.includes("@pending.com") && (
-                    <a href={`mailto:${c.account.contact_email}`} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium border border-border hover:border-primary/30 transition-colors text-muted-foreground hover:text-foreground">
+                    <button
+                      type="button"
+                      onClick={() => setComposerTarget({
+                        firstName: (c.account?.contact_name || "").split(" ")[0] || "",
+                        company: c.account?.company_name || c.name,
+                        toEmail: c.account!.contact_email!,
+                      })}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium border border-border hover:border-primary/30 transition-colors text-muted-foreground hover:text-foreground bg-transparent cursor-pointer"
+                    >
                       <Mail className="w-3 h-3" /> <span className="hidden sm:inline">Email</span>
-                    </a>
+                    </button>
                   )}
                 </div>
               </div>
@@ -158,6 +184,34 @@ export default function WinBackTab() {
           })}
         </div>
       )}
+
+      {recentSends.length > 0 && (
+        <div className="mt-6 bg-card border border-border rounded-lg p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Recent outreach (last 20)</div>
+          <div className="space-y-1.5">
+            {recentSends.map((s: any) => (
+              <div key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                <span className="text-foreground font-medium">{s.to_name || s.to_email || "—"}</span>
+                {s.company && <span>· {s.company}</span>}
+                {s.category && <span>· {s.category}</span>}
+                {s.sell_price && <span>· {s.sell_price}</span>}
+                <span>· {s.sent_via}</span>
+                <span className="ml-auto">{format(new Date(s.created_at), "dd MMM, h:mma")}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <OutreachComposer
+        open={composerTarget !== null}
+        onClose={() => { setComposerTarget(null); refetchSends(); }}
+        defaultCategory="winback"
+        sellPricePerLitre={null}
+        firstName={composerTarget?.firstName}
+        company={composerTarget?.company}
+        toEmail={composerTarget?.toEmail}
+      />
     </div>
   );
 }

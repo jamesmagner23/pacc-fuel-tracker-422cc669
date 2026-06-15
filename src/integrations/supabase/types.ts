@@ -853,6 +853,7 @@ export type Database = {
       }
       email_templates: {
         Row: {
+          category: string | null
           created_at: string
           created_by: string | null
           default_values: Json
@@ -861,12 +862,14 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          sort_order: number
           subject: string
           text_body: string
           updated_at: string
           variables: Json
         }
         Insert: {
+          category?: string | null
           created_at?: string
           created_by?: string | null
           default_values?: Json
@@ -875,12 +878,14 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          sort_order?: number
           subject: string
           text_body: string
           updated_at?: string
           variables?: Json
         }
         Update: {
+          category?: string | null
           created_at?: string
           created_by?: string | null
           default_values?: Json
@@ -889,6 +894,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          sort_order?: number
           subject?: string
           text_body?: string
           updated_at?: string
@@ -1063,6 +1069,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      outreach_log: {
+        Row: {
+          category: string | null
+          company: string | null
+          created_at: string
+          id: string
+          segment: string | null
+          sell_price: string | null
+          sent_by: string | null
+          sent_via: string
+          template_id: string | null
+          to_email: string | null
+          to_name: string | null
+        }
+        Insert: {
+          category?: string | null
+          company?: string | null
+          created_at?: string
+          id?: string
+          segment?: string | null
+          sell_price?: string | null
+          sent_by?: string | null
+          sent_via: string
+          template_id?: string | null
+          to_email?: string | null
+          to_name?: string | null
+        }
+        Update: {
+          category?: string | null
+          company?: string | null
+          created_at?: string
+          id?: string
+          segment?: string | null
+          sell_price?: string | null
+          sent_by?: string | null
+          sent_via?: string
+          template_id?: string | null
+          to_email?: string | null
+          to_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_log_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       outreach_send_log: {
         Row: {
@@ -1790,6 +1846,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      segment_openers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          opener: string
+          segment: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          opener: string
+          segment: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          opener?: string
+          segment?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       sop_client_sites: {
         Row: {
