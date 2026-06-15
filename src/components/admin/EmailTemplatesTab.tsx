@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, Save, Sun, Moon, Plus, Trash2 } from "lucide-react";
 import { renderTemplate, extractVariables } from "@/lib/templateVars";
@@ -20,6 +22,8 @@ type Template = {
   variables: string[];
   default_values: Record<string, string>;
   is_active: boolean;
+  category: string | null;
+  sort_order: number;
 };
 
 type PreviewTheme = "light" | "dark";
@@ -43,6 +47,8 @@ export default function EmailTemplatesTab() {
       const { data, error } = await supabase
         .from("email_templates")
         .select("*")
+        .order("category", { nullsFirst: false })
+        .order("sort_order")
         .order("name");
       if (error) throw error;
       return (data ?? []).map((r: any) => ({
@@ -50,6 +56,18 @@ export default function EmailTemplatesTab() {
         variables: Array.isArray(r.variables) ? r.variables : [],
         default_values: r.default_values ?? {},
       })) as Template[];
+    },
+  });
+
+  const { data: openers = [], refetch: refetchOpeners } = useQuery({
+    queryKey: ["admin-segment-openers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("segment_openers")
+        .select("id, segment, opener, is_active, sort_order")
+        .order("sort_order");
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
@@ -131,6 +149,8 @@ export default function EmailTemplatesTab() {
           variables: draft.variables,
           default_values: draft.default_values,
           is_active: draft.is_active,
+          category: draft.category,
+          sort_order: draft.sort_order,
         })
         .eq("id", draft.id);
       if (error) throw error;
@@ -147,6 +167,43 @@ export default function EmailTemplatesTab() {
     }
   };
 
+  const createTemplate = async () => {
+    const { data, error } = await supabase
+      .from("email_templates")
+      .insert({
+        name: "New template",
+        subject: "",
+        html_body: "",
+        text_body: "Hi {{first_name}},\n\n",
+        variables: ["first_name"],
+        default_values: {},
+        is_active: true,
+        category: "cold",
+        sort_order: 999,
+      })
+      .select("id")
+      .single();
+    if (error) {
+      toast({ title: "Create failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    await refetch();
+    setActiveId(data.id);
+  };
+
+  const updateOpener = async (id: string, patch: Partial<{ segment: string; opener: string; is_active: boolean }>) => {
+    await supabase.from("segment_openers").update(patch).eq("id", id);
+    await refetchOpeners();
+  };
+  const addOpener = async () => {
+    await supabase.from("segment_openers").insert({ segment: "New segment", opener: "", sort_order: 999 });
+    await refetchOpeners();
+  };
+  const deleteOpener = async (id: string) => {
+    await supabase.from("segment_openers").delete().eq("id", id);
+    await refetchOpeners();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 text-text-secondary text-sm p-4">
@@ -156,9 +213,13 @@ export default function EmailTemplatesTab() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
       {/* Sidebar */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-2 h-fit">
+        <Button variant="outline" size="sm" onClick={createTemplate} className="w-full mb-2">
+          <Plus className="w-3.5 h-3.5 mr-1" /> New template
+        </Button>
         {templates.map(t => {
           const active = t.id === activeId;
           return (
@@ -172,9 +233,9 @@ export default function EmailTemplatesTab() {
               }}
             >
               <span>{t.name}</span>
-              {!t.is_active && (
-                <span className="text-[10px] uppercase tracking-wider text-text-muted">inactive</span>
-              )}
+              <span className="text-[10px] uppercase tracking-wider text-text-muted">
+                {t.category || "uncategorised"}{!t.is_active ? " · inactive" : ""}
+              </span>
             </button>
           );
         })}
@@ -198,6 +259,36 @@ export default function EmailTemplatesTab() {
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                 Save
               </Button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Category</div>
+                <Select
+                  value={draft.category ?? "__none"}
+                  onValueChange={(v) => setDraft({ ...draft, category: v === "__none" ? null : v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Uncategorised</SelectItem>
+                    <SelectItem value="cold">Cold</SelectItem>
+                    <SelectItem value="followup">Follow-up</SelectItem>
+                    <SelectItem value="winback">Win Back</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Sort order</div>
+                <Input
+                  type="number"
+                  value={draft.sort_order}
+                  onChange={(e) => setDraft({ ...draft, sort_order: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <Switch checked={draft.is_active} onCheckedChange={(v) => setDraft({ ...draft, is_active: v })} />
+                <span className="text-xs text-text-secondary">{draft.is_active ? "Active" : "Inactive"}</span>
+              </div>
             </div>
 
             <div>
@@ -327,6 +418,35 @@ export default function EmailTemplatesTab() {
       ) : (
         <div className="text-sm text-text-muted">No templates found.</div>
       )}
+      </div>
+
+      {/* Segment openers */}
+      <div className="bg-surface border border-surface-border rounded-[10px] p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="text-sm font-semibold text-text-primary">Segment openers</div>
+            <div className="text-[11px] text-text-muted">One short opener per industry. Used by the Cold outreach composer ({"{{segment_opener}}"} token).</div>
+          </div>
+          <Button variant="outline" size="sm" onClick={addOpener}>
+            <Plus className="w-3.5 h-3.5 mr-1" /> Add
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {openers.map((o: any) => (
+            <div key={o.id} className="grid grid-cols-1 md:grid-cols-[180px_1fr_auto_auto] gap-2 items-start">
+              <Input defaultValue={o.segment} onBlur={(e) => updateOpener(o.id, { segment: e.target.value })} />
+              <Textarea defaultValue={o.opener} rows={2} onBlur={(e) => updateOpener(o.id, { opener: e.target.value })} className="text-xs" />
+              <div className="flex items-center gap-1.5">
+                <Switch checked={o.is_active} onCheckedChange={(v) => updateOpener(o.id, { is_active: v })} />
+                <span className="text-[10px] text-text-muted">{o.is_active ? "on" : "off"}</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => deleteOpener(o.id)} className="text-text-muted hover:text-negative">
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
