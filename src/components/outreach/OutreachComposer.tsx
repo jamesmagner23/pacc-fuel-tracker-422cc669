@@ -45,6 +45,33 @@ function formatSellPrice(v?: number | null): string {
   return `$${v.toFixed(2)}/L`;
 }
 
+function parseSellPriceNumber(s: string): number | null {
+  if (!s) return null;
+  const m = s.match(/(\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return isFinite(n) && n > 0 ? n : null;
+}
+
+function formatExGst(inc: string): string {
+  const n = parseSellPriceNumber(inc);
+  if (n == null) return "";
+  return `$${(n / 1.1).toFixed(2)}/L`;
+}
+
+function nextBusinessDayLabel(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  // Skip Sat (6) -> Mon, Sun (0) -> Mon
+  if (d.getDay() === 6) d.setDate(d.getDate() + 2);
+  else if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+  return d.toLocaleDateString("en-AU", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
 function mergeTokens(tpl: string, vars: Record<string, string>): string {
   // Replace tokens; if a token is empty, also strip the line it sits on
   // when that line would otherwise be empty.
@@ -169,6 +196,8 @@ export default function OutreachComposer({
       first_name: first || "",
       company: comp || "",
       sell_price: sellPrice || "",
+      sell_price_ex: formatExGst(sellPrice),
+      delivery_date: nextBusinessDayLabel(),
       segment_opener: segmentOpener || "",
       cap_statement_link: capLink || "",
     }),
