@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { Mail } from "lucide-react";
+import OutreachComposer from "@/components/outreach/OutreachComposer";
 
 type Mode = "quote" | "check";
 type Target = "cpl" | "pct";
@@ -91,6 +93,8 @@ export default function LiveDropCalculator() {
   const [clientId, setClientId] = useState<number | null>(null);
   const [paymentTerms, setPaymentTerms] = useState<number | null>(null);
   const [savingTerms, setSavingTerms] = useState(false);
+
+  const [composerOpen, setComposerOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -541,11 +545,25 @@ export default function LiveDropCalculator() {
           <Stat label="· Truck fuel" value={money(r.truckFuelCost)} sub={`${(r.truckKm * n(truckLper100) / 100).toFixed(1)} L @ $${n(truckDieselPrice).toFixed(2)}`} />
           <Stat label="· Tyres + maint" value={money(r.maintCost)} sub={`${r.truckKm.toFixed(0)} km @ $${n(maintPerKm).toFixed(2)}/km`} />
         </div>
+
+        <div className="mt-6 pt-4 border-t border-border flex justify-end">
+          <Button onClick={() => setComposerOpen(true)} disabled={!r.sell || r.sell <= 0}>
+            <Mail className="w-3.5 h-3.5 mr-1.5" /> Email this rate
+          </Button>
+        </div>
       </Card>
 
       <p className="text-xs text-muted-foreground">
         Contribution is after driver, truck fuel and per-km wear. Yard rent, office, software and admin overheads still excluded. Admin tool — never client-facing.
       </p>
+
+      <OutreachComposer
+        open={composerOpen}
+        onClose={() => setComposerOpen(false)}
+        defaultCategory="cold"
+        sellPricePerLitre={r.sell}
+        company={selectedClient?.company_name}
+      />
     </div>
   );
 }
