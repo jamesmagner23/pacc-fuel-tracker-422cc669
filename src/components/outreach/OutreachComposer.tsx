@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
-export type OutreachCategory = "cold" | "followup" | "winback";
+export type OutreachCategory = "daily" | "cold" | "followup" | "winback";
 
 type Template = {
   id: string;
@@ -35,6 +35,7 @@ type Props = {
 };
 
 const CATEGORY_LABELS: Record<OutreachCategory, string> = {
+  daily: "Daily price",
   cold: "Cold",
   followup: "Follow-up",
   winback: "Win Back",
@@ -144,7 +145,7 @@ export default function OutreachComposer({
           .from("email_templates")
           .select("id, name, category, subject, text_body, sort_order, is_active")
           .eq("is_active", true)
-          .in("category", ["cold", "followup", "winback"])
+          .in("category", ["daily", "cold", "followup", "winback"])
           .order("category")
           .order("sort_order"),
         supabase
@@ -276,7 +277,7 @@ export default function OutreachComposer({
         <div className="grid gap-4">
           {/* Category segmented */}
           <div className="flex gap-1 bg-surface-raised border border-surface-border rounded-lg p-1 w-fit">
-            {(["cold", "followup", "winback"] as OutreachCategory[]).map((c) => (
+            {(["daily", "cold", "followup", "winback"] as OutreachCategory[]).map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
