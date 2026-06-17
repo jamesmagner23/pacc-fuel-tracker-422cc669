@@ -593,10 +593,11 @@ export default function BuyPriceTab() {
                   </div>
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="text-right">
-                      <div className="text-[15px] font-semibold text-foreground tabular-nums">${p.price_per_litre.toFixed(4)}/L</div>
+                      <div className="text-[15px] font-semibold text-foreground tabular-nums">${p.price_per_litre.toFixed(4)}/L ex GST</div>
+                      <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">${(p.price_per_litre * GST_RATE).toFixed(4)}/L inc GST</div>
                       {change !== null && (
                         <div className={`text-[11px] mt-0.5 ${change >= 0 ? "text-destructive" : "text-positive"}`}>
-                          {change >= 0 ? "↑" : "↓"} ${Math.abs(change).toFixed(4)}
+                          {change >= 0 ? "↑" : "↓"} ${Math.abs(change).toFixed(4)} ex GST
                         </div>
                       )}
                     </div>
