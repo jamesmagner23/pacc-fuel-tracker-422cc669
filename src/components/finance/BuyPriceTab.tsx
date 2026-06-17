@@ -76,6 +76,7 @@ export default function BuyPriceTab() {
   const [showBulk, setShowBulk] = useState(false);
   const [exportMonth, setExportMonth] = useState(format(new Date(), "yyyy-MM"));
   const [exportSupplier, setExportSupplier] = useState<string>("__all");
+  const GST_RATE = 1.1;
 
   const visible = prices.filter((p) => {
     const d = parseISO(p.price_date);
@@ -96,7 +97,7 @@ export default function BuyPriceTab() {
       const s = String(v ?? "");
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const header = ["Date", "Day", "Supplier", "Price ex GST ($/L)", "Price inc GST ($/L)", "Notes"];
+    const header = ["Date", "Day", "Supplier", "Buy price ex GST ($/L)", "Buy price inc GST ($/L)", "Notes"];
     const lines = [header.join(",")];
     for (const r of monthRows) {
       const d = parseISO(r.price_date);
@@ -105,13 +106,13 @@ export default function BuyPriceTab() {
         esc(format(d, "EEE")),
         esc(r.supplier),
         esc(r.price_per_litre.toFixed(4)),
-        esc((r.price_per_litre * 1.1).toFixed(4)),
+        esc((r.price_per_litre * GST_RATE).toFixed(4)),
         esc(r.notes || ""),
       ].join(","));
     }
     // Per-supplier averages
     lines.push("");
-    lines.push(["", "", "Supplier", "Avg ex GST ($/L)", "Avg inc GST ($/L)", "Entries"].join(","));
+    lines.push(["", "", "Supplier", "Average ex GST ($/L)", "Average inc GST ($/L)", "Entries"].join(","));
     const bySup = new Map<string, number[]>();
     monthRows.forEach((r) => {
       const arr = bySup.get(r.supplier) || [];
@@ -120,7 +121,7 @@ export default function BuyPriceTab() {
     });
     for (const [sup, arr] of bySup) {
       const avg = arr.reduce((s, v) => s + v, 0) / arr.length;
-      lines.push(["", "", esc(sup), esc(avg.toFixed(4)), esc((avg * 1.1).toFixed(4)), esc(arr.length)].join(","));
+      lines.push(["", "", esc(sup), esc(avg.toFixed(4)), esc((avg * GST_RATE).toFixed(4)), esc(arr.length)].join(","));
     }
     const csv = lines.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -216,6 +217,9 @@ export default function BuyPriceTab() {
               ${latest.price_per_litre.toFixed(4)}
               <span className="text-base sm:text-lg text-muted-foreground">/L</span>
             </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              ex GST · ${(latest.price_per_litre * GST_RATE).toFixed(4)}/L inc GST
+            </div>
             {priceChange !== null && (
               <div className="flex items-center gap-1.5 mt-2">
                 {priceChange >= 0 ? <TrendingUp className="w-3 h-3 text-destructive" /> : <TrendingDown className="w-3 h-3 text-positive" />}
@@ -227,8 +231,9 @@ export default function BuyPriceTab() {
             )}
           </div>
           <div className="sm:text-right">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg ({PRIMARY_SUPPLIER})</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg ex GST ({PRIMARY_SUPPLIER})</div>
             <div className="text-lg sm:text-xl font-medium text-muted-foreground tabular-nums">${avgPrice.toFixed(4)}/L</div>
+            <div className="text-[11px] text-muted-foreground tabular-nums">${(avgPrice * GST_RATE).toFixed(4)}/L inc GST</div>
           </div>
         </div>
       )}
@@ -261,7 +266,8 @@ export default function BuyPriceTab() {
                       {isBest && !isPrimary && <div className="text-[9px] uppercase tracking-wider text-positive font-semibold">Cheapest</div>}
                     </div>
                   </div>
-                  <div className="text-xl font-semibold text-foreground tabular-nums mt-1">${p.price_per_litre.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                  <div className="text-xl font-semibold text-foreground tabular-nums mt-1">${p.price_per_litre.toFixed(4)}<span className="text-xs text-muted-foreground">/L ex GST</span></div>
+                  <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">${(p.price_per_litre * GST_RATE).toFixed(4)}/L inc GST</div>
                 </div>
               );
             })}
@@ -427,7 +433,7 @@ export default function BuyPriceTab() {
       {chartData.length > 1 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Buy Price Trend by Supplier — Last {prices.length} Entries</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Buy Price Trend by Supplier — Ex GST — Last {prices.length} Entries</div>
             <div className="flex items-center gap-3 flex-wrap">
               {allSuppliers.map((s, i) => (
                 <div key={s} className="flex items-center gap-1.5">
@@ -446,7 +452,7 @@ export default function BuyPriceTab() {
                   contentStyle={{ background: "var(--background)", border: "1px solid var(--primary)", borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: "var(--text-primary)" }}
                   itemStyle={{ color: "var(--text-primary)" }}
-                  formatter={(v: number, name: string) => [`$${v.toFixed(4)}/L`, name]}
+                  formatter={(v: number, name: string) => [`$${v.toFixed(4)}/L ex GST`, name]}
                   cursor={{ stroke: "rgba(196,168,130,0.2)" }}
                 />
                 {avgPrice > 0 && <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground) / 0.4)" strokeWidth={1} />}
@@ -490,8 +496,8 @@ export default function BuyPriceTab() {
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-40" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Buy Price / Litre ($)</label>
-            <input type="number" step="0.0001" placeholder="e.g. 2.5400" value={price} onChange={(e) => setPrice(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-44" />
+            <label className="text-[11px] text-muted-foreground">Buy Price / Litre — ex GST ($)</label>
+            <input type="number" step="0.0001" placeholder="e.g. 2.5400 ex GST" value={price} onChange={(e) => setPrice(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-44" />
           </div>
           <div className="flex gap-2">
             <button onClick={handleSave} disabled={upsert.isPending} className="bg-primary text-primary-foreground border-none rounded-full px-5 py-2 text-xs font-semibold cursor-pointer disabled:opacity-70">
@@ -507,7 +513,7 @@ export default function BuyPriceTab() {
         {showBulk && (
           <div className="mt-4 flex flex-col gap-2">
             <div className="text-[11px] text-muted-foreground">
-              One entry per line: <span className="text-foreground/70">YYYY-MM-DD, price</span>
+              One entry per line: <span className="text-foreground/70">YYYY-MM-DD, ex GST price</span>
             </div>
             <textarea value={bulkText} onChange={(e) => setBulkText(e.target.value)} placeholder={"2026-03-01, 2.1520\n2026-03-06, 1.8022"} rows={8} className="bg-raised border border-surface-border rounded-lg text-foreground p-3 text-xs font-mono outline-none resize-y w-full" />
             <button onClick={handleBulkSave} disabled={upsert.isPending} className="bg-primary text-primary-foreground border-none rounded-full px-5 py-2 text-xs font-semibold cursor-pointer self-start">
@@ -587,10 +593,11 @@ export default function BuyPriceTab() {
                   </div>
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="text-right">
-                      <div className="text-[15px] font-semibold text-foreground tabular-nums">${p.price_per_litre.toFixed(4)}/L</div>
+                      <div className="text-[15px] font-semibold text-foreground tabular-nums">${p.price_per_litre.toFixed(4)}/L ex GST</div>
+                      <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">${(p.price_per_litre * GST_RATE).toFixed(4)}/L inc GST</div>
                       {change !== null && (
                         <div className={`text-[11px] mt-0.5 ${change >= 0 ? "text-destructive" : "text-positive"}`}>
-                          {change >= 0 ? "↑" : "↓"} ${Math.abs(change).toFixed(4)}
+                          {change >= 0 ? "↑" : "↓"} ${Math.abs(change).toFixed(4)} ex GST
                         </div>
                       )}
                     </div>
