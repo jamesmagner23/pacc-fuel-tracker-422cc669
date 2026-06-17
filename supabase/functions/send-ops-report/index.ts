@@ -223,73 +223,64 @@ async function buildReport(period: "daily" | "weekly") {
 
 function renderHtml(r: Awaited<ReturnType<typeof buildReport>>) {
   const m = r.metrics;
-  // PACC Energy brand palette (per brand guide):
-  //   bone background, deep forest green wordmark, lime-green accent.
-  const FOREST = "#1f3318";   // primary brand
-  const FOREST_DEEP = "#162311";
-  const LIME = "#cbe89c";     // accent
-  const BONE = "#e7e6db";     // page bg
-  const CARD = "#f3f2ea";     // card bg
-  const INK = "#1a1a14";
-  const INK_SOFT = "#5a5a4f";
-  const HAIRLINE = "#d4d3c6";
+  // PACC ENERGY brand palette — sampled from the official brand book:
+  //   deep olive-black, lime accent, bone background. Brutalist typography:
+  //   massive uppercase wordmark stacked, generous negative space, no rounded corners.
+  const FOREST = "#1b2a10";   // primary dark (almost black-green)
+  const LIME   = "#c5f08c";   // signature accent
+  const BONE   = "#ddd2bd";   // warm beige page bg
+  const BONE_SOFT = "#e8dfcc";
+  const INK    = "#1b2a10";
+  const INK_SOFT = "#5a6447";
+  const HAIRLINE = "#c4b89f";
 
   const row = (label: string, value: string, sub?: string) => `
     <tr>
-      <td style="padding:18px 22px;border-bottom:1px solid ${HAIRLINE};color:${INK_SOFT};font-size:12px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;">${label}</td>
-      <td style="padding:18px 22px;border-bottom:1px solid ${HAIRLINE};color:${FOREST};font-size:22px;font-weight:800;text-align:right;line-height:1.15;letter-spacing:-0.3px;">
-        ${value}${sub ? `<div style="font-size:11px;font-weight:500;color:${INK_SOFT};margin-top:4px;letter-spacing:0.2px;text-transform:none;">${sub}</div>` : ""}
+      <td style="padding:20px 24px;border-top:1px solid ${HAIRLINE};color:${INK_SOFT};font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;vertical-align:middle;">${label}</td>
+      <td style="padding:20px 24px;border-top:1px solid ${HAIRLINE};color:${FOREST};font-size:26px;font-weight:900;text-align:right;line-height:1.1;letter-spacing:-0.5px;vertical-align:middle;">
+        ${value}${sub ? `<div style="font-size:10px;font-weight:600;color:${INK_SOFT};margin-top:6px;letter-spacing:1.5px;text-transform:uppercase;">${sub}</div>` : ""}
       </td>
     </tr>`;
 
-  // Dotted-matrix "P" mark rendered as a 5x5 grid of HTML squares (no external image needed).
-  const dot = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${LIME};margin:1px;"></span>`;
-  const blank = `<span style="display:inline-block;width:6px;height:6px;margin:1px;"></span>`;
-  // P shape (5 cols × 6 rows): 1=dot, 0=blank
-  const P_GRID = [
-    [1,1,1,1,0],
-    [1,0,0,0,1],
-    [1,0,0,0,1],
-    [1,1,1,1,0],
-    [1,0,0,0,0],
-    [1,0,0,0,0],
-  ];
-  const pMark = `<div style="line-height:0;font-size:0;">` +
-    P_GRID.map(row => `<div style="line-height:0;">${row.map(c => c ? dot : blank).join("")}</div>`).join("") +
-    `</div>`;
-
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"></head>
-<body style="margin:0;padding:0;background:${BONE};font-family:-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;color:${INK};">
-  <div style="max-width:600px;margin:0 auto;padding:32px 20px;">
-    <!-- Brand bar: dotted P mark left, wordmark center, tagline right -->
-    <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:22px;">
-      <tr>
-        <td style="width:50px;vertical-align:top;">${pMark}</td>
-        <td style="text-align:center;vertical-align:middle;color:${FOREST};font-size:18px;font-weight:900;letter-spacing:2px;">PACC ENERGY</td>
-        <td style="width:80px;text-align:right;vertical-align:top;color:${FOREST};font-size:8px;font-weight:700;letter-spacing:1.5px;line-height:1.4;">
-          POWERED<br/>BY<br/>PROGRESS
-        </td>
-      </tr>
+<body style="margin:0;padding:0;background:${BONE};font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:${INK};">
+  <div style="max-width:620px;margin:0 auto;">
+
+    <!-- HERO: dark forest panel with massive stacked wordmark, lime "PACC ENERGY" -->
+    <div style="background:${FOREST};padding:56px 32px 48px;">
+      <div style="color:${LIME};font-size:64px;font-weight:900;letter-spacing:-2px;line-height:0.92;text-transform:uppercase;">PACC</div>
+      <div style="color:${LIME};font-size:64px;font-weight:900;letter-spacing:-2px;line-height:0.92;text-transform:uppercase;margin-top:4px;">ENERGY</div>
+      <div style="color:${LIME};opacity:0.7;font-size:10px;font-weight:700;letter-spacing:3px;margin-top:24px;text-transform:uppercase;">Powered&nbsp;&nbsp;By&nbsp;&nbsp;Progress</div>
+    </div>
+
+    <!-- Lime divider stripe -->
+    <div style="background:${LIME};padding:14px 32px;color:${FOREST};font-size:11px;font-weight:900;letter-spacing:3px;text-transform:uppercase;">
+      ${r.win.label}&nbsp;&nbsp;Operations&nbsp;&nbsp;Report
+    </div>
+
+    <!-- Date band on bone -->
+    <div style="background:${BONE_SOFT};padding:24px 32px;border-bottom:1px solid ${HAIRLINE};">
+      <div style="color:${INK_SOFT};font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Reporting&nbsp;Window</div>
+      <div style="color:${FOREST};font-size:22px;font-weight:900;margin-top:6px;letter-spacing:-0.5px;">${r.win.rangeLabel}</div>
+    </div>
+
+    <!-- Metrics table on bone -->
+    <table role="presentation" style="width:100%;border-collapse:collapse;background:${BONE_SOFT};">
+      ${row("Sales", fmtNum(m.salesCount), `${fmtNum(m.litres, 0)} L delivered`)}
+      ${row("Revenue", fmtMoney(m.revenue), `Inc GST &nbsp;·&nbsp; ${fmtMoney(m.revenueExGst)} Ex GST`)}
+      ${row("Gross Profit (est.)", fmtMoney(m.profit), `Ex GST &nbsp;·&nbsp; COGS ${fmtMoney(m.cogs)}`)}
+      ${row("Stops Completed", fmtNum(m.stopsCount))}
+      ${row("Kms Travelled (est.)", `${fmtNum(m.kms, 0)} km`, "Between completed stops")}
+      ${row("Driver Hours", fmtHours(m.driverHoursMs), `${m.driverDayCount} Driver-Day${m.driverDayCount === 1 ? "" : "s"}`)}
     </table>
-    <div style="background:${CARD};border-radius:4px;overflow:hidden;border:1px solid ${HAIRLINE};">
-      <div style="padding:32px 24px;background:${FOREST_DEEP};">
-        <div style="color:${LIME};font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${r.win.label} Operations Report</div>
-        <div style="color:#ffffff;font-size:24px;font-weight:800;margin-top:10px;line-height:1.2;letter-spacing:-0.3px;">${r.win.rangeLabel}</div>
-        <div style="height:3px;width:48px;background:${LIME};margin-top:16px;"></div>
-      </div>
-      <table role="presentation" style="width:100%;border-collapse:collapse;background:${CARD};">
-        ${row("Sales", `${fmtNum(m.salesCount)}`, `${fmtNum(m.litres, 0)} L delivered`)}
-        ${row("Revenue", fmtMoney(m.revenue), `inc GST &middot; ${fmtMoney(m.revenueExGst)} ex GST`)}
-        ${row("Gross profit (est.)", fmtMoney(m.profit), `ex GST &middot; COGS ${fmtMoney(m.cogs)}`)}
-        ${row("Stops completed", fmtNum(m.stopsCount))}
-        ${row("Kms travelled (est.)", `${fmtNum(m.kms, 0)} km`, "between completed stops")}
-        ${row("Driver hours", fmtHours(m.driverHoursMs), `${m.driverDayCount} driver-day${m.driverDayCount === 1 ? "" : "s"}`)}
-      </table>
+
+    <!-- Footer: dark forest with lime tagline -->
+    <div style="background:${FOREST};padding:32px;text-align:center;">
+      <div style="color:${LIME};font-size:11px;font-weight:900;letter-spacing:4px;text-transform:uppercase;">"Fueling&nbsp;The&nbsp;Future"</div>
+      <div style="color:${LIME};opacity:0.55;font-size:9px;font-weight:700;letter-spacing:2px;margin-top:14px;text-transform:uppercase;">Auto-sent&nbsp;·&nbsp;paccenergy.com</div>
     </div>
-    <div style="text-align:center;padding:20px 16px 4px;color:${INK_SOFT};font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">
-      Auto-sent &middot; paccenergy.com
-    </div>
+
   </div>
 </body></html>`;
 }
