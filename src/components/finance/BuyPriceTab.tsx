@@ -520,16 +520,41 @@ export default function BuyPriceTab() {
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-3.5">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Price History ({prices.length} entries)</div>
-          <div className="flex items-center gap-2">
-            <input
-              type="month"
-              value={exportMonth}
-              onChange={(e) => setExportMonth(e.target.value)}
-              className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1 text-[11px] outline-none"
-            />
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={exportSupplier}
+              onChange={(e) => setExportSupplier(e.target.value)}
+              className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1.5 text-[11px] outline-none cursor-pointer"
+              aria-label="Filter supplier"
+            >
+              <option value="__all">All suppliers</option>
+              {allSuppliers.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+            <select
+              value={exportMonth.split("-")[1]}
+              onChange={(e) => setExportMonth(`${exportMonth.split("-")[0]}-${e.target.value}`)}
+              className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1.5 text-[11px] outline-none cursor-pointer"
+              aria-label="Month"
+            >
+              {["01","02","03","04","05","06","07","08","09","10","11","12"].map((m) => (
+                <option key={m} value={m}>{format(new Date(2000, Number(m) - 1, 1), "MMM")}</option>
+              ))}
+            </select>
+            <select
+              value={exportMonth.split("-")[0]}
+              onChange={(e) => setExportMonth(`${e.target.value}-${exportMonth.split("-")[1]}`)}
+              className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1.5 text-[11px] outline-none cursor-pointer"
+              aria-label="Year"
+            >
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                <option key={y} value={String(y)}>{y}</option>
+              ))}
+            </select>
             <button
               onClick={handleDownloadCsv}
-              className="bg-transparent border border-surface-border rounded-full px-3 py-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 transition-colors"
+              className="bg-transparent border border-surface-border rounded-full px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 transition-colors"
             >
               <Download className="w-3 h-3" />
               Download CSV
@@ -538,15 +563,18 @@ export default function BuyPriceTab() {
         </div>
         {isLoading ? (
           <div className="text-muted-foreground text-[13px]">Loading…</div>
-        ) : prices.length === 0 ? (
-          <div className="text-muted-foreground text-[13px]">No entries yet.</div>
-        ) : (
+        ) : (() => {
+          const visible = exportSupplier === "__all" ? prices : prices.filter(p => p.supplier === exportSupplier);
+          if (visible.length === 0) {
+            return <div className="text-muted-foreground text-[13px]">No entries{exportSupplier === "__all" ? "" : ` for ${exportSupplier}`} yet.</div>;
+          }
+          return (
           <div className="flex flex-col">
-            {prices.map((p, i) => {
-              const next = prices[i + 1];
+            {visible.map((p, i) => {
+              const next = visible[i + 1];
               const change = next ? p.price_per_litre - next.price_per_litre : null;
               return (
-                <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderBottom: i < prices.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
+                <div key={p.id} className="flex items-center justify-between py-2.5" style={{ borderBottom: i < visible.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
                   <div>
                     <div className="text-[13px] text-foreground font-medium">{format(parseISO(p.price_date), "EEE dd MMM yyyy")}</div>
                     <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
@@ -574,7 +602,8 @@ export default function BuyPriceTab() {
               );
             })}
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
