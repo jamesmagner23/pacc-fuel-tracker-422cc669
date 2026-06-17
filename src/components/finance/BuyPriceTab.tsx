@@ -79,14 +79,7 @@ export default function BuyPriceTab() {
 
   const handleDownloadCsv = () => {
     const [yy, mm] = exportMonth.split("-").map(Number);
-    const monthRows = prices
-      .filter((p) => {
-        const d = parseISO(p.price_date);
-        if (d.getFullYear() !== yy || d.getMonth() + 1 !== mm) return false;
-        if (exportSupplier !== "__all" && p.supplier !== exportSupplier) return false;
-        return true;
-      })
-      .sort((a, b) => (a.price_date < b.price_date ? -1 : a.price_date > b.price_date ? 1 : a.supplier.localeCompare(b.supplier)));
+    const monthRows = [...visible].sort((a, b) => (a.price_date < b.price_date ? -1 : a.price_date > b.price_date ? 1 : a.supplier.localeCompare(b.supplier)));
     if (!monthRows.length) {
       const supLbl = exportSupplier === "__all" ? "" : ` (${exportSupplier})`;
       toast.error(`No buy prices for ${format(new Date(yy, mm - 1, 1), "MMMM yyyy")}${supLbl}`);
