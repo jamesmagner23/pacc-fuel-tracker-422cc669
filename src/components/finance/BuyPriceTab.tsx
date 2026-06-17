@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { TrendingUp, TrendingDown, Trash2, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, Trash2, RefreshCw, Download } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice, useTodayBuyPrices, SUPPLIERS } from "@/hooks/useBuyPrices";
 import { useTGPrices, useTodayTGP, useFetchTGP } from "@/hooks/useTGPrices";
