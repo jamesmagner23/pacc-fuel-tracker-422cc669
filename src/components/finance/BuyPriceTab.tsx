@@ -75,17 +75,21 @@ export default function BuyPriceTab() {
   const [bulkText, setBulkText] = useState("");
   const [showBulk, setShowBulk] = useState(false);
   const [exportMonth, setExportMonth] = useState(format(new Date(), "yyyy-MM"));
+  const [exportSupplier, setExportSupplier] = useState<string>("__all");
 
   const handleDownloadCsv = () => {
     const [yy, mm] = exportMonth.split("-").map(Number);
     const monthRows = prices
       .filter((p) => {
         const d = parseISO(p.price_date);
-        return d.getFullYear() === yy && d.getMonth() + 1 === mm;
+        if (d.getFullYear() !== yy || d.getMonth() + 1 !== mm) return false;
+        if (exportSupplier !== "__all" && p.supplier !== exportSupplier) return false;
+        return true;
       })
       .sort((a, b) => (a.price_date < b.price_date ? -1 : a.price_date > b.price_date ? 1 : a.supplier.localeCompare(b.supplier)));
     if (!monthRows.length) {
-      toast.error(`No buy prices for ${format(new Date(yy, mm - 1, 1), "MMMM yyyy")}`);
+      const supLbl = exportSupplier === "__all" ? "" : ` (${exportSupplier})`;
+      toast.error(`No buy prices for ${format(new Date(yy, mm - 1, 1), "MMMM yyyy")}${supLbl}`);
       return;
     }
     const esc = (v: string | number) => {
@@ -123,7 +127,8 @@ export default function BuyPriceTab() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `buy-prices-${exportMonth}.csv`;
+    const supSlug = exportSupplier === "__all" ? "all" : exportSupplier.toLowerCase().replace(/\s+/g, "-");
+    a.download = `buy-prices-${exportMonth}-${supSlug}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
