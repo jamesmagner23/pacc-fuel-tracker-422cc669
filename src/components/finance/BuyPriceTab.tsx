@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { TrendingUp, TrendingDown, Trash2, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, Trash2, RefreshCw, Download } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useBuyPrices, useUpsertBuyPrice, useDeleteBuyPrice, useTodayBuyPrices, SUPPLIERS } from "@/hooks/useBuyPrices";
 import { useTGPrices, useTodayTGP, useFetchTGP } from "@/hooks/useTGPrices";
@@ -74,6 +74,62 @@ export default function BuyPriceTab() {
   const [customSupplier, setCustomSupplier] = useState("");
   const [bulkText, setBulkText] = useState("");
   const [showBulk, setShowBulk] = useState(false);
+  const [exportMonth, setExportMonth] = useState(format(new Date(), "yyyy-MM"));
+
+  const handleDownloadCsv = () => {
+    const [yy, mm] = exportMonth.split("-").map(Number);
+    const monthRows = prices
+      .filter((p) => {
+        const d = parseISO(p.price_date);
+        return d.getFullYear() === yy && d.getMonth() + 1 === mm;
+      })
+      .sort((a, b) => (a.price_date < b.price_date ? -1 : a.price_date > b.price_date ? 1 : a.supplier.localeCompare(b.supplier)));
+    if (!monthRows.length) {
+      toast.error(`No buy prices for ${format(new Date(yy, mm - 1, 1), "MMMM yyyy")}`);
+      return;
+    }
+    const esc = (v: string | number) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = ["Date", "Day", "Supplier", "Price ex GST ($/L)", "Price inc GST ($/L)", "Notes"];
+    const lines = [header.join(",")];
+    for (const r of monthRows) {
+      const d = parseISO(r.price_date);
+      lines.push([
+        esc(r.price_date),
+        esc(format(d, "EEE")),
+        esc(r.supplier),
+        esc(r.price_per_litre.toFixed(4)),
+        esc((r.price_per_litre * 1.1).toFixed(4)),
+        esc(r.notes || ""),
+      ].join(","));
+    }
+    // Per-supplier averages
+    lines.push("");
+    lines.push(["", "", "Supplier", "Avg ex GST ($/L)", "Avg inc GST ($/L)", "Entries"].join(","));
+    const bySup = new Map<string, number[]>();
+    monthRows.forEach((r) => {
+      const arr = bySup.get(r.supplier) || [];
+      arr.push(r.price_per_litre);
+      bySup.set(r.supplier, arr);
+    });
+    for (const [sup, arr] of bySup) {
+      const avg = arr.reduce((s, v) => s + v, 0) / arr.length;
+      lines.push(["", "", esc(sup), esc(avg.toFixed(4)), esc((avg * 1.1).toFixed(4)), esc(arr.length)].join(","));
+    }
+    const csv = lines.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `buy-prices-${exportMonth}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded ${monthRows.length} entries for ${format(new Date(yy, mm - 1, 1), "MMMM yyyy")}`);
+  };
 
   const handleSave = async () => {
     const p = parseFloat(price);
@@ -457,7 +513,24 @@ export default function BuyPriceTab() {
       </div>
 
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Price History ({prices.length} entries)</div>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3.5">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Price History ({prices.length} entries)</div>
+          <div className="flex items-center gap-2">
+            <input
+              type="month"
+              value={exportMonth}
+              onChange={(e) => setExportMonth(e.target.value)}
+              className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1 text-[11px] outline-none"
+            />
+            <button
+              onClick={handleDownloadCsv}
+              className="bg-transparent border border-surface-border rounded-full px-3 py-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 transition-colors"
+            >
+              <Download className="w-3 h-3" />
+              Download CSV
+            </button>
+          </div>
+        </div>
         {isLoading ? (
           <div className="text-muted-foreground text-[13px]">Loading…</div>
         ) : prices.length === 0 ? (
