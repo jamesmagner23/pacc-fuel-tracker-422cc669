@@ -496,8 +496,8 @@ export default function BuyPriceTab() {
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-40" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-muted-foreground">Buy Price / Litre ($)</label>
-            <input type="number" step="0.0001" placeholder="e.g. 2.5400" value={price} onChange={(e) => setPrice(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-44" />
+            <label className="text-[11px] text-muted-foreground">Buy Price / Litre — ex GST ($)</label>
+            <input type="number" step="0.0001" placeholder="e.g. 2.5400 ex GST" value={price} onChange={(e) => setPrice(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }} className="bg-raised border border-surface-border rounded-lg text-foreground px-3 py-2 text-[13px] outline-none w-full sm:w-44" />
           </div>
           <div className="flex gap-2">
             <button onClick={handleSave} disabled={upsert.isPending} className="bg-primary text-primary-foreground border-none rounded-full px-5 py-2 text-xs font-semibold cursor-pointer disabled:opacity-70">
@@ -513,7 +513,7 @@ export default function BuyPriceTab() {
         {showBulk && (
           <div className="mt-4 flex flex-col gap-2">
             <div className="text-[11px] text-muted-foreground">
-              One entry per line: <span className="text-foreground/70">YYYY-MM-DD, price</span>
+              One entry per line: <span className="text-foreground/70">YYYY-MM-DD, ex GST price</span>
             </div>
             <textarea value={bulkText} onChange={(e) => setBulkText(e.target.value)} placeholder={"2026-03-01, 2.1520\n2026-03-06, 1.8022"} rows={8} className="bg-raised border border-surface-border rounded-lg text-foreground p-3 text-xs font-mono outline-none resize-y w-full" />
             <button onClick={handleBulkSave} disabled={upsert.isPending} className="bg-primary text-primary-foreground border-none rounded-full px-5 py-2 text-xs font-semibold cursor-pointer self-start">
