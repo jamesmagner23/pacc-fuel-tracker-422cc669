@@ -74,6 +74,62 @@ export default function BuyPriceTab() {
   const [customSupplier, setCustomSupplier] = useState("");
   const [bulkText, setBulkText] = useState("");
   const [showBulk, setShowBulk] = useState(false);
+  const [exportMonth, setExportMonth] = useState(format(new Date(), "yyyy-MM"));
+
+  const handleDownloadCsv = () => {
+    const [yy, mm] = exportMonth.split("-").map(Number);
+    const monthRows = prices
+      .filter((p) => {
+        const d = parseISO(p.price_date);
+        return d.getFullYear() === yy && d.getMonth() + 1 === mm;
+      })
+      .sort((a, b) => (a.price_date < b.price_date ? -1 : a.price_date > b.price_date ? 1 : a.supplier.localeCompare(b.supplier)));
+    if (!monthRows.length) {
+      toast.error(`No buy prices for ${format(new Date(yy, mm - 1, 1), "MMMM yyyy")}`);
+      return;
+    }
+    const esc = (v: string | number) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = ["Date", "Day", "Supplier", "Price ex GST ($/L)", "Price inc GST ($/L)", "Notes"];
+    const lines = [header.join(",")];
+    for (const r of monthRows) {
+      const d = parseISO(r.price_date);
+      lines.push([
+        esc(r.price_date),
+        esc(format(d, "EEE")),
+        esc(r.supplier),
+        esc(r.price_per_litre.toFixed(4)),
+        esc((r.price_per_litre * 1.1).toFixed(4)),
+        esc(r.notes || ""),
+      ].join(","));
+    }
+    // Per-supplier averages
+    lines.push("");
+    lines.push(["", "", "Supplier", "Avg ex GST ($/L)", "Avg inc GST ($/L)", "Entries"].join(","));
+    const bySup = new Map<string, number[]>();
+    monthRows.forEach((r) => {
+      const arr = bySup.get(r.supplier) || [];
+      arr.push(r.price_per_litre);
+      bySup.set(r.supplier, arr);
+    });
+    for (const [sup, arr] of bySup) {
+      const avg = arr.reduce((s, v) => s + v, 0) / arr.length;
+      lines.push(["", "", esc(sup), esc(avg.toFixed(4)), esc((avg * 1.1).toFixed(4)), esc(arr.length)].join(","));
+    }
+    const csv = lines.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `buy-prices-${exportMonth}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded ${monthRows.length} entries for ${format(new Date(yy, mm - 1, 1), "MMMM yyyy")}`);
+  };
 
   const handleSave = async () => {
     const p = parseFloat(price);
