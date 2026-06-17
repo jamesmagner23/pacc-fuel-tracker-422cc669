@@ -513,7 +513,24 @@ export default function BuyPriceTab() {
       </div>
 
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Price History ({prices.length} entries)</div>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3.5">
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Price History ({prices.length} entries)</div>
+          <div className="flex items-center gap-2">
+            <input
+              type="month"
+              value={exportMonth}
+              onChange={(e) => setExportMonth(e.target.value)}
+              className="bg-raised border border-surface-border rounded-full text-foreground px-2.5 py-1 text-[11px] outline-none"
+            />
+            <button
+              onClick={handleDownloadCsv}
+              className="bg-transparent border border-surface-border rounded-full px-3 py-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1.5 transition-colors"
+            >
+              <Download className="w-3 h-3" />
+              Download CSV
+            </button>
+          </div>
+        </div>
         {isLoading ? (
           <div className="text-muted-foreground text-[13px]">Loading…</div>
         ) : prices.length === 0 ? (
