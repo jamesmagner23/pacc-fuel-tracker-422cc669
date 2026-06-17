@@ -223,32 +223,47 @@ async function buildReport(period: "daily" | "weekly") {
 
 function renderHtml(r: Awaited<ReturnType<typeof buildReport>>) {
   const m = r.metrics;
+  // Cream/light palette — survives iOS Mail dark-mode inversion and matches PACC print branding.
+  const BRAND = "#f04a1a";
+  const BRAND_DARK = "#c93a10";
+  const INK = "#1a0f08";
+  const INK_SOFT = "#5a4a3c";
+  const CREAM = "#fff7ef";
+  const CARD = "#ffffff";
+  const HAIRLINE = "#f0e3d3";
+
   const row = (label: string, value: string, sub?: string) => `
     <tr>
-      <td style="padding:12px 16px;border-bottom:1px solid #2a1a10;color:#f5e6d6;font-size:14px;">${label}</td>
-      <td style="padding:12px 16px;border-bottom:1px solid #2a1a10;color:#ffffff;font-size:16px;font-weight:600;text-align:right;">
-        ${value}${sub ? `<div style="font-size:11px;font-weight:400;color:#bda58c;margin-top:2px;">${sub}</div>` : ""}
+      <td style="padding:16px 20px;border-bottom:1px solid ${HAIRLINE};color:${INK_SOFT};font-size:13px;letter-spacing:0.2px;">${label}</td>
+      <td style="padding:16px 20px;border-bottom:1px solid ${HAIRLINE};color:${INK};font-size:18px;font-weight:700;text-align:right;line-height:1.2;">
+        ${value}${sub ? `<div style="font-size:11px;font-weight:500;color:${INK_SOFT};margin-top:3px;letter-spacing:0.1px;">${sub}</div>` : ""}
       </td>
     </tr>`;
+
   return `<!doctype html>
-<html><body style="margin:0;padding:0;background:#0f0703;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
-  <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
-    <div style="background:#1a0c05;border-radius:14px;overflow:hidden;border:1px solid #2a1a10;">
-      <div style="padding:24px;background:linear-gradient(135deg,#f04a1a,#c0390f);">
-        <div style="color:#fff;font-size:20px;font-weight:700;">PACC Energy — ${r.win.label} Report</div>
-        <div style="color:#ffe6dc;font-size:13px;margin-top:4px;">${r.win.rangeLabel}</div>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"></head>
+<body style="margin:0;padding:0;background:${CREAM};font-family:-apple-system,'Inter',Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:${INK};">
+  <div style="max-width:560px;margin:0 auto;padding:28px 16px;">
+    <!-- Brand bar -->
+    <div style="text-align:center;padding-bottom:18px;">
+      <span style="display:inline-block;font-size:18px;font-weight:800;letter-spacing:3px;color:${BRAND};">PACC<span style="color:${INK};margin-left:6px;">ENERGY</span></span>
+    </div>
+    <div style="background:${CARD};border-radius:16px;overflow:hidden;border:1px solid ${HAIRLINE};box-shadow:0 1px 3px rgba(24,15,8,0.06);">
+      <div style="padding:28px 24px 24px;background:linear-gradient(135deg,${BRAND} 0%,${BRAND_DARK} 100%);">
+        <div style="color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:0.85;">${r.win.label} Operations Report</div>
+        <div style="color:#ffffff;font-size:22px;font-weight:800;margin-top:6px;line-height:1.25;">${r.win.rangeLabel}</div>
       </div>
-      <table style="width:100%;border-collapse:collapse;">
-        ${row("Sales", `${fmtNum(m.salesCount)}`, `${fmtNum(m.litres, 0)} L`)}
-        ${row("Revenue", fmtMoney(m.revenue), `inc GST · ${fmtMoney(m.revenueExGst)} ex GST`)}
-        ${row("Gross profit (est.)", fmtMoney(m.profit), `ex GST · COGS ${fmtMoney(m.cogs)}`)}
+      <table role="presentation" style="width:100%;border-collapse:collapse;background:${CARD};">
+        ${row("Sales", `${fmtNum(m.salesCount)}`, `${fmtNum(m.litres, 0)} L delivered`)}
+        ${row("Revenue", fmtMoney(m.revenue), `inc GST &middot; ${fmtMoney(m.revenueExGst)} ex GST`)}
+        ${row("Gross profit (est.)", fmtMoney(m.profit), `ex GST &middot; COGS ${fmtMoney(m.cogs)}`)}
         ${row("Stops completed", fmtNum(m.stopsCount))}
         ${row("Kms travelled (est.)", `${fmtNum(m.kms, 0)} km`, "between completed stops")}
         ${row("Driver hours", fmtHours(m.driverHoursMs), `${m.driverDayCount} driver-day${m.driverDayCount === 1 ? "" : "s"}`)}
       </table>
-      <div style="padding:16px 20px;color:#8a7563;font-size:11px;background:#140903;">
-        Auto-sent by PACC Energy operations report.
-      </div>
+    </div>
+    <div style="text-align:center;padding:18px 16px 4px;color:${INK_SOFT};font-size:11px;letter-spacing:0.3px;">
+      Auto-sent by PACC Energy &middot; paccenergy.com
     </div>
   </div>
 </body></html>`;
