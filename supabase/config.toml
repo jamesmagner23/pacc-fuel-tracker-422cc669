@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.get-docket]
 verify_jwt = false
+
+[functions.send-ops-report]
+verify_jwt = false
