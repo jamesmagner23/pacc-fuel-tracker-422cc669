@@ -77,6 +77,13 @@ export default function BuyPriceTab() {
   const [exportMonth, setExportMonth] = useState(format(new Date(), "yyyy-MM"));
   const [exportSupplier, setExportSupplier] = useState<string>("__all");
 
+  const visible = prices.filter((p) => {
+    const d = parseISO(p.price_date);
+    if (d.getFullYear() !== Number(exportMonth.split("-")[0]) || d.getMonth() + 1 !== Number(exportMonth.split("-")[1])) return false;
+    if (exportSupplier !== "__all" && p.supplier !== exportSupplier) return false;
+    return true;
+  });
+
   const handleDownloadCsv = () => {
     const [yy, mm] = exportMonth.split("-").map(Number);
     const monthRows = [...visible].sort((a, b) => (a.price_date < b.price_date ? -1 : a.price_date > b.price_date ? 1 : a.supplier.localeCompare(b.supplier)));
