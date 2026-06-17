@@ -76,6 +76,7 @@ export default function BuyPriceTab() {
   const [showBulk, setShowBulk] = useState(false);
   const [exportMonth, setExportMonth] = useState(format(new Date(), "yyyy-MM"));
   const [exportSupplier, setExportSupplier] = useState<string>("__all");
+  const GST_RATE = 1.1;
 
   const visible = prices.filter((p) => {
     const d = parseISO(p.price_date);
@@ -96,7 +97,7 @@ export default function BuyPriceTab() {
       const s = String(v ?? "");
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
-    const header = ["Date", "Day", "Supplier", "Price ex GST ($/L)", "Price inc GST ($/L)", "Notes"];
+    const header = ["Date", "Day", "Supplier", "Buy price ex GST ($/L)", "Buy price inc GST ($/L)", "Notes"];
     const lines = [header.join(",")];
     for (const r of monthRows) {
       const d = parseISO(r.price_date);
@@ -105,13 +106,13 @@ export default function BuyPriceTab() {
         esc(format(d, "EEE")),
         esc(r.supplier),
         esc(r.price_per_litre.toFixed(4)),
-        esc((r.price_per_litre * 1.1).toFixed(4)),
+        esc((r.price_per_litre * GST_RATE).toFixed(4)),
         esc(r.notes || ""),
       ].join(","));
     }
     // Per-supplier averages
     lines.push("");
-    lines.push(["", "", "Supplier", "Avg ex GST ($/L)", "Avg inc GST ($/L)", "Entries"].join(","));
+    lines.push(["", "", "Supplier", "Average ex GST ($/L)", "Average inc GST ($/L)", "Entries"].join(","));
     const bySup = new Map<string, number[]>();
     monthRows.forEach((r) => {
       const arr = bySup.get(r.supplier) || [];
@@ -120,7 +121,7 @@ export default function BuyPriceTab() {
     });
     for (const [sup, arr] of bySup) {
       const avg = arr.reduce((s, v) => s + v, 0) / arr.length;
-      lines.push(["", "", esc(sup), esc(avg.toFixed(4)), esc((avg * 1.1).toFixed(4)), esc(arr.length)].join(","));
+      lines.push(["", "", esc(sup), esc(avg.toFixed(4)), esc((avg * GST_RATE).toFixed(4)), esc(arr.length)].join(","));
     }
     const csv = lines.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
