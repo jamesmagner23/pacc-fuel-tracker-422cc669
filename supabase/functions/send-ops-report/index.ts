@@ -223,35 +223,60 @@ async function buildReport(period: "daily" | "weekly") {
 
 function renderHtml(r: Awaited<ReturnType<typeof buildReport>>) {
   const m = r.metrics;
-  // Cream/light palette — survives iOS Mail dark-mode inversion and matches PACC print branding.
-  const BRAND = "#f04a1a";
-  const BRAND_DARK = "#c93a10";
-  const INK = "#1a0f08";
-  const INK_SOFT = "#5a4a3c";
-  const CREAM = "#fff7ef";
-  const CARD = "#ffffff";
-  const HAIRLINE = "#f0e3d3";
+  // PACC Energy brand palette (per brand guide):
+  //   bone background, deep forest green wordmark, lime-green accent.
+  const FOREST = "#1f3318";   // primary brand
+  const FOREST_DEEP = "#162311";
+  const LIME = "#cbe89c";     // accent
+  const BONE = "#e7e6db";     // page bg
+  const CARD = "#f3f2ea";     // card bg
+  const INK = "#1a1a14";
+  const INK_SOFT = "#5a5a4f";
+  const HAIRLINE = "#d4d3c6";
 
   const row = (label: string, value: string, sub?: string) => `
     <tr>
-      <td style="padding:16px 20px;border-bottom:1px solid ${HAIRLINE};color:${INK_SOFT};font-size:13px;letter-spacing:0.2px;">${label}</td>
-      <td style="padding:16px 20px;border-bottom:1px solid ${HAIRLINE};color:${INK};font-size:18px;font-weight:700;text-align:right;line-height:1.2;">
-        ${value}${sub ? `<div style="font-size:11px;font-weight:500;color:${INK_SOFT};margin-top:3px;letter-spacing:0.1px;">${sub}</div>` : ""}
+      <td style="padding:18px 22px;border-bottom:1px solid ${HAIRLINE};color:${INK_SOFT};font-size:12px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;">${label}</td>
+      <td style="padding:18px 22px;border-bottom:1px solid ${HAIRLINE};color:${FOREST};font-size:22px;font-weight:800;text-align:right;line-height:1.15;letter-spacing:-0.3px;">
+        ${value}${sub ? `<div style="font-size:11px;font-weight:500;color:${INK_SOFT};margin-top:4px;letter-spacing:0.2px;text-transform:none;">${sub}</div>` : ""}
       </td>
     </tr>`;
 
+  // Dotted-matrix "P" mark rendered as a 5x5 grid of HTML squares (no external image needed).
+  const dot = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${LIME};margin:1px;"></span>`;
+  const blank = `<span style="display:inline-block;width:6px;height:6px;margin:1px;"></span>`;
+  // P shape (5 cols × 6 rows): 1=dot, 0=blank
+  const P_GRID = [
+    [1,1,1,1,0],
+    [1,0,0,0,1],
+    [1,0,0,0,1],
+    [1,1,1,1,0],
+    [1,0,0,0,0],
+    [1,0,0,0,0],
+  ];
+  const pMark = `<div style="line-height:0;font-size:0;">` +
+    P_GRID.map(row => `<div style="line-height:0;">${row.map(c => c ? dot : blank).join("")}</div>`).join("") +
+    `</div>`;
+
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light"></head>
-<body style="margin:0;padding:0;background:${CREAM};font-family:-apple-system,'Inter',Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:${INK};">
-  <div style="max-width:560px;margin:0 auto;padding:28px 16px;">
-    <!-- Brand bar -->
-    <div style="text-align:center;padding-bottom:18px;">
-      <span style="display:inline-block;font-size:18px;font-weight:800;letter-spacing:3px;color:${BRAND};">PACC<span style="color:${INK};margin-left:6px;">ENERGY</span></span>
-    </div>
-    <div style="background:${CARD};border-radius:16px;overflow:hidden;border:1px solid ${HAIRLINE};box-shadow:0 1px 3px rgba(24,15,8,0.06);">
-      <div style="padding:28px 24px 24px;background:linear-gradient(135deg,${BRAND} 0%,${BRAND_DARK} 100%);">
-        <div style="color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:0.85;">${r.win.label} Operations Report</div>
-        <div style="color:#ffffff;font-size:22px;font-weight:800;margin-top:6px;line-height:1.25;">${r.win.rangeLabel}</div>
+<body style="margin:0;padding:0;background:${BONE};font-family:-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;color:${INK};">
+  <div style="max-width:600px;margin:0 auto;padding:32px 20px;">
+    <!-- Brand bar: dotted P mark left, wordmark center, tagline right -->
+    <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:22px;">
+      <tr>
+        <td style="width:50px;vertical-align:top;">${pMark}</td>
+        <td style="text-align:center;vertical-align:middle;color:${FOREST};font-size:18px;font-weight:900;letter-spacing:2px;">PACC ENERGY</td>
+        <td style="width:80px;text-align:right;vertical-align:top;color:${FOREST};font-size:8px;font-weight:700;letter-spacing:1.5px;line-height:1.4;">
+          POWERED<br/>BY<br/>PROGRESS
+        </td>
+      </tr>
+    </table>
+    <div style="background:${CARD};border-radius:4px;overflow:hidden;border:1px solid ${HAIRLINE};">
+      <div style="padding:32px 24px;background:${FOREST_DEEP};">
+        <div style="color:${LIME};font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${r.win.label} Operations Report</div>
+        <div style="color:#ffffff;font-size:24px;font-weight:800;margin-top:10px;line-height:1.2;letter-spacing:-0.3px;">${r.win.rangeLabel}</div>
+        <div style="height:3px;width:48px;background:${LIME};margin-top:16px;"></div>
       </div>
       <table role="presentation" style="width:100%;border-collapse:collapse;background:${CARD};">
         ${row("Sales", `${fmtNum(m.salesCount)}`, `${fmtNum(m.litres, 0)} L delivered`)}
@@ -262,8 +287,8 @@ function renderHtml(r: Awaited<ReturnType<typeof buildReport>>) {
         ${row("Driver hours", fmtHours(m.driverHoursMs), `${m.driverDayCount} driver-day${m.driverDayCount === 1 ? "" : "s"}`)}
       </table>
     </div>
-    <div style="text-align:center;padding:18px 16px 4px;color:${INK_SOFT};font-size:11px;letter-spacing:0.3px;">
-      Auto-sent by PACC Energy &middot; paccenergy.com
+    <div style="text-align:center;padding:20px 16px 4px;color:${INK_SOFT};font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">
+      Auto-sent &middot; paccenergy.com
     </div>
   </div>
 </body></html>`;
