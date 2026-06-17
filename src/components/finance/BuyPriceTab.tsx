@@ -77,16 +77,16 @@ export default function BuyPriceTab() {
   const [exportMonth, setExportMonth] = useState(format(new Date(), "yyyy-MM"));
   const [exportSupplier, setExportSupplier] = useState<string>("__all");
 
+  const visible = prices.filter((p) => {
+    const d = parseISO(p.price_date);
+    if (d.getFullYear() !== Number(exportMonth.split("-")[0]) || d.getMonth() + 1 !== Number(exportMonth.split("-")[1])) return false;
+    if (exportSupplier !== "__all" && p.supplier !== exportSupplier) return false;
+    return true;
+  });
+
   const handleDownloadCsv = () => {
     const [yy, mm] = exportMonth.split("-").map(Number);
-    const monthRows = prices
-      .filter((p) => {
-        const d = parseISO(p.price_date);
-        if (d.getFullYear() !== yy || d.getMonth() + 1 !== mm) return false;
-        if (exportSupplier !== "__all" && p.supplier !== exportSupplier) return false;
-        return true;
-      })
-      .sort((a, b) => (a.price_date < b.price_date ? -1 : a.price_date > b.price_date ? 1 : a.supplier.localeCompare(b.supplier)));
+    const monthRows = [...visible].sort((a, b) => (a.price_date < b.price_date ? -1 : a.price_date > b.price_date ? 1 : a.supplier.localeCompare(b.supplier)));
     if (!monthRows.length) {
       const supLbl = exportSupplier === "__all" ? "" : ` (${exportSupplier})`;
       toast.error(`No buy prices for ${format(new Date(yy, mm - 1, 1), "MMMM yyyy")}${supLbl}`);
@@ -519,7 +519,7 @@ export default function BuyPriceTab() {
 
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-3.5">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Price History ({prices.length} entries)</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Price History ({visible.length} entries)</div>
           <div className="flex items-center gap-2 flex-wrap">
             <select
               value={exportSupplier}
@@ -564,9 +564,9 @@ export default function BuyPriceTab() {
         {isLoading ? (
           <div className="text-muted-foreground text-[13px]">Loading…</div>
         ) : (() => {
-          const visible = exportSupplier === "__all" ? prices : prices.filter(p => p.supplier === exportSupplier);
           if (visible.length === 0) {
-            return <div className="text-muted-foreground text-[13px]">No entries{exportSupplier === "__all" ? "" : ` for ${exportSupplier}`} yet.</div>;
+            const monthName = format(new Date(Number(exportMonth.split("-")[0]), Number(exportMonth.split("-")[1]) - 1, 1), "MMMM yyyy");
+            return <div className="text-muted-foreground text-[13px]">No entries for {monthName}{exportSupplier === "__all" ? "" : ` / ${exportSupplier}`}.</div>;
           }
           return (
           <div className="flex flex-col">
