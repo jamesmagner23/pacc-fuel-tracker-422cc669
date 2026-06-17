@@ -217,6 +217,9 @@ export default function BuyPriceTab() {
               ${latest.price_per_litre.toFixed(4)}
               <span className="text-base sm:text-lg text-muted-foreground">/L</span>
             </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              ex GST · ${(latest.price_per_litre * GST_RATE).toFixed(4)}/L inc GST
+            </div>
             {priceChange !== null && (
               <div className="flex items-center gap-1.5 mt-2">
                 {priceChange >= 0 ? <TrendingUp className="w-3 h-3 text-destructive" /> : <TrendingDown className="w-3 h-3 text-positive" />}
@@ -228,8 +231,9 @@ export default function BuyPriceTab() {
             )}
           </div>
           <div className="sm:text-right">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg ({PRIMARY_SUPPLIER})</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">365-day avg ex GST ({PRIMARY_SUPPLIER})</div>
             <div className="text-lg sm:text-xl font-medium text-muted-foreground tabular-nums">${avgPrice.toFixed(4)}/L</div>
+            <div className="text-[11px] text-muted-foreground tabular-nums">${(avgPrice * GST_RATE).toFixed(4)}/L inc GST</div>
           </div>
         </div>
       )}
@@ -262,7 +266,8 @@ export default function BuyPriceTab() {
                       {isBest && !isPrimary && <div className="text-[9px] uppercase tracking-wider text-positive font-semibold">Cheapest</div>}
                     </div>
                   </div>
-                  <div className="text-xl font-semibold text-foreground tabular-nums mt-1">${p.price_per_litre.toFixed(4)}<span className="text-xs text-muted-foreground">/L</span></div>
+                  <div className="text-xl font-semibold text-foreground tabular-nums mt-1">${p.price_per_litre.toFixed(4)}<span className="text-xs text-muted-foreground">/L ex GST</span></div>
+                  <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">${(p.price_per_litre * GST_RATE).toFixed(4)}/L inc GST</div>
                 </div>
               );
             })}
