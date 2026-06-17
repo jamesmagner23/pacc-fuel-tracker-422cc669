@@ -433,7 +433,7 @@ export default function BuyPriceTab() {
       {chartData.length > 1 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Buy Price Trend by Supplier — Last {prices.length} Entries</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Buy Price Trend by Supplier — Ex GST — Last {prices.length} Entries</div>
             <div className="flex items-center gap-3 flex-wrap">
               {allSuppliers.map((s, i) => (
                 <div key={s} className="flex items-center gap-1.5">
@@ -452,7 +452,7 @@ export default function BuyPriceTab() {
                   contentStyle={{ background: "var(--background)", border: "1px solid var(--primary)", borderRadius: 8, fontSize: 12 }}
                   labelStyle={{ color: "var(--text-primary)" }}
                   itemStyle={{ color: "var(--text-primary)" }}
-                  formatter={(v: number, name: string) => [`$${v.toFixed(4)}/L`, name]}
+                  formatter={(v: number, name: string) => [`$${v.toFixed(4)}/L ex GST`, name]}
                   cursor={{ stroke: "rgba(196,168,130,0.2)" }}
                 />
                 {avgPrice > 0 && <ReferenceLine y={avgPrice} stroke="hsl(var(--muted-foreground) / 0.4)" strokeWidth={1} />}
