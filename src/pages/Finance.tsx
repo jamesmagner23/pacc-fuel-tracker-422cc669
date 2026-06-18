@@ -1,6 +1,7 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import PLOverview from "@/components/finance/PLOverview";
 import BuyPriceTab from "@/components/finance/BuyPriceTab";
+import CompetitorAnalyserTab from "@/components/finance/CompetitorAnalyserTab";
 
 export default function Finance() {
   return (
@@ -16,6 +17,7 @@ export default function Finance() {
           {[
             { value: "pnl", label: "P&L Overview" },
             { value: "buy", label: "Buy Price" },
+            { value: "competitor", label: "Competitor Analyser" },
           ].map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -32,6 +34,9 @@ export default function Finance() {
         </TabsContent>
         <TabsContent value="buy" className="mt-5">
           <BuyPriceTab />
+        </TabsContent>
+        <TabsContent value="competitor" className="mt-5">
+          <CompetitorAnalyserTab />
         </TabsContent>
       </Tabs>
     </div>
