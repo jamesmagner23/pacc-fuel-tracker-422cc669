@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Fragment } from "react";
 import { Upload, FileText, Loader2, TrendingUp, AlertTriangle, CheckCircle2, X, Archive, Save, Trash2, Inbox, Tag, Search, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTodayBuyPrices } from "@/hooks/useBuyPrices";
@@ -546,8 +546,8 @@ export default function CompetitorAnalyserTab() {
               </thead>
               <tbody>
                 {filtered.map((h) => (
-                  <>
-                  <tr key={h.id} className="border-b border-subtle hover:bg-surface-raised/50">
+                  <Fragment key={h.id}>
+                  <tr className="border-b border-subtle hover:bg-surface-raised/50">
                     <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">{format(new Date(h.created_at), "d MMM yy")}</td>
                     <td className="py-2 pr-3">
                       {h.label ? (
@@ -616,7 +616,7 @@ export default function CompetitorAnalyserTab() {
                     </td>
                   </tr>
                   {editingId === h.id && (
-                    <tr key={h.id + "-edit"} className="bg-surface-raised/40 border-b border-subtle">
+                    <tr className="bg-surface-raised/40 border-b border-subtle">
                       <td colSpan={11} className="p-3">
                         <div className="flex flex-col sm:flex-row gap-2">
                           <input
@@ -662,13 +662,13 @@ export default function CompetitorAnalyserTab() {
                     </tr>
                   )}
                   {h.user_note && editingId !== h.id && (
-                    <tr key={h.id + "-note"} className="border-b border-subtle">
+                    <tr className="border-b border-subtle">
                       <td colSpan={11} className="px-0 pb-2 -mt-1 text-[11px] text-muted-foreground italic">
                         ↳ {h.user_note}
                       </td>
                     </tr>
                   )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
