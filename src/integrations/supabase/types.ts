@@ -259,6 +259,7 @@ export type Database = {
           gst_amount: number | null
           id: string
           invoice_date: string | null
+          label: string | null
           litres: number | null
           margin_pct: number | null
           margin_per_litre: number | null
@@ -274,6 +275,7 @@ export type Database = {
           total_inc_gst: number | null
           total_profit: number | null
           updated_at: string
+          user_note: string | null
         }
         Insert: {
           created_at?: string
@@ -287,6 +289,7 @@ export type Database = {
           gst_amount?: number | null
           id?: string
           invoice_date?: string | null
+          label?: string | null
           litres?: number | null
           margin_pct?: number | null
           margin_per_litre?: number | null
@@ -302,6 +305,7 @@ export type Database = {
           total_inc_gst?: number | null
           total_profit?: number | null
           updated_at?: string
+          user_note?: string | null
         }
         Update: {
           created_at?: string
@@ -315,6 +319,7 @@ export type Database = {
           gst_amount?: number | null
           id?: string
           invoice_date?: string | null
+          label?: string | null
           litres?: number | null
           margin_pct?: number | null
           margin_per_litre?: number | null
@@ -330,6 +335,7 @@ export type Database = {
           total_inc_gst?: number | null
           total_profit?: number | null
           updated_at?: string
+          user_note?: string | null
         }
         Relationships: []
       }
