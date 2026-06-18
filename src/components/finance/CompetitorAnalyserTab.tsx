@@ -213,10 +213,17 @@ export default function CompetitorAnalyserTab() {
         margin_pct: marginPct,
         total_profit: totalProfit,
         extracted: extracted as any,
+        label: label.trim() || null,
+        user_note: userNote.trim() || null,
       };
       let res;
       if (currentId) {
-        res = await supabase.from("competitor_analyses").update({ status }).eq("id", currentId).select().single();
+        res = await supabase
+          .from("competitor_analyses")
+          .update({ status, label: label.trim() || null, user_note: userNote.trim() || null })
+          .eq("id", currentId)
+          .select()
+          .single();
       } else {
         res = await supabase.from("competitor_analyses").insert(payload).select().single();
       }
