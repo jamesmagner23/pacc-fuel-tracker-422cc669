@@ -246,6 +246,93 @@ export type Database = {
           },
         ]
       }
+      competitor_analyses: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_address: string | null
+          customer_name: string | null
+          delivery_fee_ex_gst: number | null
+          extracted: Json | null
+          filename: string | null
+          fuel_type: string | null
+          gst_amount: number | null
+          id: string
+          invoice_date: string | null
+          litres: number | null
+          margin_pct: number | null
+          margin_per_litre: number | null
+          notes: string | null
+          our_buy_price: number | null
+          our_buy_price_date: string | null
+          our_buy_supplier: string | null
+          price_per_litre_ex_gst: number | null
+          price_per_litre_inc_gst: number | null
+          status: string
+          subtotal_ex_gst: number | null
+          supplier_name: string | null
+          total_inc_gst: number | null
+          total_profit: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_name?: string | null
+          delivery_fee_ex_gst?: number | null
+          extracted?: Json | null
+          filename?: string | null
+          fuel_type?: string | null
+          gst_amount?: number | null
+          id?: string
+          invoice_date?: string | null
+          litres?: number | null
+          margin_pct?: number | null
+          margin_per_litre?: number | null
+          notes?: string | null
+          our_buy_price?: number | null
+          our_buy_price_date?: string | null
+          our_buy_supplier?: string | null
+          price_per_litre_ex_gst?: number | null
+          price_per_litre_inc_gst?: number | null
+          status?: string
+          subtotal_ex_gst?: number | null
+          supplier_name?: string | null
+          total_inc_gst?: number | null
+          total_profit?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_address?: string | null
+          customer_name?: string | null
+          delivery_fee_ex_gst?: number | null
+          extracted?: Json | null
+          filename?: string | null
+          fuel_type?: string | null
+          gst_amount?: number | null
+          id?: string
+          invoice_date?: string | null
+          litres?: number | null
+          margin_pct?: number | null
+          margin_per_litre?: number | null
+          notes?: string | null
+          our_buy_price?: number | null
+          our_buy_price_date?: string | null
+          our_buy_supplier?: string | null
+          price_per_litre_ex_gst?: number | null
+          price_per_litre_inc_gst?: number | null
+          status?: string
+          subtotal_ex_gst?: number | null
+          supplier_name?: string | null
+          total_inc_gst?: number | null
+          total_profit?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_activities: {
         Row: {
           body_excerpt: string | null
