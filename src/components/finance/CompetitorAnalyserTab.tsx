@@ -335,7 +335,34 @@ export default function CompetitorAnalyserTab() {
       {extracted && (
         <>
           {/* Save / Archive actions */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="bg-surface border border-surface-border rounded-[10px] p-4 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-1">
+                  <Tag className="w-3 h-3" /> Label
+                </label>
+                <input
+                  type="text"
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  placeholder="e.g. Hot lead, Devon Meadows, Quote Q3"
+                  className="w-full bg-surface-raised border border-surface-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-1">
+                  <Pencil className="w-3 h-3" /> Note
+                </label>
+                <input
+                  type="text"
+                  value={userNote}
+                  onChange={(e) => setUserNote(e.target.value)}
+                  placeholder="Anything you want to remember about this one…"
+                  className="w-full bg-surface-raised border border-surface-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => saveAnalysis("kept")}
               disabled={saving}
@@ -351,6 +378,7 @@ export default function CompetitorAnalyserTab() {
               <Archive className="w-3.5 h-3.5" /> Archive
             </button>
             {currentId && <span className="text-xs text-muted-foreground">Saved ✓</span>}
+            </div>
           </div>
 
           {/* Verdict */}
@@ -457,14 +485,54 @@ export default function CompetitorAnalyserTab() {
             ))}
           </div>
         </div>
-        {history.filter((h) => h.status === historyFilter).length === 0 ? (
+        {/* Search + label filter */}
+        <div className="flex flex-col sm:flex-row gap-2 mb-3">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search label, note, supplier, customer…"
+              className="w-full bg-surface-raised border border-surface-border rounded-md pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          {(() => {
+            const labels = Array.from(new Set(history.map((h) => h.label).filter(Boolean))) as string[];
+            if (!labels.length) return null;
+            return (
+              <select
+                value={labelFilter}
+                onChange={(e) => setLabelFilter(e.target.value)}
+                className="bg-surface-raised border border-surface-border rounded-md px-2.5 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="">All labels</option>
+                {labels.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            );
+          })()}
+        </div>
+        {(() => {
+          const q = search.trim().toLowerCase();
+          const filtered = history.filter((h) => h.status === historyFilter)
+            .filter((h) => !labelFilter || h.label === labelFilter)
+            .filter((h) => {
+              if (!q) return true;
+              return [h.label, h.user_note, h.supplier_name, h.customer_name, h.filename]
+                .some((v) => v && v.toLowerCase().includes(q));
+            });
+          if (filtered.length === 0) return (
           <div className="text-xs text-muted-foreground py-4 text-center">No {historyFilter} analyses yet.</div>
-        ) : (
-          <div className="overflow-x-auto -mx-5 px-5">
+          );
+          return (
+            <div className="overflow-x-auto -mx-5 px-5">
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-subtle">
                   <th className="text-left py-2 pr-3 font-medium">Saved</th>
+                  <th className="text-left py-2 pr-3 font-medium">Label</th>
                   <th className="text-left py-2 pr-3 font-medium">Supplier</th>
                   <th className="text-left py-2 pr-3 font-medium">Customer</th>
                   <th className="text-left py-2 pr-3 font-medium">Inv. date</th>
@@ -477,9 +545,19 @@ export default function CompetitorAnalyserTab() {
                 </tr>
               </thead>
               <tbody>
-                {history.filter((h) => h.status === historyFilter).map((h) => (
+                {filtered.map((h) => (
+                  <>
                   <tr key={h.id} className="border-b border-subtle hover:bg-surface-raised/50">
                     <td className="py-2 pr-3 whitespace-nowrap text-muted-foreground">{format(new Date(h.created_at), "d MMM yy")}</td>
+                    <td className="py-2 pr-3">
+                      {h.label ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold whitespace-nowrap">
+                          <Tag className="w-2.5 h-2.5" />{h.label}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="py-2 pr-3 truncate max-w-[140px]">{h.supplier_name ?? "—"}</td>
                     <td className="py-2 pr-3 truncate max-w-[160px]">{h.customer_name ?? "—"}</td>
                     <td className="py-2 pr-3 whitespace-nowrap">{h.invoice_date ?? "—"}</td>
@@ -492,6 +570,18 @@ export default function CompetitorAnalyserTab() {
                     <td className="py-2 pr-3 text-right tabular-nums">{h.total_profit != null ? fmt$(Number(h.total_profit)) : "—"}</td>
                     <td className="py-2 text-right">
                       <div className="inline-flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            if (editingId === h.id) { setEditingId(null); return; }
+                            setEditingId(h.id);
+                            setEditLabel(h.label ?? "");
+                            setEditNote(h.user_note ?? "");
+                          }}
+                          className="p-1.5 rounded hover:bg-surface text-muted-foreground hover:text-foreground"
+                          title="Edit label & note"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
                         {h.status === "kept" ? (
                           <button
                             onClick={async () => {
@@ -525,11 +615,66 @@ export default function CompetitorAnalyserTab() {
                       </div>
                     </td>
                   </tr>
+                  {editingId === h.id && (
+                    <tr key={h.id + "-edit"} className="bg-surface-raised/40 border-b border-subtle">
+                      <td colSpan={11} className="p-3">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            value={editLabel}
+                            onChange={(e) => setEditLabel(e.target.value)}
+                            placeholder="Label"
+                            className="flex-1 bg-surface border border-surface-border rounded-md px-2.5 py-1.5 text-xs"
+                          />
+                          <input
+                            value={editNote}
+                            onChange={(e) => setEditNote(e.target.value)}
+                            placeholder="Note"
+                            className="flex-[2] bg-surface border border-surface-border rounded-md px-2.5 py-1.5 text-xs"
+                          />
+                          <button
+                            onClick={async () => {
+                              const { error } = await supabase
+                                .from("competitor_analyses")
+                                .update({ label: editLabel.trim() || null, user_note: editNote.trim() || null })
+                                .eq("id", h.id);
+                              if (error) {
+                                toast({ title: "Save failed", description: error.message, variant: "destructive" });
+                                return;
+                              }
+                              setEditingId(null);
+                              loadHistory();
+                            }}
+                            className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-primary-foreground hover:opacity-90"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="px-3 py-1.5 rounded-md text-xs font-medium border border-border bg-surface hover:bg-surface-raised"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        {h.user_note && editingId !== h.id && (
+                          <div className="text-xs text-muted-foreground mt-2 italic">"{h.user_note}"</div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  {h.user_note && editingId !== h.id && (
+                    <tr key={h.id + "-note"} className="border-b border-subtle">
+                      <td colSpan={11} className="px-0 pb-2 -mt-1 text-[11px] text-muted-foreground italic">
+                        ↳ {h.user_note}
+                      </td>
+                    </tr>
+                  )}
+                  </>
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
