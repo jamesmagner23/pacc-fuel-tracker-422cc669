@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Upload, FileText, Loader2, TrendingUp, AlertTriangle, CheckCircle2, X, Archive, Save, Trash2, Inbox } from "lucide-react";
+import { Upload, FileText, Loader2, TrendingUp, AlertTriangle, CheckCircle2, X, Archive, Save, Trash2, Inbox, Tag, Search, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTodayBuyPrices } from "@/hooks/useBuyPrices";
 import { toast } from "@/hooks/use-toast";
@@ -38,6 +38,8 @@ interface SavedAnalysis {
   margin_per_litre: number | null;
   margin_pct: number | null;
   total_profit: number | null;
+  label: string | null;
+  user_note: string | null;
   created_at: string;
 }
 
@@ -51,6 +53,13 @@ export default function CompetitorAnalyserTab() {
   const [historicalBuy, setHistoricalBuy] = useState<{ supplier: string; price: number; date: string } | null>(null);
   const [history, setHistory] = useState<SavedAnalysis[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"kept" | "archived">("kept");
+  const [label, setLabel] = useState("");
+  const [userNote, setUserNote] = useState("");
+  const [search, setSearch] = useState("");
+  const [labelFilter, setLabelFilter] = useState<string>("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editNote, setEditNote] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: todayPrices = [] } = useTodayBuyPrices();
@@ -59,7 +68,7 @@ export default function CompetitorAnalyserTab() {
   const loadHistory = async () => {
     const { data, error } = await supabase
       .from("competitor_analyses")
-      .select("id,status,filename,supplier_name,invoice_date,customer_name,litres,price_per_litre_ex_gst,our_buy_supplier,our_buy_price,our_buy_price_date,margin_per_litre,margin_pct,total_profit,created_at")
+      .select("id,status,filename,supplier_name,invoice_date,customer_name,litres,price_per_litre_ex_gst,our_buy_supplier,our_buy_price,our_buy_price_date,margin_per_litre,margin_pct,total_profit,label,user_note,created_at")
       .order("created_at", { ascending: false })
       .limit(100);
     if (!error && data) setHistory(data as SavedAnalysis[]);
@@ -75,6 +84,8 @@ export default function CompetitorAnalyserTab() {
     setError(null);
     setCurrentId(null);
     setHistoricalBuy(null);
+    setLabel("");
+    setUserNote("");
     if (inputRef.current) inputRef.current.value = "";
   };
 
