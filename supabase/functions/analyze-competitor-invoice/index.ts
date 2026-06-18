@@ -24,25 +24,46 @@ Deno.serve(async (req) => {
     const isPdf = mime_type === 'application/pdf';
     const dataUrl = `data:${mime_type};base64,${file_base64}`;
 
-    const systemPrompt = `You are a fuel-invoice extraction expert. The user uploads a competitor's fuel invoice (PDF or image) that a prospective customer is currently paying. Extract structured data. All prices in Australian dollars. If a value is not visible, return null — do NOT guess. Return ONLY JSON conforming to the provided schema.`;
+    const systemPrompt = `You are a fuel-invoice extraction expert for Australian fuel invoices (PDF or image). All amounts are AUD and GST is 10%.
+
+CRITICAL RULES:
+- READ THE DOCUMENT CAREFULLY. Numbers in tables are tabular — line them up with their column headers.
+- If the unit price column says "Price (Inc GST)" or "Inc GST" the per-litre value shown is INC GST. Set price_per_litre_inc_gst to that number AND compute price_per_litre_ex_gst = inc / 1.1 (round to 4 decimals).
+- If the column says "Ex GST" set price_per_litre_ex_gst directly and compute inc = ex * 1.1.
+- If only the line total ("Extension"/"Amount") and litres are visible, derive price_per_litre_inc_gst = total_inc_gst / litres, then ex = inc / 1.1.
+- supplier_name = the company issuing the invoice (top of doc / logo / "Tax Invoice from"). NOT the carrier, NOT the customer.
+- customer_name = the "Invoice To" / "Bill To" party.
+- litres are usually shown to 4 decimals (e.g. 2700.0000) — return as a plain number (2700).
+- fuel_type: read the product line, e.g. "EXTRA LOW SULPHUR DIESEL", "ULP", "Premium Diesel".
+- Never return 0 for a price that exists on the invoice. If you genuinely cannot read it, return null.
+- Return ONLY valid JSON. No prose, no markdown.`;
 
     const userContent: any[] = [
       {
         type: 'text',
-        text: `Extract these fields from the attached fuel invoice (${filename ?? 'file'}):
-- supplier_name: company billing the customer
-- invoice_date: ISO date YYYY-MM-DD
-- customer_name: who is being billed
-- customer_address: full delivery / billing address
-- fuel_type: e.g. "Diesel", "ULP", "Premium Diesel"
-- litres: total litres delivered (number)
-- price_per_litre_ex_gst: $/L excluding GST (number, e.g. 1.7234). If only inc-GST shown, divide by 1.1.
-- price_per_litre_inc_gst: $/L including GST (number)
-- delivery_fee_ex_gst: cartage / delivery fee in $ ex GST (number, 0 if none shown)
-- subtotal_ex_gst: subtotal before GST
-- gst_amount: GST amount in $
-- total_inc_gst: invoice grand total in $
-- notes: anything else relevant (rebates, surcharges, terms)
+        text: `Extract these fields from the attached fuel invoice (${filename ?? 'file'}). Follow the CRITICAL RULES in the system prompt exactly — especially around inc/ex GST and reading tabular columns.
+
+Fields:
+- supplier_name (string): company issuing the invoice
+- invoice_date (YYYY-MM-DD)
+- customer_name (string): "Invoice To" party
+- customer_address (string): full billing/delivery address
+- fuel_type (string)
+- litres (number)
+- price_per_litre_ex_gst (number, 4dp). REQUIRED if any price is visible — derive from inc or total/litres if needed.
+- price_per_litre_inc_gst (number, 4dp). REQUIRED if any price is visible.
+- delivery_fee_ex_gst (number, 0 if none)
+- subtotal_ex_gst (number)
+- gst_amount (number)
+- total_inc_gst (number) — the invoice grand total
+- notes (string|null): rebates, surcharges, terms, anything else relevant
+
+Worked example: column header "Price(Inc GST)" shows 1.8964, litres 2700, extension $5,120.28, GST included $465.48. Then:
+  price_per_litre_inc_gst = 1.8964
+  price_per_litre_ex_gst  = 1.8964 / 1.1 = 1.7240
+  subtotal_ex_gst = 5120.28 - 465.48 = 4654.80
+  gst_amount = 465.48
+  total_inc_gst = 5120.28
 
 Return JSON only.`,
       },
