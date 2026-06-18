@@ -87,7 +87,17 @@ export default function CompetitorAnalyserTab() {
 
   // Margin maths
   const litres = Number(extracted?.litres ?? 0) || 0;
-  const compPpl = Number(extracted?.price_per_litre_ex_gst ?? 0) || 0;
+  const rawEx = Number(extracted?.price_per_litre_ex_gst ?? 0) || 0;
+  const rawInc = Number(extracted?.price_per_litre_inc_gst ?? 0) || 0;
+  // Fallbacks: derive ex from inc, or from total/litres if needed
+  let compPpl = rawEx;
+  if (!compPpl && rawInc) compPpl = rawInc / 1.1;
+  if (!compPpl && extracted?.subtotal_ex_gst && litres) {
+    compPpl = Number(extracted.subtotal_ex_gst) / litres;
+  }
+  if (!compPpl && extracted?.total_inc_gst && litres) {
+    compPpl = Number(extracted.total_inc_gst) / 1.1 / litres;
+  }
   const compTotal = Number(extracted?.total_inc_gst ?? 0) || 0;
   const ourBuyPpl = cheapest ? Number(cheapest.price_per_litre) : null;
 
