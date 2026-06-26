@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, Fragment } from "react";
-import { Upload, FileText, Loader2, TrendingUp, AlertTriangle, CheckCircle2, X, Archive, Save, Trash2, Inbox, Tag, Search, Pencil } from "lucide-react";
+import { Upload, FileText, Loader2, TrendingUp, AlertTriangle, CheckCircle2, X, Archive, Save, Trash2, Inbox, Tag, Search, Pencil, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTodayBuyPrices } from "@/hooks/useBuyPrices";
 import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, parse, isValid } from "date-fns";
+
 
 interface Extracted {
   supplier_name?: string | null;
@@ -22,6 +23,30 @@ interface Extracted {
 }
 
 const MARGIN_TARGET_CPL = 8;
+
+function normalizeInvoiceDate(raw: string | null | undefined): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  const s = raw.trim();
+  if (!s) return null;
+  // Already ISO YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // DD-MM-YYYY or DD/MM/YYYY
+  const dmY = s.match(/^(\d{1,2})[\-\/](\d{1,2})[\-\/](\d{4})$/);
+  if (dmY) {
+    const d = parse(`${dmY[1].padStart(2, "0")}-${dmY[2].padStart(2, "0")}-${dmY[3]}`, "dd-MM-yyyy", new Date());
+    return isValid(d) ? format(d, "yyyy-MM-dd") : null;
+  }
+  // Try generic date-fns parse
+  const formats = ["dd MMM yyyy", "d MMM yyyy", "dd MMMM yyyy", "d MMMM yyyy", "yyyy-MM-dd"];
+  for (const f of formats) {
+    const d = parse(s, f, new Date());
+    if (isValid(d)) return format(d, "yyyy-MM-dd");
+  }
+  const d2 = new Date(s);
+  if (!isNaN(d2.getTime())) return format(d2, "yyyy-MM-dd");
+  return null;
+}
+
 
 interface SavedAnalysis {
   id: string;
@@ -51,6 +76,7 @@ export default function CompetitorAnalyserTab() {
   const [saving, setSaving] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [historicalBuy, setHistoricalBuy] = useState<{ supplier: string; price: number; date: string } | null>(null);
+  const [manualDate, setManualDate] = useState<string | null>(null);
   const [history, setHistory] = useState<SavedAnalysis[]>([]);
   const [historyFilter, setHistoryFilter] = useState<"kept" | "archived">("kept");
   const [label, setLabel] = useState("");
@@ -84,6 +110,7 @@ export default function CompetitorAnalyserTab() {
     setError(null);
     setCurrentId(null);
     setHistoricalBuy(null);
+    setManualDate(null);
     setLabel("");
     setUserNote("");
     if (inputRef.current) inputRef.current.value = "";
@@ -127,26 +154,16 @@ export default function CompetitorAnalyserTab() {
       });
       if (error) throw error;
       if (!data?.extracted) throw new Error("No data returned");
+
+      // Normalize extracted date to ISO
+      const rawInvDate = (data.extracted?.invoice_date as string | null | undefined) ?? null;
+      const normalizedDate = normalizeInvoiceDate(rawInvDate);
+      if (normalizedDate && normalizedDate !== rawInvDate) {
+        data.extracted.invoice_date = normalizedDate;
+      }
       setExtracted(data.extracted);
 
-      // Look up historical buy price for the invoice date
-      const invDate: string | undefined = data.extracted?.invoice_date;
-      if (invDate) {
-        const { data: bp } = await supabase
-          .from("buy_prices")
-          .select("supplier, price_per_litre, price_date")
-          .lte("price_date", invDate)
-          .order("price_date", { ascending: false })
-          .order("price_per_litre", { ascending: true })
-          .limit(10);
-        if (bp && bp.length) {
-          // pick cheapest on the most recent date <= invoice date
-          const mostRecent = bp[0].price_date;
-          const onDate = bp.filter((r: any) => r.price_date === mostRecent);
-          onDate.sort((a: any, b: any) => Number(a.price_per_litre) - Number(b.price_per_litre));
-          setHistoricalBuy({ supplier: onDate[0].supplier, price: Number(onDate[0].price_per_litre), date: onDate[0].price_date });
-        }
-      }
+      await lookupHistoricalBuy(data.extracted?.invoice_date as string | undefined);
     } catch (e: any) {
       const msg = e?.message ?? String(e);
       setError(msg);
@@ -155,6 +172,31 @@ export default function CompetitorAnalyserTab() {
       setLoading(false);
     }
   };
+
+  const lookupHistoricalBuy = async (invDate: string | undefined) => {
+    const compareDate = manualDate || invDate;
+    if (!compareDate) {
+      setHistoricalBuy(null);
+      return;
+    }
+    const { data: bp } = await supabase
+      .from("buy_prices")
+      .select("supplier, price_per_litre, price_date")
+      .lte("price_date", compareDate)
+      .order("price_date", { ascending: false })
+      .order("price_per_litre", { ascending: true })
+      .limit(10);
+    if (bp && bp.length) {
+      // pick cheapest on the most recent date <= invoice date
+      const mostRecent = bp[0].price_date;
+      const onDate = bp.filter((r: any) => r.price_date === mostRecent);
+      onDate.sort((a: any, b: any) => Number(a.price_per_litre) - Number(b.price_per_litre));
+      setHistoricalBuy({ supplier: onDate[0].supplier, price: Number(onDate[0].price_per_litre), date: onDate[0].price_date });
+    } else {
+      setHistoricalBuy(null);
+    }
+  };
+
 
   // Margin maths
   const litres = Number(extracted?.litres ?? 0) || 0;
@@ -258,7 +300,7 @@ export default function CompetitorAnalyserTab() {
       <div className="bg-surface border border-surface-border rounded-[10px] p-5">
         <h2 className="text-sm font-semibold mb-1">Competitor invoice analyser</h2>
         <p className="text-xs text-muted-foreground mb-4">
-          Upload a PDF or image of what a prospect is paying now. We&apos;ll extract the line items and compare to today&apos;s cheapest buy price to see if winning the account is worth it.
+          Upload a PDF or image of what a prospect is paying now. We&apos;ll extract the invoice date and line items, then compare against our cheapest buy price on that same date. If we don&apos;t have a price for that date, we&apos;ll fall back to today&apos;s cheapest.
         </p>
 
         {!file ? (
@@ -317,14 +359,37 @@ export default function CompetitorAnalyserTab() {
             No buy price set for today — margin comparison will be unavailable. Add today&apos;s price in the Buy Price tab.
           </div>
         )}
-        {!historicalBuy && cheapest && (
-          <div className="mt-3 text-xs text-muted-foreground">
-            Comparing against today&apos;s cheapest supplier: <span className="font-semibold text-foreground">{cheapest.supplier}</span> @ {fmtCpl(Number(cheapest.price_per_litre))}/L ex-GST
+
+        {loading && (
+          <div className="mt-3 text-xs text-muted-foreground flex items-center gap-1.5">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Looking up our buy price for the invoice date…
           </div>
         )}
-        {historicalBuy && (
+        {!loading && !extracted && cheapest && (
           <div className="mt-3 text-xs text-muted-foreground">
-            Comparing against our buy price on <span className="font-semibold text-foreground">{historicalBuy.date}</span> — <span className="font-semibold text-foreground">{historicalBuy.supplier}</span> @ {fmtCpl(historicalBuy.price)}/L ex-GST (matched to invoice date)
+            Ready to compare. We&apos;ll match the invoice date to our buy-price history, then fall back to today&apos;s cheapest if no historical price exists.
+          </div>
+        )}
+        {!loading && !historicalBuy && cheapest && (
+          <div className="mt-3 text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold">Falling back to today&apos;s cheapest supplier.</span>{" "}
+              No matching buy price found for invoice date ({extracted?.invoice_date || "unknown"}).
+              <br />
+              Comparing against: <span className="font-semibold text-foreground">{cheapest.supplier}</span> @ {fmtCpl(Number(cheapest.price_per_litre))}/L ex-GST
+            </div>
+          </div>
+        )}
+        {!loading && historicalBuy && (
+          <div className="mt-3 text-xs text-green-600 dark:text-green-400 flex items-start gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold">Matched to invoice date.</span>{" "}
+              Comparing against our buy price on <span className="font-semibold text-foreground">{historicalBuy.date}</span> —{" "}
+              <span className="font-semibold text-foreground">{historicalBuy.supplier}</span> @ {fmtCpl(historicalBuy.price)}/L ex-GST
+            </div>
           </div>
         )}
         {error && (
@@ -437,6 +502,36 @@ export default function CompetitorAnalyserTab() {
           {/* Extracted details */}
           <div className="bg-surface border border-surface-border rounded-[10px] p-5">
             <h3 className="text-sm font-semibold mb-3">Extracted from invoice</h3>
+
+            <div className="bg-surface-raised border border-surface-border rounded-[10px] p-3 mb-4">
+              <label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-1">
+                <Calendar className="w-3 h-3" /> Comparison date (invoice date)
+              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="date"
+                  value={manualDate || extracted.invoice_date || ""}
+                  onChange={(e) => {
+                    const d = e.target.value;
+                    setManualDate(d);
+                    if (extracted) setExtracted({ ...extracted, invoice_date: d });
+                  }}
+                  className="bg-surface border border-surface-border rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <button
+                  onClick={() => lookupHistoricalBuy(extracted.invoice_date ?? undefined)}
+                  className="px-2.5 py-1.5 rounded-md text-xs font-medium border border-border bg-surface hover:bg-surface-raised inline-flex items-center gap-1"
+                >
+                  <TrendingUp className="w-3 h-3" /> Recalculate
+                </button>
+              </div>
+              {manualDate && manualDate !== extracted.invoice_date && (
+                <div className="mt-1.5 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> Manual date override applied
+                </div>
+              )}
+            </div>
+
             <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
               {[
                 ["Supplier", extracted.supplier_name],
