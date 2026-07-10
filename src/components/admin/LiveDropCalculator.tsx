@@ -238,7 +238,7 @@ export default function LiveDropCalculator() {
 
           <div className="text-right">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Today's buy ({supplier}) · inc-GST
+              Buy price ({supplier})
             </div>
             {loading ? (
               <div className="text-muted-foreground mt-1">…</div>
@@ -247,11 +247,17 @@ export default function LiveDropCalculator() {
                 <div className="text-4xl font-bold text-accent leading-tight mt-1">
                   {buy ? `$${buy.toFixed(4)}` : "—"}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {priceRow
-                    ? `${priceRow.supplier} · effective ${priceRow.price_date}`
-                    : "no price loaded"}
+                <div className="text-[11px] text-muted-foreground mt-0.5">inc-GST</div>
+                <div className="text-sm text-muted-foreground tabular-nums mt-1">
+                  {buy ? `$${buyExGst.toFixed(4)}` : "—"} <span className="text-[10px]">ex-GST</span>
                 </div>
+                {priceRow && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                    <span className="font-semibold text-foreground">{priceRow.supplier}</span>
+                    <span>·</span>
+                    <span>effective {priceRow.price_date}</span>
+                  </div>
+                )}
                 {stale && (
                   <Badge variant="destructive" className="mt-2">
                     stale — no price for today
@@ -277,8 +283,9 @@ export default function LiveDropCalculator() {
             >
               {s}
               {rows[s] && (
-                <span className="ml-2 opacity-70 text-xs">
-                  ${Number(rows[s]!.price_per_litre).toFixed(3)}
+                <span className="ml-2 opacity-70 text-[10px] tabular-nums flex flex-col leading-tight">
+                  <span>${Number(rows[s]!.price_per_litre).toFixed(4)} inc</span>
+                  <span>${(Number(rows[s]!.price_per_litre) / 1.1).toFixed(4)} ex · {rows[s]!.price_date}</span>
                 </span>
               )}
             </Button>
