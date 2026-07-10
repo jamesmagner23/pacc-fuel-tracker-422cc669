@@ -273,6 +273,7 @@ export default function LiveDropCalculator() {
   const canSend = status.canSend || (isAdmin && ownerOverride);
 
   const handleEmailRate = async () => {
+    const isOverride = isAdmin && ownerOverride && !status.canSend;
     await logSalesActivity({
       client_name: customerNameInput || selectedClient?.company_name || "one-off",
       client_email: customerEmailInput || null,
@@ -281,9 +282,14 @@ export default function LiveDropCalculator() {
       sell_price_per_litre: r.sell,
       buy_price_per_litre: buy,
       gp_pct: r.pct,
-      status: (isAdmin && ownerOverride && !status.canSend) ? "overridden" : "emailed_rate",
-      source: "price_a_drop",
-      metadata: { level: status.level, floorPct: status.floorPct, tier: status.tier.label },
+      status: isOverride ? "overridden" : "emailed_rate",
+      source: isOverride ? "override" : "price_a_drop",
+      metadata: {
+        level: status.level,
+        floorPct: status.floorPct,
+        tier: status.tier.label,
+        blockReason: isOverride ? status.message : undefined,
+      },
     });
     setComposerOpen(true);
   };
