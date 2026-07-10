@@ -1689,6 +1689,69 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_approval_requests: {
+        Row: {
+          admin_note: string | null
+          breach_reasons: string[]
+          buy_price_per_litre: number
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          decided_at: string | null
+          decided_by: string | null
+          driver_id: string
+          driver_note: string | null
+          id: string
+          litres: number
+          margin_pct: number
+          payment_terms_days: number | null
+          sell_price_per_litre: number
+          status: string
+          supplier: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          breach_reasons?: string[]
+          buy_price_per_litre: number
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          decided_at?: string | null
+          decided_by?: string | null
+          driver_id: string
+          driver_note?: string | null
+          id?: string
+          litres: number
+          margin_pct: number
+          payment_terms_days?: number | null
+          sell_price_per_litre: number
+          status?: string
+          supplier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          breach_reasons?: string[]
+          buy_price_per_litre?: number
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          driver_id?: string
+          driver_note?: string | null
+          id?: string
+          litres?: number
+          margin_pct?: number
+          payment_terms_days?: number | null
+          sell_price_per_litre?: number
+          status?: string
+          supplier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quote_leads: {
         Row: {
           company: string
