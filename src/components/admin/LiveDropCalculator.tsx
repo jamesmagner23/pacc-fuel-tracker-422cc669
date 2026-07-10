@@ -274,6 +274,12 @@ export default function LiveDropCalculator() {
 
   const handleEmailRate = async () => {
     const isOverride = isAdmin && ownerOverride && !status.canSend;
+    if (isOverride) {
+      const ok = window.confirm(
+        `Owner override: ${status.message}\n\nSending anyway will be logged as an override in sales_activity. Continue?`
+      );
+      if (!ok) return;
+    }
     await logSalesActivity({
       client_name: customerNameInput || selectedClient?.company_name || "one-off",
       client_email: customerEmailInput || null,
