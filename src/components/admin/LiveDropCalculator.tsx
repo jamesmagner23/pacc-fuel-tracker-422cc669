@@ -611,6 +611,33 @@ export default function LiveDropCalculator() {
                   onChange={setTargetPct}
                   className="text-xl font-semibold mt-1"
                 />
+                {isRep && (() => {
+                  const tier = tierForLitres(n(litres));
+                  const floor = Math.max(status.floorPct, 8);
+                  const ceil = Math.max(tier.targetGpPct, floor);
+                  const val = Math.min(Math.max(n(targetPct), floor), ceil);
+                  return (
+                    <div className="mt-3 space-y-1.5">
+                      <input
+                        type="range"
+                        min={floor}
+                        max={ceil}
+                        step={0.5}
+                        value={val}
+                        onChange={(e) => setTargetPct(parseFloat(e.target.value))}
+                        className="w-full accent-primary"
+                      />
+                      <div className="flex justify-between text-[10px] text-muted-foreground tabular-nums">
+                        <span>Floor {floor.toFixed(0)}%</span>
+                        <span className="text-foreground font-semibold">{val.toFixed(1)}%</span>
+                        <span>Tier target {ceil.toFixed(0)}%</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Walk the margin down toward the floor — you can't go below it without admin approval.
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
