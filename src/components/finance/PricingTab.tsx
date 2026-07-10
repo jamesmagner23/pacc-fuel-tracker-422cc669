@@ -703,6 +703,33 @@ export default function PricingTab() {
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Create Quote</div>
 
+        {/* Terms + established client controls */}
+        <div className="flex flex-wrap items-center gap-3 mb-3 pb-3 border-b border-surface-border">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span>Payment terms:</span>
+            {[0, 7, 14, 21, 30, 45, 60].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setPaymentTermsDays(d)}
+                className={`px-2 py-1 rounded-full border text-[10px] cursor-pointer transition-colors ${
+                  paymentTermsDays === d
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-transparent border-surface-border hover:border-foreground/30"
+                }`}
+              >{d === 0 ? "COD" : `${d}d`}</button>
+            ))}
+          </div>
+          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={clientEstablished}
+              onChange={(e) => setClientEstablished(e.target.checked)}
+            />
+            Established client
+          </label>
+        </div>
+
         {/* Customer details */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5 relative" ref={dropdownRef}>
