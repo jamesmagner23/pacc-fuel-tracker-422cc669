@@ -110,7 +110,12 @@ Deno.serve(async (req) => {
     const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-quote-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
-      body: JSON.stringify({ to: quote.customer_email, subject: `Fuel Quote — ${quote.customer_name}`, html }),
+      body: JSON.stringify({
+        to: quote.customer_email,
+        bcc: "jmagner@paccenergy.com",
+        subject: `Fuel Quote — ${quote.customer_name}`,
+        html,
+      }),
     }).catch(() => null);
 
     // Update quote status regardless
@@ -118,6 +123,26 @@ Deno.serve(async (req) => {
       .from("quotes")
       .update({ status: "sent", sent_at: new Date().toISOString() })
       .eq("id", quote_id);
+
+    // Log to sales_activity (BCC to owner is silent — this is the audit trail)
+    try {
+      const buy = Number(quote.buy_price_per_litre) || 0;
+      const sell = Number(quote.sell_price_per_litre) || 0;
+      const gp = sell > 0 ? ((sell - buy) / sell) * 100 : 0;
+      await supabase.from("sales_activity").insert({
+        rep_id: null,
+        client_name: quote.customer_name,
+        client_email: quote.customer_email,
+        litres: quote.volume_litres,
+        sell_price_per_litre: sell,
+        buy_price_per_litre: buy,
+        gp_pct: gp,
+        status: "sent",
+        source: "send-quote",
+        quote_id: quote_id,
+        metadata: { bcc_owner: true },
+      });
+    } catch { /* logging must not fail the send */ }
 
     return new Response(
       JSON.stringify({ success: true, message: "Quote sent" }),
