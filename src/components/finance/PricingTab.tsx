@@ -264,6 +264,17 @@ export default function PricingTab() {
       toast.error("Fill in customer and at least one line item");
       return;
     }
+    if (isDriver) {
+      const driverBreaches = checkDriverBreaches({
+        litres: grandVolume,
+        paymentTermsDays: DRIVER_RULES.maxTermsDays, // Quote Builder has no terms field — assume compliant here
+        marginPct: weightedMargin,
+      });
+      if (driverBreaches.length > 0) {
+        toast.error("Quote is outside driver rules — use Price a Drop tab to request admin approval.");
+        return;
+      }
+    }
     // Validate all line items
     for (let i = 0; i < lineItems.length; i++) {
       const li = lineItems[i];
