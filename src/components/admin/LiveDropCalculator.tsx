@@ -661,7 +661,7 @@ export default function LiveDropCalculator() {
             value={money(r.truckCost)}
             sub={`${r.truckKm.toFixed(0)} km · ${r.totalHours.toFixed(1)}h`}
           />
-          <Stat label="Buy used" value={`$${buy.toFixed(4)}`} sub={manualBuy !== null ? "manual" : supplier} />
+          <Stat label="Buy used" value={`$${buy.toFixed(4)}`} sub={isRep ? undefined : (manualBuy !== null ? "manual" : supplier)} />
           {paymentTerms != null && (
             <Stat
               label="Payment terms"
