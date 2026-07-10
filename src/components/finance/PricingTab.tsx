@@ -505,6 +505,15 @@ export default function PricingTab() {
 
   return (
     <div className="flex flex-col gap-4">
+      {isDriver && (
+        <DriverGuardrailBanner
+          breaches={checkDriverBreaches({
+            litres: grandVolume,
+            paymentTermsDays: DRIVER_RULES.maxTermsDays,
+            marginPct: weightedMargin,
+          })}
+        />
+      )}
       {/* Buy price */}
       <div className={`bg-surface border rounded-[10px] p-4 sm:p-5 ${hasTodayPrice ? "border-surface-border" : "border-destructive/50"}`}>
         <div className="flex items-center justify-between mb-2">
