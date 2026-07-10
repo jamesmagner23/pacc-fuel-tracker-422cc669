@@ -677,73 +677,94 @@ export default function LiveDropCalculator() {
           <Stat label="· Tyres + maint" value={money(r.maintCost)} sub={`${r.truckKm.toFixed(0)} km @ $${n(maintPerKm).toFixed(2)}/km`} />
         </div>
 
-        {(() => {
-          const breaches = checkDriverBreaches({
-            litres: n(litres),
-            paymentTermsDays: paymentTerms,
-            marginPct: r.pct,
-          });
-          const showBanner = isDriver || breaches.length > 0;
-          const blocked = isDriver && breaches.length > 0;
-          return (
-            <div className="mt-6 pt-4 border-t border-border space-y-3">
-              {showBanner && <DriverGuardrailBanner breaches={breaches} />}
-
-              {isDriver && blocked && (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    value={customerNameInput}
-                    onChange={(e) => setCustomerNameInput(e.target.value)}
-                    placeholder="Customer name"
-                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
-                  />
-                  <input
-                    value={customerEmailInput}
-                    onChange={(e) => setCustomerEmailInput(e.target.value)}
-                    placeholder="Email (optional)"
-                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
-                  />
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                {isDriver && blocked ? (
-                  <Button
-                    onClick={() => {
-                      if (!customerNameInput) {
-                        return;
-                      }
-                      setApprovalOpen(true);
-                    }}
-                    disabled={!r.sell || r.sell <= 0 || !customerNameInput}
-                  >
-                    <ShieldAlert className="w-3.5 h-3.5 mr-1.5" /> Request admin approval
-                  </Button>
-                ) : (
-                  <Button onClick={() => setComposerOpen(true)} disabled={!r.sell || r.sell <= 0}>
-                    <Mail className="w-3.5 h-3.5 mr-1.5" /> Email this rate
-                  </Button>
-                )}
-              </div>
-
-              <RequestApprovalDialog
-                open={approvalOpen}
-                onClose={() => setApprovalOpen(false)}
-                preset={{
-                  customer_name: customerNameInput || selectedClient?.company_name || "",
-                  customer_email: customerEmailInput || null,
-                  litres: n(litres),
-                  buy_price_per_litre: buy,
-                  sell_price_per_litre: r.sell,
-                  margin_pct: r.pct,
-                  payment_terms_days: paymentTerms,
-                  supplier: manualBuy !== null ? "manual" : supplier,
-                  breach_reasons: breaches,
-                }}
+        <div className="mt-6 pt-4 border-t border-border space-y-3">
+          {/* Client established toggle */}
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={clientEstablished}
+                onChange={(e) => setClientEstablished(e.target.checked)}
               />
-            </div>
-          );
-        })()}
+              Established client (unlock sub-tier floors on 2,500 L+ drops)
+            </label>
+            <span className="text-muted-foreground">
+              Sell inc-GST: <span className="text-foreground font-semibold">${r.sell.toFixed(4)}/L</span>
+              &nbsp;·&nbsp;{r.pct.toFixed(1)}% GP · markup {r.markupPct.toFixed(1)}% · {(r.cpl * 100).toFixed(1)}¢/L
+            </span>
+          </div>
+
+          {clampWarning && (
+            <div className="text-[11px] text-amber-300">{clampWarning}</div>
+          )}
+
+          <PriceStatusBanner status={status} />
+
+          {/* Customer capture (used for logging + composer + rep approval request) */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              value={customerNameInput}
+              onChange={(e) => setCustomerNameInput(e.target.value)}
+              placeholder={selectedClient ? selectedClient.company_name : "Customer name"}
+              className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
+            />
+            <input
+              value={customerEmailInput}
+              onChange={(e) => setCustomerEmailInput(e.target.value)}
+              placeholder="Email (optional)"
+              className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
+            />
+          </div>
+
+          {/* Admin manual override checkbox — appears only when blocked and admin */}
+          {isAdmin && !status.canSend && (
+            <label className="flex items-center gap-2 text-xs text-amber-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={ownerOverride}
+                onChange={(e) => setOwnerOverride(e.target.checked)}
+              />
+              Owner override — I accept the risk and want to send anyway (logged)
+            </label>
+          )}
+
+          <div className="flex justify-end gap-2">
+            {isRep && !status.canSend ? (
+              <Button
+                onClick={() => {
+                  if (!customerNameInput && !selectedClient) return;
+                  setApprovalOpen(true);
+                }}
+                disabled={!r.sell || r.sell <= 0 || (!customerNameInput && !selectedClient)}
+              >
+                <ShieldAlert className="w-3.5 h-3.5 mr-1.5" /> Request admin approval
+              </Button>
+            ) : (
+              <Button
+                onClick={handleEmailRate}
+                disabled={!canSend || !r.sell || r.sell <= 0}
+              >
+                <Mail className="w-3.5 h-3.5 mr-1.5" /> Email this rate
+              </Button>
+            )}
+          </div>
+
+          <RequestApprovalDialog
+            open={approvalOpen}
+            onClose={() => setApprovalOpen(false)}
+            preset={{
+              customer_name: customerNameInput || selectedClient?.company_name || "",
+              customer_email: customerEmailInput || null,
+              litres: n(litres),
+              buy_price_per_litre: buy,
+              sell_price_per_litre: r.sell,
+              margin_pct: r.pct,
+              payment_terms_days: paymentTerms,
+              supplier: isRep ? null : (manualBuy !== null ? "manual" : supplier),
+              breach_reasons: [status.message],
+            }}
+          />
+        </div>
       </Card>
 
       <p className="text-xs text-muted-foreground">
