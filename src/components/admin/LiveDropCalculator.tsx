@@ -438,9 +438,32 @@ export default function LiveDropCalculator() {
             Truck cost build-up
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div>
+            <div className="col-span-2">
               <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Driver $/hr</Label>
-              <NumberField value={driverWage} step="0.5" onChange={setDriverWage} className="mt-1" />
+              <div className="flex gap-1 mt-1">
+                {([
+                  { k: "normal" as const, l: "Normal $60" },
+                  { k: "ot" as const, l: "OT $90" },
+                  ...(isDriver ? [] : [{ k: "custom" as const, l: "Custom" }]),
+                ]).map((opt) => (
+                  <button
+                    key={opt.k}
+                    type="button"
+                    onClick={() => setWagePreset(opt.k)}
+                    className={cn(
+                      "text-[11px] px-2.5 py-1.5 rounded-md border cursor-pointer transition-colors",
+                      wageMode === opt.k
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-transparent text-muted-foreground border-border hover:text-foreground"
+                    )}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+              {wageMode === "custom" && !isDriver && (
+                <NumberField value={driverWage} step="0.5" onChange={setDriverWage} className="mt-1.5" />
+              )}
             </div>
             <div>
               <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Load/unload min</Label>
@@ -454,13 +477,15 @@ export default function LiveDropCalculator() {
               <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Diesel $/L</Label>
               <NumberField value={truckDieselPrice} step="0.01" onChange={setTruckDieselPrice} className="mt-1" />
             </div>
-            <div>
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Tyres+maint $/km</Label>
-              <NumberField value={maintPerKm} step="0.01" onChange={setMaintPerKm} className="mt-1" />
-            </div>
+            {!isDriver && (
+              <div>
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Tyres+maint $/km</Label>
+                <NumberField value={maintPerKm} step="0.01" onChange={setMaintPerKm} className="mt-1" />
+              </div>
+            )}
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Driver = wage + super/leave/workcover loaded. Maint covers tyres, servicing, rego, insurance per km. Yard/admin overhead excluded.
+            Driver wage standardised at $60/hr normal, $90/hr OT (1.5×). Maint covers tyres, servicing, rego, insurance per km. Yard/admin overhead excluded.
           </p>
         </div>
 
