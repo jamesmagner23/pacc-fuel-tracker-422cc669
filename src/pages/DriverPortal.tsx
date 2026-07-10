@@ -3,7 +3,7 @@ import { TruckMap } from "@/components/TruckMap";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, subWeeks } from "date-fns";
-import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, GripVertical, ClipboardList, CheckCircle2, Plus, Trash2, Pencil } from "lucide-react";
+import { LogOut, Droplets, MapPin, TrendingUp, Camera, Upload, X, Check, GripVertical, ClipboardList, CheckCircle2, Plus, Trash2, Pencil, Tag as TagIcon } from "lucide-react";
 import { DriverSOPSection } from "@/components/DriverSOPSection";
 import { PumpReadingForm } from "@/components/reconciliation/PumpReadingForm";
 import { PACCLogo } from "@/components/PACCLogo";
@@ -825,6 +825,14 @@ export default function DriverPortal() {
         <PACCLogo size="sm" tone={isDark ? "dark" : "light"} />
         <div className="flex items-center gap-3">
           <PortalThemeToggle size="sm" />
+          <a
+            href="/sales"
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors no-underline"
+            title="Open Sales / Price a Drop"
+          >
+            <TagIcon className="w-3.5 h-3.5" />
+            Sales
+          </a>
           <span className="text-sm font-medium text-muted-foreground">Stephan</span>
           <button
             onClick={handleSignOut}
