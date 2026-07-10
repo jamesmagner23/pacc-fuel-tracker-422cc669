@@ -24,6 +24,9 @@ import { useDemo } from "@/hooks/useDemo";
 import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import OutreachComposer from "@/components/outreach/OutreachComposer";
 import { Mail } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { checkDriverBreaches, DRIVER_RULES } from "@/hooks/useQuoteApprovals";
+import { DriverGuardrailBanner } from "@/components/sales/DriverGuardrailBanner";
 
 const GST_RATE = 0.1;
 
@@ -56,6 +59,8 @@ const newLineItem = (): LineItem => ({
 export default function PricingTab() {
   const isDemo = useDemo();
   const queryClient = useQueryClient();
+  const { data: role } = useUserRole();
+  const isDriver = role === "driver";
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { data: todayPricesAll = [] } = useTodayBuyPrices();
   const { data: todayBuyPrice } = useTodayBuyPrice();
