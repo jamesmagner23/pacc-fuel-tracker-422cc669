@@ -1,19 +1,26 @@
 import { useState } from "react";
-import { Calculator, FileText, UserMinus } from "lucide-react";
+import { Calculator, FileText, UserMinus, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import PricingTab from "@/components/finance/PricingTab";
 import LiveDropCalculator from "@/components/admin/LiveDropCalculator";
 import WinBackTab from "@/components/admin/WinBackTab";
+import ApprovalsTab from "@/components/sales/ApprovalsTab";
+import { useUserRole } from "@/hooks/useUserRole";
+import { usePendingApprovalCount } from "@/hooks/useQuoteApprovals";
 
-type TabId = "quotes" | "drop" | "winback";
+type TabId = "quotes" | "drop" | "winback" | "approvals";
 
 export default function Sales() {
-  const [activeTab, setActiveTab] = useState<TabId>("quotes");
+  const { data: role } = useUserRole();
+  const isAdmin = role === "admin";
+  const { data: pendingCount = 0 } = usePendingApprovalCount();
+  const [activeTab, setActiveTab] = useState<TabId>(isAdmin && pendingCount > 0 ? "approvals" : "quotes");
 
-  const tabs: { id: TabId; label: string; icon: JSX.Element }[] = [
+  const tabs: { id: TabId; label: string; icon: JSX.Element; badge?: number }[] = [
     { id: "quotes", label: "Quote Builder", icon: <FileText className="w-3.5 h-3.5" /> },
     { id: "drop", label: "Price a Drop", icon: <Calculator className="w-3.5 h-3.5" /> },
     { id: "winback", label: "Win Back", icon: <UserMinus className="w-3.5 h-3.5" /> },
+    ...(isAdmin ? [{ id: "approvals" as TabId, label: "Approvals", icon: <ShieldCheck className="w-3.5 h-3.5" />, badge: pendingCount }] : []),
   ];
 
   return (
@@ -38,6 +45,11 @@ export default function Sales() {
           >
             {tab.icon}
             {tab.label}
+            {tab.badge && tab.badge > 0 ? (
+              <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500/25 text-amber-300 text-[10px] font-bold">
+                {tab.badge}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -45,6 +57,7 @@ export default function Sales() {
       {activeTab === "quotes" && <PricingTab />}
       {activeTab === "drop" && <LiveDropCalculator />}
       {activeTab === "winback" && <WinBackTab />}
+      {activeTab === "approvals" && isAdmin && <ApprovalsTab />}
     </div>
   );
 }

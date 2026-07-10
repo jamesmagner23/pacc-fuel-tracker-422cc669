@@ -182,6 +182,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         navigate("/portal", { replace: true });
       }
       if (userRole === "driver" && !path.startsWith("/driver") && !path.startsWith("/docket")) {
+        // Drivers are also allowed into Sales / Price a Drop (with guardrails).
+        if (
+          path.startsWith("/sales") ||
+          path.startsWith("/admin/pricing")
+        ) return;
         navigate("/driver", { replace: true });
       }
       if (userRole === "operations" && !path.startsWith("/operations") && !path.startsWith("/docket")) {
@@ -269,7 +274,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       return <Navigate to="/portal" replace />;
     }
     if (role === "driver") {
-      if (location.pathname.startsWith("/driver") || location.pathname.startsWith("/docket")) {
+      if (
+        location.pathname.startsWith("/driver") ||
+        location.pathname.startsWith("/docket") ||
+        location.pathname.startsWith("/sales") ||
+        location.pathname.startsWith("/admin/pricing")
+      ) {
         return <>{children}</>;
       }
       return <Navigate to="/driver" replace />;

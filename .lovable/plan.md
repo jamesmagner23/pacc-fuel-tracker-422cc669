@@ -1,104 +1,60 @@
-# Customer Portal — Admindek Restructure
+# Steph (driver) on Sales — plan
 
-Convert the customer portal from a single tabbed 4,200-line page into a routed, Admindek-style app shell that mirrors the operations dashboard, scoped to the signed-in customer via RLS.
+## 1. Buy-price display fixes (Price a Drop, everyone)
 
-## 1. Routing & shell
+In `LiveDropCalculator.tsx`, upgrade the right-hand price panel:
 
-- `src/App.tsx`: replace `<Route path="/portal" element={<CustomerPortal />} />` (both branches) with a nested `<Route path="/portal" element={<PortalShell />}>` containing index + `deliveries`, `fleet`, `reports`, `profile`, `help`. Demo branch mirrors the same nested routes.
-- New `src/components/portal/PortalShell.tsx`: wraps `<PortalLayout>` + `<Outlet />`, derives `activeTab` from `useLocation()` instead of `?tab=`.
-- Role redirect (`src/App.tsx`'s post-login effect):
-  - `client` → `/portal`
-  - `admin` / `operations` / `driver` → `/`
-  - unknown → `/` (safer default for internal users)
-- `/portal?demo=true` still works — `PortalShell` reads `demo` from search params and threads it through.
+- Big number stays inc-GST, add a smaller **"ex-GST $X.XXXX"** line directly under it (÷ 1.1).
+- Move the effective date out of small caption text into a pill so it's obvious what date the buy price is for.
+- Same treatment on the supplier picker buttons: show both inc and ex, plus the price_date, so it's clear whether Pro Fusion vs Pacific is priced for today.
 
-## 2. Sidebar (PortalLayout updates)
+## 2. Driver wage standardisation + OT toggle
 
-Replace the current 4 nav groups with 2 sections:
+Replace the free-typed `Driver $/hr` field with:
 
-- **ACCOUNT**: Overview, Deliveries, Fleet, Reports, Profile
-- **SUPPORT**: Contact dispatch (`mailto:fuel@paccvictoria.com`, falls back to tel:), Help
+- Fixed baseline **$60/hr normal**.
+- Toggle: **Normal ($60) / OT ($90, 1.5×)** — switches the number used in the truck-cost build-up.
+- Admins keep the ability to override to a custom rate via a small "edit" affordance; drivers see the toggle only.
 
-Add a new **CustomerContextCard** between `SidebarHeader` and `<nav>`:
-- 32×32 rounded-square avatar, bg derived from a deterministic hash of `company_name`, centred 2-letter initials.
-- Line 1: company name uppercase (truncate). Line 2: `Account #C1004` (hidden if no `account_number`).
-- Loads via `useCustomerContext()` hook (new): selects from `client_accounts` for the signed-in user, or returns `{ name: "Demo Customer", isDemo: true }` when `?demo=true`. In demo mode renders a small "DEMO" pill (bg `--accent/30`, color `--foreground`, font 10/700 uppercase).
-- 1px bottom border `--border`.
+## 3. Driver role gets `/sales` (all three tabs)
 
-Sub-caption "Customer portal" added under the wordmark in `SidebarHeader` when not in branded mode.
+- Routing (`src/App.tsx` `AuthGate`): allow driver on `/sales`, `/admin/pricing`, and required dependencies (client list read is already RLS-open to authenticated).
+- Add a "Sales" button on `DriverPortal` so Steph can navigate in.
+- Nothing hidden inside Sales — she sees Quote Builder, Price a Drop, Win Back (Full Sales tab, as chosen).
 
-NavLinkRow rewires to real `to={item.href}` and uses `NavLink`'s active state; removes `onTabChange` and the `?tab=` query manipulation. Props `activeTab`/`onTabChange` are dropped.
+## 4. Driver guardrails on Price a Drop + Quote Builder
 
-## 3. Top bar
+Rules (driver only):
+- Litres must be **≥ 2,000 L**
+- Payment terms must be **≤ 14 days**
+- Margin must be **≥ 20%**
 
-`PortalLayout` header gets:
-- Search placeholder updated to "Search your deliveries, sites, dockets…".
-- `NotificationsBell` already exists — extend to show a lime dot when the customer has unread items (count of `delivery_requests` updated since `last_seen_at`, or just `> 0` for now; stub query OK).
-- `UserMenu`: add "Account settings" → `/portal/profile`, keep existing Help + Sign out, conditionally include "Switch organisation" only if the user has >1 row in `user_roles` with role `client`.
+Behaviour when any rule fails:
+- Yellow banner listing which rule(s) failed and the current value.
+- Send / Save / Email actions swap for a **"Request admin approval"** button.
+- Clicking it opens a small dialog: customer, litres, sell price, margin %, terms, driver note → inserts into a new `quote_approval_requests` table.
+- If all rules pass, driver sends/saves as normal.
 
-## 4. Page header with download CTA
+Admins are unaffected — they see the same warning but can still send.
 
-New `src/components/portal/PortalPageHeader.tsx`:
-- H1 + breadcrumb `<Company> / Customer portal / <Page>` (last segment `--foreground/500`, others `--muted-foreground` with `/` separators).
-- Right block: `<DownloadStatementMenu>` (dropdown of: Statement PDF, Deliveries CSV, Tax-credits report YTD, divider, Custom date range…) + `<PeriodSelector>` (Today / Week / Month / YTD / All — default Month).
-- Period state lifted into a `PortalPeriodContext` provided by `PortalShell` so Overview KPIs/charts and Deliveries page can subscribe.
+## 5. Approval queue for admins
 
-`DownloadStatementMenu` invokes a new edge function `export-customer-data` with `{ customer_id, format: 'statement-pdf' | 'deliveries-csv' | 'ftc-pdf', scope: {from, to} }`. Stub edge function returns a placeholder PDF/CSV with the customer name + period; deploys with `verify_jwt = true` (default) so RLS context is preserved via the user's JWT.
+- New table `quote_approval_requests` (driver_id, customer_name, litres, buy_price_per_litre, sell_price_per_litre, margin_pct, payment_terms_days, driver_note, status: pending/approved/rejected, admin_note, decided_by, decided_at, timestamps).
+- RLS: driver sees their own; admin sees all; driver inserts own; admin updates status.
+- New **"Approvals"** tab on Sales (admin only) showing pending requests with Approve / Reject buttons + inline note.
+- Small badge with pending count on the Admin sidebar Sales link.
 
-## 5. Overview page
+## Technical notes
 
-Carve current `OverviewTab` out of `CustomerPortal.tsx` into `src/pages/portal/PortalOverview.tsx`. Rebuild the KPI row to exactly 4 tiles using the existing `KPISparklineCard`:
-
-| Tile | Eyebrow | Icon | Container bg | Sparkline |
-|---|---|---|---|---|
-| Litres delivered | "<PERIOD> LITRES" | Droplet | `#E8EDE5` | `#2A6A2E` |
-| Spend | "<PERIOD> SPEND" | DollarSign | `#F4F0E6` | `#7A5300` |
-| FTC Savings (featured) | "EST. FTC SAVINGS" | Receipt | `#C8F26A` (lime) | `--foreground` |
-| Active sites | "ACTIVE SITES" | MapPin | `#EAEEFC` | `#2B3D8E` |
-
-FTC tile shows a neutral "YTD" pill (not green/red) plus a 11/400 italic sub-line "ATO off-road rate × volume". KPISparklineCard gets an optional `deltaTone: 'positive' | 'negative' | 'neutral'` + `subLine?: string` to support this.
-
-Below KPIs: keep the existing Litres-growth + Volume-by-site donut row from the prior turn (already built), restyled if needed.
-
-Below the chart row: new `<RecentDeliveriesCard>` — white card, header "Recent deliveries" + "View all →" link to `/portal/deliveries`. Table columns Date / Site / Driver / Volume / Docket; 10 rows scoped to the selected period; empty state copy as in spec. Docket cell triggers `export-customer-data` for a single docket PDF.
-
-Remove the old today's-deliveries + map row, or move it under the recent deliveries table — confirm with user (default: move map below the table).
-
-## 6. Sub-route pages
-
-Each new page wraps its content in `<PortalPageHeader />` with its own title/breadcrumb. Initial pass = read-only views fed by existing Supabase queries:
-
-- `PortalDeliveries.tsx`: full deliveries table, filters (date range from PortalPeriodContext, site, driver), pagination 25/page.
-- `PortalFleet.tsx`: list of plant items / vehicles refuelled with totals.
-- `PortalReports.tsx`: cards for each export (statement, deliveries, FTC, custom).
-- `PortalProfile.tsx`: extract existing `ProfileTab` content as-is into its own route file.
-- `PortalHelp.tsx`: placeholder contact card.
-
-## 7. Cleanup
-
-- Delete `CustomerPortal.tsx`'s tab switch + `?tab=` URL sync once content is split.
-- Page wrapper bg already `--muted` via PortalLayout — verify and remove any cream overrides in extracted tabs.
-- Update memory `mem://features/portal-theme-toggle` to note the portal now uses admin palette + sub-routes.
+- New file: `src/components/sales/DriverGuardrails.tsx` — pure calc + banner, reused by Price a Drop and Quote Builder.
+- New file: `src/components/sales/RequestApprovalDialog.tsx`.
+- New file: `src/components/sales/ApprovalsTab.tsx`.
+- New hook: `src/hooks/useQuoteApprovals.ts` (list, create, decide, pending-count).
+- Migration: creates `quote_approval_requests`, GRANTs (authenticated + service_role, no anon), RLS policies using `has_role`, `updated_at` trigger.
+- `useUserRole` already exists — reuse it to branch UI.
+- Buy-price ex-GST is `price / 1.1` — both suppliers feed inc-GST per the file header comment.
 
 ## Out of scope
 
-- Driver portal.
-- Real notification feed (just the dot indicator).
-- Real CSV/PDF formatting (edge function returns minimal placeholders this pass).
-- Mobile redesign beyond the existing drawer collapse.
-
-## Acceptance
-
-Per the user's checklist at the bottom of the request — sidebar replaces tabs, customer name in context card not in H1, breadcrumb under H1, Download statement dropdown in header, 4 KPIs with FTC on lime, charts row, recent deliveries table, page bg `--muted`, role-based sign-in redirect, demo badge, mobile drawer, no console errors.
-
-## Build order
-
-1. New edge function `export-customer-data` (stub).
-2. `useCustomerContext` hook + `CustomerContextCard`.
-3. `PortalShell` + nested routes in `App.tsx` + role-redirect tweak.
-4. `PortalLayout` nav refactor (NavLink + new sections + sub-caption + demo badge).
-5. `PortalPageHeader` + `DownloadStatementMenu` + `PortalPeriodContext`.
-6. Split `OverviewTab` → `PortalOverview.tsx`, rebuild 4 KPI tiles incl. FTC.
-7. `RecentDeliveriesCard`.
-8. Extract Deliveries / Fleet / Reports / Profile / Help into route files.
-9. Verify demo mode + role redirect + mobile drawer.
+- No changes to the underlying quote/pricing math beyond wage.
+- No email/SMS notification to admin on new approval request (in-app queue only). Can add later.

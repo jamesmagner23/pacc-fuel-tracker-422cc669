@@ -24,6 +24,9 @@ import { useDemo } from "@/hooks/useDemo";
 import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import OutreachComposer from "@/components/outreach/OutreachComposer";
 import { Mail } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
+import { checkDriverBreaches, DRIVER_RULES } from "@/hooks/useQuoteApprovals";
+import { DriverGuardrailBanner } from "@/components/sales/DriverGuardrailBanner";
 
 const GST_RATE = 0.1;
 
@@ -56,6 +59,8 @@ const newLineItem = (): LineItem => ({
 export default function PricingTab() {
   const isDemo = useDemo();
   const queryClient = useQueryClient();
+  const { data: role } = useUserRole();
+  const isDriver = role === "driver";
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { data: todayPricesAll = [] } = useTodayBuyPrices();
   const { data: todayBuyPrice } = useTodayBuyPrice();
@@ -258,6 +263,17 @@ export default function PricingTab() {
     if (!name || !email || grandTotalEx <= 0) {
       toast.error("Fill in customer and at least one line item");
       return;
+    }
+    if (isDriver) {
+      const driverBreaches = checkDriverBreaches({
+        litres: grandVolume,
+        paymentTermsDays: DRIVER_RULES.maxTermsDays, // Quote Builder has no terms field — assume compliant here
+        marginPct: weightedMargin,
+      });
+      if (driverBreaches.length > 0) {
+        toast.error("Quote is outside driver rules — use Price a Drop tab to request admin approval.");
+        return;
+      }
     }
     // Validate all line items
     for (let i = 0; i < lineItems.length; i++) {
@@ -489,6 +505,15 @@ export default function PricingTab() {
 
   return (
     <div className="flex flex-col gap-4">
+      {isDriver && (
+        <DriverGuardrailBanner
+          breaches={checkDriverBreaches({
+            litres: grandVolume,
+            paymentTermsDays: DRIVER_RULES.maxTermsDays,
+            marginPct: weightedMargin,
+          })}
+        />
+      )}
       {/* Buy price */}
       <div className={`bg-surface border rounded-[10px] p-4 sm:p-5 ${hasTodayPrice ? "border-surface-border" : "border-destructive/50"}`}>
         <div className="flex items-center justify-between mb-2">

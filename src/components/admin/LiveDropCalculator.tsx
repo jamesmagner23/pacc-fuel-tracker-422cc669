@@ -7,8 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Mail } from "lucide-react";
+import { Mail, ShieldAlert } from "lucide-react";
 import OutreachComposer from "@/components/outreach/OutreachComposer";
+import { useUserRole } from "@/hooks/useUserRole";
+import { checkDriverBreaches } from "@/hooks/useQuoteApprovals";
+import { DriverGuardrailBanner } from "@/components/sales/DriverGuardrailBanner";
+import { RequestApprovalDialog } from "@/components/sales/RequestApprovalDialog";
 
 type Mode = "quote" | "check";
 type Target = "cpl" | "pct";
@@ -64,6 +68,9 @@ function NumberField({
 const n = (v: number | null) => (v === null || !Number.isFinite(v) ? 0 : v);
 
 export default function LiveDropCalculator() {
+  const { data: role } = useUserRole();
+  const isDriver = role === "driver";
+
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Record<string, BuyRow | null>>({});
   const [supplier, setSupplier] = useState<string>("Pro Fusion");
@@ -81,12 +88,20 @@ export default function LiveDropCalculator() {
   const [driveMin, setDriveMin] = useState<number | null>(20);
   const speed = 40; // km/h average
 
-  // Truck cost build-up (editable)
-  const [driverWage, setDriverWage] = useState<number | null>(45);     // $/hr loaded (super, leave, workcover)
+  // Truck cost build-up. Driver wage is standardised at $60/hr normal,
+  // $90/hr for overtime (1.5×). Admins can still type a custom number.
+  const [wageMode, setWageMode] = useState<"normal" | "ot" | "custom">("normal");
+  const [driverWage, setDriverWage] = useState<number | null>(60);
   const [loadMin, setLoadMin] = useState<number | null>(30);            // loading + unloading minutes per drop
   const [truckLper100, setTruckLper100] = useState<number | null>(38); // truck diesel consumption L/100km
   const [truckDieselPrice, setTruckDieselPrice] = useState<number | null>(1.85); // $/L inc-GST burnt by the truck
   const [maintPerKm, setMaintPerKm] = useState<number | null>(0.25);    // tyres + servicing + rego + insurance per km
+
+  const setWagePreset = (m: "normal" | "ot" | "custom") => {
+    setWageMode(m);
+    if (m === "normal") setDriverWage(60);
+    else if (m === "ot") setDriverWage(90);
+  };
 
   // Client + payment terms
   const [clients, setClients] = useState<ClientRow[]>([]);
@@ -95,6 +110,9 @@ export default function LiveDropCalculator() {
   const [savingTerms, setSavingTerms] = useState(false);
 
   const [composerOpen, setComposerOpen] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [customerNameInput, setCustomerNameInput] = useState("");
+  const [customerEmailInput, setCustomerEmailInput] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -164,6 +182,7 @@ export default function LiveDropCalculator() {
   const priceRow = rows[supplier] ?? null;
   const rawBuy = priceRow ? Number(priceRow.price_per_litre) : 0;
   const buy = manualBuy ?? rawBuy;
+  const buyExGst = buy / 1.1;
   const todayMel = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
   const stale = !priceRow || priceRow.price_date < todayMel;
 
@@ -219,7 +238,7 @@ export default function LiveDropCalculator() {
 
           <div className="text-right">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Today's buy ({supplier}) · inc-GST
+              Buy price ({supplier})
             </div>
             {loading ? (
               <div className="text-muted-foreground mt-1">…</div>
@@ -228,11 +247,17 @@ export default function LiveDropCalculator() {
                 <div className="text-4xl font-bold text-accent leading-tight mt-1">
                   {buy ? `$${buy.toFixed(4)}` : "—"}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {priceRow
-                    ? `${priceRow.supplier} · effective ${priceRow.price_date}`
-                    : "no price loaded"}
+                <div className="text-[11px] text-muted-foreground mt-0.5">inc-GST</div>
+                <div className="text-sm text-muted-foreground tabular-nums mt-1">
+                  {buy ? `$${buyExGst.toFixed(4)}` : "—"} <span className="text-[10px]">ex-GST</span>
                 </div>
+                {priceRow && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                    <span className="font-semibold text-foreground">{priceRow.supplier}</span>
+                    <span>·</span>
+                    <span>effective {priceRow.price_date}</span>
+                  </div>
+                )}
                 {stale && (
                   <Badge variant="destructive" className="mt-2">
                     stale — no price for today
@@ -258,8 +283,9 @@ export default function LiveDropCalculator() {
             >
               {s}
               {rows[s] && (
-                <span className="ml-2 opacity-70 text-xs">
-                  ${Number(rows[s]!.price_per_litre).toFixed(3)}
+                <span className="ml-2 opacity-70 text-[10px] tabular-nums flex flex-col leading-tight">
+                  <span>${Number(rows[s]!.price_per_litre).toFixed(4)} inc</span>
+                  <span>${(Number(rows[s]!.price_per_litre) / 1.1).toFixed(4)} ex · {rows[s]!.price_date}</span>
                 </span>
               )}
             </Button>
@@ -412,9 +438,32 @@ export default function LiveDropCalculator() {
             Truck cost build-up
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div>
+            <div className="col-span-2">
               <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Driver $/hr</Label>
-              <NumberField value={driverWage} step="0.5" onChange={setDriverWage} className="mt-1" />
+              <div className="flex gap-1 mt-1">
+                {([
+                  { k: "normal" as const, l: "Normal $60" },
+                  { k: "ot" as const, l: "OT $90" },
+                  ...(isDriver ? [] : [{ k: "custom" as const, l: "Custom" }]),
+                ]).map((opt) => (
+                  <button
+                    key={opt.k}
+                    type="button"
+                    onClick={() => setWagePreset(opt.k)}
+                    className={cn(
+                      "text-[11px] px-2.5 py-1.5 rounded-md border cursor-pointer transition-colors",
+                      wageMode === opt.k
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-transparent text-muted-foreground border-border hover:text-foreground"
+                    )}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+              {wageMode === "custom" && !isDriver && (
+                <NumberField value={driverWage} step="0.5" onChange={setDriverWage} className="mt-1.5" />
+              )}
             </div>
             <div>
               <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Load/unload min</Label>
@@ -428,13 +477,15 @@ export default function LiveDropCalculator() {
               <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Diesel $/L</Label>
               <NumberField value={truckDieselPrice} step="0.01" onChange={setTruckDieselPrice} className="mt-1" />
             </div>
-            <div>
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Tyres+maint $/km</Label>
-              <NumberField value={maintPerKm} step="0.01" onChange={setMaintPerKm} className="mt-1" />
-            </div>
+            {!isDriver && (
+              <div>
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Tyres+maint $/km</Label>
+                <NumberField value={maintPerKm} step="0.01" onChange={setMaintPerKm} className="mt-1" />
+              </div>
+            )}
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Driver = wage + super/leave/workcover loaded. Maint covers tyres, servicing, rego, insurance per km. Yard/admin overhead excluded.
+            Driver wage standardised at $60/hr normal, $90/hr OT (1.5×). Maint covers tyres, servicing, rego, insurance per km. Yard/admin overhead excluded.
           </p>
         </div>
 
@@ -546,11 +597,73 @@ export default function LiveDropCalculator() {
           <Stat label="· Tyres + maint" value={money(r.maintCost)} sub={`${r.truckKm.toFixed(0)} km @ $${n(maintPerKm).toFixed(2)}/km`} />
         </div>
 
-        <div className="mt-6 pt-4 border-t border-border flex justify-end">
-          <Button onClick={() => setComposerOpen(true)} disabled={!r.sell || r.sell <= 0}>
-            <Mail className="w-3.5 h-3.5 mr-1.5" /> Email this rate
-          </Button>
-        </div>
+        {(() => {
+          const breaches = checkDriverBreaches({
+            litres: n(litres),
+            paymentTermsDays: paymentTerms,
+            marginPct: r.pct,
+          });
+          const showBanner = isDriver || breaches.length > 0;
+          const blocked = isDriver && breaches.length > 0;
+          return (
+            <div className="mt-6 pt-4 border-t border-border space-y-3">
+              {showBanner && <DriverGuardrailBanner breaches={breaches} />}
+
+              {isDriver && blocked && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    value={customerNameInput}
+                    onChange={(e) => setCustomerNameInput(e.target.value)}
+                    placeholder="Customer name"
+                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
+                  />
+                  <input
+                    value={customerEmailInput}
+                    onChange={(e) => setCustomerEmailInput(e.target.value)}
+                    placeholder="Email (optional)"
+                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2">
+                {isDriver && blocked ? (
+                  <Button
+                    onClick={() => {
+                      if (!customerNameInput) {
+                        return;
+                      }
+                      setApprovalOpen(true);
+                    }}
+                    disabled={!r.sell || r.sell <= 0 || !customerNameInput}
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5 mr-1.5" /> Request admin approval
+                  </Button>
+                ) : (
+                  <Button onClick={() => setComposerOpen(true)} disabled={!r.sell || r.sell <= 0}>
+                    <Mail className="w-3.5 h-3.5 mr-1.5" /> Email this rate
+                  </Button>
+                )}
+              </div>
+
+              <RequestApprovalDialog
+                open={approvalOpen}
+                onClose={() => setApprovalOpen(false)}
+                preset={{
+                  customer_name: customerNameInput || selectedClient?.company_name || "",
+                  customer_email: customerEmailInput || null,
+                  litres: n(litres),
+                  buy_price_per_litre: buy,
+                  sell_price_per_litre: r.sell,
+                  margin_pct: r.pct,
+                  payment_terms_days: paymentTerms,
+                  supplier: manualBuy !== null ? "manual" : supplier,
+                  breach_reasons: breaches,
+                }}
+              />
+            </div>
+          );
+        })()}
       </Card>
 
       <p className="text-xs text-muted-foreground">
