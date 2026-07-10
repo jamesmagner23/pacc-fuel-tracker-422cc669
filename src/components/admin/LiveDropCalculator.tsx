@@ -7,8 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Mail } from "lucide-react";
+import { Mail, ShieldAlert } from "lucide-react";
 import OutreachComposer from "@/components/outreach/OutreachComposer";
+import { useUserRole } from "@/hooks/useUserRole";
+import { checkDriverBreaches } from "@/hooks/useQuoteApprovals";
+import { DriverGuardrailBanner } from "@/components/sales/DriverGuardrailBanner";
+import { RequestApprovalDialog } from "@/components/sales/RequestApprovalDialog";
 
 type Mode = "quote" | "check";
 type Target = "cpl" | "pct";
@@ -64,6 +68,9 @@ function NumberField({
 const n = (v: number | null) => (v === null || !Number.isFinite(v) ? 0 : v);
 
 export default function LiveDropCalculator() {
+  const { data: role } = useUserRole();
+  const isDriver = role === "driver";
+
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Record<string, BuyRow | null>>({});
   const [supplier, setSupplier] = useState<string>("Pro Fusion");
@@ -81,12 +88,20 @@ export default function LiveDropCalculator() {
   const [driveMin, setDriveMin] = useState<number | null>(20);
   const speed = 40; // km/h average
 
-  // Truck cost build-up (editable)
-  const [driverWage, setDriverWage] = useState<number | null>(45);     // $/hr loaded (super, leave, workcover)
+  // Truck cost build-up. Driver wage is standardised at $60/hr normal,
+  // $90/hr for overtime (1.5×). Admins can still type a custom number.
+  const [wageMode, setWageMode] = useState<"normal" | "ot" | "custom">("normal");
+  const [driverWage, setDriverWage] = useState<number | null>(60);
   const [loadMin, setLoadMin] = useState<number | null>(30);            // loading + unloading minutes per drop
   const [truckLper100, setTruckLper100] = useState<number | null>(38); // truck diesel consumption L/100km
   const [truckDieselPrice, setTruckDieselPrice] = useState<number | null>(1.85); // $/L inc-GST burnt by the truck
   const [maintPerKm, setMaintPerKm] = useState<number | null>(0.25);    // tyres + servicing + rego + insurance per km
+
+  const setWagePreset = (m: "normal" | "ot" | "custom") => {
+    setWageMode(m);
+    if (m === "normal") setDriverWage(60);
+    else if (m === "ot") setDriverWage(90);
+  };
 
   // Client + payment terms
   const [clients, setClients] = useState<ClientRow[]>([]);
@@ -95,6 +110,9 @@ export default function LiveDropCalculator() {
   const [savingTerms, setSavingTerms] = useState(false);
 
   const [composerOpen, setComposerOpen] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [customerNameInput, setCustomerNameInput] = useState("");
+  const [customerEmailInput, setCustomerEmailInput] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -164,6 +182,7 @@ export default function LiveDropCalculator() {
   const priceRow = rows[supplier] ?? null;
   const rawBuy = priceRow ? Number(priceRow.price_per_litre) : 0;
   const buy = manualBuy ?? rawBuy;
+  const buyExGst = buy / 1.1;
   const todayMel = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
   const stale = !priceRow || priceRow.price_date < todayMel;
 
