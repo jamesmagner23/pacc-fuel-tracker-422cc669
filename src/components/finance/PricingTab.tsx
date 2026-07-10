@@ -25,8 +25,16 @@ import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
 import OutreachComposer from "@/components/outreach/OutreachComposer";
 import { Mail } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
-import { checkDriverBreaches, DRIVER_RULES } from "@/hooks/useQuoteApprovals";
-import { DriverGuardrailBanner } from "@/components/sales/DriverGuardrailBanner";
+import {
+  tierForLitres,
+  computeSellFromGpPct,
+  validateLineItem,
+  priceStatus,
+  ABSOLUTE_FLOOR_PCT,
+} from "@/lib/pricing";
+import { PriceStatusBanner } from "@/components/sales/PriceStatusBanner";
+import { logSalesActivity } from "@/hooks/useSalesActivity";
+import { AlertTriangle } from "lucide-react";
 
 const GST_RATE = 0.1;
 
@@ -61,6 +69,8 @@ export default function PricingTab() {
   const queryClient = useQueryClient();
   const { data: role } = useUserRole();
   const isDriver = role === "driver";
+  const isAdmin = role === "admin" || !role;
+  const isRep = isDriver;
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { data: todayPricesAll = [] } = useTodayBuyPrices();
   const { data: todayBuyPrice } = useTodayBuyPrice();
@@ -129,6 +139,8 @@ export default function PricingTab() {
 
   // Multi-line items
   const [lineItems, setLineItems] = useState<LineItem[]>([newLineItem()]);
+  const [paymentTermsDays, setPaymentTermsDays] = useState<number>(21);
+  const [clientEstablished, setClientEstablished] = useState(false);
 
   const [composerOpen, setComposerOpen] = useState(false);
 
@@ -146,16 +158,21 @@ export default function PricingTab() {
       const fuel = isFuelType(li.productType);
       if (fuel) {
         const vol = parseFloat(li.volume) || 0;
-        const margin = parseFloat(li.margin);
-        const marginPct = !isNaN(margin) ? margin : 0;
-        const sellPrice = latestBuyPrice > 0 ? latestBuyPrice * (1 + marginPct / 100) : 0;
+        // margin field is now % of SELL (true GP), auto-defaulted from the volume tier.
+        const tier = tierForLitres(vol);
+        const typed = parseFloat(li.margin);
+        const gpPct = !isNaN(typed) ? typed : tier.targetGpPct;
+        const sellIncGst = latestBuyPrice > 0 ? computeSellFromGpPct(latestBuyPrice, gpPct) : 0;
+        // Store ex-GST as sellPrice for legacy compatibility with existing quote records.
+        const sellPrice = sellIncGst / (1 + GST_RATE);
         const totalEx = sellPrice * vol;
-        return { vol, marginPct, sellPrice, totalEx, fuel };
+        const validation = validateLineItem({ buy: latestBuyPrice, sell: sellIncGst });
+        return { vol, marginPct: gpPct, sellPrice, sellIncGst, tier, totalEx, fuel, validation };
       } else {
         const qty = parseFloat(li.quantity) || 0;
         const unitPrice = parseFloat(li.unitPrice) || 0;
         const totalEx = unitPrice * qty;
-        return { vol: qty, marginPct: 0, sellPrice: unitPrice, totalEx, fuel };
+        return { vol: qty, marginPct: 0, sellPrice: unitPrice, sellIncGst: unitPrice * (1 + GST_RATE), tier: tierForLitres(0), totalEx, fuel, validation: { ok: true, reason: undefined } as { ok: boolean; reason?: string } };
       }
     });
   }, [lineItems, latestBuyPrice]);
@@ -167,6 +184,29 @@ export default function PricingTab() {
   const weightedMargin = grandTotalEx > 0
     ? lineCalcs.reduce((s, c) => s + c.marginPct * c.totalEx, 0) / grandTotalEx
     : 0;
+  const avgSellInc = grandVolume > 0
+    ? lineCalcs.filter(c => c.fuel).reduce((s, c) => s + c.sellIncGst * c.vol, 0) / (lineCalcs.filter(c => c.fuel).reduce((s, c) => s + c.vol, 0) || 1)
+    : 0;
+  const quoteStatus = hasFuelItems ? priceStatus({
+    buy: latestBuyPrice,
+    sell: avgSellInc,
+    litres: grandVolume,
+    termsDays: paymentTermsDays,
+    clientEstablished,
+    isAdmin,
+  }) : null;
+
+  // Auto-fill margin fields with tier target whenever volume changes and margin is blank.
+  useEffect(() => {
+    setLineItems((items) => items.map((li) => {
+      if (!isFuelType(li.productType)) return li;
+      const vol = parseFloat(li.volume) || 0;
+      if (!vol) return li;
+      if (li.margin && !isNaN(parseFloat(li.margin))) return li;
+      const tier = tierForLitres(vol);
+      return { ...li, margin: String(tier.targetGpPct) };
+    }));
+  }, [lineItems.map(l => l.volume).join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredQuotes = useMemo(
     () => quotes.filter(q =>
@@ -264,26 +304,22 @@ export default function PricingTab() {
       toast.error("Fill in customer and at least one line item");
       return;
     }
-    if (isDriver) {
-      const driverBreaches = checkDriverBreaches({
-        litres: grandVolume,
-        paymentTermsDays: DRIVER_RULES.maxTermsDays, // Quote Builder has no terms field — assume compliant here
-        marginPct: weightedMargin,
-      });
-      if (driverBreaches.length > 0) {
-        toast.error("Quote is outside driver rules — use Price a Drop tab to request admin approval.");
-        return;
-      }
+    if (quoteStatus && !quoteStatus.canSend) {
+      toast.error(`Cannot create quote: ${quoteStatus.message}`);
+      return;
     }
     // Validate all line items
     for (let i = 0; i < lineItems.length; i++) {
       const li = lineItems[i];
       const fuel = isFuelType(li.productType);
+      const calc = lineCalcs[i];
       if (fuel) {
         const vol = parseFloat(li.volume);
         const margin = parseFloat(li.margin);
         if (!vol || vol <= 0) { toast.error(`Line ${i + 1}: enter a volume`); return; }
         if (isNaN(margin)) { toast.error(`Line ${i + 1}: enter a margin %`); return; }
+        if (margin < ABSOLUTE_FLOOR_PCT) { toast.error(`Line ${i + 1}: margin below ${ABSOLUTE_FLOOR_PCT}% floor`); return; }
+        if (calc && !calc.validation.ok) { toast.error(`Line ${i + 1}: ${calc.validation.reason}`); return; }
       } else {
         const qty = parseFloat(li.quantity);
         const price = parseFloat(li.unitPrice);
@@ -306,7 +342,7 @@ export default function PricingTab() {
     const avgSellPrice = grandVolume > 0 ? grandTotalEx / grandVolume : 0;
 
     try {
-      await createQuote.mutateAsync({
+      const createdQuote: any = await createQuote.mutateAsync({
         customer_name: name,
         customer_email: email,
         customer_phone: phone || null,
@@ -321,6 +357,18 @@ export default function PricingTab() {
         valid_until: format(addDays(new Date(), 1), "yyyy-MM-dd"),
         line_items: lineItemsData,
       } as any);
+      logSalesActivity({
+        client_name: name,
+        client_email: email,
+        litres: grandVolume,
+        terms_days: paymentTermsDays,
+        sell_price_per_litre: avgSellInc,
+        buy_price_per_litre: latestBuyPrice,
+        gp_pct: quoteStatus?.level ? (avgSellInc > 0 ? ((avgSellInc - latestBuyPrice) / avgSellInc) * 100 : 0) : weightedMargin,
+        status: "drafted",
+        source: "quote_builder",
+        quote_id: createdQuote?.id ?? null,
+      });
       toast.success("Quote created");
       setName(""); setEmail(""); setPhone(""); setNotes("");
       setLineItems([newLineItem()]);
@@ -496,6 +544,20 @@ export default function PricingTab() {
     try {
       const { error } = await supabase.functions.invoke("send-quote", { body: { quote_id: quoteId } });
       if (error) throw error;
+      const q = quotes.find(qq => qq.id === quoteId);
+      if (q) {
+        logSalesActivity({
+          client_name: q.customer_name,
+          client_email: q.customer_email,
+          litres: q.volume_litres,
+          sell_price_per_litre: q.sell_price_per_litre,
+          buy_price_per_litre: q.buy_price_per_litre,
+          gp_pct: q.sell_price_per_litre > 0 ? ((q.sell_price_per_litre - q.buy_price_per_litre) / q.sell_price_per_litre) * 100 : 0,
+          status: "sent",
+          source: "quote_builder",
+          quote_id: quoteId,
+        });
+      }
       toast.success("Quote emailed");
     } catch { toast.error("Failed to send quote"); }
   };
@@ -505,14 +567,8 @@ export default function PricingTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      {isDriver && (
-        <DriverGuardrailBanner
-          breaches={checkDriverBreaches({
-            litres: grandVolume,
-            paymentTermsDays: DRIVER_RULES.maxTermsDays,
-            marginPct: weightedMargin,
-          })}
-        />
+      {quoteStatus && (
+        <PriceStatusBanner status={quoteStatus} />
       )}
       {/* Buy price */}
       <div className={`bg-surface border rounded-[10px] p-4 sm:p-5 ${hasTodayPrice ? "border-surface-border" : "border-destructive/50"}`}>
@@ -646,6 +702,33 @@ export default function PricingTab() {
       {/* Quote builder with line items */}
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">Create Quote</div>
+
+        {/* Terms + established client controls */}
+        <div className="flex flex-wrap items-center gap-3 mb-3 pb-3 border-b border-surface-border">
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span>Payment terms:</span>
+            {[0, 7, 14, 21, 30, 45, 60].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setPaymentTermsDays(d)}
+                className={`px-2 py-1 rounded-full border text-[10px] cursor-pointer transition-colors ${
+                  paymentTermsDays === d
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-transparent border-surface-border hover:border-foreground/30"
+                }`}
+              >{d === 0 ? "COD" : `${d}d`}</button>
+            ))}
+          </div>
+          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={clientEstablished}
+              onChange={(e) => setClientEstablished(e.target.checked)}
+            />
+            Established client
+          </label>
+        </div>
 
         {/* Customer details */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -861,6 +944,11 @@ export default function PricingTab() {
             <div className="flex flex-col">
               {filteredQuotes.map((q, i, arr) => {
                 const items: any[] = (q as any).line_items || [];
+                const buy = Number(q.buy_price_per_litre) || 0;
+                const sell = Number(q.sell_price_per_litre) || 0;
+                const bandBad = buy > 0 && (sell > buy * 5 || sell < buy);
+                const expired = q.valid_until ? new Date(q.valid_until) < new Date(new Date().toDateString()) : false;
+                const flagged = bandBad || expired;
                 return (
                   <div key={q.id} className="flex items-center justify-between py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
                     <div className="flex items-start gap-2 min-w-0 flex-1">
@@ -868,7 +956,15 @@ export default function PricingTab() {
                         {selectedIds.has(q.id) ? <CheckSquare className="w-3.5 h-3.5 text-primary" /> : <Square className="w-3.5 h-3.5" />}
                       </button>
                       <div className="min-w-0">
-                        <div className="text-[13px] font-medium text-foreground truncate">{q.customer_name}</div>
+                        <div className="text-[13px] font-medium text-foreground truncate flex items-center gap-1.5">
+                          {q.customer_name}
+                          {flagged && (
+                            <span title={bandBad ? "Unit price out of valid band (>5× buy or < buy)" : "Past validity date"}
+                                  className="inline-flex items-center gap-0.5 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive">
+                              <AlertTriangle className="w-2.5 h-2.5" /> check
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">
                           {items.length > 1 ? `${items.length} items · ` : ""}{q.volume_litres.toLocaleString()}L · ${q.sell_price_per_litre.toFixed(4)}/L · {format(parseISO(q.created_at), "dd MMM yyyy")}
                         </div>

@@ -1962,6 +1962,57 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_activity: {
+        Row: {
+          buy_price_per_litre: number | null
+          client_email: string | null
+          client_name: string
+          created_at: string
+          gp_pct: number | null
+          id: string
+          litres: number | null
+          metadata: Json | null
+          quote_id: string | null
+          rep_id: string | null
+          sell_price_per_litre: number | null
+          source: string | null
+          status: string
+          terms_days: number | null
+        }
+        Insert: {
+          buy_price_per_litre?: number | null
+          client_email?: string | null
+          client_name: string
+          created_at?: string
+          gp_pct?: number | null
+          id?: string
+          litres?: number | null
+          metadata?: Json | null
+          quote_id?: string | null
+          rep_id?: string | null
+          sell_price_per_litre?: number | null
+          source?: string | null
+          status: string
+          terms_days?: number | null
+        }
+        Update: {
+          buy_price_per_litre?: number | null
+          client_email?: string | null
+          client_name?: string
+          created_at?: string
+          gp_pct?: number | null
+          id?: string
+          litres?: number | null
+          metadata?: Json | null
+          quote_id?: string | null
+          rep_id?: string | null
+          sell_price_per_litre?: number | null
+          source?: string | null
+          status?: string
+          terms_days?: number | null
+        }
+        Relationships: []
+      }
       scheduled_deliveries: {
         Row: {
           client_account_id: number | null

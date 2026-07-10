@@ -10,9 +10,18 @@ import { cn } from "@/lib/utils";
 import { Mail, ShieldAlert } from "lucide-react";
 import OutreachComposer from "@/components/outreach/OutreachComposer";
 import { useUserRole } from "@/hooks/useUserRole";
-import { checkDriverBreaches } from "@/hooks/useQuoteApprovals";
-import { DriverGuardrailBanner } from "@/components/sales/DriverGuardrailBanner";
 import { RequestApprovalDialog } from "@/components/sales/RequestApprovalDialog";
+import { PriceStatusBanner } from "@/components/sales/PriceStatusBanner";
+import {
+  tierForLitres,
+  computeSellFromGpPct,
+  computeSellFromCpl,
+  deriveMetrics,
+  priceStatus,
+  clampToFloor,
+  fmtMoney0,
+} from "@/lib/pricing";
+import { logSalesActivity } from "@/hooks/useSalesActivity";
 
 type Mode = "quote" | "check";
 type Target = "cpl" | "pct";
@@ -70,6 +79,8 @@ const n = (v: number | null) => (v === null || !Number.isFinite(v) ? 0 : v);
 export default function LiveDropCalculator() {
   const { data: role } = useUserRole();
   const isDriver = role === "driver";
+  const isAdmin = role === "admin" || !role; // default admin if role missing
+  const isRep = isDriver; // rep view = driver
 
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Record<string, BuyRow | null>>({});
@@ -82,8 +93,11 @@ export default function LiveDropCalculator() {
 
   const [target, setTarget] = useState<Target>("cpl");
   const [targetCpl, setTargetCpl] = useState<number | null>(27);
-  const [targetPct, setTargetPct] = useState<number | null>(15);
+  const [targetPct, setTargetPct] = useState<number | null>(20);
   const [sellInput, setSellInput] = useState<number | null>(1.82);
+  const [clampWarning, setClampWarning] = useState<string | null>(null);
+  const [clientEstablished, setClientEstablished] = useState(false);
+  const [ownerOverride, setOwnerOverride] = useState(false); // admin manual override past soft rules
 
   const [driveMin, setDriveMin] = useState<number | null>(20);
   const speed = 40; // km/h average
@@ -131,6 +145,12 @@ export default function LiveDropCalculator() {
           if (!latest[r.supplier]) latest[r.supplier] = r as BuyRow;
         }
         setRows(latest);
+        // Rep view: auto-pick cheapest supplier and lock the picker.
+        const supplierEntries = Object.entries(latest).filter(([_, v]) => v) as [string, BuyRow][];
+        if (supplierEntries.length) {
+          supplierEntries.sort((a, b) => a[1].price_per_litre - b[1].price_per_litre);
+          setSupplier(supplierEntries[0][0]);
+        }
       }
       setLoading(false);
     })();
@@ -186,6 +206,16 @@ export default function LiveDropCalculator() {
   const todayMel = new Date().toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
   const stale = !priceRow || priceRow.price_date < todayMel;
 
+  // Auto-select tier target when litres change (only if user is on % target mode).
+  useEffect(() => {
+    const tier = tierForLitres(n(litres));
+    if (target === "pct" && !tier.custom) {
+      setTargetPct(tier.targetGpPct);
+    }
+    // Reset clamp warning when litres change
+    setClampWarning(null);
+  }, [litres]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const r = useMemo(() => {
     const dm = n(driveMin);
     const truckKm = (dm / 60) * speed * 2; // round trip
@@ -197,27 +227,66 @@ export default function LiveDropCalculator() {
     const truckCost = wageCost + truckFuelCost + maintCost;
     let sell = n(sellInput);
     if (mode === "quote") {
-      sell =
-        target === "cpl"
-          ? buy + n(targetCpl) / 100
-          : n(targetPct) < 100
-          ? buy / (1 - n(targetPct) / 100)
-          : buy;
+      sell = target === "cpl"
+        ? computeSellFromCpl(buy, n(targetCpl))
+        : computeSellFromGpPct(buy, n(targetPct));
     }
-    const cpl = sell - buy;
-    const pct = sell > 0 ? (cpl / sell) * 100 : 0;
+    const metrics = deriveMetrics({ buy, sell, litres: n(litres), truckCost });
     const revenue = n(litres) * sell;
-    const gm = n(litres) * cpl;
-    const contribution = gm - truckCost;
     return {
-      sell, cpl, pct, revenue, gm, truckCost, contribution,
+      sell,
+      cpl: sell - buy,
+      pct: metrics.gpPct,
+      markupPct: metrics.markupPct,
+      revenue,
+      gm: metrics.grossMargin$,
+      truckCost,
+      contribution: metrics.contribution$,
       truckKm, totalHours, wageCost, truckFuelCost, maintCost,
     };
   }, [mode, buy, litres, target, targetCpl, targetPct, sellInput, driveMin,
       driverWage, loadMin, truckLper100, truckDieselPrice, maintPerKm]);
 
+  const status = useMemo(() => priceStatus({
+    buy,
+    sell: r.sell,
+    litres: n(litres),
+    termsDays: paymentTerms,
+    clientEstablished,
+    isAdmin,
+  }), [buy, r.sell, litres, paymentTerms, clientEstablished, isAdmin]);
+
+  // Clamp user-typed % target up to the floor (informational — real block is in status).
+  useEffect(() => {
+    if (mode !== "quote" || target !== "pct") return;
+    if (targetPct == null) return;
+    const c = clampToFloor(targetPct, status.floorPct);
+    if (c.clamped && targetPct < status.floorPct) {
+      setTargetPct(status.floorPct);
+      setClampWarning(`Raised to floor of ${status.floorPct.toFixed(0)}% GP for the selected terms/volume.`);
+    }
+  }, [targetPct, status.floorPct, mode, target]);
+
   const money = (n: number) =>
     isFinite(n) ? "$" + Math.round(n).toLocaleString("en-AU") : "$0";
+
+  const canSend = status.canSend || (isAdmin && ownerOverride);
+
+  const handleEmailRate = async () => {
+    await logSalesActivity({
+      client_name: customerNameInput || selectedClient?.company_name || "one-off",
+      client_email: customerEmailInput || null,
+      litres: n(litres),
+      terms_days: paymentTerms,
+      sell_price_per_litre: r.sell,
+      buy_price_per_litre: buy,
+      gp_pct: r.pct,
+      status: (isAdmin && ownerOverride && !status.canSend) ? "overridden" : "emailed_rate",
+      source: "price_a_drop",
+      metadata: { level: status.level, floorPct: status.floorPct, tier: status.tier.label },
+    });
+    setComposerOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -232,13 +301,15 @@ export default function LiveDropCalculator() {
               Price a Drop
             </h2>
             <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              Live buy prices: Pro Fusion = Viva Melbourne TGP − 1.5c (inc-GST). Pacific = scraped from supplier email (inc-GST). Admin only.
+              {isRep
+                ? "Live pricing calculator. Buy figure auto-selects the cheapest available supply."
+                : "Live buy prices: Pro Fusion = Viva Melbourne TGP − 1.5c (inc-GST). Pacific = scraped from supplier email (inc-GST). Admin only."}
             </p>
           </div>
 
           <div className="text-right">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-              Buy price ({supplier})
+              {isRep ? "Buy" : `Buy price (${supplier})`}
             </div>
             {loading ? (
               <div className="text-muted-foreground mt-1">…</div>
@@ -251,14 +322,19 @@ export default function LiveDropCalculator() {
                 <div className="text-sm text-muted-foreground tabular-nums mt-1">
                   {buy ? `$${buyExGst.toFixed(4)}` : "—"} <span className="text-[10px]">ex-GST</span>
                 </div>
-                {priceRow && (
+                {priceRow && !isRep && (
                   <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
                     <span className="font-semibold text-foreground">{priceRow.supplier}</span>
                     <span>·</span>
                     <span>effective {priceRow.price_date}</span>
                   </div>
                 )}
-                {stale && (
+                {priceRow && isRep && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                    <span>effective {priceRow.price_date}</span>
+                  </div>
+                )}
+                {stale && !isRep && (
                   <Badge variant="destructive" className="mt-2">
                     stale — no price for today
                   </Badge>
@@ -272,47 +348,51 @@ export default function LiveDropCalculator() {
           <div className="mt-4 text-sm text-destructive">{err}</div>
         )}
 
-        {/* Supplier picker */}
-        <div className="mt-5 flex gap-2">
-          {SUPPLIERS.map((s) => (
-            <Button
-              key={s}
-              variant={supplier === s ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSupplier(s)}
-            >
-              {s}
-              {rows[s] && (
-                <span className="ml-2 opacity-70 text-[10px] tabular-nums flex flex-col leading-tight">
-                  <span>${Number(rows[s]!.price_per_litre).toFixed(4)} inc</span>
-                  <span>${(Number(rows[s]!.price_per_litre) / 1.1).toFixed(4)} ex · {rows[s]!.price_date}</span>
-                </span>
-              )}
-            </Button>
-          ))}
-        </div>
+        {/* Supplier picker — admin only */}
+        {!isRep && (
+          <div className="mt-5 flex gap-2">
+            {SUPPLIERS.map((s) => (
+              <Button
+                key={s}
+                variant={supplier === s ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSupplier(s)}
+              >
+                {s}
+                {rows[s] && (
+                  <span className="ml-2 opacity-70 text-[10px] tabular-nums flex flex-col leading-tight">
+                    <span>${Number(rows[s]!.price_per_litre).toFixed(4)} inc</span>
+                    <span>${(Number(rows[s]!.price_per_litre) / 1.1).toFixed(4)} ex · {rows[s]!.price_date}</span>
+                  </span>
+                )}
+              </Button>
+            ))}
+          </div>
+        )}
 
-        {/* Manual override */}
-        <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={manualBuy !== null}
-              onChange={(e) =>
-                setManualBuy(e.target.checked ? buy || 1.55 : null)
-              }
-            />
-            Override buy price manually
-          </label>
-          {manualBuy !== null && (
-            <NumberField
-              value={manualBuy}
-              step="0.0001"
-              onChange={(v) => setManualBuy(v)}
-              className="w-32"
-            />
-          )}
-        </div>
+        {/* Manual override — admin only */}
+        {!isRep && (
+          <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={manualBuy !== null}
+                onChange={(e) =>
+                  setManualBuy(e.target.checked ? buy || 1.55 : null)
+                }
+              />
+              Override buy price manually
+            </label>
+            {manualBuy !== null && (
+              <NumberField
+                value={manualBuy}
+                step="0.0001"
+                onChange={(v) => setManualBuy(v)}
+                className="w-32"
+              />
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Customer + payment terms */}
@@ -581,7 +661,7 @@ export default function LiveDropCalculator() {
             value={money(r.truckCost)}
             sub={`${r.truckKm.toFixed(0)} km · ${r.totalHours.toFixed(1)}h`}
           />
-          <Stat label="Buy used" value={`$${buy.toFixed(4)}`} sub={manualBuy !== null ? "manual" : supplier} />
+          <Stat label="Buy used" value={`$${buy.toFixed(4)}`} sub={isRep ? undefined : (manualBuy !== null ? "manual" : supplier)} />
           {paymentTerms != null && (
             <Stat
               label="Payment terms"
@@ -597,73 +677,94 @@ export default function LiveDropCalculator() {
           <Stat label="· Tyres + maint" value={money(r.maintCost)} sub={`${r.truckKm.toFixed(0)} km @ $${n(maintPerKm).toFixed(2)}/km`} />
         </div>
 
-        {(() => {
-          const breaches = checkDriverBreaches({
-            litres: n(litres),
-            paymentTermsDays: paymentTerms,
-            marginPct: r.pct,
-          });
-          const showBanner = isDriver || breaches.length > 0;
-          const blocked = isDriver && breaches.length > 0;
-          return (
-            <div className="mt-6 pt-4 border-t border-border space-y-3">
-              {showBanner && <DriverGuardrailBanner breaches={breaches} />}
-
-              {isDriver && blocked && (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <input
-                    value={customerNameInput}
-                    onChange={(e) => setCustomerNameInput(e.target.value)}
-                    placeholder="Customer name"
-                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
-                  />
-                  <input
-                    value={customerEmailInput}
-                    onChange={(e) => setCustomerEmailInput(e.target.value)}
-                    placeholder="Email (optional)"
-                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
-                  />
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                {isDriver && blocked ? (
-                  <Button
-                    onClick={() => {
-                      if (!customerNameInput) {
-                        return;
-                      }
-                      setApprovalOpen(true);
-                    }}
-                    disabled={!r.sell || r.sell <= 0 || !customerNameInput}
-                  >
-                    <ShieldAlert className="w-3.5 h-3.5 mr-1.5" /> Request admin approval
-                  </Button>
-                ) : (
-                  <Button onClick={() => setComposerOpen(true)} disabled={!r.sell || r.sell <= 0}>
-                    <Mail className="w-3.5 h-3.5 mr-1.5" /> Email this rate
-                  </Button>
-                )}
-              </div>
-
-              <RequestApprovalDialog
-                open={approvalOpen}
-                onClose={() => setApprovalOpen(false)}
-                preset={{
-                  customer_name: customerNameInput || selectedClient?.company_name || "",
-                  customer_email: customerEmailInput || null,
-                  litres: n(litres),
-                  buy_price_per_litre: buy,
-                  sell_price_per_litre: r.sell,
-                  margin_pct: r.pct,
-                  payment_terms_days: paymentTerms,
-                  supplier: manualBuy !== null ? "manual" : supplier,
-                  breach_reasons: breaches,
-                }}
+        <div className="mt-6 pt-4 border-t border-border space-y-3">
+          {/* Client established toggle */}
+          <div className="flex flex-wrap items-center gap-3 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={clientEstablished}
+                onChange={(e) => setClientEstablished(e.target.checked)}
               />
-            </div>
-          );
-        })()}
+              Established client (unlock sub-tier floors on 2,500 L+ drops)
+            </label>
+            <span className="text-muted-foreground">
+              Sell inc-GST: <span className="text-foreground font-semibold">${r.sell.toFixed(4)}/L</span>
+              &nbsp;·&nbsp;{r.pct.toFixed(1)}% GP · markup {r.markupPct.toFixed(1)}% · {(r.cpl * 100).toFixed(1)}¢/L
+            </span>
+          </div>
+
+          {clampWarning && (
+            <div className="text-[11px] text-amber-300">{clampWarning}</div>
+          )}
+
+          <PriceStatusBanner status={status} />
+
+          {/* Customer capture (used for logging + composer + rep approval request) */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              value={customerNameInput}
+              onChange={(e) => setCustomerNameInput(e.target.value)}
+              placeholder={selectedClient ? selectedClient.company_name : "Customer name"}
+              className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
+            />
+            <input
+              value={customerEmailInput}
+              onChange={(e) => setCustomerEmailInput(e.target.value)}
+              placeholder="Email (optional)"
+              className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
+            />
+          </div>
+
+          {/* Admin manual override checkbox — appears only when blocked and admin */}
+          {isAdmin && !status.canSend && (
+            <label className="flex items-center gap-2 text-xs text-amber-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={ownerOverride}
+                onChange={(e) => setOwnerOverride(e.target.checked)}
+              />
+              Owner override — I accept the risk and want to send anyway (logged)
+            </label>
+          )}
+
+          <div className="flex justify-end gap-2">
+            {isRep && !status.canSend ? (
+              <Button
+                onClick={() => {
+                  if (!customerNameInput && !selectedClient) return;
+                  setApprovalOpen(true);
+                }}
+                disabled={!r.sell || r.sell <= 0 || (!customerNameInput && !selectedClient)}
+              >
+                <ShieldAlert className="w-3.5 h-3.5 mr-1.5" /> Request admin approval
+              </Button>
+            ) : (
+              <Button
+                onClick={handleEmailRate}
+                disabled={!canSend || !r.sell || r.sell <= 0}
+              >
+                <Mail className="w-3.5 h-3.5 mr-1.5" /> Email this rate
+              </Button>
+            )}
+          </div>
+
+          <RequestApprovalDialog
+            open={approvalOpen}
+            onClose={() => setApprovalOpen(false)}
+            preset={{
+              customer_name: customerNameInput || selectedClient?.company_name || "",
+              customer_email: customerEmailInput || null,
+              litres: n(litres),
+              buy_price_per_litre: buy,
+              sell_price_per_litre: r.sell,
+              margin_pct: r.pct,
+              payment_terms_days: paymentTerms,
+              supplier: isRep ? null : (manualBuy !== null ? "manual" : supplier),
+              breach_reasons: [status.message],
+            }}
+          />
+        </div>
       </Card>
 
       <p className="text-xs text-muted-foreground">
