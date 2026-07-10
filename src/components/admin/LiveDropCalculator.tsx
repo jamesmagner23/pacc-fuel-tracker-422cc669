@@ -597,11 +597,73 @@ export default function LiveDropCalculator() {
           <Stat label="· Tyres + maint" value={money(r.maintCost)} sub={`${r.truckKm.toFixed(0)} km @ $${n(maintPerKm).toFixed(2)}/km`} />
         </div>
 
-        <div className="mt-6 pt-4 border-t border-border flex justify-end">
-          <Button onClick={() => setComposerOpen(true)} disabled={!r.sell || r.sell <= 0}>
-            <Mail className="w-3.5 h-3.5 mr-1.5" /> Email this rate
-          </Button>
-        </div>
+        {(() => {
+          const breaches = checkDriverBreaches({
+            litres: n(litres),
+            paymentTermsDays: paymentTerms,
+            marginPct: r.pct,
+          });
+          const showBanner = isDriver || breaches.length > 0;
+          const blocked = isDriver && breaches.length > 0;
+          return (
+            <div className="mt-6 pt-4 border-t border-border space-y-3">
+              {showBanner && <DriverGuardrailBanner breaches={breaches} />}
+
+              {isDriver && blocked && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    value={customerNameInput}
+                    onChange={(e) => setCustomerNameInput(e.target.value)}
+                    placeholder="Customer name"
+                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
+                  />
+                  <input
+                    value={customerEmailInput}
+                    onChange={(e) => setCustomerEmailInput(e.target.value)}
+                    placeholder="Email (optional)"
+                    className="flex-1 bg-muted border border-border rounded-lg px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2">
+                {isDriver && blocked ? (
+                  <Button
+                    onClick={() => {
+                      if (!customerNameInput) {
+                        return;
+                      }
+                      setApprovalOpen(true);
+                    }}
+                    disabled={!r.sell || r.sell <= 0 || !customerNameInput}
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5 mr-1.5" /> Request admin approval
+                  </Button>
+                ) : (
+                  <Button onClick={() => setComposerOpen(true)} disabled={!r.sell || r.sell <= 0}>
+                    <Mail className="w-3.5 h-3.5 mr-1.5" /> Email this rate
+                  </Button>
+                )}
+              </div>
+
+              <RequestApprovalDialog
+                open={approvalOpen}
+                onClose={() => setApprovalOpen(false)}
+                preset={{
+                  customer_name: customerNameInput || selectedClient?.company_name || "",
+                  customer_email: customerEmailInput || null,
+                  litres: n(litres),
+                  buy_price_per_litre: buy,
+                  sell_price_per_litre: r.sell,
+                  margin_pct: r.pct,
+                  payment_terms_days: paymentTerms,
+                  supplier: manualBuy !== null ? "manual" : supplier,
+                  breach_reasons: breaches,
+                }}
+              />
+            </div>
+          );
+        })()}
       </Card>
 
       <p className="text-xs text-muted-foreground">
