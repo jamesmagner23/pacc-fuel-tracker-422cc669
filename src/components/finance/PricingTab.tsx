@@ -944,6 +944,11 @@ export default function PricingTab() {
             <div className="flex flex-col">
               {filteredQuotes.map((q, i, arr) => {
                 const items: any[] = (q as any).line_items || [];
+                const buy = Number(q.buy_price_per_litre) || 0;
+                const sell = Number(q.sell_price_per_litre) || 0;
+                const bandBad = buy > 0 && (sell > buy * 5 || sell < buy);
+                const expired = q.valid_until ? new Date(q.valid_until) < new Date(new Date().toDateString()) : false;
+                const flagged = bandBad || expired;
                 return (
                   <div key={q.id} className="flex items-center justify-between py-3" style={{ borderBottom: i < arr.length - 1 ? "1px solid var(--surface-border)" : "none" }}>
                     <div className="flex items-start gap-2 min-w-0 flex-1">
@@ -951,7 +956,15 @@ export default function PricingTab() {
                         {selectedIds.has(q.id) ? <CheckSquare className="w-3.5 h-3.5 text-primary" /> : <Square className="w-3.5 h-3.5" />}
                       </button>
                       <div className="min-w-0">
-                        <div className="text-[13px] font-medium text-foreground truncate">{q.customer_name}</div>
+                        <div className="text-[13px] font-medium text-foreground truncate flex items-center gap-1.5">
+                          {q.customer_name}
+                          {flagged && (
+                            <span title={bandBad ? "Unit price out of valid band (>5× buy or < buy)" : "Past validity date"}
+                                  className="inline-flex items-center gap-0.5 text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive">
+                              <AlertTriangle className="w-2.5 h-2.5" /> check
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">
                           {items.length > 1 ? `${items.length} items · ` : ""}{q.volume_litres.toLocaleString()}L · ${q.sell_price_per_litre.toFixed(4)}/L · {format(parseISO(q.created_at), "dd MMM yyyy")}
                         </div>
