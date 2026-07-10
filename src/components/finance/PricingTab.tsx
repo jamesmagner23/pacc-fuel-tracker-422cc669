@@ -172,7 +172,7 @@ export default function PricingTab() {
         const qty = parseFloat(li.quantity) || 0;
         const unitPrice = parseFloat(li.unitPrice) || 0;
         const totalEx = unitPrice * qty;
-        return { vol: qty, marginPct: 0, sellPrice: unitPrice, sellIncGst: unitPrice * (1 + GST_RATE), tier: tierForLitres(0), totalEx, fuel, validation: { ok: true as const } };
+        return { vol: qty, marginPct: 0, sellPrice: unitPrice, sellIncGst: unitPrice * (1 + GST_RATE), tier: tierForLitres(0), totalEx, fuel, validation: { ok: true, reason: undefined } as { ok: boolean; reason?: string } };
       }
     });
   }, [lineItems, latestBuyPrice]);
