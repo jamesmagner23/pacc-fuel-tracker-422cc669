@@ -156,7 +156,9 @@ export default function WinBackTab() {
                     <span>Last: {format(c.lastOrder, "dd MMM yyyy")}</span>
                     <span>{c.orderCount} orders</span>
                     <span>{c.totalLitres.toLocaleString()}L total</span>
-                    <span>${c.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} rev</span>
+                    {c.totalRevenue > 0
+                      ? <span>${c.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })} rev</span>
+                      : <span className="italic opacity-70">no rate on file</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
