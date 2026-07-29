@@ -329,6 +329,7 @@ export default function Overview() {
   // Eyebrow prefix reflects period scope.
   const prefix = range === "today" ? "Daily" : range === "week" ? "Weekly" : "Monthly";
   const litresLabel    = `${prefix} Litres Delivered`;
+  const fuelCostLabel  = `${prefix} Fuel Cost`;
   const revenueLabel   = `${prefix} Revenue`;
   const deliveriesLabel = range === "today" ? "Deliveries today" : range === "week" ? "Deliveries this week" : "Deliveries this month";
   const avgLabel        = "Avg Drop Size";
