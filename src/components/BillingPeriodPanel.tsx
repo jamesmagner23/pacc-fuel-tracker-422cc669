@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { Download, CalendarRange } from "lucide-react";
 import { useAllTransactions } from "@/hooks/useTransactions";
+import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { buildBuyPriceLookup } from "@/lib/buyCost";
 
 type Period = { key: string; label: string; start: string; end: string };
 
@@ -42,6 +44,8 @@ function buildPeriods(count = 12): Period[] {
 
 export function BillingPeriodPanel() {
   const { data: txns = [], isLoading } = useAllTransactions();
+  const { data: buyPrices = [] } = useBuyPrices(365);
+  const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
   const periods = useMemo(() => buildPeriods(12), []);
   const [periodKey, setPeriodKey] = useState(periods[0].key);
   const period = periods.find((p) => p.key === periodKey) || periods[0];
@@ -51,21 +55,23 @@ export function BillingPeriodPanel() {
     !p ? [] : txns.filter((t: any) => t.date && t.date >= p.start && t.date <= p.end);
 
   const rows = useMemo(() => {
-    const map: Record<string, { litres: number; revenue: number; drops: number }> = {};
+    const map: Record<string, { litres: number; cost: number; drops: number }> = {};
     inPeriod(period).forEach((t: any) => {
       const k = t.nombre_cliente1 || t.estacion || "Unassigned";
-      if (!map[k]) map[k] = { litres: 0, revenue: 0, drops: 0 };
-      map[k].litres += t.cantidad || 0;
-      map[k].revenue += t.dinero_total || 0;
+      if (!map[k]) map[k] = { litres: 0, cost: 0, drops: 0 };
+      const litres = t.cantidad || 0;
+      const ppl = buyPriceLookup(t.date);
+      map[k].litres += litres;
+      map[k].cost += ppl != null ? litres * ppl : 0;
       map[k].drops += 1;
     });
     return Object.entries(map)
       .map(([customer, v]) => ({ customer, ...v }))
       .sort((a, b) => b.litres - a.litres);
-  }, [txns, period]);
+  }, [txns, period, buyPriceLookup]);
 
   const totalLitres = rows.reduce((s, r) => s + r.litres, 0);
-  const totalRevenue = rows.reduce((s, r) => s + r.revenue, 0);
+  const totalCost = rows.reduce((s, r) => s + r.cost, 0);
   const totalDrops = rows.reduce((s, r) => s + r.drops, 0);
   const prevLitres = useMemo(
     () => inPeriod(prevPeriod).reduce((s: number, t: any) => s + (t.cantidad || 0), 0),
@@ -75,16 +81,16 @@ export function BillingPeriodPanel() {
 
   const downloadCsv = () => {
     const lines = [
-      ["Customer", "Litres", "Deliveries", "Revenue (inc GST)"].join(","),
+      ["Customer", "Litres", "Deliveries", "Buy cost (inc GST)"].join(","),
       ...rows.map((r) =>
         [
           `"${r.customer.replace(/"/g, '""')}"`,
           r.litres.toFixed(2),
           r.drops,
-          r.revenue.toFixed(2),
+          r.cost.toFixed(2),
         ].join(","),
       ),
-      ["TOTAL", totalLitres.toFixed(2), totalDrops, totalRevenue.toFixed(2)].join(","),
+      ["TOTAL", totalLitres.toFixed(2), totalDrops, totalCost.toFixed(2)].join(","),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -127,7 +133,7 @@ export function BillingPeriodPanel() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
         {[
           { label: "Litres", value: `${Math.round(totalLitres).toLocaleString()} L` },
-          { label: "Revenue", value: `$${Math.round(totalRevenue).toLocaleString()}` },
+          { label: "Buy cost", value: `$${Math.round(totalCost).toLocaleString()}` },
           { label: "Deliveries", value: totalDrops.toLocaleString() },
           { label: "Customers", value: rows.length.toLocaleString() },
         ].map((s) => (
@@ -157,7 +163,7 @@ export function BillingPeriodPanel() {
                 <th className="text-left font-medium py-2">Customer</th>
                 <th className="text-right font-medium py-2">Litres</th>
                 <th className="text-right font-medium py-2">Drops</th>
-                <th className="text-right font-medium py-2">Revenue</th>
+                <th className="text-right font-medium py-2">Buy cost</th>
               </tr>
             </thead>
             <tbody>
@@ -166,7 +172,7 @@ export function BillingPeriodPanel() {
                   <td className="py-2 pr-2 text-foreground truncate max-w-[220px]">{r.customer}</td>
                   <td className="py-2 text-right tabular-nums font-semibold text-foreground">{Math.round(r.litres).toLocaleString()}</td>
                   <td className="py-2 text-right tabular-nums text-muted-foreground">{r.drops}</td>
-                  <td className="py-2 text-right tabular-nums text-foreground">${Math.round(r.revenue).toLocaleString()}</td>
+                  <td className="py-2 text-right tabular-nums text-foreground">${Math.round(r.cost).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
