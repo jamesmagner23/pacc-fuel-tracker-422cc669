@@ -14,6 +14,8 @@ import { PACCLogo } from "@/components/PACCLogo";
 import { formatTime, formatDate } from "@/lib/format";
 import { useSyncTransactions } from "@/hooks/useSyncTransactions";
 import { TruckMap } from "@/components/TruckMap";
+import { SupplierPricePanel } from "@/components/SupplierPricePanel";
+import { BillingPeriodPanel } from "@/components/BillingPeriodPanel";
 
 /* ---------- helpers ---------- */
 
@@ -470,6 +472,10 @@ export function MobileOverview() {
 
           {/* Live truck map */}
           <section className="mt-8">
+            <div className="mb-6 space-y-4">
+              <SupplierPricePanel compact />
+              <BillingPeriodPanel />
+            </div>
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-[22px] font-bold text-foreground tracking-tight">Live truck</h2>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">

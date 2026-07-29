@@ -18,6 +18,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSyncTransactions } from "@/hooks/useSyncTransactions";
 import { useTrucks } from "@/hooks/useTrucks";
 import { PACCLogo } from "@/components/PACCLogo";
+import { SupplierPricePanel } from "@/components/SupplierPricePanel";
+import { BillingPeriodPanel } from "@/components/BillingPeriodPanel";
 
 const TILE_THEMES = {
   litres:    { icon: Droplet,     bg: "#E8EDE5", fg: "#2A6A2E" },
@@ -676,6 +678,16 @@ export default function Overview() {
         </div>
         <div className="lg:col-span-2">
           <LiveTruckPanel lastSyncTime={lastSyncTime} />
+        </div>
+      </div>
+
+      {/* Supply cost + invoicing period volumes */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mt-4">
+        <div className="lg:col-span-2">
+          <SupplierPricePanel compact />
+        </div>
+        <div className="lg:col-span-3">
+          <BillingPeriodPanel />
         </div>
       </div>
     </div>
