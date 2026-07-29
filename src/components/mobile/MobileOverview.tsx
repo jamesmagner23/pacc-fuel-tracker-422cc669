@@ -4,9 +4,9 @@ import { Menu, ArrowUpRight, ArrowRight, Truck, RefreshCcw } from "lucide-react"
 import { format, subDays, parseISO } from "date-fns";
 import { BarChart, Bar, XAxis, ResponsiveContainer, LabelList, Cell } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
-import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 import { useTransactions, type Transaction } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { buildBuyPriceLookup, sumBuyCost } from "@/lib/buyCost";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { UserMenu } from "@/components/UserMenu";
@@ -343,14 +343,14 @@ function sameDay(iso: string, todayStr: string): boolean {
 
 export function MobileOverview() {
   const { range } = useDateRange();
-  const { filtered, totalRevenue } = useRevenueCalc(range);
+  const { data: filtered = [] } = useTransactions(range);
   const { data: monthTxns = [] } = useTransactions("month");
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { syncing, handleSync, lastSyncTime } = useSyncTransactions({ autoSync: true });
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const numDeliveries = filtered.length;
-  const avgSize = numDeliveries > 0 ? totalLitres / numDeliveries : 0;
+  const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
+  const totalFuelCost = useMemo(() => sumBuyCost(filtered, buyPriceLookup), [filtered, buyPriceLookup]);
   const latestBuy = buyPrices[0]?.price_per_litre;
 
   // Last 7 days, always — independent of period selection.
@@ -441,32 +441,20 @@ export function MobileOverview() {
           {/* tile grid */}
           <div className="grid grid-cols-2 gap-3 mt-4">
             <KPITile
-              amount={`$${Math.round(totalRevenue).toLocaleString()}`}
-              label="Revenue"
-              href="/finance"
+              amount={`$${Math.round(totalFuelCost).toLocaleString()}`}
+              label="Fuel cost"
+              href="/suppliers"
               bg="#F4F0E6"
             />
             <KPITile
-              amount={numDeliveries.toLocaleString()}
-              label="Deliveries"
-              href="/dispatch"
+              amount={latestBuy ? `$${latestBuy.toFixed(3)}/L` : "—"}
+              label="Buy price"
+              href="/suppliers"
               bg="#C8F26A"
               amountColor="var(--foreground)"
               labelWeight="bold"
               cornerBg="#FFFFFF"
               cornerBorder="#FFFFFF"
-            />
-            <KPITile
-              amount={`${Math.round(avgSize).toLocaleString()}L`}
-              label="Avg size"
-              href="/dispatch?view=avg-size"
-              bg="#F4F5F1"
-            />
-            <KPITile
-              amount={latestBuy ? `$${latestBuy.toFixed(2)}/L` : "—"}
-              label="Buy price"
-              href="/suppliers"
-              bg="#E8EDE5"
             />
           </div>
 
