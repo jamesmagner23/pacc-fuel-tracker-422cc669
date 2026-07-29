@@ -20,6 +20,7 @@ import { useTrucks } from "@/hooks/useTrucks";
 import { PACCLogo } from "@/components/PACCLogo";
 import { SupplierPricePanel } from "@/components/SupplierPricePanel";
 import { BillingPeriodPanel } from "@/components/BillingPeriodPanel";
+import { buildBuyPriceLookup, sumBuyCost } from "@/lib/buyCost";
 
 const TILE_THEMES = {
   litres:    { icon: Droplet,     bg: "#E8EDE5", fg: "#2A6A2E" },
@@ -188,6 +189,10 @@ export default function Overview() {
     [buyPrices],
   );
   const latestPrice = sortedPrices[0];
+  const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
+  const totalFuelCost = useMemo(() => sumBuyCost(filtered, buyPriceLookup), [filtered, buyPriceLookup]);
+  const prevFuelCost = useMemo(() => sumBuyCost(previous, buyPriceLookup), [previous, buyPriceLookup]);
+  const fuelCostPct = prevFuelCost > 0 ? ((totalFuelCost - prevFuelCost) / prevFuelCost) * 100 : null;
   const priorPrice = sortedPrices.find(
     (p) => p.price_date < (latestPrice?.price_date || ""),
   );
@@ -328,6 +333,7 @@ export default function Overview() {
   // Eyebrow prefix reflects period scope.
   const prefix = range === "today" ? "Daily" : range === "week" ? "Weekly" : "Monthly";
   const litresLabel    = `${prefix} Litres Delivered`;
+  const fuelCostLabel  = `${prefix} Fuel Cost`;
   const revenueLabel   = `${prefix} Revenue`;
   const deliveriesLabel = range === "today" ? "Deliveries today" : range === "week" ? "Deliveries this week" : "Deliveries this month";
   const avgLabel        = "Avg Drop Size";
@@ -468,8 +474,8 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* KPI grid — 5 tiles incl. buy price; wraps to 2/3 cols at smaller widths */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      {/* KPI grid — litres, fuel cost, buy price */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPISparklineCard
           label={litresLabel}
           value={totalLitres >= 1000 ? `${(totalLitres / 1000).toFixed(2)}k L` : `${totalLitres.toFixed(1)} L`}
@@ -487,63 +493,25 @@ export default function Overview() {
           breakdownTitle="Litres by truck"
         />
         <KPISparklineCard
-          label={revenueLabel}
-          value={"$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          deltaPct={revPct}
-          trend={trendForRevenue}
-          fallbackContext={revenueFallback}
-          href="/finance"
+          label={fuelCostLabel}
+          value={"$" + totalFuelCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          deltaPct={fuelCostPct}
+          trend={trendForTile}
+          fallbackContext="Litres delivered × buy price on the day"
+          href="/suppliers"
           icon={TILE_THEMES.revenue.icon}
           tintBg={TILE_THEMES.revenue.bg}
           tintColor={TILE_THEMES.revenue.fg}
           subLine={
             totalLitres > 0
-              ? `${(totalRevenue / totalLitres).toFixed(2)} $/L avg`
+              ? `${(totalFuelCost / totalLitres).toFixed(3)} $/L avg cost`
               : undefined
           }
           periodNote={periodNote}
-          breakdown={revenueBreakdown}
-          breakdownTotal={totalRevenue}
-          breakdownTitle="Revenue by truck"
+          breakdownTitle="Fuel cost"
         />
         <KPISparklineCard
-          label={deliveriesLabel}
-          value={numDeliveries.toLocaleString()}
-          deltaPct={delPct}
-          trend={trendForDeliveries}
-          fallbackContext={deliveryFallback}
-          href="/dispatch"
-          icon={TILE_THEMES.delivery.icon}
-          tintBg={TILE_THEMES.delivery.bg}
-          tintColor={TILE_THEMES.delivery.fg}
-          subLine={truckSubline("deliveries")}
-          periodNote={periodNote}
-          breakdown={deliveriesBreakdown}
-          breakdownTotal={numDeliveries}
-          breakdownTitle="Deliveries by truck"
-        />
-        <KPISparklineCard
-          label={avgLabel}
-          value={Math.round(avgSize).toLocaleString() + " L"}
-          deltaPct={avgPct}
-          trend={trendForAvg}
-          fallbackContext={avgFallback}
-          href="/dispatch"
-          icon={TILE_THEMES.avg.icon}
-          tintBg={TILE_THEMES.avg.bg}
-          tintColor={TILE_THEMES.avg.fg}
-          subLine={
-            numDeliveries > 0
-              ? `${numDeliveries} drop${numDeliveries === 1 ? "" : "s"}`
-              : undefined
-          }
-          periodNote={periodNote}
-          breakdown={avgBreakdown}
-          breakdownTotal={avgSize}
-          breakdownTitle="Avg size by truck"
-        />
-        <KPISparklineCard
-          label="Buy Price (Ex-GST)"
+          label="Buy Price (inc GST)"
           value={
             latestPrice
               ? `$${latestPrice.price_per_litre.toFixed(3)}/L`
