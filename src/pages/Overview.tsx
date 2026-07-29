@@ -189,6 +189,10 @@ export default function Overview() {
     [buyPrices],
   );
   const latestPrice = sortedPrices[0];
+  const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
+  const totalFuelCost = useMemo(() => sumBuyCost(filtered, buyPriceLookup), [filtered, buyPriceLookup]);
+  const prevFuelCost = useMemo(() => sumBuyCost(previous, buyPriceLookup), [previous, buyPriceLookup]);
+  const fuelCostPct = prevFuelCost > 0 ? ((totalFuelCost - prevFuelCost) / prevFuelCost) * 100 : null;
   const priorPrice = sortedPrices.find(
     (p) => p.price_date < (latestPrice?.price_date || ""),
   );
