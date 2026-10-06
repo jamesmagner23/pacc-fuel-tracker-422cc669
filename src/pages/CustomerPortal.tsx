@@ -36,7 +36,7 @@ import { PortalFilterBar } from "@/components/customer/PortalFilterBar";
 import { usePlantTags, usePlantItemTagLinks } from "@/hooks/usePlantTags";
 import { useTransactionOverrides } from "@/hooks/useTransactionOverrides";
 import { WelcomeModal } from "@/components/customer/WelcomeModal";
-import { PortalLayout } from "@/components/portal/PortalLayout";
+import { PortalLayout, HIDDEN_TABS } from "@/components/portal/PortalLayout";
 
 import { KPISparklineCard } from "@/components/KPISparklineCard";
 import {
@@ -395,16 +395,22 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help" } = {}) {
   const [params, setParams] = useSearchParams();
   const tabParam = params.get("tab");
-  const initialTab: Tab | "Help" = forcedTab
-    ? forcedTab
-    : (tabs as readonly string[]).includes(tabParam || "")
-      ? (tabParam as Tab)
-      : "Overview";
+  // Temporarily hidden sections (see HIDDEN_TABS) fall back to Overview.
+  const visibleTab = (t: Tab | "Help"): Tab | "Help" =>
+    HIDDEN_TABS.has(t) ? "Overview" : t;
+  const initialTab: Tab | "Help" = visibleTab(
+    forcedTab
+      ? forcedTab
+      : (tabs as readonly string[]).includes(tabParam || "")
+        ? (tabParam as Tab)
+        : "Overview",
+  );
   const [activeTab, setActiveTabState] = useState<Tab | "Help">(initialTab);
   // When the URL-driven forcedTab changes (sub-route nav), follow it.
   useEffect(() => {
-    if (forcedTab && forcedTab !== activeTab) {
-      setActiveTabState(forcedTab);
+    const next = forcedTab && !HIDDEN_TABS.has(forcedTab) ? forcedTab : null;
+    if (next && next !== activeTab) {
+      setActiveTabState(next);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forcedTab]);
@@ -420,6 +426,10 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   }, [activeTab]);
   useEffect(() => {
     if (forcedTab) return;
+    if (tabParam && HIDDEN_TABS.has(tabParam)) {
+      setActiveTabState("Overview");
+      return;
+    }
     if (tabParam && (tabs as readonly string[]).includes(tabParam) && tabParam !== activeTab) {
       setActiveTabState(tabParam as Tab);
     }
@@ -689,9 +699,11 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                   >
                     Deliveries CSV (this period)
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setReportsSubtab("Fuel Tax Credit"); setActiveTab("Reports"); }}>
-                    Tax-credits report (YTD)
-                  </DropdownMenuItem>
+                  {!HIDDEN_TABS.has("Reports") && (
+                    <DropdownMenuItem onClick={() => { setReportsSubtab("Fuel Tax Credit"); setActiveTab("Reports"); }}>
+                      Tax-credits report (YTD)
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem disabled>
                     Custom date range… (coming soon)
@@ -719,16 +731,16 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 speedsolNames={speedsolNames}
                 isDemo={isDemo}
                 plantItems={plantItemsAll}
-                onOpenFtcReport={() => {
+                onOpenFtcReport={HIDDEN_TABS.has("Reports") ? undefined : () => {
                   setReportsSubtab("Fuel Tax Credit");
                   setActiveTab("Reports");
                 }}
                 onOpenDeliveries={() => setActiveTab("Deliveries")}
-                onOpenFuelVolume={() => {
+                onOpenFuelVolume={HIDDEN_TABS.has("Reports") ? undefined : () => {
                   setReportsSubtab("Emissions");
                   setActiveTab("Reports");
                 }}
-                onOpenSites={() => {
+                onOpenSites={HIDDEN_TABS.has("Projects") ? undefined : () => {
                   setActiveTab("Projects");
                 }}
                 periodLabel={PERIOD_LABELS[period]}
