@@ -8,6 +8,21 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const json = (b: unknown, status = 200) =>
+      new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const token = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
+    if (!token) return json({ error: "Missing auth token" }, 401);
+    const { data: userData, error: userErr } = await admin.auth.getUser(token);
+    if (userErr || !userData?.user) return json({ error: "Invalid token" }, 401);
+    const { data: roleRow } = await admin.from("user_roles").select("role")
+      .eq("user_id", userData.user.id).eq("role", "admin").maybeSingle();
+    if (!roleRow) return json({ error: "Admin only" }, 403);
+
     const { email, password, full_name, client_account_id, role } = await req.json();
     const userRole: string = role || "client";
     const validRoles = ["admin", "operations", "driver", "client"];
@@ -20,11 +35,6 @@ Deno.serve(async (req) => {
     if (userRole === "client" && !client_account_id) {
       return new Response(JSON.stringify({ error: "client_account_id required for client role" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email,
