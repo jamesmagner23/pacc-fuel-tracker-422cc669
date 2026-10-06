@@ -23,6 +23,13 @@ type NavItem = {
 };
 type NavGroup = { label: string; items: NavItem[] };
 
+/**
+ * Tabs temporarily hidden from the customer portal. Remove an entry here to
+ * bring that section back — CustomerPortal also falls back to Overview when
+ * one of these is deep-linked.
+ */
+export const HIDDEN_TABS = new Set(["Fleet", "Projects", "Reports"]);
+
 const navGroups: NavGroup[] = [
   {
     label: "Account",
@@ -34,7 +41,7 @@ const navGroups: NavGroup[] = [
       { tab: "Projects", label: "Projects", icon: FolderKanban },
       { tab: "Reports", label: "Reports", icon: FileBarChart },
       { tab: "Profile", label: "Profile", icon: UserIcon },
-    ],
+    ].filter((i) => !HIDDEN_TABS.has(i.tab)),
   },
   {
     label: "Support",
