@@ -7,6 +7,36 @@ const tiers = [{ client_account_id: 32, min_litres: 0, max_litres: 500, margin_p
 const buys = [{ price_date: "2026-11-01", price_per_litre: 2 }, { price_date: "2026-11-10", price_per_litre: 3 }];
 const tx = { id: 1, fecha: "2026-11-02T01:00:00Z", date: "2026-11-02", nombre_cliente1: "TRACK WORKS", cantidad: 100, ppu: 0, dinero_total: 0 };
 describe("historical ticket pricing", () => {
+  it("prefers Pacific over a cheaper Pro Fusion price on the same date", () => {
+    expect(effectiveBuyPrice([
+      { price_date: "2026-10-17", price_per_litre: 2.57143, supplier: "Pro Fusion" },
+      { price_date: "2026-10-17", price_per_litre: 2.58643, supplier: "pAcIfIc" },
+    ], "2026-10-19", "2026-11-11")).toBe(2.58643);
+  });
+  it("matches the verified Track Works invoice using 25 percent added to Pacific", () => {
+    const ticket = { ...tx, date: "2026-10-19", fecha: "2026-10-19T01:00:00Z" };
+    const result = createTransactionPricer([ticket], clients, [{ ...tiers[0], margin_percent: 25 }], [
+      { price_date: "2026-10-17", price_per_litre: 2.57143, supplier: "Pro Fusion" },
+      { price_date: "2026-10-17", price_per_litre: 2.58643, supplier: "Pacific" },
+    ], "2026-11-11")(ticket);
+    expect(result.sellPPL?.toFixed(4)).toBe("3.2330");
+    expect(((result.sellPPL ?? 0) / 1.1).toFixed(4)).toBe("2.9391");
+  });
+  it("falls back to the latest supplier date and lowest price on ties without Pacific history", () => {
+    expect(effectiveBuyPrice([
+      { price_date: "2026-10-16", price_per_litre: 2.4, supplier: null },
+      { price_date: "2026-10-17", price_per_litre: 2.6, supplier: "Other" },
+      { price_date: "2026-10-17", price_per_litre: 2.57143, supplier: "Pro Fusion" },
+      { price_date: "2026-10-20", price_per_litre: 2.58643, supplier: "Pacific" },
+    ], "2026-10-19", "2026-11-11")).toBe(2.57143);
+  });
+  it("uses older Pacific history over a newer non-Pacific row and excludes future Pacific rows", () => {
+    expect(effectiveBuyPrice([
+      { price_date: "2026-10-16", price_per_litre: 2.58643, supplier: "Pacific" },
+      { price_date: "2026-10-17", price_per_litre: 2.57143, supplier: "Pro Fusion" },
+      { price_date: "2026-11-12", price_per_litre: 3, supplier: "Pacific" },
+    ], "2026-11-12", "2026-11-11")).toBe(2.58643);
+  });
   it("aggregates customer revenue with the same calculated ticket prices", () => {
     const price = createTransactionPricer([tx], clients, tiers, buys, "2026-11-11");
     expect(customerPricingSummaries([tx], price)[0].revenue).toBeCloseTo(220);

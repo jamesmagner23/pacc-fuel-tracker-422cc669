@@ -39,6 +39,8 @@ import {
   type CustomerPricing,
 } from "@/hooks/useCustomerPricing";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { effectiveBuyPrice } from "@/lib/transactionPricing";
+import { melbourneDate } from "@/lib/transactionDates";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useDemo } from "@/hooks/useDemo";
@@ -108,7 +110,8 @@ export default function ClientPricingTab() {
   const updatePricing = useUpdateCustomerPricing();
   const del = useDeleteCustomerPricing();
 
-  const latestBuyPrice = buyPrices[0]?.price_per_litre || 0;
+  const today = melbourneDate();
+  const latestBuyPrice = effectiveBuyPrice(buyPrices, today, today) ?? 0;
 
   const [search, setSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<number | null>(null);
@@ -340,6 +343,7 @@ export default function ClientPricingTab() {
 
   return (
     <div className="flex flex-col gap-4">
+      <p className="text-xs text-muted-foreground">Sell price = Pacific buy price on the delivery date (inc GST) x (1 + margin %). All prices inc GST.</p>
       {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-surface border border-surface-border rounded-[10px] p-4">
@@ -360,7 +364,7 @@ export default function ClientPricingTab() {
           <div className="text-[11px] text-muted-foreground mt-0.5">blended average</div>
         </div>
         <div className="bg-surface border border-surface-border rounded-[10px] p-4">
-          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Buy Price</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Buy Price (inc GST)</div>
           <div className="text-2xl font-semibold text-foreground tabular-nums">
             {latestBuyPrice > 0 ? `$${latestBuyPrice.toFixed(4)}` : "—"}
           </div>
@@ -494,7 +498,7 @@ export default function ClientPricingTab() {
                       <th className="px-2 py-2 font-medium">Max L</th>
                       <th className="px-2 py-2 font-medium">Type</th>
                       <th className="px-2 py-2 font-medium">Value</th>
-                      {latestBuyPrice > 0 && <th className="px-2 py-2 font-medium">Sell</th>}
+                      {latestBuyPrice > 0 && <th className="px-2 py-2 font-medium">Sell $/L (inc GST)</th>}
                       <th className="px-2 py-2 font-medium w-8"></th>
                     </tr>
                   </thead>
@@ -674,7 +678,7 @@ export default function ClientPricingTab() {
                               <th className="px-3 py-2 font-medium">Volume Range (weekly)</th>
                               <th className="px-3 py-2 font-medium">Type</th>
                               <th className="px-3 py-2 font-medium">Margin/Markup</th>
-                              <th className="px-3 py-2 font-medium">Sell Price</th>
+                              <th className="px-3 py-2 font-medium">Sell $/L (inc GST)</th>
                               <th className="px-3 py-2 font-medium">Terms</th>
                               <th className="px-3 py-2 font-medium w-16"></th>
                             </tr>

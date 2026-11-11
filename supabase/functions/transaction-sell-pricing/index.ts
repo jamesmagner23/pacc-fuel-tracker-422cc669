@@ -64,7 +64,7 @@ Deno.serve(async req => {
     }
     const buys = [];
     for (let offset = 0; ; offset += 1000) {
-      const { data, error } = await admin.from('buy_prices').select('price_date,price_per_litre').lte('price_date', today).order('price_date', { ascending: false }).order('id').range(offset, offset + 999);
+      const { data, error } = await admin.from('buy_prices').select('price_date,price_per_litre,supplier').lte('price_date', today).order('price_date', { ascending: false }).order('id').range(offset, offset + 999);
       if (error) return json({ error: 'Unable to load historical pricing' }, 500);
       buys.push(...(data ?? []));
       if ((data?.length ?? 0) < 1000) break;

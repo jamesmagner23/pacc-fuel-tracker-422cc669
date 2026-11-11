@@ -107,7 +107,7 @@ export default function PLOverview() {
 
   const kpis = [
     {
-      label: "Revenue",
+      label: "Revenue (inc GST)",
       value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }),
       sub: `${pricedClients.length} priced client${pricedClients.length !== 1 ? "s" : ""} only`,
       pct: coverage.ratesMissing || previousCoverage.ratesMissing ? null : pct(totalRevenue, prevRevenue),
@@ -168,7 +168,7 @@ export default function PLOverview() {
                     : "var(--text-primary)",
               }}
             >
-              {coverage.ratesMissing && ["Revenue", "Gross Profit", "Gross Margin"].includes(k.label) ? "Rates missing" : k.value}
+              {coverage.ratesMissing && ["Revenue (inc GST)", "Gross Profit", "Gross Margin"].includes(k.label) ? "Rates missing" : k.value}
             </div>
             <div className="flex items-center gap-1.5 mt-1.5">
               {k.pct !== undefined && k.pct !== null && (
@@ -299,7 +299,7 @@ export default function PLOverview() {
                 <tr className="text-left text-muted-foreground border-b border-border">
                   <th className="pb-2 font-medium">Client</th>
                   <th className="pb-2 font-medium text-right">Litres</th>
-                  <th className="pb-2 font-medium text-right">Revenue</th>
+                  <th className="pb-2 font-medium text-right">Revenue (inc GST)</th>
                   <th className="pb-2 font-medium text-right">Cost</th>
                   <th className="pb-2 font-medium text-right">Profit</th>
                   <th className="pb-2 font-medium text-right">Margin</th>

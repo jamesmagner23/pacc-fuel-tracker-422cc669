@@ -2589,7 +2589,7 @@ function DeliveriesTab({
                   <span style={{ fontSize: 14, fontFamily: T.sansHead, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                     {fmtL(t.cantidad || 0)}
                   </span>
-                  <div className="text-right text-xs"><TransactionPrice pricing={t.displayPricing} /><div><TransactionPrice pricing={t.displayPricing} total /></div></div>
+                  <div className="text-right text-xs"><div className="text-muted-foreground">Sell $/L (inc GST)</div><TransactionPrice pricing={t.displayPricing} /><div className="text-muted-foreground">Total (inc GST)</div><div><TransactionPrice pricing={t.displayPricing} total /></div></div>
                   <button
                     onClick={() => window.open(`/docket/${t.id}${demoSuffix}`, "_blank")}
                     style={{

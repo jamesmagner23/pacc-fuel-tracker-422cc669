@@ -28,7 +28,7 @@ export function useBuyPrices(days = 365) {
       }
       const { data, error } = await supabase
         .from("buy_prices")
-        .select("*")
+        .select("id,price_date,price_per_litre,supplier,notes,created_at")
         .gte("price_date", start)
         .order("price_date", { ascending: false })
         .order("supplier", { ascending: true });

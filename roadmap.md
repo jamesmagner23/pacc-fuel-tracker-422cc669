@@ -43,3 +43,10 @@
 
 - [x] Update confirmed public business details, phone links, legal copy and portal availability, without database or stored data changes.
 - [x] Verify legal pages, structured business details and public phone links, including desktop/mobile public layouts.
+
+# Batch 6
+
+- [x] Correct the shared historical account-pricing supplier selection and pass supplier through price loads. Read-only pricing function deployed; no SQL price selector duplicates require migration.
+- [x] Clarify inc GST labels and add the exact Client Pricing helper text.
+- [x] Run focused pricing tests: 24 passed, including the verified Track Works invoice example. Latest build OK; no database writes.
+- [ ] Signed-in pricing and export verification. Blocked: managed requester session mint reports no matching auth user; preview sign-in required.

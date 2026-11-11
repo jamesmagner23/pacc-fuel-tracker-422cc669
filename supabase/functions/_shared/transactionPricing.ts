@@ -11,12 +11,14 @@ export interface PricingTier {
   margin_percent: number; pricing_type: string;
 }
 export interface PricingClient { id: number; company_name: string; speedsol_name?: string | null; speedsol_names?: string[] | null }
-export interface HistoricalBuy { price_date: string; price_per_litre: number }
+export interface HistoricalBuy { price_date: string; price_per_litre: number; supplier?: string | null }
 
 export function effectiveBuyPrice(prices: HistoricalBuy[], date: string, today: string): number | null {
   const valid = prices.filter(p => p.price_per_litre > 0 && p.price_date <= today)
     .sort((a, b) => b.price_date.localeCompare(a.price_date) || a.price_per_litre - b.price_per_litre);
-  return (valid.find(p => p.price_date <= date) ?? valid[0])?.price_per_litre ?? null;
+  // Account pricing uses Pacific's latest buy on/before delivery; buy and calculated sell prices are inc GST.
+  const pacific = valid.find(p => p.supplier?.trim().toLowerCase() === "pacific" && p.price_date <= date);
+  return (pacific ?? valid.find(p => p.price_date <= date) ?? valid[0])?.price_per_litre ?? null;
 }
 
 export function createTransactionPricer(transactions: PriceTransaction[], clients: PricingClient[], tiers: PricingTier[], buys: HistoricalBuy[], today: string) {

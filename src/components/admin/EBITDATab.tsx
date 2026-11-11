@@ -217,7 +217,7 @@ export default function EBITDATab() {
       {/* KPI strip */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
-          { label: "Revenue", value: totals.revenue, color: "text-foreground" },
+          { label: "Revenue (inc GST)", value: totals.revenue, color: "text-foreground" },
           { label: "COGS (Fuel)", value: totals.cogs, color: "text-foreground" },
           { label: "Gross Profit", value: totals.grossProfit, sub: `${totals.gpMargin.toFixed(1)}%`, color: totals.grossProfit >= 0 ? "text-positive" : "text-destructive" },
           { label: "OpEx", value: totals.totalOpex, color: "text-foreground" },
@@ -226,7 +226,7 @@ export default function EBITDATab() {
           <div key={k.label} className="bg-surface border border-surface-border rounded-[10px] p-4">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{k.label}</div>
             <div className={`text-xl font-bold mt-1 tabular-nums ${k.color}`}>
-              {coverage.ratesMissing && ["Revenue", "Gross Profit", "EBITDA"].includes(k.label) ? "Rates missing" : `$${Math.round(k.value).toLocaleString()}`}
+              {coverage.ratesMissing && ["Revenue (inc GST)", "Gross Profit", "EBITDA"].includes(k.label) ? "Rates missing" : `$${Math.round(k.value).toLocaleString()}`}
             </div>
             {k.sub && !coverage.ratesMissing && <div className="text-[10px] text-muted-foreground mt-0.5">{k.sub} margin</div>}
           </div>
@@ -255,7 +255,7 @@ export default function EBITDATab() {
                 <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
                 <ReferenceLine y={0} stroke="var(--surface-border)" />
                 {/* Revenue alongside stacked costs for easy comparison */}
-                <Bar dataKey="revenue" name="Revenue" fill={accent} radius={[3, 3, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="revenue" name="Revenue (inc GST)" fill={accent} radius={[3, 3, 0, 0]} maxBarSize={28} />
                 <Bar dataKey="cogs" name="COGS (Fuel)" stackId="cost" fill={palette.secondary} radius={[0, 0, 0, 0]} maxBarSize={28} />
                 <Bar dataKey="opex" name="OpEx" stackId="cost" fill={palette.tertiary} stroke={palette.secondary} strokeWidth={1} radius={[3, 3, 0, 0]} maxBarSize={28} />
                 <Line type="monotone" dataKey="ebitda" name="EBITDA" stroke={palette.positive} strokeWidth={2.5} dot={{ r: 3, fill: palette.positive }} />

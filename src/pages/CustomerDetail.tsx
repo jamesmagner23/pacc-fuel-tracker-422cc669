@@ -113,7 +113,7 @@ export default function CustomerDetail() {
                 <th className="pb-2 pr-4">Location</th>
                 <th className="pb-2 pr-4">Truck</th>
                 <th className="pb-2 pr-4 text-right">Litres</th>
-                <th className="pb-2 text-right">Total</th>
+                <th className="pb-2 text-right">Total (inc GST)</th>
               </tr>
             </thead>
             <tbody>
