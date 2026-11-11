@@ -8,7 +8,7 @@ export function SyncStatus() {
   const { lastSyncTime, isSyncStale } = useSyncFreshness(lastSync?.synced_at);
 
   return (
-    <div className={`hidden sm:flex items-center gap-1.5 text-[10px] ${isSyncStale ? "text-warning" : "text-muted-foreground"}`}>
+    <div className={`flex items-center gap-1.5 text-[10px] ${isSyncStale ? "text-warning" : "text-muted-foreground"}`}>
       <span
         className={`w-1.5 h-1.5 rounded-full ${
           isSyncStale ? "bg-warning" : "bg-accent"

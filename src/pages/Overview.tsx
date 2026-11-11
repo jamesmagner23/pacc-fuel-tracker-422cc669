@@ -482,6 +482,7 @@ export default function Overview() {
           deltaPct={litresPct}
           trend={trendForTile}
           fallbackContext={litresFallback}
+          fallbackWarning={Boolean(lastSyncTime && isSyncStale)}
           href="/finance"
           icon={TILE_THEMES.litres.icon}
           tintBg={TILE_THEMES.litres.bg}
