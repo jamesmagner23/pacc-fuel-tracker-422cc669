@@ -550,6 +550,21 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_tokens: {
+        Row: {
+          name: string
+          token: string
+        }
+        Insert: {
+          name: string
+          token?: string
+        }
+        Update: {
+          name?: string
+          token?: string
+        }
+        Relationships: []
+      }
       customer_pricing: {
         Row: {
           client_account_id: number
