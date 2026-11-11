@@ -1,5 +1,3 @@
-import { getISOWeek, getISOWeekYear } from "date-fns";
-
 export interface PriceTransaction {
   id: number; fecha: string; date?: string | null; nombre_cliente1?: string | null;
   cantidad?: number | null; ppu?: number | null; dinero_total?: number | null;
@@ -27,8 +25,9 @@ export function createTransactionPricer(transactions: PriceTransaction[], client
     if (n) names.set(n.trim().toLowerCase(), c.id);
   }));
   const weekKey = (t: PriceTransaction) => {
-    const d = new Date(`${t.date || t.fecha.slice(0, 10)}T12:00:00`);
-    return `${getISOWeekYear(d)}-${getISOWeek(d)}`;
+    const d = new Date(`${t.date || t.fecha.slice(0, 10)}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7);
+    return d.toISOString().slice(0, 10);
   };
   const volumes = new Map<string, number>();
   const seen = new Set<number>();
