@@ -7,6 +7,9 @@ import { useSyncFreshness } from "@/hooks/useSyncFreshness";
 
 const REFRESH_QUERY_KEYS = [
   "transactions",
+  "customer-delivery-summary",
+  "transaction-page",
+  "transaction-sell-pricing",
   "transactions-prev",
   "transactions-all",
   "customer-transactions-all",

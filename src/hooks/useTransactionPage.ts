@@ -8,7 +8,7 @@ import { withTimeout } from "@/lib/requestTimeout";
 export const TRANSACTION_PAGE_SIZE = 50;
 export interface TransactionPageFilters { start: string; end: string; search: string; customer: string; truck: string; driver: string; sort: string; ascending: boolean }
 export async function fetchTransactionPage(filters: TransactionPageFilters, page: number, signal?: AbortSignal) {
-  let query = supabase.from("transactions").select("*", { count: "exact" })
+  let query = supabase.from("transactions").select("id,fecha,date,estacion,nombre_flota,nombre_cliente1,identificador_cliente1,ciudad,cantidad,cantidad_neta,producto,nombre_vendedor,placa,totalizador_bruto,factura,forma_de_pago,ppu,dinero_total,id_surtidor,surtidor,manguera", { count: "exact" })
     .gte("date", filters.start).lte("date", filters.end);
   if (filters.customer) query = query.eq("nombre_cliente1", filters.customer);
   if (filters.truck) query = query.eq("estacion", filters.truck);

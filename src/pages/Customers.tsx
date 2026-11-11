@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, CalendarIcon, RefreshCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useDateRange } from "@/hooks/useDateRange";
-import { useTransactions, useAllTransactions } from "@/hooks/useTransactions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useDemo } from "@/hooks/useDemo";
+import { getDemoData } from "@/data/demoData";
+import { withTimeout } from "@/lib/requestTimeout";
+import { useSyncTransactions } from "@/hooks/useSyncTransactions";
 import { format, subDays, startOfYear } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -30,36 +35,45 @@ function CustomerList() {
   const [customEnd, setCustomEnd] = useState<Date | undefined>();
   const navigate = useNavigate();
 
-  // Pull global-range data when localRange === "global", else pull all and filter client-side.
   const useGlobal = localRange === "global";
-  const { data: globalTxns = [], isLoading: loadingGlobal } = useTransactions(range);
-  const { data: allTxns = [], isLoading: loadingAll } = useAllTransactions();
-  const isLoading = useGlobal ? loadingGlobal : loadingAll;
-
-  const filtered = useMemo(() => {
-    if (useGlobal) return globalTxns;
+  const isDemo = useDemo();
+  const { syncing, handleSync } = useSyncTransactions();
+  const bounds = useMemo(() => {
     const today = new Date();
     let start: Date | null = null;
     let end: Date | null = today;
     switch (localRange) {
+      case "global":
+        if (range === "today") start = today;
+        else if (range === "week") { start = new Date(today); start.setDate(today.getDate() - (today.getDay() === 0 ? 6 : today.getDay() - 1)); }
+        else start = subDays(today, 30);
+        break;
       case "30d": start = subDays(today, 30); break;
       case "90d": start = subDays(today, 90); break;
       case "ytd": start = startOfYear(today); break;
-      case "all": start = null; end = null; break;
-      case "custom":
-        start = customStart ?? null;
-        end = customEnd ?? null;
-        break;
+      case "all": end = null; break;
+      case "custom": start = customStart ?? null; end = customEnd ?? null; break;
     }
-    const startStr = start ? format(start, "yyyy-MM-dd") : null;
-    const endStr = end ? format(end, "yyyy-MM-dd") : null;
-    return allTxns.filter((t) => {
-      if (!t.date) return false;
-      if (startStr && t.date < startStr) return false;
-      if (endStr && t.date > endStr) return false;
-      return true;
-    });
-  }, [useGlobal, globalTxns, allTxns, localRange, customStart, customEnd]);
+    return { start: start ? format(start, "yyyy-MM-dd") : null, end: end ? format(end, "yyyy-MM-dd") : null };
+  }, [range, localRange, customStart, customEnd]);
+  const summaries = useQuery({ queryKey: ["customer-delivery-summary", bounds, isDemo], staleTime: 60_000, retry: 1,
+    queryFn: async () => {
+      if (isDemo) {
+        const map = new Map<string, { name: string; litres: number; deliveries: number; revenue: number }>();
+        for (const t of getDemoData().transactions) {
+          if (!t.date || (bounds.start && t.date < bounds.start) || (bounds.end && t.date > bounds.end)) continue;
+          const name = t.nombre_cliente1 || "Unknown";
+          const row = map.get(name) ?? { name, litres: 0, deliveries: 0, revenue: 0 };
+          row.litres += t.cantidad ?? 0; row.deliveries++; row.revenue += t.dinero_total ?? 0; map.set(name, row);
+        }
+        return [...map.values()];
+      }
+      const { data, error } = await withTimeout(supabase.rpc("customer_delivery_summary", { _from: bounds.start ?? undefined, _to: bounds.end ?? undefined }));
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const isLoading = summaries.isLoading;
 
   // Responsive page size: 8–10 based on viewport height
   useEffect(() => {
@@ -85,34 +99,21 @@ function CustomerList() {
     return () => window.removeEventListener("resize", compute);
   }, []);
 
-  const rows = useMemo(() => {
-    const map: Record<string, { name: string; litres: number; deliveries: number; revenue: number }> = {};
-    filtered.forEach((t) => {
-      const name = t.nombre_cliente1 || "Unknown";
-      if (!map[name]) map[name] = { name, litres: 0, deliveries: 0, revenue: 0 };
-      map[name].litres += t.cantidad || 0;
-      map[name].deliveries += 1;
-      map[name].revenue += t.dinero_total || 0;
-    });
-    return Object.values(map)
-      .filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
-      .sort((a, b) => b[sortBy] - a[sortBy]);
-  }, [filtered, search, sortBy]);
+  const rows = useMemo(() => (summaries.data ?? [])
+    .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => Number(b[sortBy]) - Number(a[sortBy])), [summaries.data, search, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, totalPages - 1);
   const pageRows = rows.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
 
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
-  }
 
   return (
     <div className="space-y-4">
       {/* Page heading */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Customers</h1>
-        <SyncStatus />
+        <div className="flex items-center flex-wrap gap-3 mt-2"><SyncStatus /><Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}><RefreshCw className={`w-4 h-4 mr-2 ${syncing ? "animate-spin" : ""}`} />{syncing ? "Syncing..." : "Sync now"}</Button></div>
         <p className="text-xs text-muted-foreground mt-0.5">Browse, filter, and drill into customer delivery data</p>
       </div>
 
@@ -173,7 +174,7 @@ function CustomerList() {
         </Popover>
         {!useGlobal && (
           <span className="text-muted-foreground tabular-nums">
-            {filtered.length} txns
+            {(summaries.data ?? []).reduce((sum, row) => sum + Number(row.deliveries), 0)} txns
           </span>
         )}
       </div>
@@ -216,11 +217,11 @@ function CustomerList() {
         ))}
       </div>
 
-      {rows.length === 0 ? (
+      {isLoading ? <p className="py-12 text-muted-foreground">Loading customers...</p> : summaries.error ? <div role="alert" className="py-8">Customers could not be loaded. <Button variant="outline" onClick={() => summaries.refetch()}>Retry</Button></div> : rows.length === 0 ? (
         <div className="text-center text-muted-foreground py-12">No customers found. Click <strong>Sync Now</strong> to pull data.</div>
       ) : (
         <>
-          <div className="grid grid-cols-4 min-[480px]:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9 2xl:grid-cols-10 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9 2xl:grid-cols-10 gap-2">
             {pageRows.map((c, i) => {
               const initials = c.name
                 .split(/\s+/)
@@ -310,7 +311,7 @@ export default function Customers() {
   ];
   return (
     <div className="flex flex-col gap-5 max-w-[1100px] w-full">
-      <Tabs value={tabs.some(t => t.value === params.get("tab")) ? params.get("tab") ?? "customers" : "customers"} onValueChange={tab => setParams({ tab })}>
+      <Tabs value={tabs.some(t => t.value === params.get("tab")) ? params.get("tab") ?? "customers" : "customers"} onValueChange={tab => { const next = new URLSearchParams(params); next.set("tab", tab); setParams(next); }}>
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
           {tabs.map((tab) => (
             <TabsTrigger
