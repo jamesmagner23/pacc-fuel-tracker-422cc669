@@ -57,7 +57,7 @@ const services = [
 const trustStrip = [
   "Melbourne-wide coverage",
   "Family-run, local crews",
-  "4–6 hr response",
+  "4-6 hr response",
   "24/7 emergency",
 ];
 
@@ -547,6 +547,7 @@ export default function LandingPage() {
               <a href={`mailto:${BUSINESS_EMAIL}`} className="flex items-center gap-3 text-foreground hover:underline underline-offset-2">
                 <Zap className="w-4 h-4" /> {BUSINESS_EMAIL}
               </a>
+              <p className="text-muted-foreground">Available 24/7, including after-hours and emergency deliveries.</p>
             </div>
           </div>
           <div className="lg:col-span-7">
@@ -563,7 +564,7 @@ export default function LandingPage() {
           <div className="md:col-span-5">
             <PACCWordmark />
             <p className="mt-4 text-[13px] text-muted-foreground max-w-[360px]">
-              On-site diesel delivery and fuel storage for Greater Melbourne, since 2005.
+              Delivering fuel across Melbourne since 2024.
             </p>
           </div>
           <div className="md:col-span-3">
@@ -581,11 +582,12 @@ export default function LandingPage() {
               <a href="/login" className="text-foreground hover:underline underline-offset-2">Client login</a>
               <a href="/portal" className="text-foreground hover:underline underline-offset-2">Customer portal</a>
               <a href="/privacy" className="text-foreground hover:underline underline-offset-2">Privacy Policy</a>
-              <a href="/terms" className="text-foreground hover:underline underline-offset-2">Terms of Use</a>
+              <a href="/terms" className="text-foreground hover:underline underline-offset-2">Terms and Conditions</a>
             </div>
           </div>
         </div>
         <div className="border-t border-border">
+          <p className="max-w-7xl mx-auto px-4 sm:px-6 pt-5 text-xs text-muted-foreground">PACC Energy is operated by the trustee for PACC Business Trust, trading as PACC Victoria Pty Ltd. ABN 57 989 556 600.</p>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-wrap items-center justify-between gap-3 text-[12px] text-muted-foreground">
             <div>© {new Date().getFullYear()} PACC Energy. All rights reserved.</div>
             <div>Melbourne, Australia</div>
