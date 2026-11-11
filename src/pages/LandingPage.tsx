@@ -5,7 +5,6 @@ import {
   Check,
   Clock,
   Droplets,
-  Eye,
   Menu,
   Phone,
   Shield,
@@ -16,7 +15,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BoldPMark } from "@/components/BoldPMark";
+import { PublicWordmark } from "@/components/public/PublicChrome";
+import { Helmet } from "react-helmet-async";
+import { quoteLeadContact } from "@/lib/quoteLeadContact";
 import truckOnsiteImg from "@/assets/truck-onsite.webp";
 import truckOnsiteImg1200 from "@/assets/truck-onsite-1200.webp";
 import truckOnsiteImg800 from "@/assets/truck-onsite-800.webp";
@@ -76,7 +77,7 @@ const testimonials = [
   {
     quote:
       "PACC Fuel makes things easy. Same driver every time, fits in with our sites, gets the job done without fuss.",
-    name: "Mo Haider",
+    name: "Mo Haidar",
     title: "Construction Manager, Gearon",
   },
 ];
@@ -90,26 +91,14 @@ const coverage = [
   "Regional Victoria by arrangement",
 ];
 
-function PACCWordmark({ dark = false }: { dark?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <BoldPMark size={30} bg="#1A472A" fg="#C8F26A" rounded={6} />
-      <div className="leading-none">
-        <div className={`text-[15px] font-semibold tracking-tight ${dark ? "text-[#ECE4D2]" : "text-foreground"}`}>
-          PACC Energy
-        </div>
-        <div className={`text-[10px] mt-0.5 tracking-wide ${dark ? "text-[#A7B1A4]" : "text-muted-foreground"}`}>
-          Fuel delivery · Melbourne
-        </div>
-      </div>
-    </div>
-  );
-}
+const PACCWordmark = PublicWordmark;
 
 function QuoteForm() {
   const [company, setCompany] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [litres, setLitres] = useState("");
   const [site, setSite] = useState("");
   const [date, setDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -126,6 +115,7 @@ function QuoteForm() {
         company: company.trim().slice(0, 200),
         contact_name: name.trim().slice(0, 200),
         phone: phone.trim().slice(0, 40),
+        ...quoteLeadContact(email, litres),
         site_address: site.trim().slice(0, 400),
         delivery_date: date || null,
         source: "landing_page",
@@ -136,7 +126,7 @@ function QuoteForm() {
       });
       if (error) throw error;
       setSubmitted(true);
-      setCompany(""); setName(""); setPhone(""); setSite(""); setDate("");
+      setCompany(""); setName(""); setPhone(""); setEmail(""); setLitres(""); setSite(""); setDate("");
     } catch (err) {
       console.error("Quote lead submit failed", err);
       setErrorMsg(
@@ -192,6 +182,14 @@ function QuoteForm() {
           <input className={inputCls} required type="tel" maxLength={30} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0400 000 000" />
         </div>
         <div>
+          <label htmlFor="quote-email" className={labelCls}>Email</label>
+          <input id="quote-email" className={inputCls} type="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="quote-litres" className={labelCls}>Estimated litres (optional)</label>
+          <input id="quote-litres" className={inputCls} type="number" min={0} step="any" value={litres} onChange={(e) => setLitres(e.target.value)} />
+        </div>
+        <div>
           <label className={labelCls}>Delivery date</label>
           <input className={inputCls} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
@@ -225,6 +223,7 @@ export default function LandingPage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen pt-0 mt-0">
+      <Helmet><link rel="canonical" href="https://paccenergy.com/" /></Helmet>
       {/* ─────────── NAV ─────────── */}
       <nav
         className="sticky top-0 z-50 bg-background border-b border-border"
@@ -260,10 +259,6 @@ export default function LandingPage() {
             >
               <Phone className="w-3.5 h-3.5" /> {BUSINESS_PHONE_DISPLAY}
             </a>
-
-            <Button variant="ghost" size="sm" className="hidden md:inline-flex" onClick={() => navigate("/?demo=true")}>
-              <Eye className="w-3.5 h-3.5" /> Demo
-            </Button>
 
             <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => navigate("/login")}>
               Sign in
@@ -309,9 +304,6 @@ export default function LandingPage() {
               {BUSINESS_PHONE_DISPLAY}
             </a>
             <div className="pt-2 flex gap-2">
-              <Button variant="secondary" className="flex-1" onClick={() => { setMobileOpen(false); navigate("/?demo=true"); }}>
-                Demo
-              </Button>
               <Button variant="outline" className="flex-1" onClick={() => { setMobileOpen(false); navigate("/login"); }}>
                 Sign in
               </Button>
@@ -422,6 +414,17 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="border-b border-border bg-muted">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
+          <h2 className="display-l">Renewable diesel and critical power</h2>
+          <div className="mt-6 grid md:grid-cols-2 gap-6 text-[16px] leading-relaxed text-muted-foreground">
+            <p>Ask us about HVO renewable diesel for your site or fleet.</p>
+            <p>Running generators for data centres, hospitals or critical backup power? Talk to us about scheduled refuelling.</p>
+          </div>
+          <Button className="mt-7" onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}>Get a quote <ArrowRight className="w-4 h-4" /></Button>
+        </div>
+      </section>
+
       {/* ─────────── DASHBOARD FEATURE (dark) ─────────── */}
       <section className="bg-[#0E1F10] text-[#ECE4D2] border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20 grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
@@ -429,14 +432,11 @@ export default function LandingPage() {
             <div className="eyebrow !text-[#A7B1A4] mb-3">Customer portal</div>
             <h2 className="display-l text-[#ECE4D2]">A live view of every litre on your sites.</h2>
             <p className="mt-4 text-[16px] leading-[1.55] text-[#A7B1A4] max-w-[480px]">
-              Track deliveries, see scheduled drops, download dockets and export GST invoices — all from the customer portal, on any device.
+              Track deliveries, see scheduled drops, download dockets and export GST invoices , all from the customer portal, on any device.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button size="lg" className="bg-[#ECE4D2] text-[#0E1F10] hover:bg-white" onClick={() => navigate("/portal")}>
                 Open the portal <ArrowRight className="w-4 h-4" />
-              </Button>
-              <Button size="lg" variant="ghost" className="text-[#ECE4D2] hover:bg-white/10" onClick={() => navigate("/?demo=true")}>
-                <Eye className="w-4 h-4" /> Try the demo
               </Button>
             </div>
           </div>
@@ -580,7 +580,8 @@ export default function LandingPage() {
             <div className="flex flex-col gap-1.5 text-[13px]">
               <a href="/login" className="text-foreground hover:underline underline-offset-2">Client login</a>
               <a href="/portal" className="text-foreground hover:underline underline-offset-2">Customer portal</a>
-              <a href="/?demo=true" className="text-foreground hover:underline underline-offset-2">Try demo</a>
+              <a href="/privacy" className="text-foreground hover:underline underline-offset-2">Privacy Policy</a>
+              <a href="/terms" className="text-foreground hover:underline underline-offset-2">Terms of Use</a>
             </div>
           </div>
         </div>

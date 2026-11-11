@@ -72,3 +72,19 @@ export function pricingCoverage(transactions: PriceTransaction[], price: (t: Pri
 export function safeDelta(current: number, previous: number): number | null {
   return current === 0 || previous === 0 || !Number.isFinite(current) || !Number.isFinite(previous) ? null : (current - previous) / Math.abs(previous) * 100;
 }
+
+export function customerPricingSummaries(transactions: PriceTransaction[], price: (t: PriceTransaction) => PricingResult) {
+  const rows = new Map<string, { name: string; litres: number; deliveries: number; revenue: number | null; unpricedLitres: number; calculated: boolean }>();
+  for (const t of transactions) {
+    const name = t.nombre_cliente1 || "Unknown";
+    const row = rows.get(name) ?? { name, litres: 0, deliveries: 0, revenue: null, unpricedLitres: 0, calculated: false };
+    const p = price(t);
+    row.litres += t.cantidad ?? 0;
+    row.deliveries++;
+    if (p.hasPricing) row.revenue = (row.revenue ?? 0) + (p.total ?? 0);
+    else row.unpricedLitres += t.cantidad ?? 0;
+    row.calculated ||= p.source === "calculated";
+    rows.set(name, row);
+  }
+  return [...rows.values()];
+}

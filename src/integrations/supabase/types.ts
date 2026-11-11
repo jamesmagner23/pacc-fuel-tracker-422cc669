@@ -1797,6 +1797,8 @@ export type Database = {
           contact_name: string
           created_at: string
           delivery_date: string | null
+          email: string | null
+          estimated_litres: number | null
           id: string
           notes: string | null
           phone: string
@@ -1811,6 +1813,8 @@ export type Database = {
           contact_name: string
           created_at?: string
           delivery_date?: string | null
+          email?: string | null
+          estimated_litres?: number | null
           id?: string
           notes?: string | null
           phone: string
@@ -1825,6 +1829,8 @@ export type Database = {
           contact_name?: string
           created_at?: string
           delivery_date?: string | null
+          email?: string | null
+          estimated_litres?: number | null
           id?: string
           notes?: string | null
           phone?: string

@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { createTransactionPricer, effectiveBuyPrice, safeDelta, pricingCoverage } from "./transactionPricing";
+import { customerPricingSummaries } from "../../supabase/functions/_shared/transactionPricing";
 const clients = [{ id: 32, company_name: "TRACKWORKS", speedsol_names: ["TRACK WORKS"] }];
 const tiers = [{ client_account_id: 32, min_litres: 0, max_litres: 500, margin_percent: 10, pricing_type: "margin" }, { client_account_id: 32, min_litres: 500, max_litres: null, margin_percent: 15, pricing_type: "markup" }];
 // Synthetic unit-test inputs only, never published as prices or rates.
 const buys = [{ price_date: "2026-11-01", price_per_litre: 2 }, { price_date: "2026-11-10", price_per_litre: 3 }];
 const tx = { id: 1, fecha: "2026-11-02T01:00:00Z", date: "2026-11-02", nombre_cliente1: "TRACK WORKS", cantidad: 100, ppu: 0, dinero_total: 0 };
 describe("historical ticket pricing", () => {
+  it("aggregates customer revenue with the same calculated ticket prices", () => {
+    const price = createTransactionPricer([tx], clients, tiers, buys, "2026-11-11");
+    expect(customerPricingSummaries([tx], price)[0].revenue).toBeCloseTo(220);
+  });
+  it("leaves untiered customer revenue missing rather than zero", () => {
+    const price = createTransactionPricer([tx], clients, [], buys, "2026-11-11");
+    expect(customerPricingSummaries([tx], price)[0]).toMatchObject({ revenue: null, unpricedLitres: 100 });
+  });
   it("uses the effective historical buy price, not the current price", () => {
     const result = createTransactionPricer([tx], clients, tiers, buys, "2026-11-11")(tx);
     expect(result.sellPPL).toBe(2.2); expect(result.total).toBeCloseTo(220); expect(result.source).toBe("calculated");

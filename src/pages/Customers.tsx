@@ -19,6 +19,9 @@ import ClientPricingTab from "@/components/finance/ClientPricingTab";
 import TagDeliveries from "./TagDeliveries";
 import { useUserRole } from "@/hooks/useUserRole";
 import { SyncStatus } from "@/components/SyncStatus";
+import { customerPricingSummaries, createTransactionPricer } from "../../supabase/functions/_shared/transactionPricing";
+import { DEMO_CLIENT_ACCOUNTS } from "@/data/demoData";
+import { melbourneDate } from "@/lib/transactionDates";
 
 type LocalRange = "global" | "30d" | "90d" | "ytd" | "all" | "custom";
 
@@ -56,21 +59,21 @@ function CustomerList() {
     }
     return { start: start ? format(start, "yyyy-MM-dd") : null, end: end ? format(end, "yyyy-MM-dd") : null };
   }, [range, localRange, customStart, customEnd]);
-  const summaries = useQuery({ queryKey: ["customer-delivery-summary", bounds, isDemo], staleTime: 60_000, retry: 1,
+  const summaries = useQuery({ queryKey: ["customer-delivery-summary", bounds, isDemo, role], enabled: isDemo || !!role, staleTime: 60_000, retry: 1,
     queryFn: async () => {
       if (isDemo) {
-        const map = new Map<string, { name: string; litres: number; deliveries: number; revenue: number }>();
-        for (const t of getDemoData().transactions) {
-          if (!t.date || (bounds.start && t.date < bounds.start) || (bounds.end && t.date > bounds.end)) continue;
-          const name = t.nombre_cliente1 || "Unknown";
-          const row = map.get(name) ?? { name, litres: 0, deliveries: 0, revenue: 0 };
-          row.litres += t.cantidad ?? 0; row.deliveries++; row.revenue += t.dinero_total ?? 0; map.set(name, row);
-        }
-        return [...map.values()];
+        const data = getDemoData();
+        const price = createTransactionPricer(data.transactions, DEMO_CLIENT_ACCOUNTS, data.customerPricing, data.buyPrices, melbourneDate());
+        return customerPricingSummaries(data.transactions.filter(t => t.date && (!bounds.start || t.date >= bounds.start) && (!bounds.end || t.date <= bounds.end)), price);
+      }
+      if (!hideMoney) {
+        const { data, error } = await withTimeout(supabase.functions.invoke("transaction-sell-pricing", { body: { summary: true, from: bounds.start, to: bounds.end } }), 60_000);
+        if (error || data?.error) throw error ?? new Error(data.error);
+        return (data?.summaries ?? []) as ReturnType<typeof customerPricingSummaries>;
       }
       const { data, error } = await withTimeout(supabase.rpc("customer_delivery_summary", { _from: bounds.start ?? undefined, _to: bounds.end ?? undefined }));
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).map(row => ({ ...row, revenue: null as number | null, unpricedLitres: 0, calculated: false }));
     },
   });
   const isLoading = summaries.isLoading;
@@ -245,9 +248,9 @@ function CustomerList() {
                     <div className="w-5 h-5 rounded-md bg-primary/15 text-primary flex items-center justify-center text-[9px] font-bold shrink-0">
                       {initials || "?"}
                     </div>
-                    {!hideMoney && c.revenue > 0 && (
-                      <div className="text-[9px] text-muted-foreground font-medium tabular-nums leading-tight text-right">
-                        ${c.revenue >= 1000 ? `${(c.revenue / 1000).toFixed(1)}k` : Math.round(c.revenue)}
+                    {!hideMoney && (
+                      <div title={c.revenue === null ? "No Client Pricing rate available" : c.unpricedLitres > 0 ? `${c.unpricedLitres.toLocaleString()} L unpriced, revenue is partial` : c.calculated ? "Calculated from Client Pricing" : "SpeedSol revenue"} className="text-[9px] text-muted-foreground font-medium tabular-nums leading-tight text-right">
+                        {c.revenue === null ? <span className="inline-block rounded border border-border px-1">Rate missing</span> : <>${c.revenue >= 1000 ? `${(c.revenue / 1000).toFixed(1)}k` : Math.round(c.revenue)}{c.calculated && <span> calc.</span>}{c.unpricedLitres > 0 && <span className="block">Rate missing, partial</span>}</>}
                       </div>
                     )}
                   </div>

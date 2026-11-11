@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
-import { createTransactionPricer } from '../_shared/transactionPricing.ts';
+import { createTransactionPricer, customerPricingSummaries } from '../_shared/transactionPricing.ts';
 
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 Deno.serve(async req => {
@@ -14,12 +14,31 @@ Deno.serve(async req => {
     const scoped = createClient(url, anon, { global: { headers: { Authorization: header } } });
     const { data: claims, error: authError } = await scoped.auth.getClaims(header.slice(7));
     if (authError || !claims?.claims?.sub) return json({ error: 'Unauthorized' }, 401);
-    const parsed = z.object({ ids: z.array(z.number().int().positive()).min(1).max(500) }).safeParse(await req.json());
-    if (!parsed.success) return json({ error: 'Provide between 1 and 500 transaction IDs' }, 400);
+    const parsed = z.union([
+      z.object({ ids: z.array(z.number().int().positive()).min(1).max(500) }),
+      z.object({ summary: z.literal(true), from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable() }),
+    ]).safeParse(await req.json());
+    if (!parsed.success) return json({ error: 'Provide transaction IDs or a valid summary range' }, 400);
+    const isSummary = 'summary' in parsed.data;
+    if (isSummary) {
+      const { data: allowed, error } = await scoped.rpc('has_role', { _user_id: claims.claims.sub, _role: 'admin' });
+      if (error || !allowed) return json({ error: 'Forbidden' }, 403);
+    }
     // RLS decides which requested transactions this caller may see.
-    const { data: visible, error: visibleError } = await scoped.from('transactions').select('id,fecha,date,nombre_cliente1,cantidad,ppu,dinero_total').in('id', parsed.data.ids);
-    if (visibleError) return json({ error: 'Unable to load transactions' }, 500);
-    if (!visible?.length) return json({ prices: {} });
+    const visible = [];
+    for (let offset = 0; ; offset += 1000) {
+      let query = scoped.from('transactions').select('id,fecha,date,nombre_cliente1,cantidad,ppu,dinero_total').order('id');
+      if ('ids' in parsed.data) query = query.in('id', parsed.data.ids);
+      else {
+        if (parsed.data.from) query = query.gte('date', parsed.data.from);
+        if (parsed.data.to) query = query.lte('date', parsed.data.to);
+      }
+      const { data, error } = await query.range(offset, offset + 999);
+      if (error) return json({ error: 'Unable to load transactions' }, 500);
+      visible.push(...(data ?? []));
+      if ((data?.length ?? 0) < 1000) break;
+    }
+    if (!visible.length) return json(isSummary ? { summaries: [] } : { prices: {} });
     const admin = createClient(url, secret);
     let names = [...new Set(visible.map(t => t.nombre_cliente1).filter(Boolean))];
     const dates = visible.map(t => t.date || t.fecha.slice(0, 10)).sort();
@@ -52,7 +71,7 @@ Deno.serve(async req => {
     }
     const price = createTransactionPricer(weekly, clientResult.data ?? [], tierResult.data ?? [], buys, today);
     // Never return buy prices, suppliers, tiers or other customers' rows.
-    return json({ prices: Object.fromEntries(visible.map(t => [t.id, price(t)])) });
+    return json(isSummary ? { summaries: customerPricingSummaries(visible, price) } : { prices: Object.fromEntries(visible.map(t => [t.id, price(t)])) });
   } catch {
     return json({ error: 'Pricing request failed. Please retry.' }, 500);
   }

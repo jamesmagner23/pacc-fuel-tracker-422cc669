@@ -28,3 +28,13 @@
 - [x] Mobile tab strips/grid, visible Sync now, actual admin user emails, station label, All sales filter.
 - [x] Focused tests, browser checks and changed-file/migration list.
 - [ ] Authenticated upload/view/download, own-client isolation and live list timing. Blocked: requester has no mintable preview session, sign-in required. No existing records were changed during testing.
+
+# Batch 4
+
+- [x] Calculated customer summary revenue and missing rates, using the shared authenticated pricer.
+- [x] Public metadata, legal pages, nullable quote fields, hidden unsafe demo buttons, testimonial spelling and renewable/critical-power section.
+- [x] Public unknown routes with noindex, sitemap and lazy page/layout loading.
+- [x] 15 focused tests, public desktop/mobile browser flows, intercepted form payload, no existing record changes, latest build OK and invalid summary credentials rejected.
+- [x] Changed-file and SQL list reported.
+- [ ] Signed-in customer revenue and unknown-route verification. Blocked: requesting user has no mintable preview account/session.
+- [ ] After-change production entry gzip measurement. Blocked: harness does not expose generated assets or execute the size-report hook, remote preview returns 401. Published baseline: 1,253,245 gzip bytes. Production size reporting is configured for the next full build.
