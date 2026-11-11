@@ -41,5 +41,5 @@
 
 # Batch 5
 
-- [ ] Update confirmed public business details, phone links, legal copy and portal availability, without database or stored data changes.
-- [ ] Verify legal pages, structured business details and public phone links.
+- [x] Update confirmed public business details, phone links, legal copy and portal availability, without database or stored data changes.
+- [x] Verify legal pages, structured business details and public phone links, including desktop/mobile public layouts.

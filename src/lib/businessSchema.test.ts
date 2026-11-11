@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const html = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
+const html = readFileSync("index.html", "utf8");
 const match = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
 if (!match) throw new Error("Business structured data is missing");
 const business = JSON.parse(match[1]);
