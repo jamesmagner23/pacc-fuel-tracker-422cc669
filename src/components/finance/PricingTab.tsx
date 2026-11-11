@@ -912,7 +912,7 @@ export default function PricingTab() {
           </div>
           <div className="flex gap-1 flex-wrap">
             {["all", "draft", "sent", "accepted", "rejected", "expired"].map((s) => (
-              <button key={s} onClick={() => setStatusFilter(s)} className={`text-[10px] px-2.5 py-1 rounded-full border cursor-pointer transition-colors capitalize ${statusFilter === s ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-muted-foreground border-surface-border hover:border-foreground/30"}`}>
+              <button key={s} onClick={() => setStatusFilter(s as typeof statusFilter)} className={`text-[10px] px-2.5 py-1 rounded-full border cursor-pointer transition-colors capitalize ${statusFilter === s ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-muted-foreground border-surface-border hover:border-foreground/30"}`}>
                 {s}
               </button>
             ))}
