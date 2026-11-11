@@ -15,4 +15,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
+  <url><loc>https://paccenergy.com/privacy</loc></url>
+  <url><loc>https://paccenergy.com/terms</loc></url>
 </urlset>
