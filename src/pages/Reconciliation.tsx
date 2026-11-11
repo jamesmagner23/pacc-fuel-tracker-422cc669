@@ -22,6 +22,7 @@ import {
 import { useTransactionsInRange, type Transaction } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
 import { FLEET } from "@/pages/Trucks";
+import { hasReconciliationData } from "@/lib/reconciliationStatus";
 
 type TabId = "daily" | "pump" | "alerts" | "reports" | "settings";
 type TruckScope = string; // truck name or "__combined__"
@@ -940,7 +941,7 @@ export default function Reconciliation() {
         ))}
       </div>
 
-      <SummaryCards rows={dailyRows} settings={settings} hasData={pumpReadings.length > 0 && rangeTransactions.length > 0} />
+      <SummaryCards rows={dailyRows} settings={settings} hasData={hasReconciliationData(pumpReadings.length, rangeTransactions.length)} />
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-surface-border">
