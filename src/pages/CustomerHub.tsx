@@ -129,11 +129,12 @@ export default function CustomerHub() {
       equipmentList={equipmentList}
       navigate={navigate}
       inOperations={inOperations}
+      pricing={pricing}
     />
   );
 }
 
-function CustomerHubInner({ customerName, account, clientAccountId, customerTxns, plantItems, projects, assignments, ftcRates, overrides, equipmentList, navigate, inOperations }: any) {
+function CustomerHubInner({ customerName, account, clientAccountId, customerTxns, plantItems, projects, assignments, ftcRates, overrides, equipmentList, navigate, inOperations, pricing }: any) {
   const [dispatchOpen, setDispatchOpen] = useState(false);
   return (
     <div className="space-y-5 max-w-[1200px]">
