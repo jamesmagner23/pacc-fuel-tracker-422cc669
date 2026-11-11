@@ -890,6 +890,30 @@ export type Database = {
           },
         ]
       }
+      docket_archives: {
+        Row: {
+          archived_by: string
+          created_at: string
+          docket_id: string
+          docket_kind: string
+          id: string
+        }
+        Insert: {
+          archived_by?: string
+          created_at?: string
+          docket_id: string
+          docket_kind: string
+          id?: string
+        }
+        Update: {
+          archived_by?: string
+          created_at?: string
+          docket_id?: string
+          docket_kind?: string
+          id?: string
+        }
+        Relationships: []
+      }
       driver_locations: {
         Row: {
           accuracy: number | null
@@ -2610,6 +2634,73 @@ export type Database = {
         }
         Relationships: []
       }
+      uploaded_dockets: {
+        Row: {
+          client_account_id: number
+          created_at: string
+          dispatch_stop_id: string | null
+          docket_date: string
+          file_name: string
+          file_path: string
+          id: string
+          litres: number | null
+          mime_type: string
+          notes: string | null
+          transaction_id: number | null
+          uploaded_by: string
+        }
+        Insert: {
+          client_account_id: number
+          created_at?: string
+          dispatch_stop_id?: string | null
+          docket_date: string
+          file_name: string
+          file_path: string
+          id?: string
+          litres?: number | null
+          mime_type: string
+          notes?: string | null
+          transaction_id?: number | null
+          uploaded_by?: string
+        }
+        Update: {
+          client_account_id?: number
+          created_at?: string
+          dispatch_stop_id?: string | null
+          docket_date?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          litres?: number | null
+          mime_type?: string
+          notes?: string | null
+          transaction_id?: number | null
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uploaded_dockets_client_account_id_fkey"
+            columns: ["client_account_id"]
+            isOneToOne: false
+            referencedRelation: "client_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uploaded_dockets_dispatch_stop_id_fkey"
+            columns: ["dispatch_stop_id"]
+            isOneToOne: false
+            referencedRelation: "dispatch_stops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uploaded_dockets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           client_account_id: number | null
@@ -2647,9 +2738,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      signed_docket_list: {
+        Row: {
+          client_account_id: number | null
+          customer_name: string | null
+          docket_date: string | null
+          file_name: string | null
+          file_path: string | null
+          id: string | null
+          kind: string | null
+          litres: number | null
+          mime_type: string | null
+          recorded_at: string | null
+          title: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_user_directory: {
+        Args: never
+        Returns: {
+          client_account_id: number
+          company_name: string
+          email: string
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       check_plant_rego_conflict: {
         Args: { _plant_item_id: string }
         Returns: Json
@@ -2657,6 +2775,15 @@ export type Database = {
       clear_auto_backfill_for_plant: {
         Args: { _plant_item_id: string }
         Returns: number
+      }
+      customer_delivery_summary: {
+        Args: { _from?: string; _to?: string }
+        Returns: {
+          deliveries: number
+          litres: number
+          name: string
+          revenue: number
+        }[]
       }
       expand_dispatch_recurring: {
         Args: { _days_ahead?: number }
@@ -2687,6 +2814,28 @@ export type Database = {
           placa: string
           plant_items: Json
         }[]
+      }
+      list_signed_dockets: {
+        Args: { _client?: number; _from?: string; _to?: string }
+        Returns: {
+          client_account_id: number | null
+          customer_name: string | null
+          docket_date: string | null
+          file_name: string | null
+          file_path: string | null
+          id: string | null
+          kind: string | null
+          litres: number | null
+          mime_type: string | null
+          recorded_at: string | null
+          title: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "signed_docket_list"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       preview_tag_transaction: {
         Args: { _plant_item_id: string; _transaction_id: number }
