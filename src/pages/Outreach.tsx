@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { withTimeout } from "@/lib/requestTimeout";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -199,7 +200,7 @@ export default function Outreach() {
       .from("pricing_presets")
       .select("id,name,notes,weekly_volume,product_mix,diesel_price,diesel_price_inc,ulp_price,ulp_price_inc,adblue_price,adblue_price_inc,updated_at")
       .order("updated_at", { ascending: false })
-      .limit(50);
+      .limit(50));
     if (!error && data) setPresets(data as PricingPreset[]);
   }, []);
   useEffect(() => { void fetchPresets(); }, [fetchPresets]);
@@ -261,6 +262,9 @@ export default function Outreach() {
   // Send statuses (keyed by recipient_email)
   const [statuses, setStatuses] = useState<Record<string, SendStatus>>({});
   const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusLoaded, setStatusLoaded] = useState(false);
+  const peopleRequest = useRef(0);
 
   // CSV import dialog
   const [importOpen, setImportOpen] = useState(false);
@@ -282,18 +286,21 @@ export default function Outreach() {
 
   // ── Data loaders ─────────────────────────────────────────────────────────
   const fetchPeople = useCallback(async (term: string) => {
+    const request = ++peopleRequest.current;
     setLoading(true); setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke("pipedrive-people", { body: { q: term } });
+      const { data, error } = await withTimeout(supabase.functions.invoke("pipedrive-people", { body: { q: term } }));
+      if (request !== peopleRequest.current) return;
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       setPeople((data as any)?.persons ?? []);
       setBcc((data as any)?.bcc ?? null);
       setPipedriveHost(normalizePipedriveHost((data as any)?.company_domain));
     } catch (e) {
+      if (request !== peopleRequest.current) return;
       setError(e instanceof Error ? e.message : "Failed to load");
       setPeople([]);
-    } finally { setLoading(false); }
+    } finally { if (request === peopleRequest.current) setLoading(false); }
   }, []);
 
   const fetchTemplates = useCallback(async () => {
@@ -313,19 +320,21 @@ export default function Outreach() {
   }, [templateId]);
 
   const fetchStatuses = useCallback(async () => {
+    try {
+    setStatusError(null);
     // Pull last 50 sends + their cached status
-    const { data, error } = await supabase
+    const { data, error } = await withTimeout(supabase
       .from("outreach_send_log")
       .select("id, pipedrive_person_id, recipient_email, created_at, outreach_thread_status(status, last_message_at)")
       .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) { console.error(error); return; }
+      .limit(50));
+    if (error) throw error;
     const map: Record<string, SendStatus> = {};
     for (const row of data as any[]) {
       const ts = Array.isArray(row.outreach_thread_status) ? row.outreach_thread_status[0] : row.outreach_thread_status;
       // Latest send per recipient wins (data is desc-sorted)
-      if (row.recipient_email && !map[row.recipient_email]) {
-        map[row.recipient_email] = {
+      if (row.recipient_email && !map[row.recipient_email.toLowerCase()]) {
+        map[row.recipient_email.toLowerCase()] = {
           send_id: row.id,
           pipedrive_person_id: row.pipedrive_person_id,
           recipient_email: row.recipient_email,
@@ -335,22 +344,24 @@ export default function Outreach() {
         };
       }
     }
-    setStatuses(map);
+    setStatuses(map); setStatusLoaded(true);
+    } catch (error) { setStatusError(error instanceof Error ? error.message : "Status unavailable"); }
   }, []);
 
   const refreshStatuses = async () => {
-    setRefreshingStatus(true);
+    setRefreshingStatus(true); setStatusError(null);
     try {
-      const { error } = await supabase.functions.invoke("pipedrive-thread-status", { body: {} });
-      if (error) throw error;
+      const { data, error } = await withTimeout(supabase.functions.invoke("pipedrive-thread-status", { body: {} }), 60_000);
+      if (error || data?.error) throw error ?? new Error(data.error);
       await fetchStatuses();
       toast({ title: "Status refreshed", description: "Pulled latest mail-thread state from Pipedrive." });
     } catch (e) {
+      setStatusError(e instanceof Error ? e.message : "Status unavailable");
       toast({ title: "Status refresh failed", description: e instanceof Error ? e.message : "Unknown", variant: "destructive" });
     } finally { setRefreshingStatus(false); }
   };
 
-  useEffect(() => { void fetchPeople(""); void fetchTemplates(); void fetchStatuses(); }, [fetchPeople, fetchTemplates, fetchStatuses]);
+  useEffect(() => { void fetchTemplates(); void fetchStatuses(); }, [fetchTemplates, fetchStatuses]);
 
   useEffect(() => {
     const t = setTimeout(() => void fetchPeople(query), 350);
@@ -852,9 +863,11 @@ export default function Outreach() {
             </div>
           )}
           {error && (
-            <div className="text-sm text-negative bg-[color:var(--negative-bg)] border border-negative rounded p-2">{error}</div>
+            <div className="text-sm text-warning border border-border rounded p-2">{error} <Button size="sm" variant="outline" onClick={() => fetchPeople(query)}>Retry</Button></div>
           )}
 
+          {statusError && <div className="text-warning text-xs">{statusError} <Button size="sm" variant="outline" onClick={refreshStatuses}>Retry</Button></div>}
+          {statusLoaded && !statusError && Object.keys(statuses).length === 0 && <p className="text-xs text-muted-foreground">No sent emails to check.</p>}
           <div className="max-h-[calc(100vh-220px)] lg:max-h-[65vh] overflow-y-auto divide-y divide-surface-border/50">
             {people.map((p) => {
               const isSel = selected?.id === p.id;
@@ -885,7 +898,7 @@ export default function Outreach() {
                 </button>
               );
             })}
-            {!loading && people.length === 0 && (
+            {!loading && !error && people.length === 0 && (
               <div className="text-sm text-muted-foreground py-6 text-center">No contacts found.</div>
             )}
           </div>
