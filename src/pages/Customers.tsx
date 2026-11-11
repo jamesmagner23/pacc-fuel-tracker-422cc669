@@ -13,6 +13,7 @@ import Transactions from "./Transactions";
 import ClientPricingTab from "@/components/finance/ClientPricingTab";
 import TagDeliveries from "./TagDeliveries";
 import { useUserRole } from "@/hooks/useUserRole";
+import { SyncStatus } from "@/components/SyncStatus";
 
 type LocalRange = "global" | "30d" | "90d" | "ytd" | "all" | "custom";
 
@@ -111,6 +112,7 @@ function CustomerList() {
       {/* Page heading */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Customers</h1>
+        <SyncStatus />
         <p className="text-xs text-muted-foreground mt-0.5">Browse, filter, and drill into customer delivery data</p>
       </div>
 

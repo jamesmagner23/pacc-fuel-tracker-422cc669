@@ -1,5 +1,7 @@
-import { useQueryClient, useIsFetching } from "@tanstack/react-query";
+import { useQueryClient, useIsFetching, useQuery } from "@tanstack/react-query";
 import { Loader2, RefreshCcw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useSyncFreshness } from "@/hooks/useSyncFreshness";
 
 /**
  * Client-portal version of the admin TopSyncPill. Clients can't trigger a
@@ -8,11 +10,22 @@ import { Loader2, RefreshCcw } from "lucide-react";
  */
 export function PortalSyncPill() {
   const qc = useQueryClient();
+  const { data: lastSync } = useQuery({
+    queryKey: ["portal-sync-status"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_last_sync_status");
+      if (error) throw error;
+      return data?.[0] ?? null;
+    },
+    refetchInterval: 60_000,
+  });
+  const { lastSyncTime, isSyncStale } = useSyncFreshness(lastSync?.synced_at);
   const fetching = useIsFetching({ queryKey: ["customer-transactions-all"] }) > 0;
 
   const handleRefresh = () => {
     qc.invalidateQueries({ queryKey: ["customer-transactions-all"] });
     qc.invalidateQueries({ queryKey: ["delivery-requests"] });
+    qc.invalidateQueries({ queryKey: ["portal-sync-status"] });
   };
 
   return (
@@ -25,10 +38,10 @@ export function PortalSyncPill() {
       {fetching ? (
         <Loader2 className="w-3 h-3 animate-spin text-foreground" />
       ) : (
-        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+        <span className={`w-1.5 h-1.5 rounded-full ${isSyncStale ? "bg-warning" : "bg-accent"}`} />
       )}
-      <span className="text-[12px] font-medium text-foreground">
-        {fetching ? "Refreshing…" : "Live"}
+      <span className={`text-[12px] font-medium ${isSyncStale ? "text-warning" : "text-foreground"}`}>
+        {fetching ? "Refreshing…" : lastSyncTime ? `Synced ${lastSyncTime}` : "Never synced"}
       </span>
       {!fetching && <RefreshCcw className="w-3 h-3 text-muted-foreground" />}
     </button>

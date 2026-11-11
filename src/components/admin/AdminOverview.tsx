@@ -6,10 +6,12 @@ import { Users, Truck, Briefcase, AlertTriangle, Activity, Database } from "luci
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useAllTransactions, useSyncLog } from "@/hooks/useTransactions";
 import DataHealthWidget from "./DataHealthWidget";
+import { useSyncFreshness } from "@/hooks/useSyncFreshness";
 
 export default function AdminOverview() {
   const { data: txns = [] } = useAllTransactions();
   const { data: syncLog } = useSyncLog();
+  const { lastSyncTime, isSyncStale } = useSyncFreshness(syncLog?.synced_at);
 
   const { data: users = [] } = useQuery({
     queryKey: ["admin-overview-users"],
@@ -99,8 +101,8 @@ export default function AdminOverview() {
           <h2 className="text-sm font-semibold">System Status</h2>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Last Sync</div>
-            <div className="text-sm font-medium">
-              {syncLog?.synced_at ? format(parseISO(syncLog.synced_at), "dd MMM yy HH:mm") : "Never"}
+            <div className={`text-sm font-medium ${isSyncStale ? "text-warning" : "text-foreground"}`}>
+              {lastSyncTime ?? "Never"}
             </div>
             {syncLog && (
               <div className="text-[11px] text-muted-foreground">

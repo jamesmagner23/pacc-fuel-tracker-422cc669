@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSyncLog } from "@/hooks/useTransactions";
-import { formatTime } from "@/lib/format";
+import { useSyncFreshness } from "@/hooks/useSyncFreshness";
 
 export function TopSyncPill() {
   const { data: lastSync } = useSyncLog();
+  const { lastSyncTime, isSyncStale } = useSyncFreshness(lastSync?.synced_at);
   const [syncing, setSyncing] = useState(false);
   const queryClient = useQueryClient();
 
@@ -34,8 +35,8 @@ export function TopSyncPill() {
 
   const label = syncing
     ? "Syncing…"
-    : lastSync?.synced_at
-      ? `Synced ${formatTime(lastSync.synced_at)}`
+    : lastSyncTime
+      ? `Synced ${lastSyncTime}`
       : "Never synced";
 
   return (
@@ -48,9 +49,9 @@ export function TopSyncPill() {
       {syncing ? (
         <Loader2 className="w-3 h-3 animate-spin text-foreground" />
       ) : (
-        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+        <span className={`w-1.5 h-1.5 rounded-full ${isSyncStale ? "bg-warning" : "bg-accent"}`} />
       )}
-      <span className="text-[12px] font-medium text-foreground tabular-nums">{label}</span>
+      <span className={`text-[12px] font-medium tabular-nums ${isSyncStale ? "text-warning" : "text-foreground"}`}>{label}</span>
     </button>
   );
 }

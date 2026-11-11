@@ -165,9 +165,10 @@ export function useSyncLog() {
       const { data, error } = await supabase
         .from("sync_log")
         .select("*")
+        .eq("status", "success")
         .order("synced_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") throw error;
       return data;

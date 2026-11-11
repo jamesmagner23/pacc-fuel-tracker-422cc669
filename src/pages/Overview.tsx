@@ -44,7 +44,7 @@ export default function Overview() {
     prevRevenue: prevRevenueAll,
     getTxPricing,
   } = useRevenueCalc(range);
-  const { syncing, handleSync, lastSyncTime } = useSyncTransactions({ autoSync: true });
+  const { syncing, handleSync, lastSyncTime, isSyncStale } = useSyncTransactions({ autoSync: true });
   const { data: allTxnsRaw = [] } = useAllTransactions();
   const { data: buyPrices = [] } = useBuyPrices(60);
   const { data: trucks = [] } = useTrucks();
@@ -388,7 +388,7 @@ export default function Overview() {
               <div className="pb-1.5 text-sm font-bold text-primary">{periodLabel}</div>
             </div>
             <p className="mt-3 max-w-[360px] text-sm leading-5 text-muted-foreground">
-              {numDeliveries.toLocaleString()} {numDeliveries === 1 ? "drop" : "drops"} across {activeTruckCount || truckBreakdown.length || 0} active {activeTruckCount === 1 ? "truck" : "trucks"}{lastSyncTime ? ` · last refreshed ${lastSyncTime}` : ""}.
+              {numDeliveries.toLocaleString()} {numDeliveries === 1 ? "drop" : "drops"} across {activeTruckCount || truckBreakdown.length || 0} active {activeTruckCount === 1 ? "truck" : "trucks"}<span className={isSyncStale ? "text-warning" : ""}>{lastSyncTime ? ` · last refreshed ${lastSyncTime}` : ""}</span>.
             </p>
             <button
               type="button"
@@ -645,7 +645,7 @@ export default function Overview() {
           <TodaysDeliveriesPanel />
         </div>
         <div className="lg:col-span-2">
-          <LiveTruckPanel lastSyncTime={lastSyncTime} />
+          <LiveTruckPanel lastSyncTime={lastSyncTime} isSyncStale={isSyncStale} />
         </div>
       </div>
 
@@ -686,12 +686,12 @@ function GrowthRangePills({ value, onChange }: { value: "7d" | "30d" | "90d"; on
   );
 }
 
-function LiveTruckPanel({ lastSyncTime }: { lastSyncTime: string | null }) {
+function LiveTruckPanel({ lastSyncTime, isSyncStale }: { lastSyncTime: string | null; isSyncStale: boolean }) {
   return (
     <div className="bg-card border border-border rounded-xl flex flex-col h-[440px]">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+      <div className="flex flex-wrap gap-2 items-center justify-between px-5 py-4 border-b border-border shrink-0">
         <h2 className="text-base font-semibold text-foreground">Live truck location</h2>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
+        <span className={`inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold ${isSyncStale ? "text-warning" : "text-foreground"}`}>
           <span className="w-1.5 h-1.5 rounded-full bg-accent" />
           Live{lastSyncTime ? ` · ${lastSyncTime}` : ""}
         </span>
