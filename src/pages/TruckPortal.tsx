@@ -176,7 +176,7 @@ function TruckDetail({ truck, onEdit }: { truck: Truck; onEdit: () => void }) {
 function OverviewPanel({ truck, onEdit }: { truck: Truck; onEdit: () => void }) {
   const fields: { label: string; value: string | number | null }[] = [
     { label: "Rego", value: truck.rego },
-    { label: "SpeedSol Estación", value: truck.speedsol_estacion },
+    { label: "SpeedSol station name", value: truck.speedsol_estacion },
     { label: "Make", value: truck.make },
     { label: "Model", value: truck.model },
     { label: "VIN", value: truck.vin },
@@ -606,7 +606,7 @@ function SalesPanel({ truck }: { truck: Truck }) {
 
       <div className="card p-4 sm:p-5">
         <h3 className="text-sm font-semibold text-muted-foreground mb-4">
-          Daily Litres — attributed via SpeedSol estación <code className="text-[11px]">{truck.speedsol_estacion || truck.name}</code>
+          Daily Litres — attributed via SpeedSol station name <code className="text-[11px]">{truck.speedsol_estacion || truck.name}</code>
         </h3>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">

@@ -1,3 +1,4 @@
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -136,6 +137,7 @@ function StopRow({ stop, idx, dragProps, itemStyle, clientNameById, truckNameByI
 }
 
 export default function Dispatch() {
+  const [tab, setTab] = useUrlTab(["route", "week", "driver-day"], "route", undefined, "dispatchTab");
   const [searchParams, setSearchParams] = useSearchParams();
   const initialDate = (() => {
     const q = searchParams.get("date");
@@ -202,7 +204,7 @@ export default function Dispatch() {
 
   return (
     <div className="flex flex-col gap-3 max-w-[1200px] w-full">
-      <Tabs defaultValue="route" className="w-full">
+      <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList>
           <TabsTrigger value="route">Route plan</TabsTrigger>
           <TabsTrigger value="week">Week</TabsTrigger>

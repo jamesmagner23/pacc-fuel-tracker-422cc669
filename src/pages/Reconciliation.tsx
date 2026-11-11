@@ -1,3 +1,4 @@
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { useState, useMemo } from "react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, parseISO } from "date-fns";
 import { AlertTriangle, CheckCircle, Download, Settings, Table2, Bell, Archive, Trash2, Gauge, Plus, CalendarIcon } from "lucide-react";
@@ -876,7 +877,7 @@ export default function Reconciliation() {
   const [rangeMode, setRangeMode] = useState<RangeMode>("week");
   const [dateStart, setDateStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [dateEnd, setDateEnd] = useState(() => endOfWeek(new Date(), { weekStartsOn: 1 }));
-  const [activeTab, setActiveTab] = useState<TabId>("daily");
+  const [activeTab, setActiveTab] = useUrlTab<TabId>(["daily", "pump", "alerts", "reports", "settings"], "daily", undefined, "reconTab");
   const [truckScope, setTruckScope] = useState<TruckScope>(COMBINED);
 
   const handleRangeChange = (s: Date, e: Date) => { setDateStart(s); setDateEnd(e); };

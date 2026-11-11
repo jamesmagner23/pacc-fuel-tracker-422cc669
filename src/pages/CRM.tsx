@@ -1,3 +1,4 @@
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import CustomerEditor from "@/components/crm/CustomerEditor";
 import CrmInsights from "@/components/crm/CrmInsights";
 
 export default function CRM() {
+  const [tab, setTab] = useUrlTab(["acquisition", "retention", "insights"], "acquisition");
   const { data, loading, refresh } = useCrmCustomers();
   const [selected, setSelected] = useState<CrmCustomer | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -46,7 +48,7 @@ export default function CRM() {
         />
       </div>
 
-      <Tabs defaultValue="acquisition">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-surface border border-surface-border">
           <TabsTrigger value="acquisition">Acquisition</TabsTrigger>
           <TabsTrigger value="retention">Retention</TabsTrigger>

@@ -1,3 +1,4 @@
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { useMemo, useState } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { ArrowLeft, Plus, Pencil, Trash2, Truck, FolderKanban, Download, Printer, FileText, Search, Send } from "lucide-react";
@@ -135,6 +136,7 @@ export default function CustomerHub() {
 }
 
 function CustomerHubInner({ customerName, account, clientAccountId, customerTxns, plantItems, projects, assignments, ftcRates, overrides, equipmentList, navigate, inOperations, pricing }: any) {
+  const [tab, setTab] = useUrlTab(["overview", "profile", "equipment", "projects", "analytics", "transactions"], "overview");
   const [dispatchOpen, setDispatchOpen] = useState(false);
   return (
     <div className="space-y-5 max-w-[1200px]">
@@ -177,7 +179,7 @@ function CustomerHubInner({ customerName, account, clientAccountId, customerTxns
         />
       )}
 
-      <Tabs defaultValue="overview">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
           {[
             { v: "overview", l: "Overview" },

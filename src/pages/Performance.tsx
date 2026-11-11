@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { Truck, UserCheck } from "lucide-react";
 import Trucks from "./Trucks";
 import Drivers from "./Drivers";
@@ -11,13 +11,13 @@ const tabs = [
 type TabId = (typeof tabs)[number]["id"];
 
 export default function Performance() {
-  const [active, setActive] = useState<TabId>("trucks");
+  const [active, setActive] = useUrlTab<TabId>(["trucks", "drivers"], "trucks");
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center gap-6">
+      <div className="flex flex-wrap items-center gap-6">
         <h1 className="text-xl font-bold">Performance</h1>
-        <div className="flex gap-1 rounded-lg p-0.5" style={{ background: "rgba(255,255,255,0.04)" }}>
+        <div className="flex overflow-x-auto max-w-full snap-x gap-1 rounded-lg p-0.5" style={{ background: "rgba(255,255,255,0.04)" }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}

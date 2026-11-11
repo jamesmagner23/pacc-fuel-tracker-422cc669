@@ -173,7 +173,7 @@ export function useSyncLog() {
       if (isDemo) return DEMO_SYNC_LOG;
       const { data, error } = await supabase
         .from("sync_log")
-        .select("id,fecha,date,estacion,nombre_flota,nombre_cliente1,identificador_cliente1,ciudad,cantidad,cantidad_neta,producto,nombre_vendedor,placa,totalizador_bruto,factura,forma_de_pago,ppu,dinero_total,id_surtidor,surtidor,manguera")
+        .select("id,synced_at,status,records_fetched,records_upserted")
         .eq("status", "success")
         .order("synced_at", { ascending: false })
         .limit(1)
