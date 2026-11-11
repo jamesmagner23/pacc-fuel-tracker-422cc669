@@ -131,7 +131,7 @@ export function BillingPeriodPanel() {
 
   const summary = [
     { label: "Litres", value: `${Math.round(t.litres).toLocaleString()} L`, prev: `${Math.round(pt.litres).toLocaleString()} L`, pct: pctDelta(t.litres, pt.litres) },
-    { label: "Revenue", value: t.missing ? "Rates missing" : `$${Math.round(t.revenue).toLocaleString()}`, prev: pt.missing ? "Rates missing" : `$${Math.round(pt.revenue).toLocaleString()}`, pct: t.missing || pt.missing ? null : pctDelta(t.revenue, pt.revenue) },
+    { label: "Revenue (inc GST)", value: t.missing ? "Rates missing" : `$${Math.round(t.revenue).toLocaleString()}`, prev: pt.missing ? "Rates missing" : `$${Math.round(pt.revenue).toLocaleString()}`, pct: t.missing || pt.missing ? null : pctDelta(t.revenue, pt.revenue) },
     { label: "Buy cost", value: `$${Math.round(t.cost).toLocaleString()}`, prev: `$${Math.round(pt.cost).toLocaleString()}`, pct: pctDelta(t.cost, pt.cost), invert: true },
     { label: "Deliveries", value: t.drops.toLocaleString(), prev: pt.drops.toLocaleString(), pct: pctDelta(t.drops, pt.drops) },
     { label: "Customers", value: Object.keys(current.byCustomer).length.toLocaleString(), prev: Object.keys(previous.byCustomer).length.toLocaleString(), pct: pctDelta(Object.keys(current.byCustomer).length, Object.keys(previous.byCustomer).length) },
@@ -139,7 +139,7 @@ export function BillingPeriodPanel() {
 
   const downloadCsv = () => {
     const header = compare
-      ? ["Customer", "Litres", "Prev litres", "Litres delta %", "Deliveries", "Prev deliveries", "Revenue", "Prev revenue", "Buy cost", "Prev buy cost"]
+      ? ["Customer", "Litres", "Prev litres", "Litres delta %", "Deliveries", "Prev deliveries", "Revenue (inc GST)", "Prev revenue (inc GST)", "Buy cost (inc GST)", "Prev buy cost (inc GST)"]
       : ["Customer", "Litres", "Deliveries", "Revenue (inc GST)", "Buy cost (inc GST)"];
     const num = (n: number) => n.toFixed(2);
     const lines = [
@@ -208,7 +208,7 @@ export function BillingPeriodPanel() {
 
       <div className={"grid gap-3 mt-4 " + (compare ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-2 sm:grid-cols-4")}>
         {summary
-          .filter((s) => compare || s.label !== "Revenue")
+          .filter((s) => compare || s.label !== "Revenue (inc GST)")
           .map((s) => (
             <div key={s.label} className="rounded-[10px] border border-border bg-muted/40 p-3">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.label}</div>
@@ -242,7 +242,7 @@ export function BillingPeriodPanel() {
                 {compare && <th className="text-right font-medium py-2">Prev</th>}
                 {compare && <th className="text-right font-medium py-2">Δ</th>}
                 <th className="text-right font-medium py-2">Drops</th>
-                {compare && <th className="text-right font-medium py-2">Revenue</th>}
+                {compare && <th className="text-right font-medium py-2">Revenue (inc GST)</th>}
                 <th className="text-right font-medium py-2">Buy cost</th>
               </tr>
             </thead>

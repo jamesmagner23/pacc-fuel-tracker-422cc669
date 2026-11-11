@@ -201,7 +201,7 @@ function CustomerList() {
         {([
           { key: "litres", label: "Litres" },
           { key: "deliveries", label: "Deliveries" },
-          ...(hideMoney ? [] : [{ key: "revenue" as const, label: "Revenue" }]),
+          ...(hideMoney ? [] : [{ key: "revenue" as const, label: "Revenue (inc GST)" }]),
         ] as const).map((opt) => (
           <button
             key={opt.key}
@@ -250,7 +250,7 @@ function CustomerList() {
                     </div>
                     {!hideMoney && (
                       <div title={c.revenue === null ? "No Client Pricing rate available" : c.unpricedLitres > 0 ? `${c.unpricedLitres.toLocaleString()} L unpriced, revenue is partial` : c.calculated ? "Calculated from Client Pricing" : "SpeedSol revenue"} className="text-[9px] text-muted-foreground font-medium tabular-nums leading-tight text-right">
-                        {c.revenue === null ? <span className="inline-block rounded border border-border px-1">Rate missing</span> : <>${c.revenue >= 1000 ? `${(c.revenue / 1000).toFixed(1)}k` : Math.round(c.revenue)}{c.calculated && <span> calc.</span>}{c.unpricedLitres > 0 && <span className="block">Rate missing, partial</span>}</>}
+                        {c.revenue === null ? <span className="inline-block rounded border border-border px-1">Rate missing</span> : <>${c.revenue >= 1000 ? `${(c.revenue / 1000).toFixed(1)}k` : Math.round(c.revenue)}{c.calculated && <span> calc.</span>}<span className="block">inc GST</span>{c.unpricedLitres > 0 && <span className="block">Rate missing, partial</span>}</>}
                       </div>
                     )}
                   </div>

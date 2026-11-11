@@ -232,7 +232,7 @@ function OverviewTab({ txns, equipment, projects, ftcRates }: { txns: any[]; equ
   const kpis = [
     { label: "Total Litres", value: `${totalLitres.toLocaleString()}L` },
     { label: "Deliveries", value: txns.length.toLocaleString() },
-    { label: "Revenue", value: txns.some(t => !t.displayPricing?.hasPricing) ? "Rates missing" : `$${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` },
+    { label: "Revenue (inc GST)", value: txns.some(t => !t.displayPricing?.hasPricing) ? "Rates missing" : `$${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` },
     { label: "Equipment", value: equipment.length.toString() },
     { label: "Active Projects", value: activeProjects.toString() },
   ];
@@ -722,7 +722,7 @@ function EquipmentTab({
                     <th className="pb-2 pr-3">Date</th>
                     <th className="pb-2 pr-3">Location</th>
                     <th className="pb-2 pr-3 text-right">Litres</th>
-                    <th className="pb-2 text-right">Total</th>
+                    <th className="pb-2 text-right">Total (inc GST)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1093,7 +1093,7 @@ function ProjectsTab({
               <div className="text-lg font-bold mt-0.5">{selectedTxns.reduce((s, t) => s + (t.cantidad || 0), 0).toLocaleString()}L</div>
             </div>
             <div className="rounded-lg border border-border bg-secondary/30 p-3">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Revenue</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Revenue (inc GST)</div>
               <div className="text-lg font-bold mt-0.5">${selectedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
             </div>
           </div>
@@ -1203,7 +1203,7 @@ function ProjectsTab({
                       <th className="pb-2 pr-3">Location</th>
                       <th className="pb-2 pr-3">Why counted?</th>
                       <th className="pb-2 pr-3 text-right">Litres</th>
-                      <th className="pb-2 text-right">Total</th>
+                      <th className="pb-2 text-right">Total (inc GST)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1437,7 +1437,7 @@ function TransactionsTab({ txns, customerName }: { txns: any[]; customerName: st
       toast({ title: "No rows to export", variant: "destructive" });
       return;
     }
-    const headers = ["Date", "Invoice", "Plate", "Location", "Station", "Product", "Litres", "Price/L", "Total"];
+    const headers = ["Date", "Invoice", "Plate", "Location", "Station", "Product", "Litres", "Sell $/L (inc GST)", "Total (inc GST)"];
     const body = rows.map((t) => [
       format(parseISO(t.fecha), "yyyy-MM-dd HH:mm"),
       t.factura ?? "",
@@ -1493,7 +1493,7 @@ function TransactionsTab({ txns, customerName }: { txns: any[]; customerName: st
               <th className="p-3">Plate</th>
               <th className="p-3">Location</th>
               <th className="p-3 text-right">Litres</th>
-              <th className="p-3 text-right">Total</th>
+              <th className="p-3 text-right">Total (inc GST)</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
