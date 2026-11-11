@@ -1,10 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 function pipedriveHost(rawDomain: string) {
   const cleaned = rawDomain
@@ -117,11 +113,11 @@ Deno.serve(async (req) => {
       pdUrl = `${base}/persons?${params.toString()}`;
     }
 
-    const pdRes = await fetch(pdUrl);
+    const pdRes = await fetch(pdUrl, { signal: AbortSignal.timeout(15_000) });
     const rawText = await pdRes.text();
     let pdJson: any = null;
     try { pdJson = JSON.parse(rawText); } catch { /* not json */ }
-    console.log("Pipedrive call", { url: pdUrl.replace(PD_TOKEN, "***"), status: pdRes.status, ok: pdRes.ok, bodyPreview: rawText.slice(0, 300) });
+    console.log("Pipedrive response", { status: pdRes.status, ok: pdRes.ok });
     if (!pdRes.ok || !pdJson || pdJson.success === false) {
       return new Response(
         JSON.stringify({
@@ -129,7 +125,7 @@ Deno.serve(async (req) => {
           details: pdJson ?? rawText.slice(0, 500),
         }),
         {
-          status: 200, // return 200 so supabase-js surfaces our message instead of generic non-2xx
+          status: 502,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
