@@ -3,6 +3,8 @@ import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { ArrowLeft, Plus, Pencil, Trash2, Truck, FolderKanban, Download, Printer, FileText, Search, Send } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTransactionPricing } from "@/hooks/useTransactionPricing";
+import { TransactionPrice } from "@/components/TransactionPrice";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { usePlantItems, useDeletePlantItem, type PlantItem } from "@/hooks/usePlantItems";
 import { useProjects, useProjectAssignments, useDeleteProject, type Project } from "@/hooks/useProjects";
@@ -52,7 +54,9 @@ export default function CustomerHub() {
 
   const clientAccountId = account?.id ?? null;
 
-  const { data: allTxns = [], isLoading: loadingTx } = useAllTransactions();
+  const { data: rawTxns = [], isLoading: loadingTx } = useAllTransactions();
+  const pricing = useTransactionPricing(rawTxns);
+  const allTxns = useMemo(() => rawTxns.map(t => ({ ...t, ppu: pricing.getTxPricing(t).sellPPL, dinero_total: pricing.getTxPricing(t).total, displayPricing: pricing.getTxPricing(t) })), [rawTxns, pricing.data]);
   const { data: plantItems = [] } = usePlantItems(clientAccountId);
   const { data: projects = [] } = useProjects(clientAccountId);
   const { data: assignments = [] } = useProjectAssignments(clientAccountId);
@@ -224,7 +228,7 @@ function OverviewTab({ txns, equipment, projects, ftcRates }: { txns: any[]; equ
   const kpis = [
     { label: "Total Litres", value: `${totalLitres.toLocaleString()}L` },
     { label: "Deliveries", value: txns.length.toLocaleString() },
-    { label: "Revenue", value: `$${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` },
+    { label: "Revenue", value: txns.some(t => !t.displayPricing?.hasPricing) ? "Rates missing" : `$${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` },
     { label: "Equipment", value: equipment.length.toString() },
     { label: "Active Projects", value: activeProjects.toString() },
   ];
@@ -723,7 +727,7 @@ function EquipmentTab({
                       <td className="py-2 pr-3 whitespace-nowrap">{format(parseISO(t.fecha), "dd MMM HH:mm")}</td>
                       <td className="py-2 pr-3">{t.ciudad}</td>
                       <td className="py-2 pr-3 text-right">{(t.cantidad || 0).toLocaleString()}L</td>
-                      <td className="py-2 text-right">${(t.dinero_total || 0).toLocaleString()}</td>
+                      <td className="py-2 text-right"><TransactionPrice pricing={t.displayPricing} total /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -1245,7 +1249,7 @@ function ProjectsTab({
                             </td>
                             <td className="py-2 text-right">
                               <SpeedSolValue className="justify-end" showIcon={false}>
-                                ${(t.dinero_total || 0).toLocaleString()}
+                                <TransactionPrice pricing={t.displayPricing} total />
                               </SpeedSolValue>
                             </td>
                           </tr>
@@ -1438,8 +1442,8 @@ function TransactionsTab({ txns, customerName }: { txns: any[]; customerName: st
       t.estacion ?? "",
       t.producto ?? "",
       t.cantidad ?? "",
-      t.ppu ?? "",
-      t.dinero_total ?? "",
+      t.displayPricing?.sellPPL ?? "Rate missing",
+      t.displayPricing?.total ?? "Rate missing",
     ]);
     const csv = [headers, ...body]
       .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
@@ -1505,7 +1509,7 @@ function TransactionsTab({ txns, customerName }: { txns: any[]; customerName: st
                   <td className="p-3">{t.placa ?? "—"}</td>
                   <td className="p-3">{t.ciudad ?? "—"}</td>
                   <td className="p-3 text-right font-medium">{(t.cantidad || 0).toLocaleString()}L</td>
-                  <td className="p-3 text-right font-medium">${(t.dinero_total || 0).toLocaleString()}</td>
+                  <td className="p-3 text-right font-medium"><TransactionPrice pricing={t.displayPricing} total /></td>
                   <td className="p-3 text-right">
                     <div className="inline-flex gap-1">
                       <Link to={`/docket/${t.id}`} target="_blank" className="p-1.5 rounded hover:bg-secondary" title="View docket">

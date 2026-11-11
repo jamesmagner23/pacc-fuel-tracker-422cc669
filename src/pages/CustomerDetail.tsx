@@ -5,6 +5,8 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContai
 import { useDateRange } from "@/hooks/useDateRange";
 import { useTransactions } from "@/hooks/useTransactions";
 import { format, parseISO } from "date-fns";
+import { useTransactionPricing } from "@/hooks/useTransactionPricing";
+import { TransactionPrice } from "@/components/TransactionPrice";
 import { CustomerProfileCard } from "@/components/customer/CustomerProfileCard";
 
 function cssVar(name: string, fallback = ""): string {
@@ -23,6 +25,8 @@ export default function CustomerDetail() {
     () => allFiltered.filter((t) => t.nombre_cliente1 === customerName),
     [allFiltered, customerName]
   );
+
+  const { getTxPricing } = useTransactionPricing(filtered);
 
   const locationData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -116,7 +120,7 @@ export default function CustomerDetail() {
                   <td className="py-2.5 pr-4">{t.ciudad}</td>
                   <td className="py-2.5 pr-4 whitespace-nowrap">{t.estacion}</td>
                   <td className="py-2.5 pr-4 text-right font-medium">{(t.cantidad || 0).toLocaleString()}L</td>
-                  <td className="py-2.5 text-right font-medium">${(t.dinero_total || 0).toLocaleString()}</td>
+                  <td className="py-2.5 text-right font-medium"><TransactionPrice pricing={getTxPricing(t)} total /></td>
                 </tr>
               ))}
             </tbody>

@@ -6,6 +6,9 @@ import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, 
 import { formatDate, formatDateTime, formatTime } from "@/lib/format";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useTransactionPricing } from "@/hooks/useTransactionPricing";
+import { TransactionPrice } from "@/components/TransactionPrice";
+import { safeDelta } from "@/lib/transactionPricing";
 import { PACCLogo } from "@/components/PACCLogo";
 import { TruckMap } from "@/components/TruckMap";
 import { logActivity } from "@/hooks/useActivityLog";
@@ -458,7 +461,9 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   applyPortalTheme();
   const [accountOpen, setAccountOpen] = useState(false);
 
-  const { data: transactions = [], isLoading } = useCustomerTransactions(speedsolNames);
+  const { data: rawTransactions = [], isLoading } = useCustomerTransactions(speedsolNames);
+  const pricing = useTransactionPricing(rawTransactions);
+  const transactions = useMemo(() => rawTransactions.map(t => ({ ...t, ppu: pricing.getTxPricing(t).sellPPL, dinero_total: pricing.getTxPricing(t).total, displayPricing: pricing.getTxPricing(t) })), [rawTransactions, pricing.data]);
 
   // Shared lookups: placa → plant_item type / project assignment
   const { data: plantItemsAll = [] } = usePlantItems(clientAccountId);
@@ -672,7 +677,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                         t.identificador_cliente1 || "",
                         t.placa || "",
                         (t.cantidad || 0).toFixed(2),
-                        (t.dinero_total || 0).toFixed(2),
+                        t.displayPricing?.total == null ? "Rate missing" : t.displayPricing.total.toFixed(2),
                       ]);
                       const safeName = (companyName || "deliveries").replace(/[^A-Za-z0-9]+/g, "-");
                       const safePeriod = (PERIOD_LABELS[period] || "current").replace(/\s+/g, "-");
@@ -1422,8 +1427,7 @@ function OverviewTab({
   const prevSpend = previousTransactions.reduce((s: number, t: any) => s + (t.dinero_total || 0), 0);
   const prevDeliveries = previousTransactions.length;
   const prevAvg = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
-  const pct = (curr: number, prev: number): number | null =>
-    prev === 0 ? null : ((curr - prev) / prev) * 100;
+  const pct = safeDelta;
 
   // Identify trucks in the visible window — prefer SCA fleet name, fall back
   // to driver name, then a generic label. Keep top 4 by litres; the rest
@@ -2635,7 +2639,7 @@ function DeliveriesTab({
 
   const exportDeliveries = () => {
     const rows: (string | number)[][] = [
-      ["Date", "Site", "Plant/Placa", "Project", "Litres", "Invoice"],
+      ["Date", "Site", "Plant/Placa", "Project", "Litres", "Invoice", "$/L inc GST", "Total inc GST", "Price source"],
     ];
     const projectName = (id: string) => projects.find((p) => p.id === id)?.name || "";
     filtered.forEach((t) => {
@@ -2647,6 +2651,9 @@ function DeliveriesTab({
         projectName(placaToProject[placa] || ""),
         (t.cantidad || 0).toFixed(2),
         t.factura || "",
+        t.displayPricing?.sellPPL ?? "Rate missing",
+        t.displayPricing?.total ?? "Rate missing",
+        t.displayPricing?.source ?? "missing",
       ]);
     });
     downloadCSV(rows, `deliveries-${format(new Date(), "yyyy-MM-dd")}.csv`);
@@ -2831,6 +2838,7 @@ function DeliveriesTab({
                   <span style={{ fontSize: 14, fontFamily: T.sansHead, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                     {fmtL(t.cantidad || 0)}
                   </span>
+                  <div className="text-right text-xs"><TransactionPrice pricing={t.displayPricing} /><div><TransactionPrice pricing={t.displayPricing} total /></div></div>
                   <button
                     onClick={() => window.open(`/docket/${t.id}${demoSuffix}`, "_blank")}
                     style={{
