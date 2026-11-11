@@ -45,7 +45,7 @@ const STATUS_LABELS = {
 
 type RangeMode = "week" | "month" | "custom";
 
-/** Hard cutoff — no pump data exists before this date */
+/** Hard cutoff - no pump data exists before this date */
 const RECON_MIN_DATE = new Date(2025, 2, 16); // 16 March 2025 (months are 0-indexed)
 const RECON_MIN_DATE_STR = "2025-03-16";
 
@@ -267,18 +267,18 @@ function DailyBreakdownTable({
                 >
                   <td className="px-4 py-3 font-medium text-foreground">{format(parseISO(row.date), "EEE dd MMM")}</td>
                   <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
-                    {row.pumpLitres > 0 ? row.pumpLitres.toLocaleString() : "—"}
+                    {row.pumpLitres > 0 ? row.pumpLitres.toLocaleString() : "-"}
                   </td>
                   <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
-                    {row.speedsolLitres > 0 ? row.speedsolLitres.toLocaleString() : "—"}
+                    {row.speedsolLitres > 0 ? row.speedsolLitres.toLocaleString() : "-"}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums font-semibold" style={{ color: (row.pumpLitres > 0 || row.speedsolLitres > 0) ? varianceColor(row.varianceLitres) : undefined }}>
                     {row.pumpLitres > 0 || row.speedsolLitres > 0
                       ? `${row.varianceLitres >= 0 ? "+" : ""}${row.varianceLitres.toLocaleString()}`
-                      : "—"}
+                      : "-"}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums" style={{ color: row.pumpLitres > 0 ? varianceColor(row.variancePct) : undefined }}>
-                    {row.pumpLitres > 0 ? `${row.variancePct >= 0 ? "+" : ""}${row.variancePct.toFixed(1)}%` : "—"}
+                    {row.pumpLitres > 0 ? `${row.variancePct >= 0 ? "+" : ""}${row.variancePct.toFixed(1)}%` : "-"}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span
@@ -414,11 +414,11 @@ function DayDrillDown({
                 return (
                   <tr key={truck} className="border-t border-border-subtle">
                     <td className="px-3 py-2 font-medium text-foreground">{truck}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{v.drivers.size > 0 ? Array.from(v.drivers).join(", ") : "—"}</td>
-                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.pump > 0 ? v.pump.toLocaleString() : "—"}</td>
-                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.speed > 0 ? v.speed.toLocaleString() : "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{v.drivers.size > 0 ? Array.from(v.drivers).join(", ") : "-"}</td>
+                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.pump > 0 ? v.pump.toLocaleString() : "-"}</td>
+                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.speed > 0 ? v.speed.toLocaleString() : "-"}</td>
                     <td className="px-3 py-2 text-right tabular-nums font-semibold" style={{ color: varianceColor(d) }}>
-                      {(v.pump > 0 || v.speed > 0) ? `${d >= 0 ? "+" : ""}${d.toLocaleString()}` : "—"}
+                      {(v.pump > 0 || v.speed > 0) ? `${d >= 0 ? "+" : ""}${d.toLocaleString()}` : "-"}
                     </td>
                     <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">{v.txCount}</td>
                   </tr>
@@ -471,7 +471,7 @@ function DayDrillDown({
                     <li key={t.id} className="px-3 py-2 text-xs flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-foreground font-medium truncate">
-                          {t.nombre_cliente1 || t.placa || "—"}
+                          {t.nombre_cliente1 || t.placa || "-"}
                         </p>
                         <p className="text-muted-foreground truncate">
                           {[t.estacion, t.nombre_vendedor, t.producto].filter(Boolean).join(" · ")}
@@ -552,7 +552,7 @@ function AlertsTab({ alerts, onResolve }: { alerts: ReconAlert[]; onResolve: (id
                 <CheckCircle className="w-4 h-4 text-positive flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground capitalize">
-                    {alert.alert_type.replace(/_/g, " ")} — {alert.alert_date}
+                    {alert.alert_type.replace(/_/g, " ")} - {alert.alert_date}
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -828,12 +828,12 @@ function PumpReadingsTab({ readings, onDelete, defaultTruck }: { readings: PumpR
                     <td className="px-4 py-3 font-medium text-foreground">
                       {format(parseISO(r.reading_date), "EEE dd MMM")}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{r.truck || "—"}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{r.truck || "-"}</td>
                     <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
                       {Number(r.litres).toLocaleString()}L
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {r.notes || "—"}
+                      {r.notes || "-"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {confirmId === r.id ? (

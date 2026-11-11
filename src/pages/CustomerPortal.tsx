@@ -51,7 +51,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-// ─── Theme tokens — light "showcase email" palette ──────────────────
+// ─── Theme tokens - light "showcase email" palette ──────────────────
 // Mutable holder. Properties get re-assigned by applyPortalTheme() below
 // whenever the user toggles light/dark, so all module-scoped style
 // objects (card, labelStyle, ...) that reference T see the new palette.
@@ -63,7 +63,7 @@ const T = {
   borderSubtle: "#F1E8D8",
   accent: "#C8F26A",
   accentHover: "#B6E254",
-  // Chart fill color — deliberately NOT the lime accent. Lime is reserved
+  // Chart fill color - deliberately NOT the lime accent. Lime is reserved
   // for buttons/borders; charts use a darker, more readable green on cream.
   chart: "#3F6B36",
   text: "#0E1F10",
@@ -82,7 +82,7 @@ const T = {
  *
  * IMPORTANT: React freezes objects passed as `style` props in development.
  * We must therefore *replace* T and every shared style holder with a brand
- * new literal each call — never mutate the previous object (`Object.assign`
+ * new literal each call - never mutate the previous object (`Object.assign`
  * on a frozen target throws "Cannot assign to read only property").
  */
 function applyPortalTheme() {
@@ -105,7 +105,7 @@ function applyPortalTheme() {
   T.badgeCompleted = "#2A6A2E";
 
   // 2. Build *fresh* style literals from scratch. We do not spread the
-  //    previous (potentially frozen) objects — every property is rewritten.
+  //    previous (potentially frozen) objects - every property is rewritten.
   card = {
     background: T.surface,
     border: `1px solid ${T.border}`,
@@ -419,7 +419,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forcedTab]);
-  // Legacy ?tab= support — only honoured when no forcedTab is supplied.
+  // Legacy ?tab= support - only honoured when no forcedTab is supplied.
   useEffect(() => {
     if (forcedTab) return;
     if (tabParam !== activeTab) {
@@ -592,7 +592,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   const body = (
     <>
       {pricing.error && <div className="text-warning py-2">Pricing unavailable. <Button variant="outline" size="sm" onClick={() => pricing.refetch()}>Retry</Button></div>}
-      {/* Day / Week / Month period toggle — applies to time-series tabs.
+      {/* Day / Week / Month period toggle - applies to time-series tabs.
           Overview embeds its own period selector inside the dashboard. */}
       {(activeTab === "Deliveries" ||
           activeTab === "Fleet" ||
@@ -890,7 +890,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 01 OVERVIEW (preserved — no pricing, simplified to spec rules)
+// 01 OVERVIEW (preserved - no pricing, simplified to spec rules)
 // ═══════════════════════════════════════════════════════════════════════
 function ProfileTab({
   clientAccountId,
@@ -915,7 +915,7 @@ function ProfileTab({
   const Row = ({ label, value }: { label: string; value?: string | null }) => (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "8px 0", borderBottom: "1px solid var(--surface-border, rgba(255,255,255,0.06))" }}>
       <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted-foreground, #8B8773)" }}>{label}</span>
-      <span style={{ fontSize: 13, color: "var(--foreground, #ECE4D2)", textAlign: "right" }}>{value || "—"}</span>
+      <span style={{ fontSize: 13, color: "var(--foreground, #ECE4D2)", textAlign: "right" }}>{value || "-"}</span>
     </div>
   );
 
@@ -1027,7 +1027,7 @@ function SubtabBar({
   );
 }
 
-// ── Hero "Litres Used" — refined two-column visual ──────────────────
+// ── Hero "Litres Used" - refined two-column visual ──────────────────
 function HeroLitres({
   totalLitres,
   deliveries,
@@ -1434,7 +1434,7 @@ function OverviewTab({
   const prevAvg = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
   const pct = safeDelta;
 
-  // Identify trucks in the visible window — prefer SCA fleet name, fall back
+  // Identify trucks in the visible window - prefer SCA fleet name, fall back
   // to driver name, then a generic label. Keep top 4 by litres; the rest
   // roll into "Other".
   const truckSeries = useMemo(() => {
@@ -1492,7 +1492,7 @@ function OverviewTab({
     const m: Record<string, number> = {};
     transactions.forEach((t: any) => {
       // Only group by an actual mapped Project. Never fall back to
-      // SCA WEB fields like `ciudad` or `nombre_cliente1` — those are
+      // SCA WEB fields like `ciudad` or `nombre_cliente1` - those are
       // upstream delivery city / customer names (e.g. "Chiconamel")
       // and don't represent customer Projects. Everything without a
       // mapped project rolls up into a single "Unassigned" bucket.
@@ -1524,14 +1524,14 @@ function OverviewTab({
     ? activeSitesCount
     : (availableProjects?.length ?? 0);
 
-  // FTC savings — apply off-road / plant rate to total litres as a conservative estimate
+  // FTC savings - apply off-road / plant rate to total litres as a conservative estimate
   const ftcRate = useMemo(() => {
     const off = rates.find((r: any) => /off-road|machinery|plant/i.test(r.equipment_type));
     return Number((off || rates[0])?.rate_per_litre || 0);
   }, [rates]);
   const ftcSavings = totalLitres * ftcRate;
 
-  // Plant breakdown — group by placa, then resolve to a friendly
+  // Plant breakdown - group by placa, then resolve to a friendly
   // "Make Model (size)" label from the plant items list.
   const placaLabel = useMemo(() => {
     const map = new Map<string, string>();
@@ -1685,7 +1685,7 @@ function OverviewTactical({
     return Math.max(4, Math.min(100, Math.round((curr / total) * 100)));
   };
 
-  // Top projects — pad to at least 2 rows using availableProjects so the
+  // Top projects - pad to at least 2 rows using availableProjects so the
   // section always shows a meaningful preview, even on quiet periods.
   const topProjectsRaw = donutRows.slice(0, 5);
   const topSites = (() => {
@@ -1718,7 +1718,7 @@ function OverviewTactical({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Period selector — first control, sits above the Overview header */}
+      {/* Period selector - first control, sits above the Overview header */}
       <div className="flex items-center flex-wrap gap-3">
         <div
           className="inline-flex items-center gap-1 p-1 rounded-full border"
@@ -1787,9 +1787,9 @@ function OverviewTactical({
         <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">Overview</h1>
       </div>
 
-      {/* KPI bento — 2x2 on mobile, 4-up on lg */}
+      {/* KPI bento - 2x2 on mobile, 4-up on lg */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Fuel volume — hero KPI with progress */}
+        {/* Fuel volume - hero KPI with progress */}
         <button
           type="button"
           onClick={onOpenFuelVolume}
@@ -1810,7 +1810,7 @@ function OverviewTactical({
           </div>
         </button>
 
-        {/* Deliveries — segmented bar */}
+        {/* Deliveries - segmented bar */}
         <button
           type="button"
           onClick={onOpenDeliveries}
@@ -1857,7 +1857,7 @@ function OverviewTactical({
                 LIVE
               </span>
             ) : (
-              <span className="text-[10px] font-bold tracking-wider text-muted-foreground">—</span>
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground">-</span>
             )}
           </div>
           <div className="flex items-baseline gap-1">
@@ -1887,7 +1887,7 @@ function OverviewTactical({
             <Delta value={avgPct} />
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-xl font-bold text-foreground tabular-nums">{avgDrop > 0 ? fmtBig(avgDrop) : "—"}</span>
+            <span className="text-xl font-bold text-foreground tabular-nums">{avgDrop > 0 ? fmtBig(avgDrop) : "-"}</span>
             <span className="text-[10px] font-medium text-muted-foreground">LITRES</span>
           </div>
           <div className="mt-3 h-1 w-full rounded-full overflow-hidden" style={{ background: "var(--border-subtle)" }}>
@@ -1910,7 +1910,7 @@ function OverviewTactical({
         </div>
       )}
 
-      {/* Filters summary + Export — sits between KPIs and the map */}
+      {/* Filters summary + Export - sits between KPIs and the map */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         {portalFilters && (
           <details>
@@ -2060,11 +2060,11 @@ function OverviewTactical({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-foreground truncate">
-                      {(t.placa || t.nombre_cliente1 || "—") + " • " + fmtBig(t.cantidad || 0) + " L"}
+                      {(t.placa || t.nombre_cliente1 || "-") + " • " + fmtBig(t.cantidad || 0) + " L"}
                       {t.producto ? ` ${t.producto}` : ""}
                     </p>
                     <p className="text-[10px] text-muted-foreground truncate">
-                      {t.date ? formatDate(parseISO(t.date)) : "—"}
+                      {t.date ? formatDate(parseISO(t.date)) : "-"}
                     </p>
                   </div>
                 </div>
@@ -2221,7 +2221,7 @@ function _LegacyOverviewBlocks_unused(opts: any) {
         </div>
       </div>
 
-      {/* Highest-using plant — horizontal bar chart */}
+      {/* Highest-using plant - horizontal bar chart */}
       {topPlants.length > 0 && (
         <div style={card}>
           <div style={{ ...labelStyle, marginBottom: 4 }}>Top Plant by Volume</div>
@@ -2271,13 +2271,13 @@ function _LegacyOverviewBlocks_unused(opts: any) {
             >
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, color: T.text, fontWeight: 500, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span>{t.placa || t.nombre_cliente1 || "—"}</span>
+                  <span>{t.placa || t.nombre_cliente1 || "-"}</span>
                   {t.producto && (
                     <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: T.accent + "1f", color: T.textSecondary, textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>{t.producto}</span>
                   )}
                 </div>
                 <div style={muted(11)}>
-                  {t.date ? formatDate(parseISO(t.date)) : "—"}
+                  {t.date ? formatDate(parseISO(t.date)) : "-"}
                   {t.estacion ? <> · {t.estacion}</> : null}
                 </div>
               </div>
@@ -2293,7 +2293,7 @@ function _LegacyOverviewBlocks_unused(opts: any) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 02 DELIVERIES — site + project + date range filter, CSV export, dockets
+// 02 DELIVERIES - site + project + date range filter, CSV export, dockets
 // ═══════════════════════════════════════════════════════════════════════
 function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null }) {
   const [open, setOpen] = useState<any | null>(null);
@@ -2476,7 +2476,7 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
                   {open.products.lines.map((ln: any, idx: number) => (
                     <div key={idx} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderTop: idx === 0 ? "none" : "1px solid #f0f0f0", fontSize: 12 }}>
                       <span style={{ color: "#0E1F10", minWidth: 0, marginRight: 8 }}>
-                        <strong>{ln.placa || "—"}</strong>
+                        <strong>{ln.placa || "-"}</strong>
                         {ln.product ? ` · ${ln.product}` : ""}
                         {ln.fleet ? ` · ${ln.fleet}` : ""}
                       </span>
@@ -2497,7 +2497,7 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
             {open.customer_signature && (
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", marginBottom: 4 }}>
-                  Customer — {open.customer_name}{open.customer_role ? ` · ${open.customer_role}` : ""}
+                  Customer - {open.customer_name}{open.customer_role ? ` · ${open.customer_role}` : ""}
                 </div>
                 <img src={open.customer_signature} alt="Customer signature" style={{ maxWidth: "100%", border: "1px solid #eee", borderRadius: 6 }} />
               </div>
@@ -2505,7 +2505,7 @@ function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null
             {open.driver_signature && (
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", marginBottom: 4 }}>
-                  Driver{open.driver_user_id && driverNameById[open.driver_user_id] ? ` — ${driverNameById[open.driver_user_id]}` : ""}
+                  Driver{open.driver_user_id && driverNameById[open.driver_user_id] ? ` - ${driverNameById[open.driver_user_id]}` : ""}
                 </div>
                 <img src={open.driver_signature} alt="Driver signature" style={{ maxWidth: "100%", border: "1px solid #eee", borderRadius: 6 }} />
               </div>
@@ -2697,7 +2697,7 @@ function DeliveriesTab({
             padding: "4px 2px",
           }}
         >
-          Equipment names are assigned by our team — some deliveries may show the truck rego while we update them.
+          Equipment names are assigned by our team - some deliveries may show the truck rego while we update them.
         </div>
       )}
 
@@ -2829,7 +2829,7 @@ function DeliveriesTab({
                     <div style={muted(11)}>
                       {t.nombre_cliente1}
                       {" · "}
-                      {t.date ? format(parseISO(t.date), "EEE dd MMM yyyy") : "—"}
+                      {t.date ? format(parseISO(t.date), "EEE dd MMM yyyy") : "-"}
                       {t.factura ? ` · #${t.factura}` : ""}
                     </div>
                     {plant?.service_notes && (
@@ -2873,7 +2873,7 @@ function DeliveriesTab({
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 03 SITES — MTD/YTD by site, sortable, CSV (volume only)
+// 03 SITES - MTD/YTD by site, sortable, CSV (volume only)
 // ═══════════════════════════════════════════════════════════════════════
 function SitesTab({ transactions, companyName }: { transactions: any[]; companyName: string }) {
   const [sortKey, setSortKey] = useState<"site" | "mtd" | "ytd">("ytd");
@@ -3002,7 +3002,7 @@ function SitesTab({ transactions, companyName }: { transactions: any[]; companyN
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 04 FTC — calculator with editable rows + DB-driven rates
+// 04 FTC - calculator with editable rows + DB-driven rates
 // ═══════════════════════════════════════════════════════════════════════
 type FtcRow = { id: string; equipmentType: string; litres: number };
 type Period = "monthly" | "quarterly" | "annual";
@@ -3102,7 +3102,7 @@ function FtcTab({ transactions }: { transactions: any[] }) {
       {hasHistory ? (
         <div style={{ ...card, borderLeft: `3px solid ${T.accent}`, padding: "12px 16px" }}>
           <div style={{ fontSize: 12, color: T.textSecondary, fontFamily: T.sansBody }}>
-            Pre-filled from your delivery history — average{" "}
+            Pre-filled from your delivery history - average{" "}
             <span style={{ color: T.text, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
               {fmtL(avgMonthlyLitres)}
             </span>{" "}
@@ -3112,7 +3112,7 @@ function FtcTab({ transactions }: { transactions: any[] }) {
       ) : (
         <div style={{ ...card, borderLeft: `3px solid ${T.border}`, padding: "12px 16px" }}>
           <div style={{ fontSize: 12, color: T.textSecondary, fontFamily: T.sansBody }}>
-            No delivery history yet — enter your monthly litres manually to estimate your fuel tax credit savings.
+            No delivery history yet - enter your monthly litres manually to estimate your fuel tax credit savings.
           </div>
         </div>
       )}
@@ -3156,7 +3156,7 @@ function FtcTab({ transactions }: { transactions: any[] }) {
                   >
                     {rates.map((rt: any) => (
                       <option key={rt.id} value={rt.equipment_type}>
-                        {rt.equipment_type} — ${Number(rt.rate_per_litre).toFixed(3)}/L
+                        {rt.equipment_type} - ${Number(rt.rate_per_litre).toFixed(3)}/L
                       </option>
                     ))}
                   </select>
@@ -3215,7 +3215,7 @@ function FtcTab({ transactions }: { transactions: any[] }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 03 PROJECTS — per-project fuel usage analytics
+// 03 PROJECTS - per-project fuel usage analytics
 // ═══════════════════════════════════════════════════════════════════════
 function ProjectsTab({
   transactions,
@@ -3363,7 +3363,7 @@ function ProjectsTab({
       <div>
         <h2 style={sectionTitle}>Projects</h2>
         <p style={{ ...muted(12), margin: "4px 0 0" }}>
-          Fuel usage per project — create and assign equipment to projects on the Projects tab.
+          Fuel usage per project - create and assign equipment to projects on the Projects tab.
         </p>
       </div>
 
@@ -3584,7 +3584,7 @@ function ProjectsTab({
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 05 EMISSIONS — CO2e calc + jsPDF report (with editable assumptions)
+// 05 EMISSIONS - CO2e calc + jsPDF report (with editable assumptions)
 // ═══════════════════════════════════════════════════════════════════════
 type EmissionPeriod = "month" | "quarter" | "fy";
 
@@ -3628,7 +3628,7 @@ function EmissionsTab({
     const map: Record<string, number> = {};
     inPeriod.forEach((t) => {
       // Group by the Project the placa is mapped to. Never fall back
-      // to SCA WEB customer / city / station names — those leak
+      // to SCA WEB customer / city / station names - those leak
       // upstream labels (e.g. "Chiconamel") into the client portal.
       const placa = (t.placa || "").toString().trim();
       const project = placa && placaToProjectName ? placaToProjectName[placa] : undefined;
@@ -3966,7 +3966,7 @@ function generateEmissionsPDF(args: {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(136, 136, 136);
-  doc.text("Prepared by PACC® ENERGY — pacc.energy", m, footY + 4);
+  doc.text("Prepared by PACC® ENERGY - pacc.energy", m, footY + 4);
   const genStr = `Generated ${format(new Date(), "dd MMMM yyyy")}`;
   doc.text(genStr, pageW - m, footY + 4, { align: "right" });
 
@@ -3987,7 +3987,7 @@ function generateEmissionsPDF(args: {
 // ═══════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════
-// 07 SCHEDULE — request a delivery + history
+// 07 SCHEDULE - request a delivery + history
 // ═══════════════════════════════════════════════════════════════════════
 function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; clientAccountId: number | null }) {
   const qc = useQueryClient();
@@ -4132,7 +4132,7 @@ function ScheduleTab({ transactions, clientAccountId }: { transactions: any[]; c
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 04 PLANT — drag-and-drop board for assigning plant to projects
+// 04 PLANT - drag-and-drop board for assigning plant to projects
 // ═══════════════════════════════════════════════════════════════════════
 function PlantTab({
   clientAccountId,
@@ -4225,7 +4225,7 @@ function PlantTab({
       <div>
         <h2 style={sectionTitle}>Equipment</h2>
         <p style={{ ...muted(12), margin: "4px 0 0" }}>
-          All plant, machinery and tanks. Drag a card into a project column to reassign — each item belongs to one project at a time.
+          All plant, machinery and tanks. Drag a card into a project column to reassign - each item belongs to one project at a time.
         </p>
       </div>
 
@@ -4243,7 +4243,7 @@ function PlantTab({
           <div>
             <h3 className="text-sm font-semibold">Fuel Tax Credit Estimate</h3>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Based on delivered litres × ATO rate per category. Indicative — confirm with your accountant.
+              Based on delivered litres × ATO rate per category. Indicative - confirm with your accountant.
             </p>
           </div>
           <div className="text-right">
@@ -4320,7 +4320,7 @@ function PlantTab({
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 05 ANALYTICS — machinery vs machinery, project vs project comparisons
+// 05 ANALYTICS - machinery vs machinery, project vs project comparisons
 // ═══════════════════════════════════════════════════════════════════════
 function AnalyticsTab({
   transactions,
@@ -4377,7 +4377,7 @@ function AnalyticsTab({
         rows[item.id] = {
           id: item.id,
           name: item.name,
-          type: item.equipment_type || "—",
+          type: item.equipment_type || "-",
           placa,
           colour: item.colour || null,
           litres: 0,
@@ -4433,7 +4433,7 @@ function AnalyticsTab({
       .sort((a, b) => b.litres - a.litres);
   }, [transactions, enriched]);
 
-  // A vs B comparator state — defaults to top two of each
+  // A vs B comparator state - defaults to top two of each
   const [machA, setMachA] = useState<string>("");
   const [machB, setMachB] = useState<string>("");
   const [projA, setProjA] = useState<string>("");
@@ -4464,7 +4464,7 @@ function AnalyticsTab({
 
   /**
    * Build the recap PDF in-memory with consistent headers/footers and proper
-   * pagination — long tables now break across pages while reprinting their
+   * pagination - long tables now break across pages while reprinting their
    * column headers, and every page gets the brand band + page-number footer.
    */
   function buildRecapPdf() {
@@ -4557,7 +4557,7 @@ function AnalyticsTab({
       doc.setTextColor(61, 43, 26); doc.setFontSize(10);
     };
 
-    // Generic paginated table — reprints column headers when crossing pages.
+    // Generic paginated table - reprints column headers when crossing pages.
     const drawTable = <T,>(
       sectionTitleText: string,
       cols: Col[],
@@ -4616,7 +4616,7 @@ function AnalyticsTab({
       perProject,
       (p, i) => {
         doc.text(`${i + 1}.`, M, y);
-        const name = p.site ? `${p.name} — ${p.site}` : p.name;
+        const name = p.site ? `${p.name} - ${p.site}` : p.name;
         doc.text(name.length > 48 ? name.slice(0, 47) + "…" : name, M + 22, y);
         doc.text(fmtL(p.litres),                W - M - 200, y, { align: "right" });
         doc.text(p.machines.toLocaleString(),   W - M - 110, y, { align: "right" });
@@ -4626,7 +4626,7 @@ function AnalyticsTab({
       },
     );
 
-    // Comparisons — keep entire block on one page (no mid-block break).
+    // Comparisons - keep entire block on one page (no mid-block break).
     const drawCompare = (title: string, a: any, b: any, rows: { label: string; av: string; bv: string; aWin: boolean }[]) => {
       if (!a || !b) return;
       const blockHeight = 22 + 24 + rows.length * 18 + 14;
@@ -4658,20 +4658,20 @@ function AnalyticsTab({
 
     if (perMachine.length >= 2) {
       const [a, b] = perMachine;
-      drawCompare("Machinery vs Machinery — Top Two", a, b, [
+      drawCompare("Machinery vs Machinery - Top Two", a, b, [
         { label: "Litres",         av: fmtL(a.litres),                                              bv: fmtL(b.litres),                                              aWin: a.litres > b.litres },
         { label: "Deliveries",     av: a.deliveries.toString(),                                    bv: b.deliveries.toString(),                                    aWin: a.deliveries > b.deliveries },
-        { label: "Avg / delivery", av: a.deliveries ? fmtL(a.litres / a.deliveries) : "—",         bv: b.deliveries ? fmtL(b.litres / b.deliveries) : "—",         aWin: (a.deliveries ? a.litres / a.deliveries : 0) > (b.deliveries ? b.litres / b.deliveries : 0) },
+        { label: "Avg / delivery", av: a.deliveries ? fmtL(a.litres / a.deliveries) : "-",         bv: b.deliveries ? fmtL(b.litres / b.deliveries) : "-",         aWin: (a.deliveries ? a.litres / a.deliveries : 0) > (b.deliveries ? b.litres / b.deliveries : 0) },
         { label: "FTC claim",      av: fmt$(a.ftcClaim),                                           bv: fmt$(b.ftcClaim),                                           aWin: a.ftcClaim > b.ftcClaim },
       ]);
     }
 
     if (perProject.length >= 2) {
       const [a, b] = perProject;
-      drawCompare("Project vs Project — Top Two", a, b, [
+      drawCompare("Project vs Project - Top Two", a, b, [
         { label: "Litres",         av: fmtL(a.litres),                                              bv: fmtL(b.litres),                                              aWin: a.litres > b.litres },
         { label: "Deliveries",     av: a.deliveries.toString(),                                    bv: b.deliveries.toString(),                                    aWin: a.deliveries > b.deliveries },
-        { label: "Avg / delivery", av: a.deliveries ? fmtL(a.litres / a.deliveries) : "—",         bv: b.deliveries ? fmtL(b.litres / b.deliveries) : "—",         aWin: (a.deliveries ? a.litres / a.deliveries : 0) > (b.deliveries ? b.litres / b.deliveries : 0) },
+        { label: "Avg / delivery", av: a.deliveries ? fmtL(a.litres / a.deliveries) : "-",         bv: b.deliveries ? fmtL(b.litres / b.deliveries) : "-",         aWin: (a.deliveries ? a.litres / a.deliveries : 0) > (b.deliveries ? b.litres / b.deliveries : 0) },
         { label: "Active plant",   av: a.machines.toString(),                                      bv: b.machines.toString(),                                      aWin: a.machines > b.machines },
         { label: "FTC claim",      av: fmt$(a.ftcClaim),                                           bv: fmt$(b.ftcClaim),                                           aWin: a.ftcClaim > b.ftcClaim },
       ]);
@@ -4693,17 +4693,17 @@ function AnalyticsTab({
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState("");
   const [emailSubject, setEmailSubject] = useState(
-    `Analytics Recap — ${companyName} · ${periodLabel}`,
+    `Analytics Recap - ${companyName} · ${periodLabel}`,
   );
   const [emailMessage, setEmailMessage] = useState(
-    `Hi team,\n\nAttached is the ${periodLabel.toLowerCase()} analytics recap for ${companyName}, including KPIs, machinery + project leaderboards, and head-to-head comparisons.\n\nLet us know if you'd like a deeper cut.\n\n— PACC Energy`,
+    `Hi team,\n\nAttached is the ${periodLabel.toLowerCase()} analytics recap for ${companyName}, including KPIs, machinery + project leaderboards, and head-to-head comparisons.\n\nLet us know if you'd like a deeper cut.\n\n- PACC Energy`,
   );
   const [emailSending, setEmailSending] = useState(false);
 
   // Keep subject in sync if the period or company changes while panel is closed.
   useEffect(() => {
     if (!emailOpen) {
-      setEmailSubject(`Analytics Recap — ${companyName} · ${periodLabel}`);
+      setEmailSubject(`Analytics Recap - ${companyName} · ${periodLabel}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyName, periodLabel]);
@@ -4756,7 +4756,7 @@ function AnalyticsTab({
           recipients: valid,
           subject: emailSubject.trim(),
           html,
-          text: `${emailMessage}\n\n— PDF attached: ${pdfFilename}`,
+          text: `${emailMessage}\n\n- PDF attached: ${pdfFilename}`,
           pdfBase64,
           pdfFilename,
         },
@@ -5017,7 +5017,7 @@ function AnalyticsTab({
                     {p.name}
                   </div>
                   <div style={{ ...muted(10) }}>
-                    {p.site || "—"} · {p.machines} machine{p.machines === 1 ? "" : "s"} · {p.deliveries} dlv
+                    {p.site || "-"} · {p.machines} machine{p.machines === 1 ? "" : "s"} · {p.deliveries} dlv
                   </div>
                 </div>
                 <div style={{ width: 140, height: 6, background: T.bg, borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
@@ -5055,7 +5055,7 @@ function AnalyticsTab({
         </div>
         {aProj && bProj ? (
           <CompareGrid
-            a={{ label: aProj.name, sublabel: aProj.site || "—",
+            a={{ label: aProj.name, sublabel: aProj.site || "-",
                  stats: [
                    { label: "Litres",         num: aProj.litres,                                              fmt: fmtL,  higherIsBetter: true },
                    { label: "Deliveries",     num: aProj.deliveries,                                          fmt: (n) => n.toString(), higherIsBetter: true },
@@ -5063,7 +5063,7 @@ function AnalyticsTab({
                    { label: "Active Plant",   num: aProj.machines,                                            fmt: (n) => n.toString(), higherIsBetter: true },
                    { label: "FTC Claim",      num: aProj.ftcClaim,                                            fmt: fmt$,  higherIsBetter: true, accent: true },
                  ] }}
-            b={{ label: bProj.name, sublabel: bProj.site || "—",
+            b={{ label: bProj.name, sublabel: bProj.site || "-",
                  stats: [
                    { label: "Litres",         num: bProj.litres,                                              fmt: fmtL,  higherIsBetter: true },
                    { label: "Deliveries",     num: bProj.deliveries,                                          fmt: (n) => n.toString(), higherIsBetter: true },

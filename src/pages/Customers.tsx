@@ -116,7 +116,7 @@ function CustomerList() {
         <p className="text-xs text-muted-foreground mt-0.5">Browse, filter, and drill into customer delivery data</p>
       </div>
 
-      {/* Local date range filter — independent of global toggle */}
+      {/* Local date range filter - independent of global toggle */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="text-muted-foreground">Range</span>
         {([

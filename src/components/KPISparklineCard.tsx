@@ -201,7 +201,7 @@ export function KPISparklineCard({
         </div>
       )}
 
-      {/* Sparkline — absolute, ghosted, intensifies on hover */}
+      {/* Sparkline - absolute, ghosted, intensifies on hover */}
       <div
         className="absolute bottom-0 left-0 right-0 h-12 opacity-30 group-hover:opacity-60 transition-opacity pointer-events-none"
         aria-hidden

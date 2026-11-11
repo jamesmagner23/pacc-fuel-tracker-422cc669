@@ -115,7 +115,7 @@ function parseCSV(text: string): { name: string; email: string; org: string }[] 
   const idxOrg = header.findIndex(h => h === "org" || h === "organisation" || h === "organization" || h === "company");
 
   return rows.map(line => {
-    // Simple CSV parse — handles quoted fields with commas
+    // Simple CSV parse - handles quoted fields with commas
     const cells: string[] = [];
     let cur = ""; let inQ = false;
     for (const ch of line) {
@@ -245,7 +245,7 @@ export default function Outreach() {
       ...v,
       diesel_price:     fmt(p.diesel_price),
       diesel_price_inc: fmt(p.diesel_price_inc),
-      // Diesel-only template — clear any legacy ULP/AdBlue values so they
+      // Diesel-only template - clear any legacy ULP/AdBlue values so they
       // can never leak into the rendered email or PDF.
       ulp_price:        "",
       ulp_price_inc:    "",
@@ -439,14 +439,14 @@ export default function Outreach() {
       const exKey = `${p}_price`;
       const incKey = `${p}_price_inc`;
       if (!need(exKey) && !need(incKey)) return;
-      // Diesel-only template — always validate.
+      // Diesel-only template - always validate.
 
       if (need(exKey)) {
         const raw = val(exKey);
         const n = parseFloat(raw);
         if (!raw) errs[exKey] = "Required.";
         else if (!Number.isFinite(n) || n <= 0) errs[exKey] = "Must be a positive number.";
-        else if (n > 10) errs[exKey] = "Looks too high — enter $/L.";
+        else if (n > 10) errs[exKey] = "Looks too high - enter $/L.";
       }
       if (need(incKey)) {
         const raw = val(incKey);
@@ -464,7 +464,7 @@ export default function Outreach() {
   const pricingErrorCount = Object.keys(pricingErrors).length;
 
   // When pricing validation fails we replace the live preview with a clear
-  // warning panel so users never see — or screenshot — an invalid quote.
+  // warning panel so users never see - or screenshot - an invalid quote.
   const safePreviewHtml = useMemo(() => {
     if (pricingErrorCount === 0) return previewHtml;
     const items = Object.entries(pricingErrors)
@@ -716,7 +716,7 @@ export default function Outreach() {
       toast({ title: "Email required", description: "Enter a valid email address.", variant: "destructive" });
       return;
     }
-    // Synthesize a Person — negative id signals "not in Pipedrive"
+    // Synthesize a Person - negative id signals "not in Pipedrive"
     const synthetic: Person = {
       id: -Date.now(),
       name: name || email,
@@ -845,7 +845,7 @@ export default function Outreach() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
-        {/* People list — hidden on mobile when a person is selected */}
+        {/* People list - hidden on mobile when a person is selected */}
         <div className={`rounded-lg border border-surface-border bg-surface p-3 space-y-3 ${selected ? "hidden lg:block" : ""}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -886,7 +886,7 @@ export default function Outreach() {
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {p.email ?? "—"}{p.org_name ? ` · ${p.org_name}` : ""}
+                    {p.email ?? "-"}{p.org_name ? ` · ${p.org_name}` : ""}
                   </div>
                   {meta && (
                     <div className="mt-1">
@@ -904,7 +904,7 @@ export default function Outreach() {
           </div>
         </div>
 
-        {/* Compose — hidden on mobile until a person is picked */}
+        {/* Compose - hidden on mobile until a person is picked */}
         <div className={`rounded-lg border border-surface-border bg-surface p-4 space-y-4 ${selected ? "" : "hidden lg:block"}`}>
           {!selected ? (
             <div className="text-sm text-muted-foreground py-12 text-center">
@@ -942,7 +942,7 @@ export default function Outreach() {
                 </Select>
               </div>
 
-              {/* Pricing panel — only when template uses pricing keys */}
+              {/* Pricing panel - only when template uses pricing keys */}
               {allVarKeys.some(k => PRICING_KEYS.has(k)) && (
                 <div className="space-y-3 rounded-lg border border-surface-border bg-background p-3">
                   <div className="flex items-center justify-between">
@@ -1140,7 +1140,7 @@ export default function Outreach() {
                        className="bg-background border-surface-border text-foreground h-12" />
               </div>
 
-              {/* Preview tabs — collapsed by default on mobile */}
+              {/* Preview tabs - collapsed by default on mobile */}
               <details className="lg:hidden group rounded border border-surface-border bg-background">
                 <summary className="list-none cursor-pointer px-3 py-3 flex items-center justify-between text-sm">
                   <span className="inline-flex items-center gap-2"><Eye className="h-4 w-4" /> Preview email</span>
@@ -1240,7 +1240,7 @@ export default function Outreach() {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-surface-border bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           {pricingErrorCount > 0 && (
             <div role="alert" className="mb-2 rounded border border-accent bg-background px-2 py-1 text-[11px] text-foreground">
-              {pricingErrorCount} pricing field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention — sending disabled.
+              {pricingErrorCount} pricing field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention - sending disabled.
             </div>
           )}
           <div className="flex gap-2">
@@ -1386,7 +1386,7 @@ function TemplateEditor({
                   <div className="font-medium">{t.name}</div>
                   <div className="text-xs text-muted-foreground truncate">{t.subject}</div>
                   <div className="text-[11px] text-[color:var(--text-muted)] mt-1">
-                    Variables: {(t.variables ?? []).join(", ") || "—"}
+                    Variables: {(t.variables ?? []).join(", ") || "-"}
                   </div>
                 </button>
               ))}
@@ -1425,7 +1425,7 @@ function TemplateEditor({
                         className="bg-background border-surface-border text-foreground font-mono text-xs" />
             </div>
             <div className="text-xs text-muted-foreground">
-              Detected variables: {inferred.length > 0 ? inferred.map(v => <code key={v} className="text-foreground mr-2">{`{{${v}}}`}</code>) : "—"}
+              Detected variables: {inferred.length > 0 ? inferred.map(v => <code key={v} className="text-foreground mr-2">{`{{${v}}}`}</code>) : "-"}
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => void exportDraftPdf()} disabled={exportingDraftPdf || !draft.html_body}

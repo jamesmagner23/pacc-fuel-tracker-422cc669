@@ -284,9 +284,9 @@ function TodaysDeliveriesMobile() {
       ) : (
         <ul>
           {rows.map((t, i) => {
-            const customer = t.nombre_cliente1 || t.estacion || "—";
+            const customer = t.nombre_cliente1 || t.estacion || "-";
             const litres = t.cantidad ?? 0;
-            const addr = t.producto || "—";
+            const addr = t.producto || "-";
             const when = t.fecha
               ? sameDay(t.fecha, today) ? formatTime(t.fecha) : formatDate(t.fecha)
               : "";
@@ -312,7 +312,7 @@ function TodaysDeliveriesMobile() {
                   </div>
                   <div className="flex flex-col items-end gap-0.5 shrink-0">
                     <div className="text-[14px] font-semibold text-foreground tabular-nums">
-                      {litres ? `−${litres.toLocaleString()} L` : "—"}
+                      {litres ? `−${litres.toLocaleString()} L` : "-"}
                     </div>
                     <div className="text-[12px] text-muted-foreground tabular-nums">{when}</div>
                   </div>
@@ -358,7 +358,7 @@ export function MobileOverview() {
   const totalFuelCost = useMemo(() => sumBuyCost(filtered, buyPriceLookup), [filtered, buyPriceLookup]);
   const latestBuy = buyPrices[0]?.price_per_litre;
 
-  // Last 7 days, always — independent of period selection.
+  // Last 7 days, always - independent of period selection.
   const sevenDay = useMemo(() => {
     const today = new Date();
     const days: { iso: string; date: string; litres: number }[] = [];
@@ -453,7 +453,7 @@ export function MobileOverview() {
               bg="#F4F0E6"
             />
             <KPITile
-              amount={latestBuy ? `$${latestBuy.toFixed(3)}/L` : "—"}
+              amount={latestBuy ? `$${latestBuy.toFixed(3)}/L` : "-"}
               label="Buy price"
               href="/suppliers"
               bg="#C8F26A"

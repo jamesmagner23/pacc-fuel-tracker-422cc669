@@ -119,7 +119,7 @@ export default function DataHealthWidget() {
             <div key={r.key} className="flex justify-between items-baseline">
               <span className="text-muted-foreground">{r.label}</span>
               <span className="font-semibold tabular-nums">
-                {dbCounts ? (dbCounts[r.key] ?? 0).toLocaleString() : "—"}
+                {dbCounts ? (dbCounts[r.key] ?? 0).toLocaleString() : "-"}
               </span>
             </div>
           ))}
@@ -165,7 +165,7 @@ function FlagRow({
     return (
       <div className="flex justify-between">
         <span className="text-muted-foreground">{label}</span>
-        <span>—</span>
+        <span>-</span>
       </div>
     );
   }

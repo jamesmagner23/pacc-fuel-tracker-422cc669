@@ -137,7 +137,7 @@ export default function Overview() {
   const delPct = pct(numDeliveries, prevDeliveries);
   const avgPct = pct(avgSize, prevAvgSize);
 
-  // Per-truck breakdown for the current window — SpeedSol's `nombre_flota`
+  // Per-truck breakdown for the current window - SpeedSol's `nombre_flota`
   // currently carries the client/fleet, so prefer estación to avoid hiding
   // Truck 1 / Truck 2 behind a single "PACC Civil" total.
   const truckBreakdown = useMemo(() => {
@@ -410,7 +410,7 @@ export default function Overview() {
                 <div className="mt-1 text-sm font-semibold text-foreground/85">
                   {selectedTruck === "all"
                     ? "Tap a truck to focus the KPIs and charts"
-                    : `Showing ${selectedTruck} only — tap All to reset`}
+                    : `Showing ${selectedTruck} only - tap All to reset`}
                 </div>
               </div>
               <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-border bg-background p-1">
@@ -477,7 +477,7 @@ export default function Overview() {
       </div>
 
       <RatesMissingNotice {...coverage} />
-      {/* KPI grid — litres, fuel cost, buy price */}
+      {/* KPI grid - litres, fuel cost, buy price */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPISparklineCard
           label={litresLabel}
@@ -519,7 +519,7 @@ export default function Overview() {
           value={
             latestPrice
               ? `$${latestPrice.price_per_litre.toFixed(3)}/L`
-              : "—"
+              : "-"
           }
           deltaPct={buyPricePct}
           trend={buyTrend}

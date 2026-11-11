@@ -351,7 +351,7 @@ function OverviewTab({ txns, equipment, projects, ftcRates }: { txns: any[]; equ
               {txns.slice(0, 6).map((t) => (
                 <div key={t.id} className="flex items-center justify-between text-sm border-b border-border/50 pb-2 last:border-0">
                   <div>
-                    <div className="font-medium">{t.placa || t.estacion || "—"}</div>
+                    <div className="font-medium">{t.placa || t.estacion || "-"}</div>
                     <div className="text-[10px] text-muted-foreground">{format(parseISO(t.fecha), "dd MMM HH:mm")} · {t.ciudad}</div>
                   </div>
                   <div className="font-bold">{(t.cantidad || 0).toLocaleString()}L</div>
@@ -699,11 +699,11 @@ function EquipmentTab({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-lg border border-border bg-secondary/30">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">FTC Category</div>
-              <div className="text-sm font-medium mt-0.5">{selectedRate?.equipment_type || "— Not set —"}</div>
+              <div className="text-sm font-medium mt-0.5">{selectedRate?.equipment_type || "- Not set -"}</div>
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Rate</div>
-              <div className="text-sm font-medium mt-0.5">{selectedRate ? `${(Number(selectedRate.rate_per_litre) * 100).toFixed(1)}c/L` : "—"}</div>
+              <div className="text-sm font-medium mt-0.5">{selectedRate ? `${(Number(selectedRate.rate_per_litre) * 100).toFixed(1)}c/L` : "-"}</div>
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Claimable (all-time)</div>
@@ -1021,7 +1021,7 @@ function ProjectsTab({
 
           {selectedProject.notes && <p className="text-sm text-muted-foreground">{selectedProject.notes}</p>}
 
-          {/* Date range pills — first option mirrors the top-nav toggle */}
+          {/* Date range pills - first option mirrors the top-nav toggle */}
           <div className="flex flex-wrap items-center gap-1.5">
             {([
               { k: "nav", l: `Follow nav · ${rangeLabel}` },
@@ -1180,7 +1180,7 @@ function ProjectsTab({
                 Deliveries ({selectedTxns.length})
               </h3>
               <span
-                title="Every litre, price and plate shown here comes directly from SpeedSol. Project/equipment tagging is metadata only — it never modifies the source delivery."
+                title="Every litre, price and plate shown here comes directly from SpeedSol. Project/equipment tagging is metadata only - it never modifies the source delivery."
                 className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border bg-primary/10 text-primary border-primary/30"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-primary" />
@@ -1212,11 +1212,11 @@ function ProjectsTab({
                       .map((t: any) => {
                         const ov = ovById[t.id];
                         let reasonLabel = "Equipment match";
-                        let reasonDetail = `Plate ${t.placa || "—"} is assigned to this project on the Plant Assignment Board.`;
+                        let reasonDetail = `Plate ${t.placa || "-"} is assigned to this project on the Plant Assignment Board.`;
                         let tone: "primary" | "accent" | "muted" = "muted";
                         if (ov?.project_id === selected) {
                           reasonLabel = "Tagged to project";
-                          reasonDetail = `Manually tagged to this project from Tag Deliveries${ov.notes ? ` — “${ov.notes}”` : ""}.`;
+                          reasonDetail = `Manually tagged to this project from Tag Deliveries${ov.notes ? ` - “${ov.notes}”` : ""}.`;
                           tone = "primary";
                         } else if (ov?.plant_item_id) {
                           const item = equipment.find((e: any) => e.enriched?.id === ov.plant_item_id);
@@ -1234,8 +1234,8 @@ function ProjectsTab({
                         return (
                           <tr key={t.id} className="border-b border-border/50">
                             <td className="py-2 pr-3 whitespace-nowrap">{format(parseISO(t.fecha), "dd MMM HH:mm")}</td>
-                            <td className="py-2 pr-3">{t.placa || "—"}</td>
-                            <td className="py-2 pr-3">{t.ciudad || t.estacion || "—"}</td>
+                            <td className="py-2 pr-3">{t.placa || "-"}</td>
+                            <td className="py-2 pr-3">{t.ciudad || t.estacion || "-"}</td>
                             <td className="py-2 pr-3">
                               <span
                                 title={reasonDetail}
@@ -1286,7 +1286,7 @@ function AnalyticsTab({
   const muted = "var(--text-secondary)";
 
   const equipmentChart = equipment.slice(0, 10).map((e) => ({
-    name: e.enriched?.name || e.placa || "—",
+    name: e.enriched?.name || e.placa || "-",
     litres: e.litres,
   }));
 
@@ -1335,7 +1335,7 @@ function AnalyticsTab({
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="glass-card p-5">
-          <h2 className="text-sm font-semibold mb-3">Plant vs Plant — Top 10 by Fuel</h2>
+          <h2 className="text-sm font-semibold mb-3">Plant vs Plant - Top 10 by Fuel</h2>
           <div className="h-64">
             <ResponsiveContainer>
               <BarChart data={equipmentChart} layout="vertical">
@@ -1507,9 +1507,9 @@ function TransactionsTab({ txns, customerName }: { txns: any[]; customerName: st
                     <Checkbox checked={selected.has(t.id)} onCheckedChange={() => toggleOne(t.id)} />
                   </td>
                   <td className="p-3 whitespace-nowrap">{format(parseISO(t.fecha), "dd MMM yy HH:mm")}</td>
-                  <td className="p-3">{t.factura ?? "—"}</td>
-                  <td className="p-3">{t.placa ?? "—"}</td>
-                  <td className="p-3">{t.ciudad ?? "—"}</td>
+                  <td className="p-3">{t.factura ?? "-"}</td>
+                  <td className="p-3">{t.placa ?? "-"}</td>
+                  <td className="p-3">{t.ciudad ?? "-"}</td>
                   <td className="p-3 text-right font-medium">{(t.cantidad || 0).toLocaleString()}L</td>
                   <td className="p-3 text-right font-medium"><TransactionPrice pricing={t.displayPricing} total /></td>
                   <td className="p-3 text-right">
@@ -1529,7 +1529,7 @@ function TransactionsTab({ txns, customerName }: { txns: any[]; customerName: st
         </table>
         {filtered.length > 200 && (
           <div className="p-3 text-center text-xs text-muted-foreground border-t border-border">
-            Showing first 200 of {filtered.length} — refine search or export CSV for full list.
+            Showing first 200 of {filtered.length} - refine search or export CSV for full list.
           </div>
         )}
       </div>
