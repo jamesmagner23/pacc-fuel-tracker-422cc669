@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,36 +6,39 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { DateRangeProvider } from "@/hooks/useDateRange";
 import { DemoProvider } from "@/hooks/useDemo";
-import { Layout } from "@/components/Layout";
+const Layout = lazy(() => import("@/components/Layout").then(module => ({ default: module.Layout })));
 import { supabase } from "@/integrations/supabase/client";
-import Overview from "./pages/Overview";
-import Customers from "./pages/Customers";
-import CustomerHub from "./pages/CustomerHub";
-import Performance from "./pages/Performance";
-import Transactions from "./pages/Transactions";
-import Finance from "./pages/Finance";
-import DeliveryDocket from "./pages/DeliveryDocket";
-import CustomerPortal from "./pages/CustomerPortal";
-import DriverPortal from "./pages/DriverPortal";
-import Admin from "./pages/Admin";
-import Operations from "./pages/Operations";
-import Reconciliation from "./pages/Reconciliation";
-import TagDeliveries from "./pages/TagDeliveries";
-import Outreach from "./pages/Outreach";
-import TruckPortal from "./pages/TruckPortal";
+const Overview = lazy(() => import("./pages/Overview"));
+const Customers = lazy(() => import("./pages/Customers"));
+const CustomerHub = lazy(() => import("./pages/CustomerHub"));
+const Performance = lazy(() => import("./pages/Performance"));
+const Transactions = lazy(() => import("./pages/Transactions"));
+const Finance = lazy(() => import("./pages/Finance"));
+const DeliveryDocket = lazy(() => import("./pages/DeliveryDocket"));
+const CustomerPortal = lazy(() => import("./pages/CustomerPortal"));
+const DriverPortal = lazy(() => import("./pages/DriverPortal"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Operations = lazy(() => import("./pages/Operations"));
+const Reconciliation = lazy(() => import("./pages/Reconciliation"));
+const TagDeliveries = lazy(() => import("./pages/TagDeliveries"));
+const Outreach = lazy(() => import("./pages/Outreach"));
+const TruckPortal = lazy(() => import("./pages/TruckPortal"));
 
-import Dispatch from "./pages/Dispatch";
-import Suppliers from "./pages/Suppliers";
-import MarketIntelligence from "./pages/MarketIntelligence";
-import CRM from "./pages/CRM";
-import Pricing from "./pages/Pricing";
-import Sales from "./pages/Sales";
-import Login from "./pages/Login";
-import ResetPassword from "./pages/ResetPassword";
+const Dispatch = lazy(() => import("./pages/Dispatch"));
+const Suppliers = lazy(() => import("./pages/Suppliers"));
+const MarketIntelligence = lazy(() => import("./pages/MarketIntelligence"));
+const CRM = lazy(() => import("./pages/CRM"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Sales = lazy(() => import("./pages/Sales"));
+const Login = lazy(() => import("./pages/Login"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 import LandingPage from "./pages/LandingPage";
-import NotFound from "./pages/NotFound";
-import BrandCheck from "./pages/BrandCheck";
+const NotFound = lazy(() => import("./pages/NotFound"));
+const BrandCheck = lazy(() => import("./pages/BrandCheck"));
 import { DemoBanner } from "./components/DemoBanner";
+import { HelmetProvider } from "react-helmet-async";
+import { alwaysPublicPaths, isKnownRoute } from "@/lib/publicRoutes";
+const LegalPage = lazy(() => import("./pages/LegalPage"));
 import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -50,10 +53,14 @@ function DemoAwareRoutes() {
   const [params] = useSearchParams();
   const isDemo = params.get("demo") === "true";
 
+  const location = useLocation();
+  if (!isKnownRoute(location.pathname)) return <NotFound />;
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/landing" element={<LandingPage />} />
+      <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+      <Route path="/terms" element={<LegalPage kind="terms" />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/brand-check" element={<BrandCheck />} />
       <Route path="/docket/multi" element={<DeliveryDocket />} />
@@ -150,8 +157,8 @@ function DemoAwareRoutes() {
 
 type UserRole = "admin" | "client" | "driver" | "operations" | null;
 
-const PUBLIC_PATHS = ["/login", "/landing", "/reset-password"];
-const ALWAYS_PUBLIC_PATHS = ["/landing"];
+const PUBLIC_PATHS = ["/login", "/landing", "/reset-password", "/privacy", "/terms"];
+const ALWAYS_PUBLIC_PATHS = alwaysPublicPaths;
 
 async function getUserRole(userId: string): Promise<UserRole> {
   const { data, error } = await supabase
@@ -182,6 +189,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     const redirectSignedOut = (path: string) => {
+      if (!isKnownRoute(path)) return;
       if (!PUBLIC_PATHS.includes(path) && !path.startsWith("/docket")) {
         navigate(path === "/" ? "/landing" : "/login", { replace: true });
       }
@@ -189,7 +197,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
     const redirectByRole = (userRole: UserRole, path: string) => {
       // Always allow viewing the public marketing page
-      if (ALWAYS_PUBLIC_PATHS.includes(path)) return;
+      if (ALWAYS_PUBLIC_PATHS.includes(path) || !isKnownRoute(path)) return;
       if (userRole === "client" && !path.startsWith("/portal") && !path.startsWith("/docket")) {
         navigate("/portal", { replace: true });
       }
@@ -248,15 +256,17 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [isDemo]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (!isKnownRoute(location.pathname) || ALWAYS_PUBLIC_PATHS.includes(location.pathname)) return <>{children}</>;
+
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", color: "#555", fontSize: 14 }}>
+      <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground text-sm">
         Loading…
       </div>
     );
   }
 
-  // Not logged in — allow public pages
+  // Not logged in - allow public pages
   if (!role && !isDemo) {
     if (PUBLIC_PATHS.includes(location.pathname) || location.pathname.startsWith("/docket")) {
       return <>{children}</>;
@@ -269,7 +279,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   const isPublicAuthPath = PUBLIC_PATHS.includes(location.pathname);
 
-  // /landing is the canonical marketing URL — always render it, regardless of session
+  // /landing is the canonical marketing URL - always render it, regardless of session
   if (ALWAYS_PUBLIC_PATHS.includes(location.pathname)) {
     return <>{children}</>;
   }
@@ -308,6 +318,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => (
+  <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -318,13 +329,16 @@ const App = () => (
             <DateRangeProvider>
               <ScrollToTop />
               <DemoBanner />
-              <DemoAwareRoutes />
+              <Suspense fallback={<div role="status" className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">Loading...</div>}>
+                <DemoAwareRoutes />
+              </Suspense>
             </DateRangeProvider>
           </AuthGate>
         </DemoProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
