@@ -812,7 +812,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                   <div>
                     <h2 className="text-base font-semibold text-foreground">Need a hand?</h2>
                     <p className="mt-1 text-[13px] text-muted-foreground">
-                      Dispatch is available Monday–Friday, 7am–5pm AEST.
+                      Available 24/7, including after-hours and emergency deliveries.
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <a href="mailto:fuel@paccvictoria.com"

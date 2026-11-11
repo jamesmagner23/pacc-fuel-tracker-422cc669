@@ -38,3 +38,8 @@
 - [x] Changed-file and SQL list reported.
 - [ ] Signed-in customer revenue and unknown-route verification. Blocked: requesting user has no mintable preview account/session.
 - [ ] After-change production entry gzip measurement. Blocked: harness does not expose generated assets or execute the size-report hook, remote preview returns 401. Published baseline: 1,253,245 gzip bytes. Production size reporting is configured for the next full build.
+
+# Batch 5
+
+- [ ] Update confirmed public business details, phone links, legal copy and portal availability, without database or stored data changes.
+- [ ] Verify legal pages, structured business details and public phone links.
