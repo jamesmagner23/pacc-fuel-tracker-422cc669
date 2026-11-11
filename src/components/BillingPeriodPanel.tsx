@@ -152,8 +152,8 @@ export function BillingPeriodPanel() {
           : [name, num(r.litres), r.drops, r.missing ? "Rates missing" : num(r.revenue), num(r.cost)].join(",");
       }),
       compare
-        ? ["TOTAL", num(t.litres), num(pt.litres), pctDelta(t.litres, pt.litres)?.toFixed(1) ?? "", t.drops, pt.drops, num(t.revenue), num(pt.revenue), num(t.cost), num(pt.cost)].join(",")
-        : ["TOTAL", num(t.litres), t.drops, num(t.revenue), num(t.cost)].join(","),
+        ? ["TOTAL", num(t.litres), num(pt.litres), pctDelta(t.litres, pt.litres)?.toFixed(1) ?? "", t.drops, pt.drops, t.missing ? "Rates missing" : num(t.revenue), pt.missing ? "Rates missing" : num(pt.revenue), num(t.cost), num(pt.cost)].join(",")
+        : ["TOTAL", num(t.litres), t.drops, t.missing ? "Rates missing" : num(t.revenue), num(t.cost)].join(","),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);

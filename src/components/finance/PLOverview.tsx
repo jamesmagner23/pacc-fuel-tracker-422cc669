@@ -39,6 +39,7 @@ export default function PLOverview() {
 
   const pct = safeDelta;
   const coverage = pricingCoverage(filtered, getTxPricing);
+  const previousCoverage = pricingCoverage(previous, getTxPricing);
   const rangeLabel = range === "today" ? "Today" : range === "week" ? "This Week" : "This Month";
 
   // Per-client breakdown using actual transaction data + individual margins
@@ -109,7 +110,7 @@ export default function PLOverview() {
       label: "Revenue",
       value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }),
       sub: `${pricedClients.length} priced client${pricedClients.length !== 1 ? "s" : ""} only`,
-      pct: coverage.ratesMissing ? null : pct(totalRevenue, prevRevenue),
+      pct: coverage.ratesMissing || previousCoverage.ratesMissing ? null : pct(totalRevenue, prevRevenue),
     },
     {
       label: "Cost of Fuel",
@@ -122,7 +123,7 @@ export default function PLOverview() {
       label: "Gross Profit",
       value: "$" + grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 }),
       sub: `${rangeLabel} · priced clients`,
-      pct: coverage.ratesMissing ? null : pct(grossProfit, prevGrossProfit),
+      pct: coverage.ratesMissing || previousCoverage.ratesMissing ? null : pct(grossProfit, prevGrossProfit),
       positive: grossProfit >= 0,
     },
     {

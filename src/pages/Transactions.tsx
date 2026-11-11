@@ -9,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { withTimeout } from "@/lib/requestTimeout";
 import type { Transaction } from "@/hooks/useTransactions";
-import { useTransactions } from "@/hooks/useTransactions";
+
 import { useDemo } from "@/hooks/useDemo";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 
-type SortKey = "fecha" | "nombre_cliente1" | "ciudad" | "cantidad" | "ppu" | "dinero_total" | "factura";
+type SortKey = "fecha" | "nombre_cliente1" | "cantidad" | "factura";
 
 export default function Transactions({ embedded }: { embedded?: boolean } = {}) {
   const [preset, setPreset] = useState<TransactionPreset>("30d");
