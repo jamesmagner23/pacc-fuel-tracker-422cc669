@@ -43,3 +43,9 @@
 
 - [x] Update confirmed public business details, phone links, legal copy and portal availability, without database or stored data changes.
 - [x] Verify legal pages, structured business details and public phone links, including desktop/mobile public layouts.
+
+# Batch 6
+
+- [ ] Correct the shared historical account-pricing supplier selection and pass supplier through price loads.
+- [ ] Clarify inc GST labels and add the exact Client Pricing helper text.
+- [ ] Run focused pricing tests and verify the read-only pricing function, without database writes.
