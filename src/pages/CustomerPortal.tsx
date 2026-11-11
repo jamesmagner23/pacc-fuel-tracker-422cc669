@@ -8,6 +8,7 @@ import { formatDate, formatDateTime, formatTime } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { useTransactionPricing } from "@/hooks/useTransactionPricing";
 import { TransactionPrice } from "@/components/TransactionPrice";
+import { Button } from "@/components/ui/button";
 import { safeDelta } from "@/lib/transactionPricing";
 import { PACCLogo } from "@/components/PACCLogo";
 import { TruckMap } from "@/components/TruckMap";
@@ -590,6 +591,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
 
   const body = (
     <>
+      {pricing.error && <div className="text-warning py-2">Pricing unavailable. <Button variant="outline" size="sm" onClick={() => pricing.refetch()}>Retry</Button></div>}
       {/* Day / Week / Month period toggle — applies to time-series tabs.
           Overview embeds its own period selector inside the dashboard. */}
       {(activeTab === "Deliveries" ||

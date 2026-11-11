@@ -212,6 +212,7 @@ function CustomerHubInner({ customerName, account, clientAccountId, customerTxns
           <AnalyticsTab txns={customerTxns} equipment={equipmentList} projects={projects} assignments={assignments} overrides={overrides} />
         </TabsContent>
         <TabsContent value="transactions" className="mt-5">
+          {pricing.error && <div className="text-warning">Pricing unavailable. <Button size="sm" variant="outline" onClick={() => pricing.refetch()}>Retry</Button></div>}
           <TransactionsTab txns={customerTxns} customerName={customerName} />
         </TabsContent>
       </Tabs>

@@ -12,8 +12,6 @@ import { MarketTGPCompareTab } from "@/components/market/MarketTGPCompareTab";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const TODAY = new Date();
-const exciseIndexation = nextExciseIndexation(TODAY);
-const daysToJuly = exciseIndexation.days;
 
 const SEED_DATA = {
   brent: 108.4,
@@ -292,6 +290,13 @@ const TOOLTIP_STYLE = {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function MarketIntelligence() {
+  const [calendarNow, setCalendarNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setCalendarNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+  const exciseIndexation = nextExciseIndexation(calendarNow);
+  const daysToJuly = exciseIndexation.days;
   const { data: tgpHistory } = useTGPrices("Melbourne", "Diesel", 7);
 
   const [marketMetrics, setMarketMetrics] = useState<Record<string, { value: number; previous_value: number | null }>>({});

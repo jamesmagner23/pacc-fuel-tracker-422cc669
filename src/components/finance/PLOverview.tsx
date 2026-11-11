@@ -70,14 +70,10 @@ export default function PLOverview() {
       }
       const litres = t.cantidad || 0;
       byClient[key].litres += litres;
-      const { hasPricing, sellPPL } = getTxPricing(t);
+      const { hasPricing, total } = getTxPricing(t);
       byClient[key].cost += costOf(t);
       byClient[key].missing ||= !hasPricing;
-      if (t.dinero_total && t.dinero_total > 0) {
-        byClient[key].revenue += t.dinero_total;
-      } else if (hasPricing) {
-        byClient[key].revenue += litres * sellPPL;
-      }
+      byClient[key].revenue += total ?? 0;
     });
 
     return Object.values(byClient)

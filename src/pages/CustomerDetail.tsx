@@ -7,6 +7,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { format, parseISO } from "date-fns";
 import { useTransactionPricing } from "@/hooks/useTransactionPricing";
 import { TransactionPrice } from "@/components/TransactionPrice";
+import { Button } from "@/components/ui/button";
 import { CustomerProfileCard } from "@/components/customer/CustomerProfileCard";
 
 function cssVar(name: string, fallback = ""): string {
@@ -26,7 +27,8 @@ export default function CustomerDetail() {
     [allFiltered, customerName]
   );
 
-  const { getTxPricing } = useTransactionPricing(filtered);
+  const pricing = useTransactionPricing(filtered);
+  const { getTxPricing } = pricing;
 
   const locationData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -69,6 +71,7 @@ export default function CustomerDetail() {
       </div>
 
       <CustomerProfileCard customerName={customerName} />
+      {pricing.error && <div className="text-warning">Pricing unavailable. <Button size="sm" variant="outline" onClick={() => pricing.refetch()}>Retry</Button></div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="glass-card p-4 sm:p-5">

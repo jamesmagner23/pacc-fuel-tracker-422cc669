@@ -44,8 +44,8 @@ function buildPeriods(count = 12): Period[] {
   return out;
 }
 
-type Agg = { litres: number; cost: number; drops: number; revenue: number };
-const EMPTY: Agg = { litres: 0, cost: 0, drops: 0, revenue: 0 };
+type Agg = { litres: number; cost: number; drops: number; revenue: number; missing: boolean };
+const EMPTY: Agg = { litres: 0, cost: 0, drops: 0, revenue: 0, missing: false };
 
 function pctDelta(curr: number, prev: number): number | null {
   return safeDelta(curr, prev);
@@ -93,6 +93,9 @@ export function BillingPeriodPanel() {
         const ppl = buyPriceLookup(t.date);
         const cost = ppl != null ? litres * ppl : 0;
         const revenue = pricing.getTxPricing(t).total ?? 0;
+        const missing = !pricing.getTxPricing(t).hasPricing;
+        byCustomer[k].missing ||= missing;
+        totals.missing ||= missing;
         byCustomer[k].litres += litres;
         byCustomer[k].cost += cost;
         byCustomer[k].drops += 1;
@@ -128,7 +131,7 @@ export function BillingPeriodPanel() {
 
   const summary = [
     { label: "Litres", value: `${Math.round(t.litres).toLocaleString()} L`, prev: `${Math.round(pt.litres).toLocaleString()} L`, pct: pctDelta(t.litres, pt.litres) },
-    { label: "Revenue", value: `$${Math.round(t.revenue).toLocaleString()}`, prev: `$${Math.round(pt.revenue).toLocaleString()}`, pct: pctDelta(t.revenue, pt.revenue) },
+    { label: "Revenue", value: t.missing ? "Rates missing" : `$${Math.round(t.revenue).toLocaleString()}`, prev: pt.missing ? "Rates missing" : `$${Math.round(pt.revenue).toLocaleString()}`, pct: t.missing || pt.missing ? null : pctDelta(t.revenue, pt.revenue) },
     { label: "Buy cost", value: `$${Math.round(t.cost).toLocaleString()}`, prev: `$${Math.round(pt.cost).toLocaleString()}`, pct: pctDelta(t.cost, pt.cost), invert: true },
     { label: "Deliveries", value: t.drops.toLocaleString(), prev: pt.drops.toLocaleString(), pct: pctDelta(t.drops, pt.drops) },
     { label: "Customers", value: Object.keys(current.byCustomer).length.toLocaleString(), prev: Object.keys(previous.byCustomer).length.toLocaleString(), pct: pctDelta(Object.keys(current.byCustomer).length, Object.keys(previous.byCustomer).length) },
@@ -145,8 +148,8 @@ export function BillingPeriodPanel() {
         const name = `"${r.customer.replace(/"/g, '""')}"`;
         const d = pctDelta(r.litres, r.prev.litres);
         return compare
-          ? [name, num(r.litres), num(r.prev.litres), d == null ? "" : d.toFixed(1), r.drops, r.prev.drops, num(r.revenue), num(r.prev.revenue), num(r.cost), num(r.prev.cost)].join(",")
-          : [name, num(r.litres), r.drops, num(r.revenue), num(r.cost)].join(",");
+          ? [name, num(r.litres), num(r.prev.litres), d == null ? "-" : d.toFixed(1), r.drops, r.prev.drops, r.missing ? "Rates missing" : num(r.revenue), r.prev.missing ? "Rates missing" : num(r.prev.revenue), num(r.cost), num(r.prev.cost)].join(",")
+          : [name, num(r.litres), r.drops, r.missing ? "Rates missing" : num(r.revenue), num(r.cost)].join(",");
       }),
       compare
         ? ["TOTAL", num(t.litres), num(pt.litres), pctDelta(t.litres, pt.litres)?.toFixed(1) ?? "", t.drops, pt.drops, num(t.revenue), num(pt.revenue), num(t.cost), num(pt.cost)].join(",")
@@ -258,7 +261,7 @@ export function BillingPeriodPanel() {
                   )}
                   <td className="py-2 text-right tabular-nums text-muted-foreground">{r.drops}</td>
                   {compare && (
-                    <td className="py-2 text-right tabular-nums text-foreground">${Math.round(r.revenue).toLocaleString()}</td>
+                    <td className="py-2 text-right tabular-nums text-foreground">{r.missing ? <span className="text-warning">Rates missing</span> : `$${Math.round(r.revenue).toLocaleString()}`}</td>
                   )}
                   <td className="py-2 text-right tabular-nums text-foreground">${Math.round(r.cost).toLocaleString()}</td>
                 </tr>
