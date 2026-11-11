@@ -50,7 +50,7 @@ export function UploadDocketDialog({ clients, onClose }: { clients: Client[]; on
     } catch (err) { setError(err instanceof Error ? err.message : "Upload failed. Try again"); }
     finally { setSaving(false); }
   };
-  return <Dialog open onOpenChange={() => { if (!saving) onClose(); }}><DialogContent className="max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>Upload signed docket</DialogTitle></DialogHeader><form className="space-y-4" onSubmit={submit}>
+  return <Dialog open onOpenChange={() => { if (!saving) onClose(); }}><DialogContent className="max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>Upload signed docket</DialogTitle></DialogHeader><form onSubmit={submit}><fieldset disabled={saving} className="space-y-4">
     <div><Label htmlFor="upload-client">Customer</Label><select id="upload-client" required value={client} onChange={e => { setClient(e.target.value); setLink(""); }} className="w-full border border-input bg-background rounded-md p-2"><option value="">Choose customer</option>{clients.map(c => <option value={c.id} key={c.id}>{c.company_name}</option>)}</select></div>
     <div><Label htmlFor="upload-date">Docket date</Label><Input id="upload-date" type="date" required value={date} onChange={e => { setDate(e.target.value); setLink(""); }} /></div>
     <div><Label htmlFor="upload-link">Link delivery or transaction (optional)</Label><select id="upload-link" value={link} onChange={e => setLink(e.target.value)} className="w-full border border-input bg-background rounded-md p-2"><option value="">No link</option>{choices.data?.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select>{choices.isLoading && <p className="text-sm text-muted-foreground">Loading deliveries...</p>}{choices.error && <Button type="button" variant="outline" onClick={() => choices.refetch()}>Retry deliveries</Button>}{choices.data?.length === 0 && <p className="text-sm text-muted-foreground">No deliveries or transactions for this customer and date</p>}</div>
@@ -58,5 +58,5 @@ export function UploadDocketDialog({ clients, onClose }: { clients: Client[]; on
     <div><Label htmlFor="upload-notes">Notes (optional)</Label><Textarea id="upload-notes" value={notes} onChange={e => setNotes(e.target.value)} /></div>
     <div><Label htmlFor="upload-file">PDF or image, max 10 MB</Label><Input id="upload-file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif" required onChange={e => setFile(e.target.files?.[0] ?? null)} /></div>
     {error && <p role="alert" className="text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button variant="outline" type="button" disabled={saving} onClick={onClose}>Cancel</Button><Button disabled={saving} type="submit">{saving ? "Uploading..." : "Upload"}</Button></div>
-  </form></DialogContent></Dialog>;
+  </fieldset></form></DialogContent></Dialog>;
 }
