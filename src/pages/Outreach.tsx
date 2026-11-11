@@ -200,7 +200,7 @@ export default function Outreach() {
       .from("pricing_presets")
       .select("id,name,notes,weekly_volume,product_mix,diesel_price,diesel_price_inc,ulp_price,ulp_price_inc,adblue_price,adblue_price_inc,updated_at")
       .order("updated_at", { ascending: false })
-      .limit(50));
+      .limit(50);
     if (!error && data) setPresets(data as PricingPreset[]);
   }, []);
   useEffect(() => { void fetchPresets(); }, [fetchPresets]);

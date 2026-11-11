@@ -46,7 +46,7 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
   const totalPages = Math.max(1, Math.ceil(total / 50));
   const pricing = useTransactionPricing(txns);
   useEffect(() => { setPage(0); setSelected(new Set()); }, [filters]);
-  useEffect(() => { if (page >= totalPages) setPage(totalPages - 1); }, [totalPages, page]);
+  useEffect(() => { if (result.data && page >= totalPages) setPage(totalPages - 1); }, [totalPages, page, result.data]);
   const customers = useMemo(() => [...new Set(txns.map(t => t.nombre_cliente1).filter(Boolean))].sort() as string[], [txns]);
   const trucks = useMemo(() => [...new Set(txns.map(t => t.estacion).filter(Boolean))].sort() as string[], [txns]);
   const drivers = useMemo(() => [...new Set(txns.map(t => t.nombre_vendedor).filter(Boolean))].sort() as string[], [txns]);
