@@ -46,6 +46,7 @@
 
 # Batch 6
 
-- [ ] Correct the shared historical account-pricing supplier selection and pass supplier through price loads.
-- [ ] Clarify inc GST labels and add the exact Client Pricing helper text.
-- [ ] Run focused pricing tests and verify the read-only pricing function, without database writes.
+- [x] Correct the shared historical account-pricing supplier selection and pass supplier through price loads. Read-only pricing function deployed; no SQL price selector duplicates require migration.
+- [x] Clarify inc GST labels and add the exact Client Pricing helper text.
+- [x] Run focused pricing tests: 24 passed, including the verified Track Works invoice example. Latest build OK; no database writes.
+- [ ] Signed-in pricing and export verification. Blocked: managed requester session mint reports no matching auth user; preview sign-in required.
