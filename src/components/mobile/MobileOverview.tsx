@@ -346,7 +346,7 @@ export function MobileOverview() {
   const { data: filtered = [] } = useTransactions(range);
   const { data: monthTxns = [] } = useTransactions("month");
   const { data: buyPrices = [] } = useBuyPrices(30);
-  const { syncing, handleSync, lastSyncTime } = useSyncTransactions({ autoSync: true });
+  const { syncing, handleSync, lastSyncTime, isSyncStale } = useSyncTransactions({ autoSync: true });
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
@@ -412,7 +412,7 @@ export function MobileOverview() {
             <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-border bg-card px-3 py-3">
               <div className="min-w-0">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Daily sales data</div>
-                <div className="mt-0.5 text-[12px] font-semibold text-foreground truncate">
+                <div className={`mt-0.5 text-[12px] font-semibold ${isSyncStale ? "text-warning" : "text-foreground"}`}>
                   {lastSyncTime ? `Last refreshed ${lastSyncTime}` : "Never refreshed"}
                 </div>
               </div>
@@ -464,9 +464,9 @@ export function MobileOverview() {
               <SupplierPricePanel compact />
               <BillingPeriodPanel />
             </div>
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-wrap gap-2 items-center justify-between mb-2">
               <h2 className="text-[22px] font-bold text-foreground tracking-tight">Live truck</h2>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
+              <span className={`inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold ${isSyncStale ? "text-warning" : "text-foreground"}`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                 Live{lastSyncTime ? ` · ${lastSyncTime}` : ""}
               </span>

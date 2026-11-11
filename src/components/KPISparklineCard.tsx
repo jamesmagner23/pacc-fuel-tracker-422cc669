@@ -23,6 +23,7 @@ export interface KPISparklineProps {
   trend?: { v: number }[];
   /** Contextual line shown when deltaPct is null. */
   fallbackContext: string;
+  fallbackWarning?: boolean;
   href?: string;
   /** Lucide icon component for the tinted square. */
   icon: ComponentType<{ className?: string }>;
@@ -50,6 +51,7 @@ export function KPISparklineCard({
   deltaPct,
   trend = [],
   fallbackContext,
+  fallbackWarning = false,
   href,
   icon: Icon,
   tintBg,
@@ -93,7 +95,7 @@ export function KPISparklineCard({
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[220px] text-xs">
                   <p className="font-medium">{periodNote}</p>
-                  <p className="text-muted-foreground mt-0.5">{fallbackContext}</p>
+                  <p className={`mt-0.5 ${fallbackWarning ? "text-warning" : "text-muted-foreground"}`}>{fallbackContext}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

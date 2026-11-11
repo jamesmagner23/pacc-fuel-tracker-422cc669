@@ -1,9 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders as sdkCorsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { authorizeSync, syncFailureResponse } from "./auth.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  ...sdkCorsHeaders,
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    `${sdkCorsHeaders['Access-Control-Allow-Headers']}, x-cron-token, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version`,
 };
 
 async function login(baseUrl: string, username: string, password: string): Promise<string> {
@@ -103,56 +105,50 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-  // --- Authentication: require admin role ---
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return new Response(
-      JSON.stringify({ success: false, error: "Unauthorized" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!supabaseUrl || !supabaseKey || !anonKey) {
+    return new Response(JSON.stringify({ success: false, error: "Server configuration error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
-
-  const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-    global: { headers: { Authorization: authHeader } },
-  });
-
-  const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
-  if (claimsError || !claimsData?.claims) {
-    return new Response(
-      JSON.stringify({ success: false, error: "Unauthorized" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  const userId = claimsData.claims.sub;
-
-  // Check admin role
   const supabase = createClient(supabaseUrl, supabaseKey);
-  const { data: roleCheck } = await supabase.rpc("has_role", {
-    _user_id: userId,
-    _role: "admin",
+  const authStatus = await authorizeSync(req.headers, {
+    readCronToken: async () => {
+      const { data, error } = await supabase.from("cron_tokens").select("token")
+        .eq("name", "sync-transactions").maybeSingle();
+      return error ? null : data?.token ?? null;
+    },
+    validateAdmin: async (token) => {
+      const authClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data, error } = await authClient.auth.getClaims(token);
+      if (error || !data?.claims?.sub) return 401;
+      const { data: roleCheck, error: roleError } = await supabase.rpc("has_role", {
+        _user_id: data.claims.sub, _role: "admin",
+      });
+      return roleError || !roleCheck ? 403 : null;
+    },
   });
-
-  if (!roleCheck) {
+  if (authStatus) {
     return new Response(
-      JSON.stringify({ success: false, error: "Admin access required" }),
-      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: false, error: authStatus === 403 ? "Admin access required" : "Unauthorized" }),
+      { status: authStatus, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
   // --- End authentication ---
 
-  const baseUrl = Deno.env.get("SCA_WEB_BASE_URL")!;
-  const username = Deno.env.get("SCA_WEB_USERNAME")!;
-  const password = Deno.env.get("SCA_WEB_PASSWORD")!;
+  const baseUrl = Deno.env.get("SCA_WEB_BASE_URL");
+  const username = Deno.env.get("SCA_WEB_USERNAME");
+  const password = Deno.env.get("SCA_WEB_PASSWORD");
 
   let totalFetched = 0;
   let totalUpserted = 0;
 
   try {
+    if (!baseUrl || !username || !password) throw new Error("Missing SCA configuration");
     const cookieStr = await login(baseUrl, username, password);
 
     const pageSize = 200;
@@ -218,9 +214,6 @@ Deno.serve(async (req) => {
       error_message: err.message,
     });
 
-    return new Response(
-      JSON.stringify({ success: false, error: "Sync failed", records_fetched: totalFetched }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return syncFailureResponse(totalFetched, { ...corsHeaders, "Content-Type": "application/json" });
   }
 });

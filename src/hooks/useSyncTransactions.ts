@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSyncLog } from "@/hooks/useTransactions";
-import { formatTime } from "@/lib/format";
+import { useSyncFreshness } from "@/hooks/useSyncFreshness";
 
 const REFRESH_QUERY_KEYS = [
   "transactions",
@@ -34,7 +34,7 @@ export function useSyncTransactions(options: { autoSync?: boolean } = {}) {
       if (data?.success) {
         const count = Number(data.records_upserted ?? 0);
         if (!opts.silent) {
-          toast.success(count > 0 ? `Synced ${count} transactions` : "Data refreshed — no new transactions");
+          toast.success(count > 0 ? `Synced ${count} transactions` : "Data refreshed, no new transactions");
         } else if (count > 0) {
           toast.success(`Auto-synced ${count} new transactions`);
         }
@@ -73,8 +73,8 @@ export function useSyncTransactions(options: { autoSync?: boolean } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSync]);
 
-  const lastSyncTime = lastSync?.synced_at ? formatTime(lastSync.synced_at) : null;
+  const { lastSyncTime, isSyncStale } = useSyncFreshness(lastSync?.synced_at);
   const syncedLabel = lastSyncTime ? `Synced ${lastSyncTime}` : "Never synced";
 
-  return { syncing, handleSync, lastSync, lastSyncTime, syncedLabel };
+  return { syncing, handleSync, lastSync, lastSyncTime, syncedLabel, isSyncStale };
 }

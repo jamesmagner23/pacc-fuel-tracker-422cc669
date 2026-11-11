@@ -554,7 +554,7 @@ function SalesPanel({ truck }: { truck: Truck }) {
   const palette = useChartPalette();
   const { data: filtered = [], isLoading } = useTransactions(range);
   const { data: allTxns = [] } = useAllTransactions();
-  const { syncing, handleSync, lastSyncTime } = useSyncTransactions({ autoSync: true });
+  const { syncing, handleSync, lastSyncTime, isSyncStale } = useSyncTransactions({ autoSync: true });
 
   const matcher = (t: { estacion: string | null }) =>
     t.estacion === (truck.speedsol_estacion || truck.name);
@@ -583,7 +583,7 @@ function SalesPanel({ truck }: { truck: Truck }) {
         <div className="mr-auto min-w-[220px]">
           <h3 className="text-sm font-semibold">Daily Fuel Sales</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {truck.name} · {lastSyncTime ? `last refreshed ${lastSyncTime}` : "not refreshed yet"}
+            {truck.name} · <span className={isSyncStale ? "text-warning" : ""}>{lastSyncTime ? `last refreshed ${lastSyncTime}` : "not refreshed yet"}</span>
           </p>
         </div>
         <Button size="sm" onClick={handleSync} disabled={syncing} className="min-h-10">

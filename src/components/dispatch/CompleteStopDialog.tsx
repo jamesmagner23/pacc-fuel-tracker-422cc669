@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { X, Check, Eraser, Loader2, RefreshCw } from "lucide-react";
 import { SignaturePad, type SignaturePadHandle } from "./SignaturePad";
 import type { DispatchStop } from "@/hooks/useDispatch";
-import { formatDistanceToNow, parseISO, format } from "date-fns";
+import { parseISO, format } from "date-fns";
+import { useSyncFreshness } from "@/hooks/useSyncFreshness";
 
 interface Props {
   stop: DispatchStop;
@@ -157,9 +158,8 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
   );
 
   const shifts = useMemo(() => groupIntoShifts(matchedTxns), [matchedTxns]);
-  const lastSyncLabel = lastSyncAt
-    ? `${formatDistanceToNow(parseISO(lastSyncAt))} ago`
-    : "never";
+  const { lastSyncTime, isSyncStale } = useSyncFreshness(lastSyncAt);
+  const lastSyncLabel = lastSyncTime ?? "never";
 
   const submit = async () => {
     const litres = parseFloat(delivered);
@@ -276,7 +276,7 @@ export function CompleteStopDialog({ stop, onClose }: Props) {
               </button>
             </div>
             <div className="text-[10px] text-gray-500 mb-2">
-              Last SpeedSol sync: {syncing ? "syncing now…" : lastSyncLabel}
+              <span className={isSyncStale ? "text-warning" : ""}>Last SpeedSol sync: {syncing ? "syncing now…" : lastSyncLabel}</span>
             </div>
             {!loadingActuals && !syncing && matchedTxns.length === 0 && (
               <div className="text-xs text-gray-600">

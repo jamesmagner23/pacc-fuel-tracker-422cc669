@@ -2,17 +2,17 @@ import { RefreshCcw } from "lucide-react";
 import { useSyncTransactions } from "@/hooks/useSyncTransactions";
 
 export function SidebarSyncCard() {
-  const { syncing, handleSync, syncedLabel } = useSyncTransactions();
+  const { syncing, handleSync, syncedLabel, isSyncStale } = useSyncTransactions();
 
   return (
     <div className="p-3 flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+        <span className={`w-1.5 h-1.5 rounded-full ${isSyncStale ? "bg-warning" : "bg-accent"}`} />
         <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-foreground">
           Live
         </span>
       </div>
-      <div className="text-[12px] text-muted-foreground">{syncedLabel}</div>
+      <div className={`text-[12px] ${isSyncStale ? "text-warning" : "text-muted-foreground"}`}>{syncedLabel}</div>
       <button
         type="button"
         onClick={handleSync}
