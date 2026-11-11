@@ -1,5 +1,12 @@
 # Batch 1
 
+# Batch 4
+
+- [ ] Calculated customer summary revenue and missing rates.
+- [ ] Public metadata, legal pages, quote fields, demo safety, testimonial and new section.
+- [ ] Public unknown routes, sitemap and lazy page loading.
+- [ ] Verify public flows, pricing tests and entry sizes; list files and SQL.
+
 - [x] Add private cron-token authentication without weakening admin authentication.
 - [x] Replace the 15-minute HTTP job with runtime token lookup and 120-second timeout. Completed directly by the user, no further action requested.
 - [x] Return non-200 on sync failures and retain sync logging.
