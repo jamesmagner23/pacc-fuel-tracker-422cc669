@@ -102,7 +102,7 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
         Object.assign(prices, data?.prices ?? {});
       }
       const rows = all.map(t => { const p = prices[t.id]; return [format(parseISO(t.fecha), "yyyy-MM-dd HH:mm"), t.nombre_cliente1 ?? "", t.estacion ?? "", t.nombre_vendedor ?? "", t.cantidad ?? "", p?.sellPPL ?? "Rate missing", p?.total ?? "Rate missing", p?.source ?? "missing", t.factura ?? ""]; });
-      const csv = [["Date", "Customer", "Truck", "Driver", "Litres", "$/L inc GST", "Total inc GST", "Price source", "Invoice"], ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const csv = [["Date", "Customer", "Truck", "Driver", "Litres", "Sell $/L (inc GST)", "Total (inc GST)", "Price source", "Invoice"], ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
       const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
       const a = document.createElement("a"); a.href = url; a.download = `pacc-fuel-transactions-${dates.start}-${dates.end}.csv`; a.click(); URL.revokeObjectURL(url);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Export failed. Please retry."); }
@@ -182,8 +182,8 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
               <th className="p-3 pr-2 hidden md:table-cell">Truck</th>
               <th className="p-3 pr-2 hidden lg:table-cell">Driver</th>
               <SortHeader label="Litres" k="cantidad" className="text-right" />
-              <th className="p-3 text-right hidden sm:table-cell">$/L inc GST</th>
-              <th className="p-3 text-right">Total inc GST</th>
+              <th className="p-3 text-right hidden sm:table-cell">Sell $/L (inc GST)</th>
+              <th className="p-3 text-right">Total (inc GST)</th>
               <th className="p-3 pr-2 text-right hidden md:table-cell">Invoice</th>
               <th className="p-3 pr-2 w-10"></th>
             </tr>
