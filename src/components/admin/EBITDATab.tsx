@@ -1,4 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTransactionPricing } from "@/hooks/useTransactionPricing";
+import { effectiveBuyPrice, pricingCoverage } from "@/lib/transactionPricing";
+import { melbourneDate } from "@/lib/transactionDates";
+import { RatesMissingNotice } from "@/components/RatesMissingNotice";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { useOperatingExpenses, dailyRateFor } from "@/hooks/useOperatingExpenses";
@@ -22,6 +26,7 @@ export default function EBITDATab() {
   const [recurringPeriodTotal, setRecurringPeriodTotal] = useState(0);
 
   const { data: txns = [], isLoading } = useAllTransactions();
+  const pricing = useTransactionPricing(txns);
   const { data: buyPrices = [] } = useBuyPrices(730);
   const { data: expenses = [] } = useOperatingExpenses();
 
@@ -46,25 +51,19 @@ export default function EBITDATab() {
     [buyPrices]
   );
 
-  const buyPriceFor = (dateStr: string): number => {
-    if (!sortedBuy.length) return 0;
-    let last = sortedBuy[0].price_per_litre;
-    for (const p of sortedBuy) {
-      if (p.price_date <= dateStr) last = p.price_per_litre;
-      else break;
-    }
-    return last;
-  };
+  const buyPriceFor = (dateStr: string): number => effectiveBuyPrice(buyPrices, dateStr, melbourneDate()) ?? 0;
 
   const periodTxns = useMemo(
     () => txns.filter((t) => new Date(t.fecha) >= periodStart),
     [txns, periodStart]
   );
 
+  const coverage = pricingCoverage(periodTxns, pricing.getTxPricing);
+
   const totals = useMemo(() => {
     let revenue = 0, cogs = 0, litres = 0;
     periodTxns.forEach((t) => {
-      const r = t.dinero_total || 0;
+      const r = pricing.getTxPricing(t).total ?? 0;
       const l = t.cantidad || 0;
       const buy = buyPriceFor((t.date || t.fecha.slice(0, 10)) as string);
       revenue += r;
@@ -75,20 +74,21 @@ export default function EBITDATab() {
     const totalOpex = recurringPeriodTotal;
     const ebitda = grossProfit - totalOpex;
     return { revenue, cogs, grossProfit, totalOpex, ebitda, litres, gpMargin: revenue > 0 ? (grossProfit / revenue) * 100 : 0, ebitdaMargin: revenue > 0 ? (ebitda / revenue) * 100 : 0 };
-  }, [periodTxns, sortedBuy, recurringPeriodTotal]);
+  }, [periodTxns, sortedBuy, recurringPeriodTotal, pricing.data]);
 
   // Monthly chart: always show last 12 months for context, pro-rate OpEx by days
   const monthlyChart = useMemo(() => {
     const dailyOpex = recurringPeriodTotal / periodDays;
 
-    const byMonth: Record<string, { revenue: number; cogs: number; litres: number }> = {};
-    // Use ALL transactions, not just period — chart is always trailing 12 months
+    const byMonth: Record<string, { revenue: number; cogs: number; litres: number; missing: boolean }> = {};
+    // Use ALL transactions, not just period - chart is always trailing 12 months
     txns.forEach((t) => {
       const d = parseISO(t.fecha);
       const key = format(startOfMonth(d), "yyyy-MM");
-      if (!byMonth[key]) byMonth[key] = { revenue: 0, cogs: 0, litres: 0 };
+      if (!byMonth[key]) byMonth[key] = { revenue: 0, cogs: 0, litres: 0, missing: false };
       const buy = buyPriceFor((t.date || t.fecha.slice(0, 10)) as string);
-      byMonth[key].revenue += t.dinero_total || 0;
+      byMonth[key].missing ||= !pricing.getTxPricing(t).hasPricing;
+      byMonth[key].revenue += pricing.getTxPricing(t).total ?? 0;
       byMonth[key].cogs += (t.cantidad || 0) * buy;
       byMonth[key].litres += t.cantidad || 0;
     });
@@ -102,22 +102,23 @@ export default function EBITDATab() {
     }
 
     return buckets.map(({ key, label }) => {
-      const v = byMonth[key] || { revenue: 0, cogs: 0, litres: 0 };
+      const v = byMonth[key] || { revenue: 0, cogs: 0, litres: 0, missing: false };
       // Days in this month → opex share at the daily rate set by current period
       const monthStart = parseISO(key + "-01");
       const daysInMonth = differenceInCalendarDays(endOfMonth(monthStart), monthStart) + 1;
       const opexShare = dailyOpex * daysInMonth;
       const gp = v.revenue - v.cogs;
+      const complete = v.revenue > 0 && !v.missing;
       return {
         month: label,
         revenue: Math.round(v.revenue),
         cogs: Math.round(v.cogs),
         opex: Math.round(opexShare),
-        gp: Math.round(gp),
-        ebitda: Math.round(gp - opexShare),
+        gp: complete ? Math.round(gp) : null,
+        ebitda: complete ? Math.round(gp - opexShare) : null,
       };
     });
-  }, [txns, sortedBuy, recurringPeriodTotal, periodStart, periodDays]);
+  }, [txns, sortedBuy, recurringPeriodTotal, periodStart, periodDays, pricing.data]);
 
   // Sum of daily repayments contribution from active 'Repayments' expenses
   const dailyRepayments = useMemo(
@@ -212,6 +213,7 @@ export default function EBITDATab() {
         </div>
       </div>
 
+      <RatesMissingNotice {...coverage} />
       {/* KPI strip */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
@@ -224,9 +226,9 @@ export default function EBITDATab() {
           <div key={k.label} className="bg-surface border border-surface-border rounded-[10px] p-4">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{k.label}</div>
             <div className={`text-xl font-bold mt-1 tabular-nums ${k.color}`}>
-              ${Math.round(k.value).toLocaleString()}
+              {coverage.ratesMissing && ["Revenue", "Gross Profit", "EBITDA"].includes(k.label) ? "Rates missing" : `$${Math.round(k.value).toLocaleString()}`}
             </div>
-            {k.sub && <div className="text-[10px] text-muted-foreground mt-0.5">{k.sub} margin</div>}
+            {k.sub && !coverage.ratesMissing && <div className="text-[10px] text-muted-foreground mt-0.5">{k.sub} margin</div>}
           </div>
         ))}
       </div>
@@ -235,7 +237,7 @@ export default function EBITDATab() {
         {/* Chart */}
         <div className="lg:col-span-2 bg-surface border border-surface-border rounded-[10px] p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold">Monthly P&amp;L — Last 12 Months</h3>
+            <h3 className="text-sm font-semibold">Monthly P&amp;L - Last 12 Months</h3>
             <span className="text-[10px] text-muted-foreground">EBITDA line uses OpEx pro-rated daily from selected period</span>
           </div>
           <div className="h-72">
@@ -276,7 +278,7 @@ export default function EBITDATab() {
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Wallet className="w-4 h-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Loan Repayments — {PERIOD_LABELS[period]}</h3>
+            <h3 className="text-sm font-semibold">Loan Repayments - {PERIOD_LABELS[period]}</h3>
           </div>
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
             <span>Period total: <span className="text-foreground font-medium tabular-nums">${Math.round(dailyRepayments * periodDays).toLocaleString()}</span></span>
@@ -332,7 +334,7 @@ export default function EBITDATab() {
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <CalendarClock className="w-4 h-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold">Scheduled vs Actual OpEx — {PERIOD_LABELS[period]}</h3>
+            <h3 className="text-sm font-semibold">Scheduled vs Actual OpEx - {PERIOD_LABELS[period]}</h3>
           </div>
           <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
             <span>Scheduled: <span className="text-foreground font-medium tabular-nums">${projectionTotals.scheduled.toLocaleString()}</span></span>
@@ -406,7 +408,7 @@ export default function EBITDATab() {
               </ResponsiveContainer>
             </div>
             <p className="text-[10px] text-muted-foreground mt-2">
-              Scheduled is the smoothed daily accrual used by EBITDA. Actual steps up on each expense's next-due date inside the period — useful for spotting cash-flow lumps vs steady-state cost.
+              Scheduled is the smoothed daily accrual used by EBITDA. Actual steps up on each expense's next-due date inside the period - useful for spotting cash-flow lumps vs steady-state cost.
             </p>
           </>
         ) : (

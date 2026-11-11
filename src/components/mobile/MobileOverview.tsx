@@ -16,6 +16,9 @@ import { useSyncTransactions } from "@/hooks/useSyncTransactions";
 import { TruckMap } from "@/components/TruckMap";
 import { SupplierPricePanel } from "@/components/SupplierPricePanel";
 import { BillingPeriodPanel } from "@/components/BillingPeriodPanel";
+import { useTransactionPricing } from "@/hooks/useTransactionPricing";
+import { pricingCoverage } from "@/lib/transactionPricing";
+import { RatesMissingNotice } from "@/components/RatesMissingNotice";
 
 /* ---------- helpers ---------- */
 
@@ -281,9 +284,9 @@ function TodaysDeliveriesMobile() {
       ) : (
         <ul>
           {rows.map((t, i) => {
-            const customer = t.nombre_cliente1 || t.estacion || "—";
+            const customer = t.nombre_cliente1 || t.estacion || "-";
             const litres = t.cantidad ?? 0;
-            const addr = t.producto || "—";
+            const addr = t.producto || "-";
             const when = t.fecha
               ? sameDay(t.fecha, today) ? formatTime(t.fecha) : formatDate(t.fecha)
               : "";
@@ -309,7 +312,7 @@ function TodaysDeliveriesMobile() {
                   </div>
                   <div className="flex flex-col items-end gap-0.5 shrink-0">
                     <div className="text-[14px] font-semibold text-foreground tabular-nums">
-                      {litres ? `−${litres.toLocaleString()} L` : "—"}
+                      {litres ? `−${litres.toLocaleString()} L` : "-"}
                     </div>
                     <div className="text-[12px] text-muted-foreground tabular-nums">{when}</div>
                   </div>
@@ -347,13 +350,15 @@ export function MobileOverview() {
   const { data: monthTxns = [] } = useTransactions("month");
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { syncing, handleSync, lastSyncTime, isSyncStale } = useSyncTransactions({ autoSync: true });
+  const pricing = useTransactionPricing(filtered);
+  const coverage = pricingCoverage(filtered, pricing.getTxPricing);
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
   const totalFuelCost = useMemo(() => sumBuyCost(filtered, buyPriceLookup), [filtered, buyPriceLookup]);
   const latestBuy = buyPrices[0]?.price_per_litre;
 
-  // Last 7 days, always — independent of period selection.
+  // Last 7 days, always - independent of period selection.
   const sevenDay = useMemo(() => {
     const today = new Date();
     const days: { iso: string; date: string; litres: number }[] = [];
@@ -409,6 +414,7 @@ export function MobileOverview() {
                 L
               </span>
             </div>
+            <RatesMissingNotice {...coverage} />
             <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-border bg-card px-3 py-3">
               <div className="min-w-0">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Daily sales data</div>
@@ -447,7 +453,7 @@ export function MobileOverview() {
               bg="#F4F0E6"
             />
             <KPITile
-              amount={latestBuy ? `$${latestBuy.toFixed(3)}/L` : "—"}
+              amount={latestBuy ? `$${latestBuy.toFixed(3)}/L` : "-"}
               label="Buy price"
               href="/suppliers"
               bg="#C8F26A"

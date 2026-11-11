@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { CheckCircle2, AlertTriangle, ShieldAlert, RefreshCw } from "lucide-react";
+import { withTimeout } from "@/lib/requestTimeout";
+import { Button } from "@/components/ui/button";
 import { format, subDays } from "date-fns";
 
 type RangeDef = { key: string; label: string; days: number | null };
@@ -21,45 +23,29 @@ const RANGES: RangeDef[] = [
  * Flags any truncation (e.g. Supabase 1000-row cap) and zero-revenue rows.
  */
 export default function DataHealthWidget() {
-  const { data: clientTxns = [], isFetching, refetch } = useAllTransactions();
+  const { data: clientTxns = [], isFetching, refetch, error: rowsError } = useAllTransactions();
 
-  const { data: dbCounts } = useQuery({
+  const { data: dbCounts, error: countsError, refetch: refetchCounts } = useQuery({
     queryKey: ["data-health-counts"],
     refetchOnWindowFocus: false,
+    retry: 1,
     queryFn: async () => {
       const today = new Date();
       const out: Record<string, number> = {};
 
-      // All-time count
-      const all = await supabase
-        .from("transactions")
-        .select("*", { count: "exact", head: true });
-      out.all = all.count ?? 0;
-
-      // Per-range counts
-      for (const r of RANGES) {
-        if (r.days === null) continue;
-        const start = format(subDays(today, r.days), "yyyy-MM-dd");
-        const { count } = await supabase
-          .from("transactions")
-          .select("*", { count: "exact", head: true })
-          .gte("date", start);
-        out[r.key] = count ?? 0;
-      }
-
-      // Data quality flags
-      const zeroRev = await supabase
-        .from("transactions")
-        .select("*", { count: "exact", head: true })
-        .or("dinero_total.is.null,dinero_total.eq.0");
-      out.zero_revenue = zeroRev.count ?? 0;
-
-      const zeroLit = await supabase
-        .from("transactions")
-        .select("*", { count: "exact", head: true })
-        .or("cantidad.is.null,cantidad.eq.0");
-      out.zero_litres = zeroLit.count ?? 0;
-
+      const specs = [
+        ...RANGES.map(r => ({ key: r.key, start: r.days == null ? null : format(subDays(today, r.days), "yyyy-MM-dd"), field: null as string | null })),
+        { key: "zero_revenue", start: null, field: "dinero_total" },
+        { key: "zero_litres", start: null, field: "cantidad" },
+      ];
+      await Promise.all(specs.map(async spec => {
+        let query = supabase.from("transactions").select("id", { count: "exact", head: true });
+        if (spec.start) query = query.gte("date", spec.start);
+        if (spec.field) query = query.or(`${spec.field}.is.null,${spec.field}.eq.0`);
+        const { count, error } = await withTimeout(query);
+        if (error) throw error;
+        out[spec.key] = count ?? 0;
+      }));
       return out;
     },
   });
@@ -77,7 +63,7 @@ export default function DataHealthWidget() {
           Data Health
         </h2>
         <button
-          onClick={() => refetch()}
+          onClick={() => { void refetch(); void refetchCounts(); }}
           className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
         >
           <RefreshCw className={`w-3 h-3 ${isFetching ? "animate-spin" : ""}`} />
@@ -85,6 +71,7 @@ export default function DataHealthWidget() {
         </button>
       </div>
 
+      {(countsError || rowsError) && <div className="text-warning text-sm">Data health could not be loaded. <Button variant="outline" size="sm" onClick={() => { void refetch(); void refetchCounts(); }}>Retry</Button></div>}
       {/* Headline: load integrity */}
       <div
         className={`rounded-md border p-3 text-xs flex items-start gap-2 ${
@@ -103,18 +90,18 @@ export default function DataHealthWidget() {
         <div className="flex-1">
           <div className="font-semibold">
             {truncated
-              ? "⚠ Truncation detected — dashboard is missing rows"
+              ? "Truncation detected, dashboard is missing rows"
               : matched
-                ? "All transactions loaded"
-                : "Loading…"}
+                ? dbAll === 0 ? "No transactions found" : "All transactions loaded"
+                : countsError || rowsError ? "Unable to check data" : "Loading…"}
           </div>
           <div className="text-muted-foreground mt-0.5 tabular-nums">
             Fetched {fetched.toLocaleString()} of {dbAll?.toLocaleString() ?? "?"} rows in DB
             {truncated && (
               <>
-                {" "}— short by{" "}
+                {" "}short by{" "}
                 <span className="font-semibold">
-                  {(dbAll! - fetched).toLocaleString()}
+                  {((dbAll ?? 0) - fetched).toLocaleString()}
                 </span>
               </>
             )}
@@ -132,7 +119,7 @@ export default function DataHealthWidget() {
             <div key={r.key} className="flex justify-between items-baseline">
               <span className="text-muted-foreground">{r.label}</span>
               <span className="font-semibold tabular-nums">
-                {dbCounts ? (dbCounts[r.key] ?? 0).toLocaleString() : "—"}
+                {dbCounts ? (dbCounts[r.key] ?? 0).toLocaleString() : "-"}
               </span>
             </div>
           ))}
@@ -178,7 +165,7 @@ function FlagRow({
     return (
       <div className="flex justify-between">
         <span className="text-muted-foreground">{label}</span>
-        <span>—</span>
+        <span>-</span>
       </div>
     );
   }

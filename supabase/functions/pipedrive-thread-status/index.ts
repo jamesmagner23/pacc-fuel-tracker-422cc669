@@ -1,10 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 function pipedriveHost(rawDomain: string) {
   const cleaned = rawDomain
@@ -83,7 +79,10 @@ Deno.serve(async (req) => {
     const base = `https://${pipedriveHost(PD_DOMAIN)}/api/v1`;
     const updates: Array<{ send_id: string; status: string; thread_id: number | null; last_message_at: string | null }> = [];
 
+    let failures = 0;
+    const started = Date.now();
     for (const s of sends ?? []) {
+      if (Date.now() - started > 40_000) return json({ error: "Status check timed out. Please retry." }, 504);
       if (!s.pipedrive_person_id) {
         updates.push({ send_id: s.id, status: "none", thread_id: null, last_message_at: null });
         continue;
@@ -96,8 +95,9 @@ Deno.serve(async (req) => {
           limit: "20",
           api_token: PD_TOKEN,
         });
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
         const j = await res.json();
+        if (!res.ok || j?.success === false) throw new Error(`Pipedrive request failed (${res.status})`);
         const sentAt = new Date(s.created_at).getTime();
         const threads: any[] = Array.isArray(j?.data) ? j.data : [];
         // Match a thread sent at/after our send (allow 5min skew before)
@@ -121,9 +121,11 @@ Deno.serve(async (req) => {
           last_message_at: candidate.message_time || candidate.add_time || null,
         });
       } catch {
-        updates.push({ send_id: s.id, status: "pending", thread_id: null, last_message_at: null });
+        failures++;
       }
     }
+
+    if (failures > 0) return json({ error: `${failures} Pipedrive status requests failed. Please retry.` }, 502);
 
     // Upsert
     if (updates.length > 0) {

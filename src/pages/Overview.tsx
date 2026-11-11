@@ -5,6 +5,8 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
+import { safeDelta, pricingCoverage } from "@/lib/transactionPricing";
+import { RatesMissingNotice } from "@/components/RatesMissingNotice";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
@@ -127,15 +129,15 @@ export default function Overview() {
   const prevDeliveries = previous.length;
   const prevAvgSize = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
 
-  const pct = (curr: number, prev: number): number | null =>
-    prev === 0 ? null : ((curr - prev) / prev) * 100;
+  const pct = safeDelta;
+  const coverage = pricingCoverage(filtered, getTxPricing);
 
   const litresPct = pct(totalLitres, prevLitres);
   const revPct = pct(totalRevenue, prevRevenue);
   const delPct = pct(numDeliveries, prevDeliveries);
   const avgPct = pct(avgSize, prevAvgSize);
 
-  // Per-truck breakdown for the current window — SpeedSol's `nombre_flota`
+  // Per-truck breakdown for the current window - SpeedSol's `nombre_flota`
   // currently carries the client/fleet, so prefer estación to avoid hiding
   // Truck 1 / Truck 2 behind a single "PACC Civil" total.
   const truckBreakdown = useMemo(() => {
@@ -192,7 +194,7 @@ export default function Overview() {
   const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
   const totalFuelCost = useMemo(() => sumBuyCost(filtered, buyPriceLookup), [filtered, buyPriceLookup]);
   const prevFuelCost = useMemo(() => sumBuyCost(previous, buyPriceLookup), [previous, buyPriceLookup]);
-  const fuelCostPct = prevFuelCost > 0 ? ((totalFuelCost - prevFuelCost) / prevFuelCost) * 100 : null;
+  const fuelCostPct = safeDelta(totalFuelCost, prevFuelCost);
   const priorPrice = sortedPrices.find(
     (p) => p.price_date < (latestPrice?.price_date || ""),
   );
@@ -408,7 +410,7 @@ export default function Overview() {
                 <div className="mt-1 text-sm font-semibold text-foreground/85">
                   {selectedTruck === "all"
                     ? "Tap a truck to focus the KPIs and charts"
-                    : `Showing ${selectedTruck} only — tap All to reset`}
+                    : `Showing ${selectedTruck} only - tap All to reset`}
                 </div>
               </div>
               <div className="inline-flex flex-wrap items-center gap-1 rounded-full border border-border bg-background p-1">
@@ -474,7 +476,8 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* KPI grid — litres, fuel cost, buy price */}
+      <RatesMissingNotice {...coverage} />
+      {/* KPI grid - litres, fuel cost, buy price */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPISparklineCard
           label={litresLabel}
@@ -516,7 +519,7 @@ export default function Overview() {
           value={
             latestPrice
               ? `$${latestPrice.price_per_litre.toFixed(3)}/L`
-              : "—"
+              : "-"
           }
           deltaPct={buyPricePct}
           trend={buyTrend}

@@ -3,6 +3,10 @@ import { format, parseISO, startOfWeek, getISOWeek } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
+import { effectiveBuyPrice, safeDelta, pricingCoverage } from "@/lib/transactionPricing";
+import { RatesMissingNotice } from "@/components/RatesMissingNotice";
+import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { melbourneDate } from "@/lib/transactionDates";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 
 export default function PLOverview() {
@@ -21,17 +25,21 @@ export default function PLOverview() {
     prevPricedLitres,
   } = useRevenueCalc(range);
 
+  const { data: buyPrices = [] } = useBuyPrices(3650);
+  const costOf = (t: any) => getTxPricing(t).hasPricing ? (t.cantidad ?? 0) * (effectiveBuyPrice(buyPrices, t.date || t.fecha.slice(0, 10), melbourneDate()) ?? 0) : 0;
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const numDeliveries = filtered.length;
-  const totalCost = pricedLitres * latestBuyPrice;
+  const totalCost = filtered.reduce((sum, t) => sum + costOf(t), 0);
   const grossProfit = totalRevenue - totalCost;
   const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
   const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevCost = prevPricedLitres * latestBuyPrice;
+  const prevCost = previous.reduce((sum, t) => sum + costOf(t), 0);
   const prevGrossProfit = prevRevenue - prevCost;
 
-  const pct = (c: number, p: number) => (p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100);
+  const pct = safeDelta;
+  const coverage = pricingCoverage(filtered, getTxPricing);
+  const previousCoverage = pricingCoverage(previous, getTxPricing);
   const rangeLabel = range === "today" ? "Today" : range === "week" ? "This Week" : "This Month";
 
   // Per-client breakdown using actual transaction data + individual margins
@@ -53,22 +61,20 @@ export default function PLOverview() {
     });
 
     // Aggregate transactions by client
-    const byClient: Record<string, { name: string; litres: number; revenue: number; clientId: number | null }> = {};
+    const byClient: Record<string, { name: string; litres: number; revenue: number; cost: number; missing: boolean; clientId: number | null }> = {};
     filtered.forEach((t) => {
       const rawName = t.nombre_cliente1 || "Unmatched";
       const matched = speedsolToClient.get(rawName.toLowerCase());
       const key = matched ? matched.name : rawName;
       if (!byClient[key]) {
-        byClient[key] = { name: key, litres: 0, revenue: 0, clientId: matched?.id || null };
+        byClient[key] = { name: key, litres: 0, revenue: 0, cost: 0, missing: false, clientId: matched?.id || null };
       }
       const litres = t.cantidad || 0;
       byClient[key].litres += litres;
-      const { hasPricing, sellPPL } = getTxPricing(t);
-      if (t.dinero_total && t.dinero_total > 0) {
-        byClient[key].revenue += t.dinero_total;
-      } else if (hasPricing) {
-        byClient[key].revenue += litres * sellPPL;
-      }
+      const { hasPricing, total } = getTxPricing(t);
+      byClient[key].cost += costOf(t);
+      byClient[key].missing ||= !hasPricing;
+      byClient[key].revenue += total ?? 0;
     });
 
     return Object.values(byClient)
@@ -76,20 +82,20 @@ export default function PLOverview() {
         const pricing = c.clientId
           ? customerPricing.find((p) => p.client_account_id === c.clientId)
           : null;
-        const cost = pricing ? c.litres * latestBuyPrice : 0;
-        const profit = pricing ? c.revenue - cost : 0;
+        const cost = c.cost;
+        const profit = c.revenue - cost;
         const margin = c.revenue > 0 ? (profit / c.revenue) * 100 : 0;
         return {
           ...c,
           cost,
           profit,
           margin,
-          hasCustomPricing: !!pricing,
+          hasCustomPricing: !c.missing,
           customMargin: pricing?.margin_percent ?? null,
         };
       })
       .sort((a, b) => b.revenue - a.revenue);
-  }, [filtered, clients, customerPricing, latestBuyPrice, getTxPricing]);
+  }, [filtered, clients, customerPricing, latestBuyPrice, getTxPricing, buyPrices]);
 
   if (isLoading) {
     return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
@@ -104,12 +110,12 @@ export default function PLOverview() {
       label: "Revenue",
       value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }),
       sub: `${pricedClients.length} priced client${pricedClients.length !== 1 ? "s" : ""} only`,
-      pct: pct(totalRevenue, prevRevenue),
+      pct: coverage.ratesMissing || previousCoverage.ratesMissing ? null : pct(totalRevenue, prevRevenue),
     },
     {
       label: "Cost of Fuel",
       value: "$" + totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${pricedLitres.toLocaleString()}L × $${latestBuyPrice.toFixed(4)}`,
+      sub: "Priced litres at the historical buy price",
       pct: null,
       positive: null as boolean | null,
     },
@@ -117,7 +123,7 @@ export default function PLOverview() {
       label: "Gross Profit",
       value: "$" + grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 }),
       sub: `${rangeLabel} · priced clients`,
-      pct: pct(grossProfit, prevGrossProfit),
+      pct: coverage.ratesMissing || previousCoverage.ratesMissing ? null : pct(grossProfit, prevGrossProfit),
       positive: grossProfit >= 0,
     },
     {
@@ -143,6 +149,7 @@ export default function PLOverview() {
 
   return (
     <div className="flex flex-col gap-3">
+      <RatesMissingNotice {...coverage} />
       {/* KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {kpis.map((k) => (
@@ -161,7 +168,7 @@ export default function PLOverview() {
                     : "var(--text-primary)",
               }}
             >
-              {k.value}
+              {coverage.ratesMissing && ["Revenue", "Gross Profit", "Gross Margin"].includes(k.label) ? "Rates missing" : k.value}
             </div>
             <div className="flex items-center gap-1.5 mt-1.5">
               {k.pct !== undefined && k.pct !== null && (
@@ -174,6 +181,7 @@ export default function PLOverview() {
                   {k.pct.toFixed(1)}%
                 </span>
               )}
+              {k.pct === null && <span title="Comparison unavailable because a period value is zero or rates are incomplete." className="text-muted-foreground">-</span>}
               <span className="text-[11px] text-muted-foreground">{k.sub}</span>
             </div>
           </div>
@@ -207,11 +215,11 @@ export default function PLOverview() {
         </div>
       )}
 
-      {/* Per-client profit breakdown — priced clients only */}
+      {/* Per-client profit breakdown - priced clients only */}
       {pricedClients.length > 0 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">
-            Profit by Client — {rangeLabel}
+            Profit by Client - {rangeLabel}
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
@@ -283,7 +291,7 @@ export default function PLOverview() {
       {clientBreakdown.length > 0 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">
-            Client Detail — {rangeLabel}
+            Client Detail - {rangeLabel}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]">
@@ -316,26 +324,26 @@ export default function PLOverview() {
                       {c.litres.toLocaleString()}
                     </td>
                     <td className="py-2.5 text-right tabular-nums" style={{ color: c.hasCustomPricing ? "var(--text-primary)" : "var(--text-secondary)" }}>
-                      {c.hasCustomPricing ? `$${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+                      {c.hasCustomPricing ? `$${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "-"}
                     </td>
                     <td className="py-2.5 text-right tabular-nums text-muted-foreground">
-                      {c.hasCustomPricing ? `$${c.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+                      {c.hasCustomPricing ? `$${c.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "-"}
                     </td>
                     <td
                       className="py-2.5 text-right font-medium tabular-nums"
                       style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.profit >= 0 ? "var(--positive)" : "var(--negative)" }}
                     >
-                      {c.hasCustomPricing ? `$${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+                      {c.hasCustomPricing ? `$${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "-"}
                     </td>
                     <td
                       className="py-2.5 text-right tabular-nums"
                       style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.margin >= 0 ? "var(--positive)" : "var(--negative)" }}
                     >
-                      {c.hasCustomPricing ? `${c.margin.toFixed(1)}%` : "—"}
+                      {c.hasCustomPricing ? `${c.margin.toFixed(1)}%` : "-"}
                     </td>
                   </tr>
                 ))}
-                {/* Totals row — priced only */}
+                {/* Totals row - priced only */}
                 <tr className="font-semibold border-t border-border">
                   <td className="py-2.5 text-foreground">Total (priced)</td>
                   <td className="py-2.5 text-right text-foreground tabular-nums">

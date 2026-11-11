@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { subDays, format } from "date-fns";
 import { useDemo } from "./useDemo";
+import { withTimeout } from "@/lib/requestTimeout";
 import { getDemoData, DEMO_SYNC_LOG } from "@/data/demoData";
 
 export type DateRange = "today" | "week" | "month" | "custom";
@@ -82,13 +83,13 @@ async function fetchAllInRange(start: string, end: string): Promise<Transaction[
   const all: Transaction[] = [];
   let from = 0;
   for (let i = 0; i < 50; i++) {
-    const { data, error } = await supabase
+    const { data, error } = await withTimeout(supabase
       .from("transactions")
       .select("*")
       .gte("date", start)
       .lte("date", end)
       .order("fecha", { ascending: false })
-      .range(from, from + PAGE - 1);
+      .range(from, from + PAGE - 1));
     if (error) throw error;
     const batch = (data || []) as Transaction[];
     all.push(...batch);
@@ -110,6 +111,14 @@ export function useTransactions(range: DateRange) {
       }
       return fetchAllInRange(start, end);
     },
+  });
+}
+
+export function useTransactionsInRange(start: string, end: string) {
+  const isDemo = useDemo();
+  return useQuery({
+    queryKey: ["transactions", start, end, isDemo],
+    queryFn: () => isDemo ? filterByDateRange(getDemoData().transactions, start, end) : fetchAllInRange(start, end),
   });
 }
 
@@ -140,11 +149,11 @@ export function useAllTransactions() {
       let from = 0;
       // Safety cap so a runaway never hangs the UI
       for (let i = 0; i < 50; i++) {
-        const { data, error } = await supabase
+        const { data, error } = await withTimeout(supabase
           .from("transactions")
           .select("*")
           .order("fecha", { ascending: false })
-          .range(from, from + PAGE - 1);
+          .range(from, from + PAGE - 1));
         if (error) throw error;
         const batch = (data || []) as Transaction[];
         all.push(...batch);

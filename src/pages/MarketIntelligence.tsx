@@ -7,12 +7,11 @@ import {
   ReferenceLine, BarChart, Bar, Cell
 } from "recharts";
 import { MarketBowserAvgTab } from "@/components/market/MarketBowserAvgTab";
+import { nextExciseIndexation } from "@/lib/transactionDates";
 import { MarketTGPCompareTab } from "@/components/market/MarketTGPCompareTab";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const TODAY = new Date();
-const JULY1 = new Date("2026-07-01");
-const daysToJuly = Math.ceil((JULY1.getTime() - TODAY.getTime()) / (1000 * 60 * 60 * 24));
 
 const SEED_DATA = {
   brent: 108.4,
@@ -35,7 +34,7 @@ const SEED_DATA = {
 const MONTHS = [
   {
     label: "APR 2026", status: "NOW", color: "var(--warning)", signal: "CAUTION",
-    headline: "Excise cut active. TGP down ~32¢ but import cost still elevated. New truck timing ideal — demand surging.",
+    headline: "Excise cut active. TGP down ~32¢ but import cost still elevated. New truck timing ideal - demand surging.",
     actions: ["Update FTC claim to 26.3¢/L", "Lock in customers at current margin", "Monitor AIP TGP daily"],
   },
   {
@@ -50,7 +49,7 @@ const MONTHS = [
   },
   {
     label: "JUL 2026", status: "CLIFF", color: "var(--negative)", signal: "CLIFF",
-    headline: `Excise reverts to 52.6¢/L. RUC reinstates. TGP could spike 26–32¢ overnight. ${daysToJuly} days away.`,
+    headline: `Excise reverts to 52.6¢/L. RUC reinstates. TGP could spike 26–32¢ overnight.`,
     actions: ["Ensure all contracts have price escalation clauses", "Rebuild FTC to 20.2¢/L", "Brief customers on price movement"],
   },
 ];
@@ -86,18 +85,6 @@ const BUY_PRICE_TREND = Array.from({ length: 60 }, (_, i) => {
     isForecast: false,
   };
 });
-// Add forecast to July 1
-const lastPrice = BUY_PRICE_TREND[BUY_PRICE_TREND.length - 1].price;
-for (let i = 1; i <= daysToJuly && i <= 90; i++) {
-  const d = new Date(TODAY);
-  d.setDate(d.getDate() + i);
-  BUY_PRICE_TREND.push({
-    date: d.toLocaleDateString("en-AU", { day: "2-digit", month: "short" }),
-    price: lastPrice + i * 0.004 + Math.random() * 0.01,
-    isForecast: true,
-  });
-}
-
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function fmtDate(d: Date) {
   return d.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -303,6 +290,13 @@ const TOOLTIP_STYLE = {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function MarketIntelligence() {
+  const [calendarNow, setCalendarNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setCalendarNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+  const exciseIndexation = nextExciseIndexation(calendarNow);
+  const daysToJuly = exciseIndexation.days;
   const { data: tgpHistory } = useTGPrices("Melbourne", "Diesel", 7);
 
   const [marketMetrics, setMarketMetrics] = useState<Record<string, { value: number; previous_value: number | null }>>({});
@@ -364,7 +358,7 @@ export default function MarketIntelligence() {
     { label: "Excise Cut Active", value: `${data.exciseCutCPL}`, sub: "¢/L", change: null },
     { label: "FTC Rate", value: `${data.ftcRate}`, sub: "¢/L", change: null, highlight: true },
     { label: "Supply Risk", value: data.supplyRisk, sub: "", change: null },
-    { label: "Days to July 1", value: `${daysToJuly}`, sub: "DAYS", change: null },
+    { label: "Days to excise indexation", value: `${daysToJuly}`, sub: "DAYS", change: null },
   ];
 
   return (
@@ -402,13 +396,13 @@ export default function MarketIntelligence() {
           <span className="text-[10px] font-bold text-destructive">RESTRICTED</span>
         </div>
         <div className="flex items-center gap-1.5 ml-auto">
-          <span className="text-[10px] text-muted-foreground">EXCISE CLIFF</span>
+          <span className="text-[10px] text-muted-foreground">EXCISE INDEXATION</span>
           <span className="text-lg font-bold text-destructive tabular-nums">{daysToJuly}d</span>
-          <span className="text-[10px] text-muted-foreground">TO JUL 1</span>
+          <span className="text-[10px] text-muted-foreground">{exciseIndexation.date}</span>
         </div>
       </div>
 
-      {/* TABS — matches Finance page style */}
+      {/* TABS - matches Finance page style */}
       <div className="flex gap-0 border-b border-surface-border overflow-x-auto">
         {tabs.map(t => (
           <button
@@ -428,7 +422,7 @@ export default function MarketIntelligence() {
       {/* ── OVERVIEW TAB ── */}
       {tab === "OVERVIEW" && (
         <div className="flex flex-col gap-3">
-          {/* KPI Grid — matches PLOverview 2-col */}
+          {/* KPI Grid - matches PLOverview 2-col */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {kpis.map((k) => {
               const up = k.change !== null && k.change !== undefined && k.change > 0;
@@ -460,10 +454,10 @@ export default function MarketIntelligence() {
             })}
           </div>
 
-          {/* Alert banners — matches PLOverview amber warning */}
+          {/* Alert banners - matches PLOverview amber warning */}
           {[
-            { color: "var(--negative)", icon: "⚠", text: "HORMUZ RESTRICTED — Gasoil inflows to Australia tracking -1.47M bbl vs January. April/May critical months." },
-            { color: "var(--warning)", icon: "⏱", text: `EXCISE CLIFF IN ${daysToJuly} DAYS — Diesel TGP to spike +26–32¢/L on July 1 if not extended. All contracts must include escalation clauses.` },
+            { color: "var(--negative)", icon: "⚠", text: "HORMUZ RESTRICTED - Gasoil inflows to Australia tracking -1.47M bbl vs January. April/May critical months." },
+            { color: "var(--warning)", icon: "⏱", text: `Next excise indexation: ${exciseIndexation.date}, ${daysToJuly} days. Indexation occurs on 1 February and 1 August.` },
           ].map((a, i) => (
             <div key={i} className="bg-surface border rounded-[10px] p-4 flex items-start gap-3" style={{ borderColor: `${a.color}33` }}>
               <div className="text-lg mt-0.5" style={{ color: a.color }}>{a.icon}</div>
@@ -474,7 +468,7 @@ export default function MarketIntelligence() {
           {/* CHART: Fuel Buy Price Trend with forecast */}
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-4">
-              Supply Price Trend — Forecast to July 1
+              Supply Price Trend
             </div>
             <div className="h-44">
               <ResponsiveContainer width="100%" height="100%">
@@ -482,7 +476,7 @@ export default function MarketIntelligence() {
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} interval={Math.floor(BUY_PRICE_TREND.length / 8)} />
                   <YAxis tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]} />
-                  <ReferenceLine x={BUY_PRICE_TREND.find(d => d.isForecast)?.date} stroke="var(--negative)" strokeDasharray="4 4" strokeWidth={1} label={{ value: "EXCISE REVERTS", position: "top", fontSize: 9, fill: "var(--negative)" }} />
+
                   {/* Actual line */}
                   <Line
                     type="monotone"
@@ -516,7 +510,7 @@ export default function MarketIntelligence() {
           {/* CHART: Brent Crude 90-day */}
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-4">
-              Brent Crude — 90 Day
+              Brent Crude - 90 Day
             </div>
             <div className="h-40">
               <ResponsiveContainer width="100%" height="100%">
@@ -531,7 +525,7 @@ export default function MarketIntelligence() {
             </div>
           </div>
 
-          {/* CHART: Reserve Days — horizontal bar */}
+          {/* CHART: Reserve Days - horizontal bar */}
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-4">
               National Fuel Reserves
@@ -551,14 +545,14 @@ export default function MarketIntelligence() {
                     <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((r.days / 60) * 100, 100)}%`, background: color }} />
                   </div>
                   <div className="flex justify-between mt-0.5 text-[9px] text-muted-foreground/50">
-                    <span>0</span><span className="text-destructive">20 — Critical</span><span className="text-warning">30</span><span>60+</span>
+                    <span>0</span><span className="text-destructive">20 - Critical</span><span className="text-warning">30</span><span>60+</span>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* CHART: Supply Route Risk — horizontal bars */}
+          {/* CHART: Supply Route Risk - horizontal bars */}
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-4">
               Supply Route Disruption Risk
@@ -586,7 +580,7 @@ export default function MarketIntelligence() {
       {tab === "SUPPLY CHAIN" && (
         <div className="flex flex-col gap-3">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider" style={{ color: "var(--accent-text)" }}>
-            ▸ LIVE SUPPLY CHAIN STATUS — REFINED DIESEL TO MELBOURNE
+            ▸ LIVE SUPPLY CHAIN STATUS - REFINED DIESEL TO MELBOURNE
           </div>
 
           {SUPPLY_CHAIN.map((item, i) => (
@@ -637,8 +631,8 @@ export default function MarketIntelligence() {
               ▸ DOMESTIC REFINERY STATUS
             </div>
             {[
-            { name: "Viva Energy — Geelong, VIC", cap: "120,000 bbl/day", status: "OPERATING", coverage: "~10% national demand", note: "Closest major terminal to Melbourne metro deliveries." },
-              { name: "Ampol Lytton — Brisbane, QLD", cap: "109,000 bbl/day", status: "OPERATING", coverage: "~10% national demand", note: "Full operation. Supplies QLD/NSW primarily." },
+            { name: "Viva Energy - Geelong, VIC", cap: "120,000 bbl/day", status: "OPERATING", coverage: "~10% national demand", note: "Closest major terminal to Melbourne metro deliveries." },
+              { name: "Ampol Lytton - Brisbane, QLD", cap: "109,000 bbl/day", status: "OPERATING", coverage: "~10% national demand", note: "Full operation. Supplies QLD/NSW primarily." },
             ].map((r, i) => (
               <div key={i} className="bg-surface-raised rounded-[10px] p-3 mb-2">
                 <div className="flex justify-between items-center">
@@ -657,7 +651,7 @@ export default function MarketIntelligence() {
       {tab === "MONTH BY MONTH" && (
         <div className="flex flex-col gap-3">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider" style={{ color: "var(--accent-text)" }}>
-            ▸ 4-MONTH OUTLOOK — MELBOURNE DIESEL MARKET CONDITIONS
+            ▸ 4-MONTH OUTLOOK - MELBOURNE DIESEL MARKET CONDITIONS
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {MONTHS.map((m, i) => (
@@ -684,7 +678,7 @@ export default function MarketIntelligence() {
           {/* Scenario table */}
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5 overflow-x-auto">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3" style={{ color: "var(--accent-text)" }}>
-              ▸ SCENARIO PRICE TABLE — MELBOURNE DIESEL TGP (AUD ¢/L)
+              ▸ SCENARIO PRICE TABLE - MELBOURNE DIESEL TGP (AUD ¢/L)
             </div>
             <table className="w-full text-[12px]">
               <thead>

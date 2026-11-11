@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { withTimeout } from "@/lib/requestTimeout";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -114,7 +115,7 @@ function parseCSV(text: string): { name: string; email: string; org: string }[] 
   const idxOrg = header.findIndex(h => h === "org" || h === "organisation" || h === "organization" || h === "company");
 
   return rows.map(line => {
-    // Simple CSV parse — handles quoted fields with commas
+    // Simple CSV parse - handles quoted fields with commas
     const cells: string[] = [];
     let cur = ""; let inQ = false;
     for (const ch of line) {
@@ -244,7 +245,7 @@ export default function Outreach() {
       ...v,
       diesel_price:     fmt(p.diesel_price),
       diesel_price_inc: fmt(p.diesel_price_inc),
-      // Diesel-only template — clear any legacy ULP/AdBlue values so they
+      // Diesel-only template - clear any legacy ULP/AdBlue values so they
       // can never leak into the rendered email or PDF.
       ulp_price:        "",
       ulp_price_inc:    "",
@@ -261,6 +262,9 @@ export default function Outreach() {
   // Send statuses (keyed by recipient_email)
   const [statuses, setStatuses] = useState<Record<string, SendStatus>>({});
   const [refreshingStatus, setRefreshingStatus] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusLoaded, setStatusLoaded] = useState(false);
+  const peopleRequest = useRef(0);
 
   // CSV import dialog
   const [importOpen, setImportOpen] = useState(false);
@@ -282,18 +286,21 @@ export default function Outreach() {
 
   // ── Data loaders ─────────────────────────────────────────────────────────
   const fetchPeople = useCallback(async (term: string) => {
+    const request = ++peopleRequest.current;
     setLoading(true); setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke("pipedrive-people", { body: { q: term } });
+      const { data, error } = await withTimeout(supabase.functions.invoke("pipedrive-people", { body: { q: term } }));
+      if (request !== peopleRequest.current) return;
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       setPeople((data as any)?.persons ?? []);
       setBcc((data as any)?.bcc ?? null);
       setPipedriveHost(normalizePipedriveHost((data as any)?.company_domain));
     } catch (e) {
+      if (request !== peopleRequest.current) return;
       setError(e instanceof Error ? e.message : "Failed to load");
       setPeople([]);
-    } finally { setLoading(false); }
+    } finally { if (request === peopleRequest.current) setLoading(false); }
   }, []);
 
   const fetchTemplates = useCallback(async () => {
@@ -313,19 +320,21 @@ export default function Outreach() {
   }, [templateId]);
 
   const fetchStatuses = useCallback(async () => {
+    try {
+    setStatusError(null);
     // Pull last 50 sends + their cached status
-    const { data, error } = await supabase
+    const { data, error } = await withTimeout(supabase
       .from("outreach_send_log")
       .select("id, pipedrive_person_id, recipient_email, created_at, outreach_thread_status(status, last_message_at)")
       .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) { console.error(error); return; }
+      .limit(50));
+    if (error) throw error;
     const map: Record<string, SendStatus> = {};
     for (const row of data as any[]) {
       const ts = Array.isArray(row.outreach_thread_status) ? row.outreach_thread_status[0] : row.outreach_thread_status;
       // Latest send per recipient wins (data is desc-sorted)
-      if (row.recipient_email && !map[row.recipient_email]) {
-        map[row.recipient_email] = {
+      if (row.recipient_email && !map[row.recipient_email.toLowerCase()]) {
+        map[row.recipient_email.toLowerCase()] = {
           send_id: row.id,
           pipedrive_person_id: row.pipedrive_person_id,
           recipient_email: row.recipient_email,
@@ -335,22 +344,24 @@ export default function Outreach() {
         };
       }
     }
-    setStatuses(map);
+    setStatuses(map); setStatusLoaded(true);
+    } catch (error) { setStatusError(error instanceof Error ? error.message : "Status unavailable"); }
   }, []);
 
   const refreshStatuses = async () => {
-    setRefreshingStatus(true);
+    setRefreshingStatus(true); setStatusError(null);
     try {
-      const { error } = await supabase.functions.invoke("pipedrive-thread-status", { body: {} });
-      if (error) throw error;
+      const { data, error } = await withTimeout(supabase.functions.invoke("pipedrive-thread-status", { body: {} }), 60_000);
+      if (error || data?.error) throw error ?? new Error(data.error);
       await fetchStatuses();
       toast({ title: "Status refreshed", description: "Pulled latest mail-thread state from Pipedrive." });
     } catch (e) {
+      setStatusError(e instanceof Error ? e.message : "Status unavailable");
       toast({ title: "Status refresh failed", description: e instanceof Error ? e.message : "Unknown", variant: "destructive" });
     } finally { setRefreshingStatus(false); }
   };
 
-  useEffect(() => { void fetchPeople(""); void fetchTemplates(); void fetchStatuses(); }, [fetchPeople, fetchTemplates, fetchStatuses]);
+  useEffect(() => { void fetchTemplates(); void fetchStatuses(); }, [fetchTemplates, fetchStatuses]);
 
   useEffect(() => {
     const t = setTimeout(() => void fetchPeople(query), 350);
@@ -428,14 +439,14 @@ export default function Outreach() {
       const exKey = `${p}_price`;
       const incKey = `${p}_price_inc`;
       if (!need(exKey) && !need(incKey)) return;
-      // Diesel-only template — always validate.
+      // Diesel-only template - always validate.
 
       if (need(exKey)) {
         const raw = val(exKey);
         const n = parseFloat(raw);
         if (!raw) errs[exKey] = "Required.";
         else if (!Number.isFinite(n) || n <= 0) errs[exKey] = "Must be a positive number.";
-        else if (n > 10) errs[exKey] = "Looks too high — enter $/L.";
+        else if (n > 10) errs[exKey] = "Looks too high - enter $/L.";
       }
       if (need(incKey)) {
         const raw = val(incKey);
@@ -453,7 +464,7 @@ export default function Outreach() {
   const pricingErrorCount = Object.keys(pricingErrors).length;
 
   // When pricing validation fails we replace the live preview with a clear
-  // warning panel so users never see — or screenshot — an invalid quote.
+  // warning panel so users never see - or screenshot - an invalid quote.
   const safePreviewHtml = useMemo(() => {
     if (pricingErrorCount === 0) return previewHtml;
     const items = Object.entries(pricingErrors)
@@ -705,7 +716,7 @@ export default function Outreach() {
       toast({ title: "Email required", description: "Enter a valid email address.", variant: "destructive" });
       return;
     }
-    // Synthesize a Person — negative id signals "not in Pipedrive"
+    // Synthesize a Person - negative id signals "not in Pipedrive"
     const synthetic: Person = {
       id: -Date.now(),
       name: name || email,
@@ -834,7 +845,7 @@ export default function Outreach() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
-        {/* People list — hidden on mobile when a person is selected */}
+        {/* People list - hidden on mobile when a person is selected */}
         <div className={`rounded-lg border border-surface-border bg-surface p-3 space-y-3 ${selected ? "hidden lg:block" : ""}`}>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -852,9 +863,11 @@ export default function Outreach() {
             </div>
           )}
           {error && (
-            <div className="text-sm text-negative bg-[color:var(--negative-bg)] border border-negative rounded p-2">{error}</div>
+            <div className="text-sm text-warning border border-border rounded p-2">{error} <Button size="sm" variant="outline" onClick={() => fetchPeople(query)}>Retry</Button></div>
           )}
 
+          {statusError && <div className="text-warning text-xs">{statusError} <Button size="sm" variant="outline" onClick={refreshStatuses}>Retry</Button></div>}
+          {statusLoaded && !statusError && Object.keys(statuses).length === 0 && <p className="text-xs text-muted-foreground">No sent emails to check.</p>}
           <div className="max-h-[calc(100vh-220px)] lg:max-h-[65vh] overflow-y-auto divide-y divide-surface-border/50">
             {people.map((p) => {
               const isSel = selected?.id === p.id;
@@ -873,7 +886,7 @@ export default function Outreach() {
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {p.email ?? "—"}{p.org_name ? ` · ${p.org_name}` : ""}
+                    {p.email ?? "-"}{p.org_name ? ` · ${p.org_name}` : ""}
                   </div>
                   {meta && (
                     <div className="mt-1">
@@ -885,13 +898,13 @@ export default function Outreach() {
                 </button>
               );
             })}
-            {!loading && people.length === 0 && (
+            {!loading && !error && people.length === 0 && (
               <div className="text-sm text-muted-foreground py-6 text-center">No contacts found.</div>
             )}
           </div>
         </div>
 
-        {/* Compose — hidden on mobile until a person is picked */}
+        {/* Compose - hidden on mobile until a person is picked */}
         <div className={`rounded-lg border border-surface-border bg-surface p-4 space-y-4 ${selected ? "" : "hidden lg:block"}`}>
           {!selected ? (
             <div className="text-sm text-muted-foreground py-12 text-center">
@@ -929,7 +942,7 @@ export default function Outreach() {
                 </Select>
               </div>
 
-              {/* Pricing panel — only when template uses pricing keys */}
+              {/* Pricing panel - only when template uses pricing keys */}
               {allVarKeys.some(k => PRICING_KEYS.has(k)) && (
                 <div className="space-y-3 rounded-lg border border-surface-border bg-background p-3">
                   <div className="flex items-center justify-between">
@@ -1127,7 +1140,7 @@ export default function Outreach() {
                        className="bg-background border-surface-border text-foreground h-12" />
               </div>
 
-              {/* Preview tabs — collapsed by default on mobile */}
+              {/* Preview tabs - collapsed by default on mobile */}
               <details className="lg:hidden group rounded border border-surface-border bg-background">
                 <summary className="list-none cursor-pointer px-3 py-3 flex items-center justify-between text-sm">
                   <span className="inline-flex items-center gap-2"><Eye className="h-4 w-4" /> Preview email</span>
@@ -1227,7 +1240,7 @@ export default function Outreach() {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-surface-border bg-[#1a1108]/95 backdrop-blur p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           {pricingErrorCount > 0 && (
             <div role="alert" className="mb-2 rounded border border-accent bg-background px-2 py-1 text-[11px] text-foreground">
-              {pricingErrorCount} pricing field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention — sending disabled.
+              {pricingErrorCount} pricing field{pricingErrorCount === 1 ? "" : "s"} need{pricingErrorCount === 1 ? "s" : ""} attention - sending disabled.
             </div>
           )}
           <div className="flex gap-2">
@@ -1373,7 +1386,7 @@ function TemplateEditor({
                   <div className="font-medium">{t.name}</div>
                   <div className="text-xs text-muted-foreground truncate">{t.subject}</div>
                   <div className="text-[11px] text-[color:var(--text-muted)] mt-1">
-                    Variables: {(t.variables ?? []).join(", ") || "—"}
+                    Variables: {(t.variables ?? []).join(", ") || "-"}
                   </div>
                 </button>
               ))}
@@ -1412,7 +1425,7 @@ function TemplateEditor({
                         className="bg-background border-surface-border text-foreground font-mono text-xs" />
             </div>
             <div className="text-xs text-muted-foreground">
-              Detected variables: {inferred.length > 0 ? inferred.map(v => <code key={v} className="text-foreground mr-2">{`{{${v}}}`}</code>) : "—"}
+              Detected variables: {inferred.length > 0 ? inferred.map(v => <code key={v} className="text-foreground mr-2">{`{{${v}}}`}</code>) : "-"}
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => void exportDraftPdf()} disabled={exportingDraftPdf || !draft.html_body}

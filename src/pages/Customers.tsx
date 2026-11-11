@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useDateRange } from "@/hooks/useDateRange";
@@ -116,7 +116,7 @@ function CustomerList() {
         <p className="text-xs text-muted-foreground mt-0.5">Browse, filter, and drill into customer delivery data</p>
       </div>
 
-      {/* Local date range filter — independent of global toggle */}
+      {/* Local date range filter - independent of global toggle */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="text-muted-foreground">Range</span>
         {([
@@ -297,6 +297,7 @@ function CustomerList() {
 }
 
 export default function Customers() {
+  const [params, setParams] = useSearchParams();
   const { data: role } = useUserRole();
   const hideMoney = role === "operations";
   const tabs = [
@@ -309,7 +310,7 @@ export default function Customers() {
   ];
   return (
     <div className="flex flex-col gap-5 max-w-[1100px] w-full">
-      <Tabs defaultValue="customers">
+      <Tabs value={tabs.some(t => t.value === params.get("tab")) ? params.get("tab") ?? "customers" : "customers"} onValueChange={tab => setParams({ tab })}>
         <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
           {tabs.map((tab) => (
             <TabsTrigger

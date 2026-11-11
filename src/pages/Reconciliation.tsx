@@ -19,9 +19,10 @@ import {
   type ReconAlert,
   type PumpReading,
 } from "@/hooks/useReconciliation";
-import { useTransactions, type Transaction } from "@/hooks/useTransactions";
+import { useTransactionsInRange, type Transaction } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
 import { FLEET } from "@/pages/Trucks";
+import { hasReconciliationData } from "@/lib/reconciliationStatus";
 
 type TabId = "daily" | "pump" | "alerts" | "reports" | "settings";
 type TruckScope = string; // truck name or "__combined__"
@@ -44,7 +45,7 @@ const STATUS_LABELS = {
 
 type RangeMode = "week" | "month" | "custom";
 
-/** Hard cutoff — no pump data exists before this date */
+/** Hard cutoff - no pump data exists before this date */
 const RECON_MIN_DATE = new Date(2025, 2, 16); // 16 March 2025 (months are 0-indexed)
 const RECON_MIN_DATE_STR = "2025-03-16";
 
@@ -187,7 +188,7 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
   );
 }
 
-function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any }) {
+function SummaryCards({ rows, settings, hasData }: { rows: DailyReconRow[]; settings: any; hasData: boolean }) {
   const totalPump = rows.reduce((s, r) => s + r.pumpLitres, 0);
   const totalSpeedsol = rows.reduce((s, r) => s + r.speedsolLitres, 0);
   const variance = totalPump - totalSpeedsol;
@@ -199,7 +200,7 @@ function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any
     settings?.variance_threshold_litres
   );
 
-  const statusLabel = status === "none" ? "✓ Reconciled" : status === "warning" ? "⚠ Minor Variance" : "✗ Critical Variance";
+  const statusLabel = !hasData ? "No data to reconcile" : status === "none" ? "✓ Reconciled" : status === "warning" ? "⚠ Minor Variance" : "✗ Critical Variance";
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -222,7 +223,7 @@ function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any
       </div>
       <div className="card p-4">
         <p className="kpi-label mb-1">Status</p>
-        <p className="text-lg font-bold" style={{ color: STATUS_COLORS[status] }}>
+        <p className="text-lg font-bold" style={{ color: hasData ? STATUS_COLORS[status] : "var(--muted-foreground)" }}>
           {statusLabel}
         </p>
       </div>
@@ -266,18 +267,18 @@ function DailyBreakdownTable({
                 >
                   <td className="px-4 py-3 font-medium text-foreground">{format(parseISO(row.date), "EEE dd MMM")}</td>
                   <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
-                    {row.pumpLitres > 0 ? row.pumpLitres.toLocaleString() : "—"}
+                    {row.pumpLitres > 0 ? row.pumpLitres.toLocaleString() : "-"}
                   </td>
                   <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
-                    {row.speedsolLitres > 0 ? row.speedsolLitres.toLocaleString() : "—"}
+                    {row.speedsolLitres > 0 ? row.speedsolLitres.toLocaleString() : "-"}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums font-semibold" style={{ color: (row.pumpLitres > 0 || row.speedsolLitres > 0) ? varianceColor(row.varianceLitres) : undefined }}>
                     {row.pumpLitres > 0 || row.speedsolLitres > 0
                       ? `${row.varianceLitres >= 0 ? "+" : ""}${row.varianceLitres.toLocaleString()}`
-                      : "—"}
+                      : "-"}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums" style={{ color: row.pumpLitres > 0 ? varianceColor(row.variancePct) : undefined }}>
-                    {row.pumpLitres > 0 ? `${row.variancePct >= 0 ? "+" : ""}${row.variancePct.toFixed(1)}%` : "—"}
+                    {row.pumpLitres > 0 ? `${row.variancePct >= 0 ? "+" : ""}${row.variancePct.toFixed(1)}%` : "-"}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span
@@ -287,7 +288,7 @@ function DailyBreakdownTable({
                         color: STATUS_COLORS[row.alertStatus],
                       }}
                     >
-                      {STATUS_LABELS[row.alertStatus]}
+                      {row.pumpLitres <= 0 || row.speedsolLitres <= 0 ? "No data to reconcile" : STATUS_LABELS[row.alertStatus]}
                     </span>
                   </td>
                 </tr>
@@ -413,11 +414,11 @@ function DayDrillDown({
                 return (
                   <tr key={truck} className="border-t border-border-subtle">
                     <td className="px-3 py-2 font-medium text-foreground">{truck}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{v.drivers.size > 0 ? Array.from(v.drivers).join(", ") : "—"}</td>
-                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.pump > 0 ? v.pump.toLocaleString() : "—"}</td>
-                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.speed > 0 ? v.speed.toLocaleString() : "—"}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{v.drivers.size > 0 ? Array.from(v.drivers).join(", ") : "-"}</td>
+                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.pump > 0 ? v.pump.toLocaleString() : "-"}</td>
+                    <td className="px-3 py-2 text-right text-foreground tabular-nums">{v.speed > 0 ? v.speed.toLocaleString() : "-"}</td>
                     <td className="px-3 py-2 text-right tabular-nums font-semibold" style={{ color: varianceColor(d) }}>
-                      {(v.pump > 0 || v.speed > 0) ? `${d >= 0 ? "+" : ""}${d.toLocaleString()}` : "—"}
+                      {(v.pump > 0 || v.speed > 0) ? `${d >= 0 ? "+" : ""}${d.toLocaleString()}` : "-"}
                     </td>
                     <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">{v.txCount}</td>
                   </tr>
@@ -470,7 +471,7 @@ function DayDrillDown({
                     <li key={t.id} className="px-3 py-2 text-xs flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-foreground font-medium truncate">
-                          {t.nombre_cliente1 || t.placa || "—"}
+                          {t.nombre_cliente1 || t.placa || "-"}
                         </p>
                         <p className="text-muted-foreground truncate">
                           {[t.estacion, t.nombre_vendedor, t.producto].filter(Boolean).join(" · ")}
@@ -551,7 +552,7 @@ function AlertsTab({ alerts, onResolve }: { alerts: ReconAlert[]; onResolve: (id
                 <CheckCircle className="w-4 h-4 text-positive flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-xs text-muted-foreground capitalize">
-                    {alert.alert_type.replace(/_/g, " ")} — {alert.alert_date}
+                    {alert.alert_type.replace(/_/g, " ")} - {alert.alert_date}
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -827,12 +828,12 @@ function PumpReadingsTab({ readings, onDelete, defaultTruck }: { readings: PumpR
                     <td className="px-4 py-3 font-medium text-foreground">
                       {format(parseISO(r.reading_date), "EEE dd MMM")}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{r.truck || "—"}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{r.truck || "-"}</td>
                     <td className="px-4 py-3 text-right text-foreground tabular-nums font-semibold">
                       {Number(r.litres).toLocaleString()}L
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {r.notes || "—"}
+                      {r.notes || "-"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {confirmId === r.id ? (
@@ -886,7 +887,7 @@ export default function Reconciliation() {
   const endDate = format(dateEnd, "yyyy-MM-dd");
 
   const { data: allPumpReadings = [] } = usePumpReadings(startDate, endDate);
-  const { data: transactions = [] } = useTransactions("month"); // Get wide range
+  const { data: transactions = [] } = useTransactionsInRange(startDate, endDate);
   const { data: alerts = [] } = useReconAlerts(startDate, endDate);
   const { data: settings } = useReconSettings();
   const resolveMutation = useResolveAlert();
@@ -940,7 +941,7 @@ export default function Reconciliation() {
         ))}
       </div>
 
-      <SummaryCards rows={dailyRows} settings={settings} />
+      <SummaryCards rows={dailyRows} settings={settings} hasData={hasReconciliationData(pumpReadings.length, rangeTransactions.length)} />
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-surface-border">
