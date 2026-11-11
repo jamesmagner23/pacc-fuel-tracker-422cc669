@@ -94,7 +94,6 @@ function DemoAwareRoutes() {
                 <Route path="/portal/profile" element={<CustomerPortal forcedTab="Profile" />} />
                 <Route path="/portal/help" element={<CustomerPortal forcedTab="Help" />} />
                 <Route path="/driver" element={<DriverPortal />} />
-                <Route path="/admin/outreach" element={<Admin />} />
                 <Route path="/crm" element={<CRM />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
@@ -137,8 +136,7 @@ function DemoAwareRoutes() {
                   <Route path="/admin/pricing" element={<Pricing />} />
                   <Route path="/sales" element={<Sales />} />
                   <Route path="/trucks" element={<TruckPortal />} />
-                  <Route path="/admin/outreach" element={<Admin />} />
-                  <Route path="/crm" element={<CRM />} />
+                    <Route path="/crm" element={<CRM />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>
