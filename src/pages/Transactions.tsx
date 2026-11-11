@@ -1,16 +1,27 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Search, Download, ArrowUpDown, FileText, CheckSquare, Square, Send } from "lucide-react";
-import { useDateRange } from "@/hooks/useDateRange";
+import { useTransactionPage, fetchTransactionPage } from "@/hooks/useTransactionPage";
+import { transactionDateRange, melbourneDate, type TransactionPreset } from "@/lib/transactionDates";
+import { useTransactionPricing } from "@/hooks/useTransactionPricing";
+import { TransactionPrice } from "@/components/TransactionPrice";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { withTimeout } from "@/lib/requestTimeout";
+import type { Transaction } from "@/hooks/useTransactions";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useDemo } from "@/hooks/useDemo";
+import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 
 type SortKey = "fecha" | "nombre_cliente1" | "ciudad" | "cantidad" | "ppu" | "dinero_total" | "factura";
 
 export default function Transactions({ embedded }: { embedded?: boolean } = {}) {
-  const { range } = useDateRange();
-  const { data: txns = [], isLoading } = useTransactions(range);
+  const [preset, setPreset] = useState<TransactionPreset>("30d");
+  const [from, setFrom] = useState(melbourneDate());
+  const [to, setTo] = useState(melbourneDate());
+  const [page, setPage] = useState(0);
+  const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const isDemo = useDemo();
@@ -19,40 +30,26 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
   const [customerFilter, setCustomerFilter] = useState("");
   const [truckFilter, setTruckFilter] = useState("");
   const [driverFilter, setDriverFilter] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
+
   const [sortKey, setSortKey] = useState<SortKey>("fecha");
   const [sortAsc, setSortAsc] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
 
-  const customers = useMemo(() => [...new Set(txns.map((t) => t.nombre_cliente1).filter(Boolean))].sort() as string[], [txns]);
-  const trucks = useMemo(() => [...new Set(txns.map((t) => t.estacion).filter(Boolean))].sort() as string[], [txns]);
-  const drivers = useMemo(() => [...new Set(txns.map((t) => t.nombre_vendedor).filter(Boolean))].sort() as string[], [txns]);
-  const locations = useMemo(() => [...new Set(txns.map((t) => t.ciudad).filter(Boolean))].sort() as string[], [txns]);
-
-  const filtered = useMemo(() => {
-    let result = [...txns];
-    if (customerFilter) result = result.filter((t) => t.nombre_cliente1 === customerFilter);
-    if (truckFilter) result = result.filter((t) => t.estacion === truckFilter);
-    if (driverFilter) result = result.filter((t) => t.nombre_vendedor === driverFilter);
-    if (locationFilter) result = result.filter((t) => t.ciudad === locationFilter);
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter((t) =>
-        (t.nombre_cliente1 || "").toLowerCase().includes(q) ||
-        (t.ciudad || "").toLowerCase().includes(q) ||
-        (t.nombre_vendedor || "").toLowerCase().includes(q) ||
-        (t.factura?.toString() || "").includes(q)
-      );
-    }
-    result.sort((a, b) => {
-      const av = a[sortKey];
-      const bv = b[sortKey];
-      if (typeof av === "number" && typeof bv === "number") return sortAsc ? av - bv : bv - av;
-      return sortAsc ? String(av || "").localeCompare(String(bv || "")) : String(bv || "").localeCompare(String(av || ""));
-    });
-    return result;
-  }, [txns, search, customerFilter, truckFilter, driverFilter, locationFilter, sortKey, sortAsc]);
+  const dates = transactionDateRange(preset, from, to);
+  const filters = useMemo(() => ({ ...dates, search, customer: customerFilter, truck: truckFilter, driver: driverFilter, sort: sortKey, ascending: sortAsc }), [dates.start, dates.end, search, customerFilter, truckFilter, driverFilter, sortKey, sortAsc]);
+  const result = useTransactionPage(filters, page);
+  const txns = result.data?.rows ?? [];
+  const filtered = txns;
+  const isLoading = result.isLoading;
+  const total = result.data?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / 50));
+  const pricing = useTransactionPricing(txns);
+  useEffect(() => { setPage(0); setSelected(new Set()); }, [filters]);
+  useEffect(() => { if (page >= totalPages) setPage(totalPages - 1); }, [totalPages, page]);
+  const customers = useMemo(() => [...new Set(txns.map(t => t.nombre_cliente1).filter(Boolean))].sort() as string[], [txns]);
+  const trucks = useMemo(() => [...new Set(txns.map(t => t.estacion).filter(Boolean))].sort() as string[], [txns]);
+  const drivers = useMemo(() => [...new Set(txns.map(t => t.nombre_vendedor).filter(Boolean))].sort() as string[], [txns]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -68,7 +65,7 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
   };
 
   const selectAllVisible = () => {
-    const visibleIds = filtered.slice(0, 100).map((t) => t.id);
+    const visibleIds = filtered.map((t) => t.id);
     setSelected(new Set(visibleIds));
   };
 
@@ -87,19 +84,29 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
     return txns.filter((t) => selected.has(t.id)).reduce((sum, t) => sum + (t.cantidad || 0), 0);
   }, [txns, selected]);
 
-  const exportCSV = () => {
-    const headers = "Date,Customer,Location,Truck,Driver,Litres,$/L,Total,Invoice";
-    const rows = filtered.map((t) =>
-      `${format(parseISO(t.fecha), "yyyy-MM-dd HH:mm")},"${t.nombre_cliente1}","${t.ciudad}","${t.estacion}",${t.nombre_vendedor},${t.cantidad},${t.ppu},${t.dinero_total},${t.factura}`
-    );
-    const csv = [headers, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `pacc-fuel-transactions-${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      const all: Transaction[] = [];
+      if (isDemo) all.push(...filtered);
+      else for (let i = 0; ; i++) {
+        const batch = await fetchTransactionPage(filters, i);
+        all.push(...batch.rows);
+        if (all.length >= batch.count || !batch.rows.length) break;
+      }
+      const prices: Record<number, import("@/lib/transactionPricing").PricingResult> = {};
+      for (let i = 0; i < all.length; i += 500) {
+        if (isDemo) { all.slice(i, i + 500).forEach(t => { prices[t.id] = pricing.getTxPricing(t); }); continue; }
+        const { data, error } = await withTimeout(supabase.functions.invoke("transaction-sell-pricing", { body: { ids: all.slice(i, i + 500).map(t => t.id) } }), 30_000);
+        if (error || data?.error) throw error ?? new Error(data.error);
+        Object.assign(prices, data?.prices ?? {});
+      }
+      const rows = all.map(t => { const p = prices[t.id]; return [format(parseISO(t.fecha), "yyyy-MM-dd HH:mm"), t.nombre_cliente1 ?? "", t.estacion ?? "", t.nombre_vendedor ?? "", t.cantidad ?? "", p?.sellPPL ?? "Rate missing", p?.total ?? "Rate missing", p?.source ?? "missing", t.factura ?? ""]; });
+      const csv = [["Date", "Customer", "Truck", "Driver", "Litres", "$/L inc GST", "Total inc GST", "Price source", "Invoice"], ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      const a = document.createElement("a"); a.href = url; a.download = `pacc-fuel-transactions-${dates.start}-${dates.end}.csv`; a.click(); URL.revokeObjectURL(url);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Export failed. Please retry."); }
+    finally { setExporting(false); }
   };
 
   const SortHeader = ({ label, k, className = "" }: { label: string; k: SortKey; className?: string }) => (
@@ -108,7 +115,7 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
     </th>
   );
 
-  if (isLoading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Loading...</div>;
+
 
   return (
     <div className="space-y-4 max-w-6xl">
@@ -121,16 +128,27 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
           >
             <CheckSquare className="w-3.5 h-3.5" /> {selectMode ? "Cancel" : "Select"}
           </button>
-          <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
-            <Download className="w-3.5 h-3.5" /> Export CSV
+          <button disabled={exporting || pricing.isLoading || Boolean(pricing.error)} onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
+            <Download className="w-3.5 h-3.5" /> {exporting ? "Exporting..." : "Export CSV"}
           </button>
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2 items-center">
+        <select aria-label="Transaction date range" className="bg-card border border-border rounded-md p-2 text-sm" value={preset} onChange={e => setPreset(e.target.value as TransactionPreset)}>
+          <option value="today">Today</option><option value="week">This week</option><option value="30d">Last 30 days</option><option value="month">This month</option><option value="last-month">Last month</option><option value="custom">Custom</option>
+        </select>
+        {preset === "custom" && <><input aria-label="From date" type="date" value={from} onChange={e => setFrom(e.target.value)} className="bg-card border border-border rounded-md p-2" /><input aria-label="To date" type="date" value={to} onChange={e => setTo(e.target.value)} className="bg-card border border-border rounded-md p-2" /></>}
+        <span className="text-xs text-muted-foreground">{dates.start} to {dates.end}</span>
+      </div>
+      {dates.start > dates.end && <p className="text-warning">From date must be before the to date.</p>}
+      {result.error && <div className="text-warning">Transactions could not be loaded. <Button variant="outline" size="sm" onClick={() => result.refetch()}>Retry</Button></div>}
+      {pricing.error && <div className="text-warning">Pricing unavailable. <Button variant="outline" size="sm" onClick={() => pricing.refetch()}>Retry</Button></div>}
+      {isLoading && <p className="text-muted-foreground">Loading transactions...</p>}
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[150px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input type="text" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          <input type="text" placeholder="Search customers..." aria-label="Search customers" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
         </div>
         <select value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)} className="px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
           <option value="">All Customers</option>
@@ -144,10 +162,7 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
           <option value="">All Drivers</option>
           {drivers.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
-        <select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} className="px-3 py-2.5 rounded-lg bg-card border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
-          <option value="">All Locations</option>
-          {locations.map((l) => <option key={l} value={l}>{l}</option>)}
-        </select>
+
       </div>
 
       <div className="glass-card overflow-x-auto">
@@ -163,18 +178,18 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
               )}
               <SortHeader label="Date" k="fecha" />
               <SortHeader label="Customer" k="nombre_cliente1" />
-              <th className="p-3 pr-2 hidden lg:table-cell">Location</th>
+
               <th className="p-3 pr-2 hidden md:table-cell">Truck</th>
               <th className="p-3 pr-2 hidden lg:table-cell">Driver</th>
               <SortHeader label="Litres" k="cantidad" className="text-right" />
-              <SortHeader label="$/L" k="ppu" className="text-right hidden sm:table-cell" />
-              <SortHeader label="Total" k="dinero_total" className="text-right" />
+              <th className="p-3 text-right hidden sm:table-cell">$/L inc GST</th>
+              <th className="p-3 text-right">Total inc GST</th>
               <th className="p-3 pr-2 text-right hidden md:table-cell">Invoice</th>
               <th className="p-3 pr-2 w-10"></th>
             </tr>
           </thead>
           <tbody>
-            {filtered.slice(0, 100).map((t) => {
+            {filtered.map((t) => {
               const isSelected = selected.has(t.id);
               return (
                 <tr
@@ -189,12 +204,12 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
                   )}
                   <td className="p-3 pr-2 whitespace-nowrap">{format(parseISO(t.fecha), "dd MMM HH:mm")}</td>
                   <td className="p-3 pr-2 truncate max-w-[140px]">{t.nombre_cliente1}</td>
-                  <td className="p-3 pr-2 hidden lg:table-cell">{t.ciudad}</td>
+
                   <td className="p-3 pr-2 whitespace-nowrap hidden md:table-cell">{t.estacion}</td>
                   <td className="p-3 pr-2 hidden lg:table-cell">{t.nombre_vendedor}</td>
                   <td className="p-3 pr-2 text-right font-medium">{(t.cantidad || 0).toLocaleString()}</td>
-                  <td className="p-3 pr-2 text-right hidden sm:table-cell">${(t.ppu || 0).toFixed(2)}</td>
-                  <td className="p-3 text-right font-medium">${(t.dinero_total || 0).toLocaleString()}</td>
+                  <td className="p-3 pr-2 text-right hidden sm:table-cell"><TransactionPrice pricing={pricing.getTxPricing(t)} /></td>
+                  <td className="p-3 text-right font-medium"><TransactionPrice pricing={pricing.getTxPricing(t)} total /></td>
                   <td className="p-3 pr-2 text-right hidden md:table-cell font-mono text-xs">{t.factura}</td>
                   <td className="p-3 pr-2 text-center">
                     <Link to={`/docket/${t.id}${demoSuffix}`} className="inline-flex items-center justify-center w-7 h-7 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="View Docket" onClick={(e) => e.stopPropagation()}>
@@ -206,9 +221,11 @@ export default function Transactions({ embedded }: { embedded?: boolean } = {}) 
             })}
           </tbody>
         </table>
-        {filtered.length > 100 && (
-          <div className="p-3 text-center text-xs text-muted-foreground">Showing 100 of {filtered.length} transactions</div>
-        )}
+        {!isLoading && !result.error && filtered.length === 0 && <p className="p-6 text-center text-muted-foreground">No transactions for these filters.</p>}
+      </div>
+      <div className="flex flex-wrap gap-3 items-center justify-between text-sm">
+        <span>{total.toLocaleString()} transactions, page {page + 1} of {totalPages}</span>
+        <div className="flex gap-2"><Button variant="outline" size="sm" aria-label="Previous page" disabled={page === 0 || isLoading} onClick={() => setPage(p => p - 1)}>Previous</Button><Button variant="outline" size="sm" aria-label="Next page" disabled={page + 1 >= totalPages || isLoading} onClick={() => setPage(p => p + 1)}>Next</Button></div>
       </div>
 
       {/* Floating action bar when items are selected */}
