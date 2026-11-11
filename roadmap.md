@@ -21,9 +21,10 @@
 
 # Batch 3
 
-- [ ] URL-driven staff and portal tabs with history and legacy portal redirects.
-- [ ] Server customer summaries, indexes, paginated lightweight combined docket list.
-- [ ] Private signed docket uploads, own-client reads and signed URL viewing.
-- [ ] Separate confirmed docket Delete action, preserving existing records.
-- [ ] Mobile tab strips/grid, visible Sync now, actual admin user emails, station label, All sales filter.
-- [ ] Focused tests, browser checks and changed-file/migration list.
+- [x] URL-driven staff and portal tabs with history and legacy portal redirects.
+- [x] Server customer summaries, indexes, paginated lightweight combined docket list.
+- [x] Private signed docket uploads, own-client reads and signed URL viewing.
+- [x] Separate confirmed docket Delete action, preserving existing records.
+- [x] Mobile tab strips/grid, visible Sync now, actual admin user emails, station label, All sales filter.
+- [x] Focused tests, browser checks and changed-file/migration list.
+- [ ] Authenticated upload/view/download, own-client isolation and live list timing. Blocked: requester has no mintable preview session, sign-in required. No existing records were changed during testing.
