@@ -4,6 +4,8 @@ import { Download, CalendarRange, ArrowUp, ArrowDown } from "lucide-react";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
 import { buildBuyPriceLookup } from "@/lib/buyCost";
+import { safeDelta } from "@/lib/transactionPricing";
+import { useTransactionPricing } from "@/hooks/useTransactionPricing";
 
 type Period = { key: string; label: string; start: string; end: string };
 
@@ -46,12 +48,11 @@ type Agg = { litres: number; cost: number; drops: number; revenue: number };
 const EMPTY: Agg = { litres: 0, cost: 0, drops: 0, revenue: 0 };
 
 function pctDelta(curr: number, prev: number): number | null {
-  if (prev <= 0) return null;
-  return ((curr - prev) / prev) * 100;
+  return safeDelta(curr, prev);
 }
 
 function DeltaChip({ pct, invert = false }: { pct: number | null; invert?: boolean }) {
-  if (pct == null) return <span className="text-[11px] text-muted-foreground">no prior data</span>;
+  if (pct == null) return <span title="Comparison unavailable because the current or previous value is zero." className="text-[11px] text-muted-foreground">-</span>;
   const up = pct >= 0;
   const good = invert ? !up : up;
   const Icon = up ? ArrowUp : ArrowDown;
@@ -70,6 +71,7 @@ function DeltaChip({ pct, invert = false }: { pct: number | null; invert?: boole
 
 export function BillingPeriodPanel() {
   const { data: txns = [], isLoading } = useAllTransactions();
+  const pricing = useTransactionPricing(txns);
   const { data: buyPrices = [] } = useBuyPrices(365);
   const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
   const periods = useMemo(() => buildPeriods(12), []);
@@ -90,7 +92,7 @@ export function BillingPeriodPanel() {
         const litres = t.cantidad || 0;
         const ppl = buyPriceLookup(t.date);
         const cost = ppl != null ? litres * ppl : 0;
-        const revenue = t.dinero_total || 0;
+        const revenue = pricing.getTxPricing(t).total ?? 0;
         byCustomer[k].litres += litres;
         byCustomer[k].cost += cost;
         byCustomer[k].drops += 1;
@@ -102,7 +104,7 @@ export function BillingPeriodPanel() {
       });
       return { byCustomer, totals };
     };
-  }, [txns, buyPriceLookup]);
+  }, [txns, buyPriceLookup, pricing.data]);
 
   const current = useMemo(() => aggregate(period), [aggregate, period]);
   const previous = useMemo(() => aggregate(prevPeriod), [aggregate, prevPeriod]);

@@ -114,6 +114,14 @@ export function useTransactions(range: DateRange) {
   });
 }
 
+export function useTransactionsInRange(start: string, end: string) {
+  const isDemo = useDemo();
+  return useQuery({
+    queryKey: ["transactions", start, end, isDemo],
+    queryFn: () => isDemo ? filterByDateRange(getDemoData().transactions, start, end) : fetchAllInRange(start, end),
+  });
+}
+
 export function usePreviousTransactions(range: DateRange) {
   const isDemo = useDemo();
   const { start, end } = getPreviousRange(range);

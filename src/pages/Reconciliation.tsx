@@ -19,7 +19,7 @@ import {
   type ReconAlert,
   type PumpReading,
 } from "@/hooks/useReconciliation";
-import { useTransactions, type Transaction } from "@/hooks/useTransactions";
+import { useTransactionsInRange, type Transaction } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
 import { FLEET } from "@/pages/Trucks";
 
@@ -287,7 +287,7 @@ function DailyBreakdownTable({
                         color: STATUS_COLORS[row.alertStatus],
                       }}
                     >
-                      {STATUS_LABELS[row.alertStatus]}
+                      {row.pumpLitres <= 0 || row.speedsolLitres <= 0 ? "No data to reconcile" : STATUS_LABELS[row.alertStatus]}
                     </span>
                   </td>
                 </tr>
@@ -886,7 +886,7 @@ export default function Reconciliation() {
   const endDate = format(dateEnd, "yyyy-MM-dd");
 
   const { data: allPumpReadings = [] } = usePumpReadings(startDate, endDate);
-  const { data: transactions = [] } = useTransactions("month"); // Get wide range
+  const { data: transactions = [] } = useTransactionsInRange(startDate, endDate);
   const { data: alerts = [] } = useReconAlerts(startDate, endDate);
   const { data: settings } = useReconSettings();
   const resolveMutation = useResolveAlert();

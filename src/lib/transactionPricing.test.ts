@@ -27,6 +27,11 @@ describe("historical ticket pricing", () => {
     const price = createTransactionPricer([tx, { ...tx, id: 2, cantidad: 500 }], clients, tiers, buys, "2026-11-11");
     expect(price(tx).sellPPL).toBe(2.15);
   });
+  it("preserves the highest configured tier above its labelled maximum", () => {
+    const configured = [{ ...tiers[0], min_litres: 0, max_litres: 3500 }];
+    const large = { ...tx, cantidad: 4000 };
+    expect(createTransactionPricer([large], clients, configured, buys, "2026-11-11")(large).hasPricing).toBe(true);
+  });
   it("counts missing litres and distinct customers", () => {
     const price = createTransactionPricer([tx], clients, [], buys, "2026-11-11");
     expect(pricingCoverage([tx, { ...tx, id: 2 }], price)).toMatchObject({ unpricedLitres: 200, unpricedCustomers: 1, ratesMissing: true });

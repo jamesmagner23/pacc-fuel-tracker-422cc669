@@ -16,6 +16,9 @@ import { useSyncTransactions } from "@/hooks/useSyncTransactions";
 import { TruckMap } from "@/components/TruckMap";
 import { SupplierPricePanel } from "@/components/SupplierPricePanel";
 import { BillingPeriodPanel } from "@/components/BillingPeriodPanel";
+import { useTransactionPricing } from "@/hooks/useTransactionPricing";
+import { pricingCoverage } from "@/lib/transactionPricing";
+import { RatesMissingNotice } from "@/components/RatesMissingNotice";
 
 /* ---------- helpers ---------- */
 
@@ -347,6 +350,8 @@ export function MobileOverview() {
   const { data: monthTxns = [] } = useTransactions("month");
   const { data: buyPrices = [] } = useBuyPrices(30);
   const { syncing, handleSync, lastSyncTime, isSyncStale } = useSyncTransactions({ autoSync: true });
+  const pricing = useTransactionPricing(filtered);
+  const coverage = pricingCoverage(filtered, pricing.getTxPricing);
 
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
@@ -409,6 +414,7 @@ export function MobileOverview() {
                 L
               </span>
             </div>
+            <RatesMissingNotice {...coverage} />
             <div className="mt-4 flex items-center justify-between gap-3 rounded-[14px] border border-border bg-card px-3 py-3">
               <div className="min-w-0">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Daily sales data</div>

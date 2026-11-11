@@ -45,8 +45,10 @@ export function createTransactionPricer(transactions: PriceTransaction[], client
     if ((t.ppu ?? 0) > 0) return { hasPricing: true, sellPPL: Number(t.ppu), total: litres * Number(t.ppu), source: "speedsol" };
     const client = names.get((t.nombre_cliente1 ?? "").trim().toLowerCase());
     const volume = client == null ? 0 : volumes.get(`${client}:${weekKey(t)}`) ?? 0;
-    const tier = tiers.filter(p => p.client_account_id === client && volume >= p.min_litres && (p.max_litres == null || volume < p.max_litres))
-      .sort((a, b) => b.min_litres - a.min_litres)[0];
+    const clientTiers = tiers.filter(p => p.client_account_id === client).sort((a, b) => b.min_litres - a.min_litres);
+    // Reuse the existing Client Pricing walk-down: highest eligible minimum,
+    // including the highest configured tier for volumes above its upper label.
+    const tier = clientTiers.find(p => volume >= p.min_litres) ?? clientTiers[clientTiers.length - 1];
     const buy = effectiveBuyPrice(buys, t.date || t.fecha.slice(0, 10), today);
     if (!tier || buy == null) return { hasPricing: false, sellPPL: null, total: null, source: "missing" };
     // Preserve Client Pricing's existing formula: markup is cents/L, margin is percentage added to buy.
