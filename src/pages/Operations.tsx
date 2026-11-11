@@ -1,3 +1,5 @@
+import { useUrlTab } from "@/hooks/useUrlTab";
+import SignedDocketsTab from "@/components/admin/SignedDocketsTab";
 import { useMemo, useState } from "react";
 import { LayoutDashboard, Truck, Users, Route, LogOut, CalendarIcon, Droplet, Package, Gauge } from "lucide-react";
 import { format, subDays, startOfYear, parseISO, startOfWeek } from "date-fns";
@@ -13,7 +15,7 @@ import Trucks from "./Trucks";
 import Customers from "./Customers";
 import Dispatch from "./Dispatch";
 
-type TabId = "overview" | "trucks" | "customers" | "dispatch";
+type TabId = "overview" | "trucks" | "customers" | "dispatch" | "dockets";
 type OpsRange = "7d" | "30d" | "90d" | "ytd" | "all" | "custom";
 
 function OperationsOverview() {
@@ -232,13 +234,14 @@ function OperationsOverview() {
  * tabs they need.
  */
 export default function Operations() {
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useUrlTab<TabId>(["overview", "trucks", "customers", "dispatch", "dockets"], "overview", undefined, "section");
 
   const tabs: { id: TabId; label: string; icon: JSX.Element }[] = [
     { id: "overview", label: "Overview", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
     { id: "trucks", label: "Trucks", icon: <Truck className="w-3.5 h-3.5" /> },
     { id: "customers", label: "Customers", icon: <Users className="w-3.5 h-3.5" /> },
     { id: "dispatch", label: "Dispatch", icon: <Route className="w-3.5 h-3.5" /> },
+    { id: "dockets", label: "Signed dockets", icon: <Package className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -296,6 +299,7 @@ export default function Operations() {
         {activeTab === "trucks" && <Trucks />}
         {activeTab === "customers" && <Customers />}
         {activeTab === "dispatch" && <Dispatch />}
+        {activeTab === "dockets" && <SignedDocketsTab />}
       </main>
     </div>
   );

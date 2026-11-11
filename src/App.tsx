@@ -40,6 +40,12 @@ import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
+function LegacyPortalRedirect() {
+  const location = useLocation();
+  const target = location.pathname.replace(/^\/portal\/client(?:\/|$)/, "/portal/").replace(/\/$/, "");
+  return <Navigate to={`${target}${location.search}${location.hash}`} replace />;
+}
+
 function DemoAwareRoutes() {
   const [params] = useSearchParams();
   const isDemo = params.get("demo") === "true";
@@ -69,6 +75,7 @@ function DemoAwareRoutes() {
                 <Route path="/transactions" element={<Transactions />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/:tab" element={<Admin />} />
                 <Route path="/dispatch" element={<Dispatch />} />
                 <Route path="/suppliers" element={<Suppliers />} />
                 <Route path="/market" element={<MarketIntelligence />} />
@@ -77,6 +84,9 @@ function DemoAwareRoutes() {
                 <Route path="/sales" element={<Sales />} />
                 <Route path="/trucks" element={<TruckPortal />} />
                 <Route path="/portal" element={<CustomerPortal />} />
+          <Route path="/portal/overview" element={<CustomerPortal forcedTab="Overview" />} />
+          <Route path="/portal/signed-dockets" element={<CustomerPortal forcedTab="SignedDockets" />} />
+          <Route path="/portal/client/*" element={<LegacyPortalRedirect />} />
                 <Route path="/portal/deliveries" element={<CustomerPortal forcedTab="Deliveries" />} />
                 <Route path="/portal/fleet" element={<CustomerPortal forcedTab="Fleet" />} />
                 <Route path="/portal/projects" element={<CustomerPortal forcedTab="Projects" />} />
@@ -84,7 +94,6 @@ function DemoAwareRoutes() {
                 <Route path="/portal/profile" element={<CustomerPortal forcedTab="Profile" />} />
                 <Route path="/portal/help" element={<CustomerPortal forcedTab="Help" />} />
                 <Route path="/driver" element={<DriverPortal />} />
-                <Route path="/admin/outreach" element={<Outreach />} />
                 <Route path="/crm" element={<CRM />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
@@ -95,6 +104,9 @@ function DemoAwareRoutes() {
       ) : (
         <>
           <Route path="/portal" element={<CustomerPortal />} />
+          <Route path="/portal/overview" element={<CustomerPortal forcedTab="Overview" />} />
+          <Route path="/portal/signed-dockets" element={<CustomerPortal forcedTab="SignedDockets" />} />
+          <Route path="/portal/client/*" element={<LegacyPortalRedirect />} />
           <Route path="/portal/deliveries" element={<CustomerPortal forcedTab="Deliveries" />} />
           <Route path="/portal/fleet" element={<CustomerPortal forcedTab="Fleet" />} />
           <Route path="/portal/projects" element={<CustomerPortal forcedTab="Projects" />} />
@@ -116,6 +128,7 @@ function DemoAwareRoutes() {
                   <Route path="/transactions" element={<Transactions />} />
                   <Route path="/finance" element={<Finance />} />
                    <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/:tab" element={<Admin />} />
                    <Route path="/dispatch" element={<Dispatch />} />
                   <Route path="/suppliers" element={<Suppliers />} />
                   <Route path="/market" element={<MarketIntelligence />} />
@@ -123,8 +136,7 @@ function DemoAwareRoutes() {
                   <Route path="/admin/pricing" element={<Pricing />} />
                   <Route path="/sales" element={<Sales />} />
                   <Route path="/trucks" element={<TruckPortal />} />
-                  <Route path="/admin/outreach" element={<Outreach />} />
-                  <Route path="/crm" element={<CRM />} />
+                    <Route path="/crm" element={<CRM />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Layout>

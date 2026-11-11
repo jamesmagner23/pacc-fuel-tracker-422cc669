@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { withTimeout } from "@/lib/requestTimeout";
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -157,6 +158,7 @@ function normalizePipedriveHost(rawDomain?: string | null) {
 }
 
 export default function Outreach() {
+  const [previewTab, setPreviewTab] = useUrlTab(["html", "text"], "html", undefined, "preview");
   const { toast } = useToast();
 
   // People list
@@ -1158,7 +1160,7 @@ export default function Outreach() {
                 </div>
               </details>
 
-              <Tabs defaultValue="html" className="hidden lg:block">
+              <Tabs value={previewTab} onValueChange={setPreviewTab} className="hidden lg:block">
                 <div className="flex items-center justify-between">
                   <TabsList className="bg-background border border-surface-border">
                     <TabsTrigger value="html">HTML preview</TabsTrigger>

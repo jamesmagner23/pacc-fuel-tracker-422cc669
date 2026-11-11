@@ -1,5 +1,7 @@
+import { useUrlTab } from "@/hooks/useUrlTab";
+import SignedDocketsTab from "@/components/admin/SignedDocketsTab";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
 import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, addDays, startOfWeek, subDays } from "date-fns";
@@ -161,6 +163,7 @@ function applyPortalTheme() {
 const tabs = [
   "Overview",
   "Deliveries",
+  "SignedDockets",
   "Fleet",
   "Projects",
   "Reports",
@@ -259,7 +262,7 @@ function useCustomerProfile() {
   });
 }
 
-function useCustomerTransactions(speedsolNames: string[]) {
+function useCustomerTransactions(speedsolNames: string[], enabled = true) {
   const isDemo = useDemo();
   return useQuery({
     queryKey: ["customer-transactions-all", speedsolNames, isDemo],
@@ -272,14 +275,14 @@ function useCustomerTransactions(speedsolNames: string[]) {
       if (speedsolNames.length === 0) return [];
       const all = [];
       for (let offset = 0; ; offset += 1000) {
-        const { data, error } = await supabase.from("transactions").select("*").in("nombre_cliente1", speedsolNames).order("fecha", { ascending: false }).order("id").range(offset, offset + 999);
+        const { data, error } = await supabase.from("transactions").select("id,fecha,date,estacion,nombre_flota,nombre_cliente1,identificador_cliente1,cantidad,producto,nombre_vendedor,placa,factura,ppu,dinero_total").in("nombre_cliente1", speedsolNames).order("fecha", { ascending: false }).order("id").range(offset, offset + 999);
         if (error) throw error;
         all.push(...(data ?? []));
         if ((data?.length ?? 0) < 1000) break;
       }
       return all;
     },
-    enabled: speedsolNames.length > 0,
+    enabled: enabled && speedsolNames.length > 0,
   });
 }
 
@@ -398,50 +401,16 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 
 // ─── Main component ──────────────────────────────────────────────────
 export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help" } = {}) {
-  const [params, setParams] = useSearchParams();
-  const tabParam = params.get("tab");
-  // Temporarily hidden sections (see HIDDEN_TABS) fall back to Overview.
-  const visibleTab = (t: Tab | "Help"): Tab | "Help" =>
-    HIDDEN_TABS.has(t) ? "Overview" : t;
-  const initialTab: Tab | "Help" = visibleTab(
-    forcedTab
-      ? forcedTab
-      : (tabs as readonly string[]).includes(tabParam || "")
-        ? (tabParam as Tab)
-        : "Overview",
-  );
-  const [activeTab, setActiveTabState] = useState<Tab | "Help">(initialTab);
-  // When the URL-driven forcedTab changes (sub-route nav), follow it.
-  useEffect(() => {
-    const next = forcedTab && !HIDDEN_TABS.has(forcedTab) ? forcedTab : null;
-    if (next && next !== activeTab) {
-      setActiveTabState(next);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [forcedTab]);
-  // Legacy ?tab= support - only honoured when no forcedTab is supplied.
-  useEffect(() => {
-    if (forcedTab) return;
-    if (tabParam !== activeTab) {
-      const next = new URLSearchParams(params);
-      next.set("tab", activeTab);
-      setParams(next, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
-  useEffect(() => {
-    if (forcedTab) return;
-    if (tabParam && HIDDEN_TABS.has(tabParam)) {
-      setActiveTabState("Overview");
-      return;
-    }
-    if (tabParam && (tabs as readonly string[]).includes(tabParam) && tabParam !== activeTab) {
-      setActiveTabState(tabParam as Tab);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabParam]);
-  const setActiveTab = setActiveTabState as (t: Tab) => void;
-  const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Emissions");
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const requested = forcedTab ?? params.get("tab") ?? "Overview";
+  const activeTab = HIDDEN_TABS.has(requested) ? "Overview" : requested;
+  const setActiveTab = (tab: Tab | "Help") => {
+    const slugs: Record<string, string> = { Overview: "overview", Deliveries: "deliveries", SignedDockets: "signed-dockets", Fleet: "fleet", Projects: "projects", Reports: "reports", Profile: "profile", Help: "help" };
+    const next = new URLSearchParams(params); next.delete("tab");
+    navigate(`/portal/${slugs[tab]}${next.toString() ? `?${next}` : ""}`);
+  };
+  const [reportsSubtab, setReportsSubtab] = useUrlTab<ReportSubtab>(["Emissions", "Fuel Tax Credit"], "Emissions", undefined, "report");
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
   const isDemo = useDemo();
@@ -463,7 +432,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   applyPortalTheme();
   const [accountOpen, setAccountOpen] = useState(false);
 
-  const { data: rawTransactions = [], isLoading } = useCustomerTransactions(speedsolNames);
+  const { data: rawTransactions = [], isLoading } = useCustomerTransactions(speedsolNames, activeTab !== "SignedDockets");
   const pricing = useTransactionPricing(rawTransactions);
   const transactions = useMemo(() => rawTransactions.map(t => ({ ...t, ppu: pricing.getTxPricing(t).sellPPL, dinero_total: pricing.getTxPricing(t).total, displayPricing: pricing.getTxPricing(t) })), [rawTransactions, pricing.data]);
 
@@ -725,7 +694,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
         )}
 
 
-        {isLoading && activeTab !== "Fleet" ? (
+        {isLoading && activeTab !== "Fleet" && activeTab !== "SignedDockets" ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
@@ -782,6 +751,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 clientAccountId={clientAccountId}
               />
             )}
+            {activeTab === "SignedDockets" && <SignedDocketsTab portal clientAccountId={clientAccountId} />}
             {activeTab === "Fleet" && (
               <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />
             )}
@@ -2295,230 +2265,6 @@ function _LegacyOverviewBlocks_unused(opts: any) {
 // ═══════════════════════════════════════════════════════════════════════
 // 02 DELIVERIES - site + project + date range filter, CSV export, dockets
 // ═══════════════════════════════════════════════════════════════════════
-function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null }) {
-  const [open, setOpen] = useState<any | null>(null);
-  const { data: dockets = [], isLoading, error } = useQuery({
-    queryKey: ["signed-dockets", clientAccountId],
-    queryFn: async () => {
-      if (!clientAccountId) return [];
-      const { data, error } = await supabase
-        .from("dispatch_stops" as any)
-        .select("*")
-        .eq("client_account_id", clientAccountId)
-        .eq("status", "completed")
-        .not("customer_signature", "is", null)
-        .order("signed_at", { ascending: false, nullsFirst: false })
-        .order("completed_at", { ascending: false, nullsFirst: false })
-        .limit(50);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-    enabled: !!clientAccountId,
-  });
-  const { data: completedCount = 0 } = useQuery({
-    queryKey: ["signed-dockets-completed-count", clientAccountId],
-    queryFn: async () => {
-      if (!clientAccountId) return 0;
-      const { data, error } = await supabase
-        .from("dispatch_stops" as any)
-        .select("id")
-        .eq("client_account_id", clientAccountId)
-        .eq("status", "completed");
-      if (error) throw error;
-      return (data || []).length;
-    },
-    enabled: !!clientAccountId,
-  });
-  const { data: projectById = {} } = useQuery({
-    queryKey: ["signed-dockets-projects", dockets.map((d: any) => d.project_id).filter(Boolean).sort().join(",")],
-    queryFn: async () => {
-      const ids = Array.from(new Set(dockets.map((d: any) => d.project_id).filter(Boolean)));
-      if (!ids.length) return {} as Record<string, any>;
-      const { data, error } = await supabase.from("projects").select("id, name, site_address").in("id", ids);
-      if (error) return {} as Record<string, any>;
-      const map: Record<string, any> = {};
-      (data || []).forEach((p: any) => { map[p.id] = p; });
-      return map;
-    },
-    enabled: dockets.length > 0,
-  });
-  const { data: truckById = {} } = useQuery({
-    queryKey: ["signed-dockets-trucks", dockets.map((d: any) => d.truck_id).filter(Boolean).sort().join(",")],
-    queryFn: async () => {
-      const ids = Array.from(new Set(dockets.map((d: any) => d.truck_id).filter(Boolean)));
-      if (!ids.length) return {} as Record<string, any>;
-      const { data, error } = await supabase.from("trucks" as any).select("id, name, rego").in("id", ids);
-      if (error) return {} as Record<string, any>;
-      const map: Record<string, any> = {};
-      (data || []).forEach((t: any) => { map[t.id] = t; });
-      return map;
-    },
-    enabled: dockets.length > 0,
-  });
-  const { data: driverNameById = {} } = useQuery({
-    queryKey: ["signed-dockets-drivers", dockets.map((d: any) => d.driver_user_id).filter(Boolean).sort().join(",")],
-    queryFn: async () => {
-      const ids = Array.from(new Set(dockets.map((d: any) => d.driver_user_id).filter(Boolean)));
-      if (!ids.length) return {} as Record<string, string>;
-      const { data, error } = await supabase.from("user_roles").select("user_id, full_name, email").in("user_id", ids);
-      if (error) return {} as Record<string, string>;
-      const map: Record<string, string> = {};
-      (data || []).forEach((u: any) => { map[u.user_id] = u.full_name || u.email || ""; });
-      return map;
-    },
-    enabled: dockets.length > 0,
-  });
-  return (
-    <div id="signed-dockets" style={{ ...card, scrollMarginTop: 80 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{ ...labelStyle, marginBottom: 0 }}>Signed Dockets</div>
-        <div style={muted(11)}>
-          {dockets.length} signed
-        </div>
-      </div>
-      {isLoading && <p style={muted(13)}>Loading signed dockets…</p>}
-      {error && <p style={{ ...muted(13), color: "#9F2A1D" }}>Signed dockets could not be loaded. Please refresh and try again.</p>}
-      {!isLoading && !error && dockets.length === 0 && (
-        <div style={{ border: `1px dashed ${T.border}`, borderRadius: 8, padding: 14, background: T.surfaceRaised }}>
-          <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>No signed dockets yet</div>
-          <div style={muted(12)}>
-            {completedCount > 0
-              ? `${completedCount} completed delivery ${completedCount === 1 ? "record is" : "records are"} below, but none have a captured customer signature yet.`
-              : "Signed dockets will appear here as soon as a driver captures the customer and driver signatures."}
-          </div>
-        </div>
-      )}
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        {dockets.map((d, i) => {
-          const project = d.project_id ? projectById[d.project_id] : null;
-          const truck = d.truck_id ? truckById[d.truck_id] : null;
-          return (
-            <button
-              key={d.id}
-              onClick={() => setOpen({ ...d, project, truck })}
-              style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "10px 0", borderTop: i > 0 ? `1px solid ${T.border}` : "none",
-                background: "transparent", border: "none", textAlign: "left",
-                cursor: "pointer", color: T.text,
-              }}
-            >
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  {project?.name || d.site_name}
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "rgba(122,168,77,0.18)", color: "#2A6A2E", letterSpacing: "0.05em" }}>SIGNED</span>
-                </div>
-                <div style={muted(11)}>
-                  {d.signed_at ? format(parseISO(d.signed_at), "d MMM yyyy · HH:mm")
-                    : d.completed_at ? format(parseISO(d.completed_at), "d MMM yyyy · HH:mm") : ""}
-                  {d.customer_name ? ` · ${d.customer_name}${d.customer_role ? `, ${d.customer_role}` : ""}` : ""}
-                </div>
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: T.chart, marginLeft: 12 }}>
-                {Number(d.delivered_litres || 0).toLocaleString()} L
-              </div>
-            </button>
-          );
-        })}
-      </div>
-      {open && (
-        <div
-          onClick={() => setOpen(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(14,31,16,0.55)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ background: "#fff", color: "#0E1F10", borderRadius: 12, padding: 20, maxWidth: 480, width: "100%", maxHeight: "90vh", overflow: "auto" }}
-          >
-            <div style={{ fontWeight: 700, fontSize: 16 }}>{open.site_name}</div>
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>
-              {open.signed_at ? format(parseISO(open.signed_at), "d MMM yyyy · HH:mm") : ""}
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12, fontSize: 12 }}>
-              {open.project?.name && (
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Project</div>
-                  <div style={{ fontWeight: 600, color: "#0E1F10" }}>{open.project.name}</div>
-                </div>
-              )}
-              {open.address && (
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Address</div>
-                  <div style={{ color: "#0E1F10" }}>{open.address}</div>
-                </div>
-              )}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Delivered</div>
-                <div style={{ fontWeight: 700, color: "#0E1F10" }}>{Number(open.delivered_litres || 0).toLocaleString()} L</div>
-              </div>
-              {(open.truck?.name || open.truck?.rego) && (
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Truck</div>
-                  <div style={{ color: "#0E1F10" }}>
-                    {open.truck?.name}{open.truck?.rego ? ` · ${open.truck.rego}` : ""}
-                  </div>
-                </div>
-              )}
-              {open.driver_user_id && driverNameById[open.driver_user_id] && (
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#888" }}>Driver</div>
-                  <div style={{ color: "#0E1F10" }}>{driverNameById[open.driver_user_id]}</div>
-                </div>
-              )}
-            </div>
-
-            {Array.isArray(open.products?.lines) && open.products.lines.length > 0 && (
-              <div style={{ marginBottom: 12, border: "1px solid #eee", borderRadius: 8, overflow: "hidden" }}>
-                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", padding: "8px 10px", background: "#f7f7f5" }}>
-                  Equipment fuelled ({open.products.lines.length})
-                </div>
-                <div>
-                  {open.products.lines.map((ln: any, idx: number) => (
-                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderTop: idx === 0 ? "none" : "1px solid #f0f0f0", fontSize: 12 }}>
-                      <span style={{ color: "#0E1F10", minWidth: 0, marginRight: 8 }}>
-                        <strong>{ln.placa || "-"}</strong>
-                        {ln.product ? ` · ${ln.product}` : ""}
-                        {ln.fleet ? ` · ${ln.fleet}` : ""}
-                      </span>
-                      <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#0E1F10" }}>
-                        {Number(ln.litres || 0).toFixed(2)} L
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {open.signature_notes && (
-              <div style={{ fontSize: 12, marginBottom: 12, color: "#444" }}>
-                <strong>Notes:</strong> {open.signature_notes}
-              </div>
-            )}
-            {open.customer_signature && (
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", marginBottom: 4 }}>
-                  Customer - {open.customer_name}{open.customer_role ? ` · ${open.customer_role}` : ""}
-                </div>
-                <img src={open.customer_signature} alt="Customer signature" style={{ maxWidth: "100%", border: "1px solid #eee", borderRadius: 6 }} />
-              </div>
-            )}
-            {open.driver_signature && (
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#666", marginBottom: 4 }}>
-                  Driver{open.driver_user_id && driverNameById[open.driver_user_id] ? ` - ${driverNameById[open.driver_user_id]}` : ""}
-                </div>
-                <img src={open.driver_signature} alt="Driver signature" style={{ maxWidth: "100%", border: "1px solid #eee", borderRadius: 6 }} />
-              </div>
-            )}
-            <button onClick={() => setOpen(null)} style={{ marginTop: 8, padding: "10px 16px", borderRadius: 8, border: "1px solid #ddd", background: "#fff", cursor: "pointer", width: "100%" }}>
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function DeliveriesTab({
   transactions,
@@ -2687,7 +2433,7 @@ function DeliveriesTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <SignedDocketsCard clientAccountId={clientAccountId} />
+      <SignedDocketsTab portal clientAccountId={clientAccountId} />
       {unmappedCount > 0 && (
         <div
           style={{

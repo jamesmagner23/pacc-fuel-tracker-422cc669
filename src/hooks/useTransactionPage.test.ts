@@ -11,7 +11,7 @@ beforeEach(() => vi.clearAllMocks());
 const filters = { start: "2026-10-01", end: "2026-10-31", search: "TRACK WORKS", customer: "", truck: "", driver: "", sort: "fecha", ascending: false };
 it("requests 50 rows with an exact total count", async () => {
   const result = await fetchTransactionPage(filters, 0);
-  expect(builder.select).toHaveBeenCalledWith("*", { count: "exact" });
+  expect(builder.select).toHaveBeenCalledWith(expect.stringContaining("id,fecha,date"), { count: "exact" });
   expect(builder.range).toHaveBeenCalledWith(0, 49);
   expect(result.count).toBe(304);
 });

@@ -85,7 +85,7 @@ async function fetchAllInRange(start: string, end: string): Promise<Transaction[
   for (let i = 0; i < 50; i++) {
     const { data, error } = await withTimeout(supabase
       .from("transactions")
-      .select("*")
+      .select("id,fecha,date,estacion,nombre_flota,nombre_cliente1,identificador_cliente1,ciudad,cantidad,cantidad_neta,producto,nombre_vendedor,placa,totalizador_bruto,factura,forma_de_pago,ppu,dinero_total,id_surtidor,surtidor,manguera")
       .gte("date", start)
       .lte("date", end)
       .order("fecha", { ascending: false })
@@ -151,7 +151,7 @@ export function useAllTransactions() {
       for (let i = 0; i < 50; i++) {
         const { data, error } = await withTimeout(supabase
           .from("transactions")
-          .select("*")
+          .select("id,fecha,date,estacion,nombre_flota,nombre_cliente1,identificador_cliente1,ciudad,cantidad,cantidad_neta,producto,nombre_vendedor,placa,totalizador_bruto,factura,forma_de_pago,ppu,dinero_total,id_surtidor,surtidor,manguera")
           .order("fecha", { ascending: false })
           .range(from, from + PAGE - 1));
         if (error) throw error;
@@ -173,7 +173,7 @@ export function useSyncLog() {
       if (isDemo) return DEMO_SYNC_LOG;
       const { data, error } = await supabase
         .from("sync_log")
-        .select("*")
+        .select("id,synced_at,status,records_fetched,records_upserted")
         .eq("status", "success")
         .order("synced_at", { ascending: false })
         .limit(1)

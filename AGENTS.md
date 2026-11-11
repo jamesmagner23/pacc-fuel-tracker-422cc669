@@ -7,3 +7,8 @@
 - Treat any unpriced period volume as incomplete reporting and suppress percentage comparisons involving zero, so missing rates never appear as measured losses.
 - Fetch transaction pages with exact server counts and 50-row ranges; fetch export rows separately using identical filters, so the visible page cannot silently truncate an export.
 - Bound Data Health and external outreach requests with finite timeouts and explicit retries, so empty or failed requests never remain loading indefinitely.
+- Drive staff and portal tabs from router state with push navigation and separate keys for nested tabs, so bookmarks and browser Back restore the selected view.
+- Fetch Customers through role-checked server summaries and signed dockets through 25-row metadata pages; load signatures only on opening, so lists avoid full-history and image payloads.
+- Keep uploaded signed dockets in private storage with customer-linked records and own-client read policies; validate linked deliveries and transactions before insertion, so cross-customer attachments cannot be published.
+- Remove dockets from lists through additive archive records rather than deleting deliveries or files, so original operational records remain intact.
+- Retrieve authentication emails through an admin-checked directory function, so user listings never depend on redacted role-table email values.

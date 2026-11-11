@@ -18,3 +18,13 @@
 - [x] Melbourne future excise indexation countdown.
 - [x] Focused tests: 23 tests passed, read-only October count confirmed 304 rows, public login renders without page errors.
 - [ ] Authenticated end-to-end pricing, pagination, CSV and Pipedrive verification. Blocked: managed requester session cannot be minted, user must sign in to preview.
+
+# Batch 3
+
+- [x] URL-driven staff and portal tabs with history and legacy portal redirects.
+- [x] Server customer summaries, indexes, paginated lightweight combined docket list.
+- [x] Private signed docket uploads, own-client reads and signed URL viewing.
+- [x] Separate confirmed docket Delete action, preserving existing records.
+- [x] Mobile tab strips/grid, visible Sync now, actual admin user emails, station label, All sales filter.
+- [x] Focused tests, browser checks and changed-file/migration list.
+- [ ] Authenticated upload/view/download, own-client isolation and live list timing. Blocked: requester has no mintable preview session, sign-in required. No existing records were changed during testing.

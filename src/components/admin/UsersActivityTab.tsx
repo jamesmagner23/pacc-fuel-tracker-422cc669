@@ -33,24 +33,9 @@ function useAdminUsers() {
     queryKey: ["admin-users", isDemo],
     queryFn: async () => {
       if (isDemo) return DEMO_USERS as UserRow[];
-      const { data: roles, error } = await supabase
-        .from("user_roles")
-        .select("id, user_id, role, full_name, email, client_account_id")
-        .order("role").order("full_name");
+      const { data, error } = await supabase.rpc("admin_user_directory");
       if (error) throw error;
-      const clientIds = [...new Set((roles || []).filter(r => r.client_account_id).map(r => r.client_account_id))];
-      let accountsMap: Record<number, string> = {};
-      if (clientIds.length > 0) {
-        const { data: accounts } = await supabase
-          .from("client_accounts")
-          .select("id, company_name")
-          .in("id", clientIds);
-        accountsMap = Object.fromEntries((accounts || []).map(a => [a.id, a.company_name]));
-      }
-      return (roles || []).map(r => ({
-        ...r,
-        company_name: r.client_account_id ? accountsMap[r.client_account_id] || null : null,
-      })) as UserRow[];
+      return (data ?? []) as UserRow[];
     },
   });
 }
@@ -72,10 +57,8 @@ function useActivityLogs(days = 30) {
       const userIds = [...new Set((data || []).map(d => d.user_id))];
       let nameMap: Record<string, { full_name: string; email: string }> = {};
       if (userIds.length > 0) {
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("user_id, full_name, email")
-          .in("user_id", userIds);
+        const { data: roles, error } = await supabase.rpc("admin_user_directory");
+        if (error) throw error;
         nameMap = Object.fromEntries((roles || []).map(r => [r.user_id, { full_name: r.full_name || "", email: r.email || "" }]));
       }
       return (data || []).map(d => ({
@@ -115,7 +98,7 @@ const ACTION_ICONS: Record<string, typeof LogIn> = {
 };
 
 export default function UsersActivityTab() {
-  const { data: users = [], isLoading: usersLoading } = useAdminUsers();
+  const { data: users = [], isLoading: usersLoading, error: usersError, refetch: retryUsers } = useAdminUsers();
   const { data: activity = [], isLoading: activityLoading } = useActivityLogs();
   const deleteUser = useDeleteUser();
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
@@ -329,7 +312,7 @@ export default function UsersActivityTab() {
             <span className="bg-positive/20 text-positive px-2 py-0.5 rounded-full">{drivers.length} Driver</span>
           </div>
         </div>
-        {usersLoading ? (
+        {usersError ? <div role="alert">Users could not be loaded. <button onClick={() => retryUsers()}>Retry</button></div> : usersLoading ? (
           <div className="text-muted-foreground text-sm">Loading…</div>
         ) : (
           <div className="overflow-x-auto">
@@ -346,12 +329,12 @@ export default function UsersActivityTab() {
               <tbody>
                 {users.map((user) => (
                   <tr key={user.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                    <td className="py-2.5 pr-3 text-[13px] text-foreground font-medium">{user.full_name || "—"}</td>
-                    <td className="py-2.5 pr-3 text-[13px] text-muted-foreground">{user.email || "—"}</td>
+                    <td className="py-2.5 pr-3 text-[13px] text-foreground font-medium">{user.full_name || "-"}</td>
+                    <td className="py-2.5 pr-3 text-[13px] text-muted-foreground">{user.email || "No email on record"}</td>
                     <td className="py-2.5 pr-3">
                       <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full ${ROLE_COLORS[user.role] || ""}`}>{user.role}</span>
                     </td>
-                    <td className="py-2.5 pr-3 text-[13px] text-muted-foreground">{user.company_name || "—"}</td>
+                    <td className="py-2.5 pr-3 text-[13px] text-muted-foreground">{user.company_name || "-"}</td>
                     <td className="py-2.5">
                       <div className="flex gap-1">
                         <button onClick={() => handleEdit(user)} className="bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground p-1 transition-colors" title="Edit">
@@ -397,7 +380,7 @@ export default function UsersActivityTab() {
 
       <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3.5">
-          Recent Activity ({activity.length} events — last 30 days)
+          Recent Activity ({activity.length} events - last 30 days)
         </div>
         {activityLoading ? (
           <div className="text-muted-foreground text-sm">Loading…</div>
@@ -415,7 +398,7 @@ export default function UsersActivityTab() {
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] text-foreground">
                       <span className="font-medium">{a.full_name || a.email}</span>
-                      <span className="text-muted-foreground"> — {a.action.replace(/_/g, " ")}</span>
+                      <span className="text-muted-foreground"> - {a.action.replace(/_/g, " ")}</span>
                     </div>
                     {a.metadata && Object.keys(a.metadata).length > 0 && (
                       <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{JSON.stringify(a.metadata).slice(0, 80)}</div>
@@ -471,7 +454,7 @@ export default function UsersActivityTab() {
             ) : (
               <div className="flex flex-col gap-3">
                 <p className="text-[12px] text-muted-foreground">
-                  Existing passwords can't be retrieved (they're hashed). This is the new password — copy it now, you won't see it again after closing this dialog.
+                  Existing passwords can't be retrieved (they're hashed). This is the new password - copy it now, you won't see it again after closing this dialog.
                 </p>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[11px] text-muted-foreground">Email</label>
@@ -574,7 +557,7 @@ export default function UsersActivityTab() {
                     Generate
                   </button>
                 </div>
-                <p className="text-[10px] text-muted-foreground">Share this with the user — they sign in at /login.</p>
+                <p className="text-[10px] text-muted-foreground">Share this with the user - they sign in at /login.</p>
               </div>
 
               {newRole === "client" && (

@@ -1,3 +1,4 @@
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTGPrices } from "@/hooks/useTGPrices";
 import { supabase } from "@/integrations/supabase/client";
@@ -345,7 +346,7 @@ export default function MarketIntelligence() {
   }, [tgpHistory, marketMetrics]);
 
   const [activeMonth, setActiveMonth] = useState(0);
-  const [tab, setTab] = useState("OVERVIEW");
+  const [tab, setTab] = useUrlTab(["OVERVIEW", "SUPPLY CHAIN", "MONTH BY MONTH", "BOWSER AVG", "TGP COMPARE"], "OVERVIEW");
 
   const tabs = ["OVERVIEW", "SUPPLY CHAIN", "MONTH BY MONTH", "BOWSER AVG", "TGP COMPARE"];
 
@@ -403,11 +404,11 @@ export default function MarketIntelligence() {
       </div>
 
       {/* TABS - matches Finance page style */}
-      <div className="flex gap-0 border-b border-surface-border overflow-x-auto">
+      <div className="flex gap-0 border-b border-surface-border overflow-x-auto snap-x">
         {tabs.map(t => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => setTab(t as typeof tab)}
             className={`px-2.5 sm:px-4 py-2 text-[12px] sm:text-[13px] rounded-none border-b-2 bg-transparent cursor-pointer whitespace-nowrap shrink-0 transition-colors ${
               tab === t
                 ? "border-primary text-foreground font-medium"
@@ -676,7 +677,7 @@ export default function MarketIntelligence() {
           </div>
 
           {/* Scenario table */}
-          <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5 overflow-x-auto">
+          <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5 overflow-x-auto snap-x">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3" style={{ color: "var(--accent-text)" }}>
               ▸ SCENARIO PRICE TABLE - MELBOURNE DIESEL TGP (AUD ¢/L)
             </div>

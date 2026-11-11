@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { format, parseISO, addDays } from "date-fns";
 import { Send, Trash2, FileText, Plus, Settings2, Download, ChevronDown, Pencil, Copy, CheckSquare, Square, X } from "lucide-react";
 import jsPDF from "jspdf";
@@ -132,7 +133,7 @@ export default function PricingTab() {
   const [clientSearch, setClientSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useUrlTab(["all", "draft", "sent", "accepted", "rejected", "expired"], "all", undefined, "status");
   const [quoteSearch, setQuoteSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState("sent");
@@ -911,7 +912,7 @@ export default function PricingTab() {
           </div>
           <div className="flex gap-1 flex-wrap">
             {["all", "draft", "sent", "accepted", "rejected", "expired"].map((s) => (
-              <button key={s} onClick={() => setStatusFilter(s)} className={`text-[10px] px-2.5 py-1 rounded-full border cursor-pointer transition-colors capitalize ${statusFilter === s ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-muted-foreground border-surface-border hover:border-foreground/30"}`}>
+              <button key={s} onClick={() => setStatusFilter(s as typeof statusFilter)} className={`text-[10px] px-2.5 py-1 rounded-full border cursor-pointer transition-colors capitalize ${statusFilter === s ? "bg-primary text-primary-foreground border-primary" : "bg-transparent text-muted-foreground border-surface-border hover:border-foreground/30"}`}>
                 {s}
               </button>
             ))}

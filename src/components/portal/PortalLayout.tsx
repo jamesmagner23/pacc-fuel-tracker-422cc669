@@ -36,7 +36,7 @@ const navGroups: NavGroup[] = [
     items: [
       { tab: "Overview", label: "Overview", icon: LayoutDashboard },
       { tab: "Deliveries", label: "Deliveries", icon: Truck },
-      { tab: "SignedDockets", label: "Signed dockets", icon: FileSignature, href: "/portal/deliveries#signed-dockets" },
+      { tab: "SignedDockets", label: "Signed dockets", icon: FileSignature },
       { tab: "Fleet", label: "Equipment", icon: Wrench },
       { tab: "Projects", label: "Projects", icon: FolderKanban },
       { tab: "Reports", label: "Reports", icon: FileBarChart },
@@ -98,6 +98,8 @@ export function PortalLayout({
       Projects: "projects",
       Reports: "reports",
       Profile: "profile",
+      SignedDockets: "signed-dockets",
+      Help: "help",
     };
     const next = new URLSearchParams(params);
     // Drop the legacy ?tab= param if present.
@@ -140,7 +142,6 @@ export function PortalLayout({
       <Link
         to={tabHref(item.tab)}
         onClick={(e) => {
-          onTabChange(item.tab);
           onNavigate?.();
         }}
         className={rowClass}

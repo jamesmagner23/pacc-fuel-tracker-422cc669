@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useUrlTab } from "@/hooks/useUrlTab";
+import { Button } from "@/components/ui/button";
 import { Calculator, FileText, UserMinus, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import PricingTab from "@/components/finance/PricingTab";
@@ -14,7 +15,7 @@ export default function Sales() {
   const { data: role } = useUserRole();
   const isAdmin = role === "admin";
   const { data: pendingCount = 0 } = usePendingApprovalCount();
-  const [activeTab, setActiveTab] = useState<TabId>(isAdmin && pendingCount > 0 ? "approvals" : "quotes");
+  const [activeTab, setActiveTab] = useUrlTab<TabId>(isAdmin ? ["quotes", "drop", "winback", "approvals"] : ["quotes", "drop", "winback"], "quotes");
 
   const tabs: { id: TabId; label: string; icon: JSX.Element; badge?: number }[] = [
     { id: "quotes", label: "Quote Builder", icon: <FileText className="w-3.5 h-3.5" /> },
@@ -31,12 +32,12 @@ export default function Sales() {
         showPeriod={false}
       />
 
-      <div className="flex gap-1 bg-surface border border-surface-border rounded-[10px] p-1 overflow-x-auto no-scrollbar">
+      <div className="flex gap-1 bg-surface border border-surface-border rounded-[10px] p-1 overflow-x-auto snap-x">
         {tabs.map((tab) => (
-          <button
+          <Button variant="ghost"
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer min-h-[44px] sm:min-h-0 whitespace-nowrap shrink-0"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer min-h-[44px] sm:min-h-0 whitespace-nowrap shrink-0 snap-start"
             style={{
               background: activeTab === tab.id ? "var(--accent-light)" : "transparent",
               color: activeTab === tab.id ? "var(--primary)" : "var(--text-secondary)",
@@ -50,7 +51,7 @@ export default function Sales() {
                 {tab.badge}
               </span>
             ) : null}
-          </button>
+          </Button>
         ))}
       </div>
 

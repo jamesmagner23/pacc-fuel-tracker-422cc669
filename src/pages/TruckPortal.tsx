@@ -1,3 +1,4 @@
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { useMemo, useState } from "react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
@@ -43,7 +44,7 @@ const DOC_TYPES = [
 ];
 
 function expiryStatus(expiry: string | null): { label: string; tone: "ok" | "warn" | "bad" | "none" } {
-  if (!expiry) return { label: "—", tone: "none" };
+  if (!expiry) return { label: "-", tone: "none" };
   const days = differenceInDays(parseISO(expiry), new Date());
   if (days < 0) return { label: `Expired ${-days}d ago`, tone: "bad" };
   if (days <= 30) return { label: `${days}d left`, tone: "warn" };
@@ -127,8 +128,9 @@ export default function TruckPortal() {
 /* ────────────────────────────────────────────────────────────── */
 
 function TruckDetail({ truck, onEdit }: { truck: Truck; onEdit: () => void }) {
+  const [tab, setTab] = useUrlTab(["overview", "compliance", "service", "docs", "sales"], "overview");
   return (
-    <Tabs defaultValue="overview">
+    <Tabs value={tab} onValueChange={setTab}>
       <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
         {[
           { v: "overview", label: "Overview", icon: TruckIcon },
@@ -174,7 +176,7 @@ function TruckDetail({ truck, onEdit }: { truck: Truck; onEdit: () => void }) {
 function OverviewPanel({ truck, onEdit }: { truck: Truck; onEdit: () => void }) {
   const fields: { label: string; value: string | number | null }[] = [
     { label: "Rego", value: truck.rego },
-    { label: "SpeedSol Estación", value: truck.speedsol_estacion },
+    { label: "SpeedSol station name", value: truck.speedsol_estacion },
     { label: "Make", value: truck.make },
     { label: "Model", value: truck.model },
     { label: "VIN", value: truck.vin },
@@ -204,7 +206,7 @@ function OverviewPanel({ truck, onEdit }: { truck: Truck; onEdit: () => void }) 
         {fields.map((f) => (
           <div key={f.label}>
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{f.label}</div>
-            <div className="text-sm font-medium tabular-nums">{f.value || "—"}</div>
+            <div className="text-sm font-medium tabular-nums">{f.value || "-"}</div>
           </div>
         ))}
       </div>
@@ -436,7 +438,7 @@ function ServicePanel({ truck }: { truck: Truck }) {
                   {r.service_type || "Service"} · {format(parseISO(r.service_date), "d MMM yyyy")}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
-                  {r.vendor || "—"}
+                  {r.vendor || "-"}
                   {r.service_km ? ` · ${r.service_km.toLocaleString()} km` : ""}
                   {r.cost ? ` · $${r.cost.toLocaleString()}` : ""}
                 </div>
@@ -604,7 +606,7 @@ function SalesPanel({ truck }: { truck: Truck }) {
 
       <div className="card p-4 sm:p-5">
         <h3 className="text-sm font-semibold text-muted-foreground mb-4">
-          Daily Litres — attributed via SpeedSol estación <code className="text-[11px]">{truck.speedsol_estacion || truck.name}</code>
+          Daily Litres - attributed via SpeedSol station name <code className="text-[11px]">{truck.speedsol_estacion || truck.name}</code>
         </h3>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
@@ -677,7 +679,7 @@ function TruckEditModal({ truck, onClose }: { truck: Partial<Truck>; onClose: ()
             <Field label="Name *"><Input value={form.name || ""} onChange={(e) => set("name", e.target.value)} /></Field>
             <Field label="Rego"><Input value={form.rego || ""} onChange={(e) => set("rego", e.target.value)} /></Field>
           </div>
-          <Field label="SpeedSol estación (must match dispenser station name)">
+          <Field label="SpeedSol station name">
             <Input value={form.speedsol_estacion || ""} onChange={(e) => set("speedsol_estacion", e.target.value)} placeholder="e.g. PACC Truck 2" />
           </Field>
           <div className="grid grid-cols-2 gap-2">
