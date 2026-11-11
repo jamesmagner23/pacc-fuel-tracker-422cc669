@@ -1,5 +1,6 @@
+import SignedDocketsTab from "@/components/admin/SignedDocketsTab";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import jsPDF from "jspdf";
 import { format, parseISO, startOfMonth, startOfQuarter, subMonths, endOfMonth, addDays, startOfWeek, subDays } from "date-fns";
@@ -161,6 +162,7 @@ function applyPortalTheme() {
 const tabs = [
   "Overview",
   "Deliveries",
+  "SignedDockets",
   "Fleet",
   "Projects",
   "Reports",
@@ -398,49 +400,15 @@ function downloadCSV(rows: (string | number)[][], filename: string) {
 
 // ─── Main component ──────────────────────────────────────────────────
 export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help" } = {}) {
-  const [params, setParams] = useSearchParams();
-  const tabParam = params.get("tab");
-  // Temporarily hidden sections (see HIDDEN_TABS) fall back to Overview.
-  const visibleTab = (t: Tab | "Help"): Tab | "Help" =>
-    HIDDEN_TABS.has(t) ? "Overview" : t;
-  const initialTab: Tab | "Help" = visibleTab(
-    forcedTab
-      ? forcedTab
-      : (tabs as readonly string[]).includes(tabParam || "")
-        ? (tabParam as Tab)
-        : "Overview",
-  );
-  const [activeTab, setActiveTabState] = useState<Tab | "Help">(initialTab);
-  // When the URL-driven forcedTab changes (sub-route nav), follow it.
-  useEffect(() => {
-    const next = forcedTab && !HIDDEN_TABS.has(forcedTab) ? forcedTab : null;
-    if (next && next !== activeTab) {
-      setActiveTabState(next);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [forcedTab]);
-  // Legacy ?tab= support - only honoured when no forcedTab is supplied.
-  useEffect(() => {
-    if (forcedTab) return;
-    if (tabParam !== activeTab) {
-      const next = new URLSearchParams(params);
-      next.set("tab", activeTab);
-      setParams(next, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
-  useEffect(() => {
-    if (forcedTab) return;
-    if (tabParam && HIDDEN_TABS.has(tabParam)) {
-      setActiveTabState("Overview");
-      return;
-    }
-    if (tabParam && (tabs as readonly string[]).includes(tabParam) && tabParam !== activeTab) {
-      setActiveTabState(tabParam as Tab);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabParam]);
-  const setActiveTab = setActiveTabState as (t: Tab) => void;
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const requested = forcedTab ?? params.get("tab") ?? "Overview";
+  const activeTab = HIDDEN_TABS.has(requested) ? "Overview" : requested;
+  const setActiveTab = (tab: Tab | "Help") => {
+    const slugs: Record<string, string> = { Overview: "overview", Deliveries: "deliveries", SignedDockets: "signed-dockets", Fleet: "fleet", Projects: "projects", Reports: "reports", Profile: "profile", Help: "help" };
+    const next = new URLSearchParams(params); next.delete("tab");
+    navigate(`/portal/${slugs[tab]}${next.toString() ? `?${next}` : ""}`);
+  };
   const [reportsSubtab, setReportsSubtab] = useState<ReportSubtab>("Emissions");
   const [period, setPeriod] = useState<PortalPeriod>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>({});
@@ -782,6 +750,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 clientAccountId={clientAccountId}
               />
             )}
+            {activeTab === "SignedDockets" && <SignedDocketsTab portal clientAccountId={clientAccountId} />}
             {activeTab === "Fleet" && (
               <PlantTab clientAccountId={clientAccountId} transactions={filteredTransactions} />
             )}
@@ -2295,7 +2264,7 @@ function _LegacyOverviewBlocks_unused(opts: any) {
 // ═══════════════════════════════════════════════════════════════════════
 // 02 DELIVERIES - site + project + date range filter, CSV export, dockets
 // ═══════════════════════════════════════════════════════════════════════
-function SignedDocketsCard({ clientAccountId }: { clientAccountId: number | null }) {
+function LegacySignedDocketsCard({ clientAccountId }: { clientAccountId: number | null }) {
   const [open, setOpen] = useState<any | null>(null);
   const { data: dockets = [], isLoading, error } = useQuery({
     queryKey: ["signed-dockets", clientAccountId],
@@ -2687,7 +2656,7 @@ function DeliveriesTab({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <SignedDocketsCard clientAccountId={clientAccountId} />
+      <SignedDocketsTab portal clientAccountId={clientAccountId} />
       {unmappedCount > 0 && (
         <div
           style={{

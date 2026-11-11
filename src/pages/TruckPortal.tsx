@@ -1,3 +1,4 @@
+import { useUrlTab } from "@/hooks/useUrlTab";
 import { useMemo, useState } from "react";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
@@ -127,8 +128,9 @@ export default function TruckPortal() {
 /* ────────────────────────────────────────────────────────────── */
 
 function TruckDetail({ truck, onEdit }: { truck: Truck; onEdit: () => void }) {
+  const [tab, setTab] = useUrlTab(["overview", "compliance", "service", "docs", "sales"], "overview");
   return (
-    <Tabs defaultValue="overview">
+    <Tabs value={tab} onValueChange={setTab}>
       <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 overflow-x-auto flex-nowrap w-full no-scrollbar">
         {[
           { v: "overview", label: "Overview", icon: TruckIcon },
@@ -677,7 +679,7 @@ function TruckEditModal({ truck, onClose }: { truck: Partial<Truck>; onClose: ()
             <Field label="Name *"><Input value={form.name || ""} onChange={(e) => set("name", e.target.value)} /></Field>
             <Field label="Rego"><Input value={form.rego || ""} onChange={(e) => set("rego", e.target.value)} /></Field>
           </div>
-          <Field label="SpeedSol estación (must match dispenser station name)">
+          <Field label="SpeedSol station name">
             <Input value={form.speedsol_estacion || ""} onChange={(e) => set("speedsol_estacion", e.target.value)} placeholder="e.g. PACC Truck 2" />
           </Field>
           <div className="grid grid-cols-2 gap-2">

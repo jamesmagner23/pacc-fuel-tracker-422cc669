@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useUrlTab } from "@/hooks/useUrlTab";
+import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Gauge, Users, Shield, TrendingUp, MousePointerClick, Mail, Palette, FileText, FileSignature } from "lucide-react";
 import Reconciliation from "./Reconciliation";
 import SOPManager from "@/components/admin/SOPManager";
@@ -14,7 +15,7 @@ import SignedDocketsTab from "@/components/admin/SignedDocketsTab";
 type TabId = "overview" | "reconciliation" | "dockets" | "users" | "sops" | "ebitda" | "email-clicks" | "outreach" | "email-templates" | "branding";
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [activeTab, setActiveTab] = useUrlTab<TabId>(["overview", "reconciliation", "dockets", "users", "sops", "ebitda", "email-clicks", "outreach", "email-templates", "branding"], "overview", "/admin");
 
   const tabs: { id: TabId; label: string; icon: JSX.Element }[] = [
     { id: "overview", label: "Overview", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
@@ -30,13 +31,13 @@ export default function Admin() {
   ];
 
   return (
-    <div className="flex flex-col gap-5 max-w-[1200px]">
-      <div className="flex gap-1 bg-surface border border-surface-border rounded-[10px] p-1 mt-1 overflow-x-auto no-scrollbar">
+    <div className="flex flex-col gap-5 max-w-[1200px] w-full min-w-0">
+      <div className="flex gap-1 bg-surface border border-surface-border rounded-[10px] p-1 mt-1 overflow-x-auto snap-x snap-mandatory">
         {tabs.map((tab) => (
-          <button
+          <Button variant="ghost"
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer min-h-[44px] sm:min-h-0 whitespace-nowrap shrink-0"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer min-h-[44px] sm:min-h-0 whitespace-nowrap shrink-0 snap-start"
             style={{
               background: activeTab === tab.id ? "var(--accent-light)" : "transparent",
               color: activeTab === tab.id ? "var(--primary)" : "var(--text-secondary)",
@@ -45,7 +46,7 @@ export default function Admin() {
           >
             {tab.icon}
             {tab.label}
-          </button>
+          </Button>
         ))}
       </div>
 
