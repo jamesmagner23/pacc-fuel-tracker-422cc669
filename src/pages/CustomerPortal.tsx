@@ -262,7 +262,7 @@ function useCustomerProfile() {
   });
 }
 
-function useCustomerTransactions(speedsolNames: string[]) {
+function useCustomerTransactions(speedsolNames: string[], enabled = true) {
   const isDemo = useDemo();
   return useQuery({
     queryKey: ["customer-transactions-all", speedsolNames, isDemo],
@@ -282,7 +282,7 @@ function useCustomerTransactions(speedsolNames: string[]) {
       }
       return all;
     },
-    enabled: speedsolNames.length > 0,
+    enabled: enabled && speedsolNames.length > 0,
   });
 }
 
@@ -432,7 +432,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
   applyPortalTheme();
   const [accountOpen, setAccountOpen] = useState(false);
 
-  const { data: rawTransactions = [], isLoading } = useCustomerTransactions(speedsolNames);
+  const { data: rawTransactions = [], isLoading } = useCustomerTransactions(speedsolNames, activeTab !== "SignedDockets");
   const pricing = useTransactionPricing(rawTransactions);
   const transactions = useMemo(() => rawTransactions.map(t => ({ ...t, ppu: pricing.getTxPricing(t).sellPPL, dinero_total: pricing.getTxPricing(t).total, displayPricing: pricing.getTxPricing(t) })), [rawTransactions, pricing.data]);
 
@@ -694,7 +694,7 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
         )}
 
 
-        {isLoading && activeTab !== "Fleet" ? (
+        {isLoading && activeTab !== "Fleet" && activeTab !== "SignedDockets" ? (
           <p style={muted(13)}>Loading...</p>
         ) : (
           <>
