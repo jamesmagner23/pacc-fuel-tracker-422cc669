@@ -15,3 +15,4 @@
 - Keep only the landing page eager and load staff layouts and pages in lazy chunks, so public visitors do not download operational libraries.
 - Classify unknown routes before authentication redirects and render a noindex NotFound page, so public URLs never become login or dashboard redirects.
 - Aggregate customer sell revenue inside the authenticated shared pricing function with admin-only summary access, so lists reuse ticket pricing without exposing supplier data.
+- Report entry gzip sizes from the production bundle hook rather than estimating from source, so performance comparisons use generated code.
