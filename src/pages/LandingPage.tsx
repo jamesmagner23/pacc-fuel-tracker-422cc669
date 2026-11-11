@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PublicWordmark } from "@/components/public/PublicChrome";
 import { Helmet } from "react-helmet-async";
+import { quoteLeadContact } from "@/lib/quoteLeadContact";
 import truckOnsiteImg from "@/assets/truck-onsite.webp";
 import truckOnsiteImg1200 from "@/assets/truck-onsite-1200.webp";
 import truckOnsiteImg800 from "@/assets/truck-onsite-800.webp";
@@ -114,8 +115,7 @@ function QuoteForm() {
         company: company.trim().slice(0, 200),
         contact_name: name.trim().slice(0, 200),
         phone: phone.trim().slice(0, 40),
-        email: email.trim().slice(0, 254),
-        estimated_litres: litres === "" ? null : Number(litres),
+        ...quoteLeadContact(email, litres),
         site_address: site.trim().slice(0, 400),
         delivery_date: date || null,
         source: "landing_page",
