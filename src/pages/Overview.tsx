@@ -5,6 +5,8 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
+import { safeDelta, pricingCoverage } from "@/lib/transactionPricing";
+import { RatesMissingNotice } from "@/components/RatesMissingNotice";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
@@ -127,8 +129,8 @@ export default function Overview() {
   const prevDeliveries = previous.length;
   const prevAvgSize = prevDeliveries > 0 ? prevLitres / prevDeliveries : 0;
 
-  const pct = (curr: number, prev: number): number | null =>
-    prev === 0 ? null : ((curr - prev) / prev) * 100;
+  const pct = safeDelta;
+  const coverage = pricingCoverage(filtered, getTxPricing);
 
   const litresPct = pct(totalLitres, prevLitres);
   const revPct = pct(totalRevenue, prevRevenue);
@@ -192,7 +194,7 @@ export default function Overview() {
   const buyPriceLookup = useMemo(() => buildBuyPriceLookup(buyPrices), [buyPrices]);
   const totalFuelCost = useMemo(() => sumBuyCost(filtered, buyPriceLookup), [filtered, buyPriceLookup]);
   const prevFuelCost = useMemo(() => sumBuyCost(previous, buyPriceLookup), [previous, buyPriceLookup]);
-  const fuelCostPct = prevFuelCost > 0 ? ((totalFuelCost - prevFuelCost) / prevFuelCost) * 100 : null;
+  const fuelCostPct = safeDelta(totalFuelCost, prevFuelCost);
   const priorPrice = sortedPrices.find(
     (p) => p.price_date < (latestPrice?.price_date || ""),
   );
@@ -474,6 +476,7 @@ export default function Overview() {
         </div>
       </div>
 
+      <RatesMissingNotice {...coverage} />
       {/* KPI grid — litres, fuel cost, buy price */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <KPISparklineCard

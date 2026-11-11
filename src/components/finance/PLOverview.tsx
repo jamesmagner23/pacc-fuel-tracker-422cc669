@@ -3,6 +3,8 @@ import { format, parseISO, startOfWeek, getISOWeek } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
+import { safeDelta, pricingCoverage } from "@/lib/transactionPricing";
+import { RatesMissingNotice } from "@/components/RatesMissingNotice";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 
 export default function PLOverview() {
@@ -31,7 +33,8 @@ export default function PLOverview() {
   const prevCost = prevPricedLitres * latestBuyPrice;
   const prevGrossProfit = prevRevenue - prevCost;
 
-  const pct = (c: number, p: number) => (p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100);
+  const pct = safeDelta;
+  const coverage = pricingCoverage(filtered, getTxPricing);
   const rangeLabel = range === "today" ? "Today" : range === "week" ? "This Week" : "This Month";
 
   // Per-client breakdown using actual transaction data + individual margins
@@ -104,7 +107,7 @@ export default function PLOverview() {
       label: "Revenue",
       value: "$" + totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 }),
       sub: `${pricedClients.length} priced client${pricedClients.length !== 1 ? "s" : ""} only`,
-      pct: pct(totalRevenue, prevRevenue),
+      pct: coverage.ratesMissing ? null : pct(totalRevenue, prevRevenue),
     },
     {
       label: "Cost of Fuel",
@@ -117,7 +120,7 @@ export default function PLOverview() {
       label: "Gross Profit",
       value: "$" + grossProfit.toLocaleString(undefined, { maximumFractionDigits: 0 }),
       sub: `${rangeLabel} · priced clients`,
-      pct: pct(grossProfit, prevGrossProfit),
+      pct: coverage.ratesMissing ? null : pct(grossProfit, prevGrossProfit),
       positive: grossProfit >= 0,
     },
     {
@@ -143,6 +146,7 @@ export default function PLOverview() {
 
   return (
     <div className="flex flex-col gap-3">
+      <RatesMissingNotice {...coverage} />
       {/* KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {kpis.map((k) => (
@@ -161,7 +165,7 @@ export default function PLOverview() {
                     : "var(--text-primary)",
               }}
             >
-              {k.value}
+              {coverage.ratesMissing && ["Revenue", "Gross Profit", "Gross Margin"].includes(k.label) ? "Rates missing" : k.value}
             </div>
             <div className="flex items-center gap-1.5 mt-1.5">
               {k.pct !== undefined && k.pct !== null && (
@@ -174,6 +178,7 @@ export default function PLOverview() {
                   {k.pct.toFixed(1)}%
                 </span>
               )}
+              {k.pct === null && <span title="Comparison unavailable because a period value is zero or rates are incomplete." className="text-muted-foreground">-</span>}
               <span className="text-[11px] text-muted-foreground">{k.sub}</span>
             </div>
           </div>
@@ -207,11 +212,11 @@ export default function PLOverview() {
         </div>
       )}
 
-      {/* Per-client profit breakdown — priced clients only */}
+      {/* Per-client profit breakdown - priced clients only */}
       {pricedClients.length > 0 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">
-            Profit by Client — {rangeLabel}
+            Profit by Client - {rangeLabel}
           </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
@@ -283,7 +288,7 @@ export default function PLOverview() {
       {clientBreakdown.length > 0 && (
         <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
           <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-3">
-            Client Detail — {rangeLabel}
+            Client Detail - {rangeLabel}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]">
@@ -316,26 +321,26 @@ export default function PLOverview() {
                       {c.litres.toLocaleString()}
                     </td>
                     <td className="py-2.5 text-right tabular-nums" style={{ color: c.hasCustomPricing ? "var(--text-primary)" : "var(--text-secondary)" }}>
-                      {c.hasCustomPricing ? `$${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+                      {c.hasCustomPricing ? `$${c.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "-"}
                     </td>
                     <td className="py-2.5 text-right tabular-nums text-muted-foreground">
-                      {c.hasCustomPricing ? `$${c.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+                      {c.hasCustomPricing ? `$${c.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "-"}
                     </td>
                     <td
                       className="py-2.5 text-right font-medium tabular-nums"
                       style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.profit >= 0 ? "var(--positive)" : "var(--negative)" }}
                     >
-                      {c.hasCustomPricing ? `$${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "—"}
+                      {c.hasCustomPricing ? `$${c.profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : "-"}
                     </td>
                     <td
                       className="py-2.5 text-right tabular-nums"
                       style={{ color: !c.hasCustomPricing ? "var(--text-secondary)" : c.margin >= 0 ? "var(--positive)" : "var(--negative)" }}
                     >
-                      {c.hasCustomPricing ? `${c.margin.toFixed(1)}%` : "—"}
+                      {c.hasCustomPricing ? `${c.margin.toFixed(1)}%` : "-"}
                     </td>
                   </tr>
                 ))}
-                {/* Totals row — priced only */}
+                {/* Totals row - priced only */}
                 <tr className="font-semibold border-t border-border">
                   <td className="py-2.5 text-foreground">Total (priced)</td>
                   <td className="py-2.5 text-right text-foreground tabular-nums">

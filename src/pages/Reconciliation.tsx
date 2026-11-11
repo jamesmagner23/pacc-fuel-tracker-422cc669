@@ -187,7 +187,7 @@ function DateRangePicker({ mode, onModeChange, startDate, endDate, onRangeChange
   );
 }
 
-function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any }) {
+function SummaryCards({ rows, settings, hasData }: { rows: DailyReconRow[]; settings: any; hasData: boolean }) {
   const totalPump = rows.reduce((s, r) => s + r.pumpLitres, 0);
   const totalSpeedsol = rows.reduce((s, r) => s + r.speedsolLitres, 0);
   const variance = totalPump - totalSpeedsol;
@@ -199,7 +199,7 @@ function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any
     settings?.variance_threshold_litres
   );
 
-  const statusLabel = status === "none" ? "✓ Reconciled" : status === "warning" ? "⚠ Minor Variance" : "✗ Critical Variance";
+  const statusLabel = !hasData ? "No data to reconcile" : status === "none" ? "✓ Reconciled" : status === "warning" ? "⚠ Minor Variance" : "✗ Critical Variance";
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -222,7 +222,7 @@ function SummaryCards({ rows, settings }: { rows: DailyReconRow[]; settings: any
       </div>
       <div className="card p-4">
         <p className="kpi-label mb-1">Status</p>
-        <p className="text-lg font-bold" style={{ color: STATUS_COLORS[status] }}>
+        <p className="text-lg font-bold" style={{ color: hasData ? STATUS_COLORS[status] : "var(--muted-foreground)" }}>
           {statusLabel}
         </p>
       </div>
@@ -940,7 +940,7 @@ export default function Reconciliation() {
         ))}
       </div>
 
-      <SummaryCards rows={dailyRows} settings={settings} />
+      <SummaryCards rows={dailyRows} settings={settings} hasData={pumpReadings.length > 0 && rangeTransactions.length > 0} />
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-surface-border">

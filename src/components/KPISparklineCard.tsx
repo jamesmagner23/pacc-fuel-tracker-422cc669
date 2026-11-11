@@ -123,9 +123,9 @@ export function KPISparklineCard({
           ) : (
             <span
               className="inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-bold bg-muted text-muted-foreground"
-              title="No prior period to compare against"
+              title="Comparison unavailable because the current or previous value is zero, or data is incomplete."
             >
-              New
+              -
             </span>
           )}
           {subLine && (

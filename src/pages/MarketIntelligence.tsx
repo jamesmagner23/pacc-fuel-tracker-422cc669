@@ -7,12 +7,13 @@ import {
   ReferenceLine, BarChart, Bar, Cell
 } from "recharts";
 import { MarketBowserAvgTab } from "@/components/market/MarketBowserAvgTab";
+import { nextExciseIndexation } from "@/lib/transactionDates";
 import { MarketTGPCompareTab } from "@/components/market/MarketTGPCompareTab";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const TODAY = new Date();
-const JULY1 = new Date("2026-07-01");
-const daysToJuly = Math.ceil((JULY1.getTime() - TODAY.getTime()) / (1000 * 60 * 60 * 24));
+const exciseIndexation = nextExciseIndexation(TODAY);
+const daysToJuly = exciseIndexation.days;
 
 const SEED_DATA = {
   brent: 108.4,
@@ -50,7 +51,7 @@ const MONTHS = [
   },
   {
     label: "JUL 2026", status: "CLIFF", color: "var(--negative)", signal: "CLIFF",
-    headline: `Excise reverts to 52.6¢/L. RUC reinstates. TGP could spike 26–32¢ overnight. ${daysToJuly} days away.`,
+    headline: `Excise reverts to 52.6¢/L. RUC reinstates. TGP could spike 26–32¢ overnight.`,
     actions: ["Ensure all contracts have price escalation clauses", "Rebuild FTC to 20.2¢/L", "Brief customers on price movement"],
   },
 ];
@@ -364,7 +365,7 @@ export default function MarketIntelligence() {
     { label: "Excise Cut Active", value: `${data.exciseCutCPL}`, sub: "¢/L", change: null },
     { label: "FTC Rate", value: `${data.ftcRate}`, sub: "¢/L", change: null, highlight: true },
     { label: "Supply Risk", value: data.supplyRisk, sub: "", change: null },
-    { label: "Days to July 1", value: `${daysToJuly}`, sub: "DAYS", change: null },
+    { label: "Days to excise indexation", value: `${daysToJuly}`, sub: "DAYS", change: null },
   ];
 
   return (
@@ -402,9 +403,9 @@ export default function MarketIntelligence() {
           <span className="text-[10px] font-bold text-destructive">RESTRICTED</span>
         </div>
         <div className="flex items-center gap-1.5 ml-auto">
-          <span className="text-[10px] text-muted-foreground">EXCISE CLIFF</span>
+          <span className="text-[10px] text-muted-foreground">EXCISE INDEXATION</span>
           <span className="text-lg font-bold text-destructive tabular-nums">{daysToJuly}d</span>
-          <span className="text-[10px] text-muted-foreground">TO JUL 1</span>
+          <span className="text-[10px] text-muted-foreground">{exciseIndexation.date}</span>
         </div>
       </div>
 
@@ -463,7 +464,7 @@ export default function MarketIntelligence() {
           {/* Alert banners — matches PLOverview amber warning */}
           {[
             { color: "var(--negative)", icon: "⚠", text: "HORMUZ RESTRICTED — Gasoil inflows to Australia tracking -1.47M bbl vs January. April/May critical months." },
-            { color: "var(--warning)", icon: "⏱", text: `EXCISE CLIFF IN ${daysToJuly} DAYS — Diesel TGP to spike +26–32¢/L on July 1 if not extended. All contracts must include escalation clauses.` },
+            { color: "var(--warning)", icon: "⏱", text: `Next excise indexation: ${exciseIndexation.date}, ${daysToJuly} days. Indexation occurs on 1 February and 1 August.` },
           ].map((a, i) => (
             <div key={i} className="bg-surface border rounded-[10px] p-4 flex items-start gap-3" style={{ borderColor: `${a.color}33` }}>
               <div className="text-lg mt-0.5" style={{ color: a.color }}>{a.icon}</div>
@@ -474,7 +475,7 @@ export default function MarketIntelligence() {
           {/* CHART: Fuel Buy Price Trend with forecast */}
           <div className="bg-surface border border-surface-border rounded-[10px] p-4 sm:p-5">
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-4">
-              Supply Price Trend — Forecast to July 1
+              Supply Price Trend
             </div>
             <div className="h-44">
               <ResponsiveContainer width="100%" height="100%">
