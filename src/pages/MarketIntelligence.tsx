@@ -87,18 +87,6 @@ const BUY_PRICE_TREND = Array.from({ length: 60 }, (_, i) => {
     isForecast: false,
   };
 });
-// Add forecast to July 1
-const lastPrice = BUY_PRICE_TREND[BUY_PRICE_TREND.length - 1].price;
-for (let i = 1; i <= daysToJuly && i <= 90; i++) {
-  const d = new Date(TODAY);
-  d.setDate(d.getDate() + i);
-  BUY_PRICE_TREND.push({
-    date: d.toLocaleDateString("en-AU", { day: "2-digit", month: "short" }),
-    price: lastPrice + i * 0.004 + Math.random() * 0.01,
-    isForecast: true,
-  });
-}
-
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function fmtDate(d: Date) {
   return d.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -483,7 +471,7 @@ export default function MarketIntelligence() {
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} interval={Math.floor(BUY_PRICE_TREND.length / 8)} />
                   <YAxis tick={{ fontSize: 9, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v.toFixed(2)}`} domain={["auto", "auto"]} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`$${v.toFixed(4)}/L`, "Buy Price"]} />
-                  <ReferenceLine x={BUY_PRICE_TREND.find(d => d.isForecast)?.date} stroke="var(--negative)" strokeDasharray="4 4" strokeWidth={1} label={{ value: "EXCISE REVERTS", position: "top", fontSize: 9, fill: "var(--negative)" }} />
+
                   {/* Actual line */}
                   <Line
                     type="monotone"

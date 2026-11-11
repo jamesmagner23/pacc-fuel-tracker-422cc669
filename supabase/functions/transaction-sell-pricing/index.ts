@@ -21,7 +21,7 @@ Deno.serve(async req => {
     if (visibleError) return json({ error: 'Unable to load transactions' }, 500);
     if (!visible?.length) return json({ prices: {} });
     const admin = createClient(url, secret);
-    const names = [...new Set(visible.map(t => t.nombre_cliente1).filter(Boolean))];
+    let names = [...new Set(visible.map(t => t.nombre_cliente1).filter(Boolean))];
     const dates = visible.map(t => t.date || t.fecha.slice(0, 10)).sort();
     const first = new Date(`${dates[0]}T12:00:00Z`), last = new Date(`${dates[dates.length - 1]}T12:00:00Z`);
     first.setUTCDate(first.getUTCDate() - (first.getUTCDay() + 6) % 7);
@@ -32,8 +32,10 @@ Deno.serve(async req => {
       admin.from('customer_pricing').select('client_account_id,min_litres,max_litres,margin_percent,pricing_type'),
     ]);
     if (clientResult.error || tierResult.error) return json({ error: 'Unable to load pricing rules' }, 500);
+    const matchedClients = (clientResult.data ?? []).filter(c => [c.company_name, c.speedsol_name, ...(c.speedsol_names ?? [])].some(n => n && names.some(v => v?.trim().toLowerCase() === n.trim().toLowerCase())));
+    names = [...new Set(matchedClients.flatMap(c => [c.company_name, c.speedsol_name, ...(c.speedsol_names ?? [])]).filter(Boolean))];
     const weekly = [];
-    for (let offset = 0; ; offset += 1000) {
+    for (let offset = 0; names.length > 0; offset += 1000) {
       const { data, error } = await admin.from('transactions').select('id,fecha,date,nombre_cliente1,cantidad,ppu,dinero_total')
         .in('nombre_cliente1', names).gte('date', first.toISOString().slice(0, 10)).lte('date', last.toISOString().slice(0, 10))
         .order('id').range(offset, offset + 999);

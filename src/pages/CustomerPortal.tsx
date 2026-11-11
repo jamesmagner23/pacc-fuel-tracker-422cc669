@@ -269,13 +269,14 @@ function useCustomerTransactions(speedsolNames: string[]) {
         );
       }
       if (speedsolNames.length === 0) return [];
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .in("nombre_cliente1", speedsolNames)
-        .order("fecha", { ascending: false });
-      if (error) throw error;
-      return data || [];
+      const all = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await supabase.from("transactions").select("*").in("nombre_cliente1", speedsolNames).order("fecha", { ascending: false }).order("id").range(offset, offset + 999);
+        if (error) throw error;
+        all.push(...(data ?? []));
+        if ((data?.length ?? 0) < 1000) break;
+      }
+      return all;
     },
     enabled: speedsolNames.length > 0,
   });
@@ -670,14 +671,16 @@ export default function CustomerPortal({ forcedTab }: { forcedTab?: Tab | "Help"
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     onClick={() => {
-                      const header = ["Date", "Site", "Plant", "Rego", "Litres", "Spend"];
+                      const header = ["Date", "Site", "Plant", "Rego", "Litres", "$/L inc GST", "Total inc GST", "Price source"];
                       const rows = filteredTransactions.map((t: any) => [
                         t.date || "",
                         t.estacion || t.ciudad || t.nombre_cliente1 || "",
                         t.identificador_cliente1 || "",
                         t.placa || "",
                         (t.cantidad || 0).toFixed(2),
+                        t.displayPricing?.sellPPL ?? "Rate missing",
                         t.displayPricing?.total == null ? "Rate missing" : t.displayPricing.total.toFixed(2),
+                        t.displayPricing?.source ?? "missing",
                       ]);
                       const safeName = (companyName || "deliveries").replace(/[^A-Za-z0-9]+/g, "-");
                       const safePeriod = (PERIOD_LABELS[period] || "current").replace(/\s+/g, "-");
@@ -2834,7 +2837,7 @@ function DeliveriesTab({
                     )}
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                <div className="flex flex-wrap justify-end items-center gap-2 max-w-[45%]">
                   <span style={{ fontSize: 14, fontFamily: T.sansHead, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                     {fmtL(t.cantidad || 0)}
                   </span>

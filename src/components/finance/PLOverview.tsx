@@ -3,8 +3,10 @@ import { format, parseISO, startOfWeek, getISOWeek } from "date-fns";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useDateRange } from "@/hooks/useDateRange";
-import { safeDelta, pricingCoverage } from "@/lib/transactionPricing";
+import { effectiveBuyPrice, safeDelta, pricingCoverage } from "@/lib/transactionPricing";
 import { RatesMissingNotice } from "@/components/RatesMissingNotice";
+import { useBuyPrices } from "@/hooks/useBuyPrices";
+import { melbourneDate } from "@/lib/transactionDates";
 import { useRevenueCalc } from "@/hooks/useRevenueCalc";
 
 export default function PLOverview() {
@@ -23,14 +25,16 @@ export default function PLOverview() {
     prevPricedLitres,
   } = useRevenueCalc(range);
 
+  const { data: buyPrices = [] } = useBuyPrices(3650);
+  const costOf = (t: any) => getTxPricing(t).hasPricing ? (t.cantidad ?? 0) * (effectiveBuyPrice(buyPrices, t.date || t.fecha.slice(0, 10), melbourneDate()) ?? 0) : 0;
   const totalLitres = filtered.reduce((s, t) => s + (t.cantidad || 0), 0);
   const numDeliveries = filtered.length;
-  const totalCost = pricedLitres * latestBuyPrice;
+  const totalCost = filtered.reduce((sum, t) => sum + costOf(t), 0);
   const grossProfit = totalRevenue - totalCost;
   const grossMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
   const prevLitres = previous.reduce((s, t) => s + (t.cantidad || 0), 0);
-  const prevCost = prevPricedLitres * latestBuyPrice;
+  const prevCost = previous.reduce((sum, t) => sum + costOf(t), 0);
   const prevGrossProfit = prevRevenue - prevCost;
 
   const pct = safeDelta;
@@ -56,17 +60,19 @@ export default function PLOverview() {
     });
 
     // Aggregate transactions by client
-    const byClient: Record<string, { name: string; litres: number; revenue: number; clientId: number | null }> = {};
+    const byClient: Record<string, { name: string; litres: number; revenue: number; cost: number; missing: boolean; clientId: number | null }> = {};
     filtered.forEach((t) => {
       const rawName = t.nombre_cliente1 || "Unmatched";
       const matched = speedsolToClient.get(rawName.toLowerCase());
       const key = matched ? matched.name : rawName;
       if (!byClient[key]) {
-        byClient[key] = { name: key, litres: 0, revenue: 0, clientId: matched?.id || null };
+        byClient[key] = { name: key, litres: 0, revenue: 0, cost: 0, missing: false, clientId: matched?.id || null };
       }
       const litres = t.cantidad || 0;
       byClient[key].litres += litres;
       const { hasPricing, sellPPL } = getTxPricing(t);
+      byClient[key].cost += costOf(t);
+      byClient[key].missing ||= !hasPricing;
       if (t.dinero_total && t.dinero_total > 0) {
         byClient[key].revenue += t.dinero_total;
       } else if (hasPricing) {
@@ -79,20 +85,20 @@ export default function PLOverview() {
         const pricing = c.clientId
           ? customerPricing.find((p) => p.client_account_id === c.clientId)
           : null;
-        const cost = pricing ? c.litres * latestBuyPrice : 0;
-        const profit = pricing ? c.revenue - cost : 0;
+        const cost = c.cost;
+        const profit = c.revenue - cost;
         const margin = c.revenue > 0 ? (profit / c.revenue) * 100 : 0;
         return {
           ...c,
           cost,
           profit,
           margin,
-          hasCustomPricing: !!pricing,
+          hasCustomPricing: !c.missing,
           customMargin: pricing?.margin_percent ?? null,
         };
       })
       .sort((a, b) => b.revenue - a.revenue);
-  }, [filtered, clients, customerPricing, latestBuyPrice, getTxPricing]);
+  }, [filtered, clients, customerPricing, latestBuyPrice, getTxPricing, buyPrices]);
 
   if (isLoading) {
     return <div className="text-muted-foreground text-[13px] py-16 text-center">Loading…</div>;
@@ -112,7 +118,7 @@ export default function PLOverview() {
     {
       label: "Cost of Fuel",
       value: "$" + totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 }),
-      sub: `${pricedLitres.toLocaleString()}L × $${latestBuyPrice.toFixed(4)}`,
+      sub: "Priced litres at the historical buy price",
       pct: null,
       positive: null as boolean | null,
     },

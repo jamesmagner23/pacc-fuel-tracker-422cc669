@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTransactionPricing } from "@/hooks/useTransactionPricing";
-import { pricingCoverage } from "@/lib/transactionPricing";
+import { effectiveBuyPrice, pricingCoverage } from "@/lib/transactionPricing";
+import { melbourneDate } from "@/lib/transactionDates";
 import { RatesMissingNotice } from "@/components/RatesMissingNotice";
 import { useAllTransactions } from "@/hooks/useTransactions";
 import { useBuyPrices } from "@/hooks/useBuyPrices";
@@ -50,15 +51,7 @@ export default function EBITDATab() {
     [buyPrices]
   );
 
-  const buyPriceFor = (dateStr: string): number => {
-    if (!sortedBuy.length) return 0;
-    let last = sortedBuy[0].price_per_litre;
-    for (const p of sortedBuy) {
-      if (p.price_date <= dateStr) last = p.price_per_litre;
-      else break;
-    }
-    return last;
-  };
+  const buyPriceFor = (dateStr: string): number => effectiveBuyPrice(buyPrices, dateStr, melbourneDate()) ?? 0;
 
   const periodTxns = useMemo(
     () => txns.filter((t) => new Date(t.fecha) >= periodStart),
@@ -87,13 +80,14 @@ export default function EBITDATab() {
   const monthlyChart = useMemo(() => {
     const dailyOpex = recurringPeriodTotal / periodDays;
 
-    const byMonth: Record<string, { revenue: number; cogs: number; litres: number }> = {};
+    const byMonth: Record<string, { revenue: number; cogs: number; litres: number; missing: boolean }> = {};
     // Use ALL transactions, not just period - chart is always trailing 12 months
     txns.forEach((t) => {
       const d = parseISO(t.fecha);
       const key = format(startOfMonth(d), "yyyy-MM");
-      if (!byMonth[key]) byMonth[key] = { revenue: 0, cogs: 0, litres: 0 };
+      if (!byMonth[key]) byMonth[key] = { revenue: 0, cogs: 0, litres: 0, missing: false };
       const buy = buyPriceFor((t.date || t.fecha.slice(0, 10)) as string);
+      byMonth[key].missing ||= !pricing.getTxPricing(t).hasPricing;
       byMonth[key].revenue += pricing.getTxPricing(t).total ?? 0;
       byMonth[key].cogs += (t.cantidad || 0) * buy;
       byMonth[key].litres += t.cantidad || 0;
@@ -108,13 +102,13 @@ export default function EBITDATab() {
     }
 
     return buckets.map(({ key, label }) => {
-      const v = byMonth[key] || { revenue: 0, cogs: 0, litres: 0 };
+      const v = byMonth[key] || { revenue: 0, cogs: 0, litres: 0, missing: false };
       // Days in this month → opex share at the daily rate set by current period
       const monthStart = parseISO(key + "-01");
       const daysInMonth = differenceInCalendarDays(endOfMonth(monthStart), monthStart) + 1;
       const opexShare = dailyOpex * daysInMonth;
       const gp = v.revenue - v.cogs;
-      const complete = v.revenue > 0;
+      const complete = v.revenue > 0 && !v.missing;
       return {
         month: label,
         revenue: Math.round(v.revenue),
